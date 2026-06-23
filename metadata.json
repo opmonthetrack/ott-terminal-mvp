@@ -1,0 +1,6 @@
+{
+  "name": "XRPL OTT Terminal",
+  "description": "A minimalist, futuristic Web3 dashboard prototype for the XRPL ecosystem.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
