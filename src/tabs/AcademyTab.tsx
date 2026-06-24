@@ -1,287 +1,180 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
-import { GraduationCap, Award, Brain, Zap, BookOpen, ShieldAlert, Cpu, CheckCircle2, Triangle, Sparkles, Download, ShoppingBag, Coins, Loader2 } from 'lucide-react';
+import { GraduationCap, Award, Brain, Zap, BookOpen, ShieldAlert, Cpu, CheckCircle2, Triangle, Sparkles, Download, ShoppingBag, Coins, Loader2, AlertOctagon, Ticket } from 'lucide-react';
 
 interface AcademyTabProps {
   onClaimGlobal: () => void;
 }
 
 export function AcademyTab({ onClaimGlobal }: AcademyTabProps) {
-  // Categorie filter state
-  const [activeCategory, setActiveCategory] = useState<'all' | 'xls' | 'xaman' | 'core' | 'exclusive'>('all');
-  
-  // State voor afgeronde L2E modules
+  const [activeCategory, setActiveCategory] = useState<'all' | 'xls' | 'xaman' | 'core'>('all');
   const [completedModules, setCompletedModules] = useState<string[]>(["core-1"]);
   const [claimingModuleId, setClaimingModuleId] = useState<string | null>(null);
 
+  // --- PLATFORM SECURITY STATE (JOUW ANTI-DUMPING ENGINE) ---
+  const [isWalletRestricted, setIsWalletRestricted] = useState(false);
+  const [ticketRequested, setTicketRequested] = useState(false);
+  const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
+
   // --- MARKETPLACE STATE ---
-  const [purchasedBooks, setPurchasedBooks] = useState<string[]>([]);
+  const [purchasedChapters, setPurchasedChapters] = useState<string[]>([]);
   const [selectedAsset, setSelectedAsset] = useState<{ [key: string]: 'OTT' | 'XRP' | 'RLUSD' }>({
-    "book-1": "OTT",
-    "book-2": "OTT",
-    "book-3": "OTT"
+    "ch-1": "OTT", "ch-2": "OTT", "ch-3": "OTT"
   });
-  const [isBuyingBookId, setIsBuyingBookId] = useState<string | null>(null);
+  const [isBuyingId, setIsBuyingId] = useState<string | null>(null);
   const [purchaseStatus, setPurchaseStatus] = useState<'idle' | 'signing' | 'success'>('idle');
 
-  // De e-learning modules
+  // L2E Modules
   const academyModules = [
+    { id: "core-1", category: "core", title: "XRPL Core: Ledger Fundamentals", description: "Understand consensus and trustlines.", reward: 50 },
+    { id: "xaman-1", category: "xaman", title: "Xaman Wallet Mastery", description: "Deep dive into secure key custody and signing.", reward: 100 },
+    { id: "xls-20", category: "xls", title: "XLS-20: Native NFTs on XRPL", description: "Learn native minting and metadata structure.", reward: 150 },
+    { id: "xls-30", category: "xls", title: "XLS-30d: Native AMM Mechanics", description: "Deconstruct continuous auction liquidity.", reward: 200 }
+  ];
+
+  // --- JOUW GEWENSCHTE EN ONTLEDEN HEARTH BOOK STRUCTUUR ---
+  const hearthBookChapters = [
     {
-      id: "core-1",
-      category: "core",
-      title: "XRPL Core (A to Z): Ledger Fundamentals",
-      description: "Understand the XRP Ledger consensus mechanism, trustline architecture, account reserves, and decentralized transactions from first principles.",
-      reward: 50,
-      difficulty: "Beginner",
-      status: "Completed"
+      id: "ch-1",
+      title: "The Hearth Book - Vol. I (Chapter 1)",
+      subtitle: "Decoded Symbolism & Ancestral Frequency",
+      description: "Unlocking the ancient wisdom strings and understanding how words act as direct vibratory creators of your reality.",
+      prices: { OTT: 75, XRP: 15, RLUSD: 8 }
     },
     {
-      id: "xaman-1",
-      category: "xaman",
-      title: "Xaman Wallet Mastery & Security",
-      description: "Deep dive into secure key custody, biometric transaction signing, managing multi-signing accounts, and interacting safely with third-party xApps.",
-      reward: 100,
-      difficulty: "Intermediate",
-      status: "Ready to Claim"
+      id: "ch-2",
+      title: "The Hearth Book - Vol. I (Chapter 2)",
+      subtitle: "The Toxic Architecture",
+      description: "A deep structural analysis parsing how corporate financial systems and modern chemical nutrition cage human consciousness.",
+      prices: { OTT: 100, XRP: 20, RLUSD: 10 }
     },
     {
-      id: "xls-20",
-      category: "xls",
-      title: "XLS-20 Matrix: Native NFTs on XRPL",
-      description: "Learn how native Non-Fungible Tokens operate on-chain without smart contract vulnerabilities. Master minting, burning, and brokerage hooks.",
-      reward: 150,
-      difficulty: "Advanced",
-      status: "Start Course"
-    },
-    {
-      id: "xls-30",
-      category: "xls",
-      title: "XLS-30d: Native Automated Market Makers (AMM)",
-      description: "Deconstruct the ledger-level AMM protocol. Learn how continuous auction mechanisms reduce impermanent loss and route liquidity via Doppler structures.",
-      reward: 200,
-      difficulty: "Advanced",
-      status: "Start Course"
-    },
-    {
-      id: "crypto-1",
-      category: "core",
-      title: "How to Spot a Fugazi Token (Security 101)",
-      description: "The ultimate survival guide to financial awareness. Filter out fake volume, analyze issuer keys, check blackhole status, and deploy the OTT Compliance Shield.",
-      reward: 75,
-      difficulty: "Intermediate",
-      status: "Start Course"
+      id: "ch-3",
+      title: "The Hearth Book - Vol. I (Chapter 3)",
+      subtitle: "Cellular Emancipation",
+      description: "Practical biometric protocols regarding deep tissue detoxification, advanced supplement matching, and energetic grid resetting.",
+      prices: { OTT: 125, XRP: 25, RLUSD: 12 }
     }
   ];
 
-  // --- EXCLUSIEVE E-BOOKS MATRIX ---
-  const eDocsBooks = [
-    {
-      id: "book-1",
-      title: "The Hearth Book (Volume I)",
-      description: "The cornerstone text of TruthOnTheTrack. Unlocking ancestral wisdom, decoded symbolism, and the spiritual frequency shifts required to achieve mental sovereignty.",
-      prices: { OTT: 250, XRP: 50, RLUSD: 25 },
-      author: "Oswald Hellemun"
-    },
-    {
-      id: "book-2",
-      title: "589 Steps Ahead: Escaping Toxic Systems",
-      description: "A comprehensive investigation dossier detailing how corporate financial frameworks and modern chemical-nutrition systems manipulate human consciousness.",
-      prices: { OTT: 150, XRP: 30, RLUSD: 15 },
-      author: "Oswald Hellemun"
-    },
-    {
-      id: "book-3",
-      title: "The Sovereign Detox & Energy Manifesto",
-      description: "Practical biometric blueprints on cell-level detoxification, advanced supplement layering, breathing protocols, and energetic grid restoration.",
-      prices: { OTT: 200, XRP: 40, RLUSD: 20 },
-      author: "Oswald Hellemun"
-    }
-  ];
+  const filteredModules = activeCategory === 'all' ? academyModules : academyModules.filter(m => m.category === activeCategory);
 
-  const filteredModules = activeCategory === 'all' 
-    ? academyModules 
-    : academyModules.filter(m => m.category === activeCategory);
-
-  // L2E Claim Logica
   const handleExecuteAirdrop = (id: string) => {
     setClaimingModuleId(id);
     setTimeout(() => {
       setCompletedModules(prev => [...prev, id]);
       setClaimingModuleId(null);
       onClaimGlobal();
-    }, 1500);
+    }, 1200);
   };
 
-  // E-Book Multi-Asset Aankoop Logica via Xaman
-  const handlePurchaseBook = (bookId: string) => {
-    setIsBuyingBookId(bookId);
+  const handlePurchaseChapter = (id: string) => {
+    if (isWalletRestricted) return; // Blokeer aankopen als wallet restricted is!
+    setIsBuyingId(id);
     setPurchaseStatus('signing');
-    
-    // Simuleer Xaman cryptographic signature
     setTimeout(() => {
       setPurchaseStatus('success');
       setTimeout(() => {
-        setPurchasedBooks(prev => [...prev, bookId]);
-        setIsBuyingBookId(null);
+        setPurchasedChapters(prev => [...prev, id]);
+        setIsBuyingId(null);
         setPurchaseStatus('idle');
-      }, 1500);
+      }, 1200);
+    }, 1500);
+  };
+
+  const handleRequestTicket = () => {
+    setIsSubmittingTicket(true);
+    setTimeout(() => {
+      setIsSubmittingTicket(false);
+      setTicketRequested(true);
     }, 2000);
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="space-y-12 max-w-5xl font-sans text-white"
-    >
-      {/* Academy Segment */}
-      <div className="space-y-6">
-        <div className="border-b border-gray-800 pb-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h2 className="font-orbitron text-2xl uppercase tracking-widest flex items-center space-x-3">
-              <GraduationCap className="w-7 h-7 text-[#2b82ff]" />
-              <span>Learn-to-Earn (L2E) Engine</span>
-            </h2>
-            <p className="text-xs text-gray-500 mt-1 uppercase font-mono">Complete Tasks & Receive Automated Ledger Airdrops</p>
-          </div>
-          <div className="flex items-center space-x-2 bg-gray-950 border border-gray-900 px-4 py-2 text-xs font-mono text-gray-400">
-            <Award className="w-4 h-4 text-[#ff2079]" />
-            <span>Modules: <span className="text-white font-bold">{completedModules.length}</span> / {academyModules.length}</span>
-          </div>
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-10 max-w-5xl font-sans text-white">
+      
+      {/* 🛡️ JOUW ANTI-DUMP SIMULATOR CONTROL PANEL (DEMO GOUD) */}
+      <div className="border border-gray-800 bg-gray-950/40 p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <div className="text-xs font-mono text-gray-500 uppercase tracking-widest">Jury Demonstration Modus</div>
+          <h4 className="font-orbitron text-xs font-bold uppercase text-white mt-1">Anti-Dump & Platform Gating Validator</h4>
         </div>
-
-        {/* Categorie Filters */}
-        <div className="flex flex-wrap gap-2 border-b border-gray-900 pb-4">
-          {[
-            { id: 'all', label: 'All Modules', icon: BookOpen },
-            { id: 'xls', label: 'XLS Patches', icon: Cpu },
-            { id: 'xaman', label: 'Xaman Wallet', icon: Zap },
-            { id: 'core', label: 'Crypto Education', icon: Brain },
-          ].map((btn) => (
-            <button
-              key={btn.id}
-              onClick={() => setActiveCategory(btn.id as any)}
-              className={`flex items-center space-x-2 px-4 py-2 border text-xs font-orbitron uppercase tracking-wider transition-all cursor-pointer ${
-                activeCategory === btn.id
-                  ? 'border-[#ff2079] bg-[#ff2079]/10 text-[#ff2079]'
-                  : 'border-gray-800 text-gray-400 hover:text-white bg-black'
-              }`}
-            >
-              <btn.icon className="w-3.5 h-3.5" />
-              <span>{btn.label}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Modules Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {filteredModules.map((mod) => {
-            const isCompleted = completedModules.includes(mod.id);
-            const isClaiming = claimingModuleId === mod.id;
-
-            return (
-              <div key={mod.id} className={`group relative border bg-black p-6 flex flex-col justify-between h-64 transition-all duration-300 ${isCompleted ? 'border-gray-900 opacity-60' : 'border-gray-800 hover:border-transparent'}`}>
-                {!isCompleted && (
-                  <div className="absolute inset-0 bg-ott-gradient opacity-0 transition-opacity duration-500 group-hover:opacity-100" style={{ padding: '1px' }}><div className="w-full h-full bg-black"></div></div>
-                )}
-                <div className="relative z-10 flex flex-col h-full justify-between">
-                  <div>
-                    <h3 className="font-orbitron text-sm text-white font-bold uppercase tracking-wider mb-2">{mod.title}</h3>
-                    <p className="text-gray-400 text-xs leading-relaxed line-clamp-3 font-sans">{mod.description}</p>
-                  </div>
-                  <div className="flex justify-between items-center border-t border-gray-900 pt-4">
-                    <span className="font-orbitron font-bold text-xs text-[#2b82ff]">+{mod.reward} $OTT</span>
-                    {isCompleted ? (
-                      <span className="text-[10px] uppercase tracking-widest text-gray-500 font-orbitron">Airdropped</span>
-                    ) : (
-                      <button onClick={() => handleExecuteAirdrop(mod.id)} className="border border-gray-800 text-gray-400 text-[10px] font-orbitron uppercase tracking-widest py-1.5 px-3 transition-all cursor-pointer hover:border-white hover:text-white bg-black">
-                        {isClaiming ? "Airdropping..." : "Launch Task"}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <button 
+          onClick={() => {
+            setIsWalletRestricted(!isWalletRestricted);
+            if(isWalletRestricted) setTicketRequested(false);
+          }}
+          className={`px-4 py-2 text-[10px] font-orbitron uppercase tracking-widest font-bold border transition-all cursor-pointer ${
+            isWalletRestricted 
+              ? 'border-[#2b82ff] bg-[#2b82ff]/10 text-[#2b82ff]' 
+              : 'border-[#ff2079] bg-[#ff2079]/10 text-[#ff2079] animate-pulse'
+          }`}
+        >
+          {isWalletRestricted ? "⚡ Reset naar Transparante Modus" : "🚨 Simuleer Dump ($OTT onder limiet)"}
+        </button>
       </div>
 
-      {/* --- NIEUWE SECTIE: EXCLUSIEVE DIGITAL LIBRARY MARKETPLACE --- */}
-      <div className="space-y-6 pt-6">
-        <div className="border-b border-gray-800 pb-5">
-          <h2 className="font-orbitron text-2xl uppercase tracking-widest flex items-center space-x-3">
-            <ShoppingBag className="w-7 h-7 text-[#ff2079]" />
-            <span>Sovereign Knowledge Marketplace</span>
-          </h2>
-          <p className="text-xs text-gray-500 mt-1 uppercase font-mono">Unlock Oswald Hellemun's Exclusive Literature Using Multi-Asset Nodes</p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {eDocsBooks.map((book) => {
-            const hasPurchased = purchasedBooks.includes(book.id);
-            const activeAsset = selectedAsset[book.id];
-            const currentPrice = book.prices[activeAsset];
-
-            return (
-              <div 
-                key={book.id}
-                className={`relative border bg-black p-6 flex flex-col justify-between h-80 transition-all ${
-                  hasPurchased ? 'border-[#2b82ff]/40 bg-gray-950/20' : 'border-gray-800'
-                }`}
-              >
-                <div className="absolute top-0 right-0 p-2 bg-gray-900 text-gray-500 font-mono text-[8px] uppercase tracking-widest">
-                  {book.author}
-                </div>
-
-                <div className="space-y-3">
-                  <h3 className="font-orbitron text-sm text-white font-black uppercase tracking-wider border-b border-gray-900 pb-2">
-                    {book.title}
-                  </h3>
-                  <p className="text-gray-400 text-xs leading-relaxed font-sans line-clamp-4">
-                    {book.description}
-                  </p>
-                </div>
-
-                <div className="space-y-3 pt-4 border-t border-gray-900">
-                  {/* ASSET SELECTOR BAR (Alleen tonen als boek niet gekocht is) */}
-                  {!hasPurchased && (
-                    <div className="flex justify-between items-center bg-gray-950 p-1 border border-gray-900">
-                      <span className="text-[9px] uppercase text-gray-500 font-mono pl-2">Pay with:</span>
-                      <div className="flex space-x-1">
-                        {(['OTT', 'XRP', 'RLUSD'] as const).map((asset) => (
-                          <button
-                            key={asset}
-                            onClick={() => setSelectedAsset(prev => ({ ...prev, [book.id]: asset }))}
-                            className={`px-2 py-0.5 font-mono text-[9px] transition-all cursor-pointer ${
-                              activeAsset === asset 
-                                ? 'bg-[#ff2079] text-white font-bold' 
-                                : 'text-gray-500 hover:text-white'
-                            }`}
-                          >
-                            {asset}
-                          </button>
-                        ))}
-                      </div>
+      {/* BIJ VERGRENDELING: TOON TRANSPARANTE WARNING PANEL */}
+      <AnimatePresence>
+        {isWalletRestricted && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="border border-[#ff2079] bg-[#ff2079]/5 p-6 relative overflow-hidden">
+            <div className="flex items-start space-x-4">
+              <AlertOctagon className="w-8 h-8 text-[#ff2079] shrink-0" />
+              <div className="space-y-2">
+                <h3 className="font-orbitron text-sm font-black uppercase tracking-widest text-white">xApp Command Station: Access Suspended</h3>
+                <p className="text-xs text-gray-400 leading-relaxed max-w-3xl">
+                  Ledger analysis indicates your connected wallet address has deployed market-dumping parameters (holdings dropped below baseline). To maintain ecosystem equilibrium, premium features are gated. You cannot interact with the Marketplace until liquidity parameters are verified.
+                </p>
+                <div className="pt-2">
+                  {ticketRequested ? (
+                    <div className="border border-[#2b82ff]/40 bg-[#2b82ff]/5 px-4 py-2 w-fit text-[10px] font-mono text-[#2b82ff] uppercase tracking-wider">
+                      🎟️ Exit-Ticket Queue Active. Request pending internal liquidity match.
                     </div>
-                  )}
-
-                  {/* KRIJG DOWNLOAD KNOP OF KOOP KNOP */}
-                  {hasPurchased ? (
-                    <a 
-                      href="#" 
-                      onClick={(e) => e.preventDefault()}
-                      className="w-full flex items-center justify-center space-x-2 border border-[#2b82ff] bg-[#2b82ff]/10 text-[#2b82ff] text-xs font-orbitron uppercase tracking-widest py-2.5 font-bold hover:bg-[#2b82ff]/20 transition-all"
-                    >
-                      <Download className="w-4 h-4 animate-bounce" />
-                      <span>Download PDF / EPUB</span>
-                    </a>
                   ) : (
-                    <button
-                      onClick={() => handlePurchaseBook(book.id)}
-                      className="w-full flex items-center justify-center space-x-2 bg-white text-black text-xs font-orbitron uppercase tracking-widest py-2.5 font-black hover:bg-gray-200 transition-all cursor-pointer"
+                    <button 
+                      onClick={handleRequestTicket}
+                      disabled={isSubmittingTicket}
+                      className="flex items-center space-x-2 bg-white text-black text-[10px] font-orbitron font-bold uppercase tracking-widest px-4 py-2 hover:bg-gray-200 transition-colors cursor-pointer"
                     >
-                      <Coins className="w-4 h-4" />
-                      <span>Buy: {currentPrice} {activeAsset}</span>
+                      {isSubmittingTicket ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Ticket className="w-3 h-3" />
+                      )}
+                      <span>Request Transparent Exit-Ticket</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* L2E Engine Grid */}
+      <div className={`space-y-6 transition-all ${isWalletRestricted ? 'opacity-30 pointer-events-none' : ''}`}>
+        <div className="border-b border-gray-800 pb-4">
+          <h2 className="font-orbitron text-xl uppercase tracking-widest flex items-center space-x-2">
+            <GraduationCap className="w-6 h-6 text-[#2b82ff]" />
+            <span>Learn-to-Earn (L2E) Matrix</span>
+          </h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {filteredModules.map((mod) => {
+            const isCompleted = completedModules.includes(mod.id);
+            return (
+              <div key={mod.id} className={`border p-4 bg-black flex flex-col justify-between h-48 ${isCompleted ? 'border-gray-900 opacity-50' : 'border-gray-800'}`}>
+                <div>
+                  <h3 className="font-orbitron text-xs font-bold uppercase text-white tracking-wider">{mod.title}</h3>
+                  <p className="text-gray-400 text-[11px] mt-2 font-sans">{mod.description}</p>
+                </div>
+                <div className="flex justify-between items-center border-t border-gray-900 pt-3 mt-2">
+                  <span className="font-mono text-[11px] text-[#2b82ff]">+{mod.reward} $OTT</span>
+                  {isCompleted ? (
+                    <span className="text-[9px] uppercase font-mono text-gray-600">Airdropped</span>
+                  ) : (
+                    <button onClick={() => handleExecuteAirdrop(mod.id)} className="border border-gray-800 text-gray-400 text-[9px] font-orbitron uppercase py-1 px-2 hover:border-white hover:text-white cursor-pointer">
+                      {claimingModuleId === mod.id ? "Airdropping..." : "Launch Task"}
                     </button>
                   )}
                 </div>
@@ -291,32 +184,78 @@ export function AcademyTab({ onClaimGlobal }: AcademyTabProps) {
         </div>
       </div>
 
-      {/* INTERACTIEVE KOOP PROMPT MODAL */}
+      {/* --- PREMIUM SERIËLE ER-READER MARKETPLACE --- */}
+      <div className={`space-y-6 pt-4 transition-all ${isWalletRestricted ? 'opacity-20 pointer-events-none' : ''}`}>
+        <div className="border-b border-gray-800 pb-4">
+          <h2 className="font-orbitron text-xl uppercase tracking-widest flex items-center space-x-2">
+            <ShoppingBag className="w-6 h-6 text-[#ff2079]" />
+            <span>Serialized Knowledge Marketplace</span>
+          </h2>
+          <p className="text-[11px] text-gray-500 uppercase font-mono mt-1">Unlock The Hearth Book chapter-by-chapter via verified ledger assets</p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {hearthBookChapters.map((book) => {
+            const hasPurchased = purchasedChapters.includes(book.id);
+            const activeAsset = selectedAsset[book.id];
+            const currentPrice = book.prices[activeAsset];
+
+            return (
+              <div key={book.id} className={`border p-5 bg-black flex flex-col justify-between h-80 relative ${hasPurchased ? 'border-[#2b82ff]/50' : 'border-gray-800'}`}>
+                <div className="space-y-2">
+                  <h3 className="font-orbitron text-xs text-white font-black uppercase tracking-wider">{book.title}</h3>
+                  <div className="text-[10px] text-[#ff2079] font-orbitron uppercase tracking-widest font-bold">{book.subtitle}</div>
+                  <p className="text-gray-400 text-[11px] font-sans leading-relaxed pt-2 line-clamp-4">{book.description}</p>
+                </div>
+
+                <div className="space-y-2 pt-4 border-t border-gray-900">
+                  {!hasPurchased && (
+                    <div className="flex justify-between items-center bg-gray-950 p-1 border border-gray-900">
+                      <span className="text-[8px] uppercase text-gray-600 font-mono pl-1">Asset:</span>
+                      <div className="flex space-x-1">
+                        {(['OTT', 'XRP', 'RLUSD'] as const).map((asset) => (
+                          <button key={asset} onClick={() => setSelectedAsset(prev => ({ ...prev, [book.id]: asset }))} className={`px-1.5 py-0.5 font-mono text-[8px] transition-all cursor-pointer ${activeAsset === asset ? 'bg-[#ff2079] text-white font-bold' : 'text-gray-600 hover:text-white'}`}>
+                            {asset}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {hasPurchased ? (
+                    <button className="w-full flex items-center justify-center space-x-1 border border-[#2b82ff] bg-[#2b82ff]/10 text-[#2b82ff] text-[10px] font-orbitron uppercase py-2 font-bold">
+                      <Download className="w-3 h-3 animate-bounce" />
+                      <span>Download Fragment PDF</span>
+                    </button>
+                  ) : (
+                    <button onClick={() => handlePurchaseChapter(book.id)} className="w-full flex items-center justify-center space-x-1 bg-white text-black text-[10px] font-orbitron uppercase py-2 font-black hover:bg-gray-200 transition-all cursor-pointer">
+                      <Coins className="w-3 h-3" />
+                      <span>Unlock: {currentPrice} {activeAsset}</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Handshake Loader Overlay */}
       <AnimatePresence>
-        {isBuyingBookId && (
+        {isBuyingId && (
           <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-black border border-gray-800 p-6 max-w-xs w-full text-center space-y-4"
-            >
-              {purchaseStatus === 'signing' && (
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-black border border-gray-800 p-6 max-w-xs w-full text-center space-y-3">
+              {purchaseStatus === 'signing' ? (
                 <>
-                  <Loader2 className="w-10 h-10 text-[#ff2079] animate-spin mx-auto" />
-                  <h4 className="font-orbitron text-sm uppercase tracking-widest text-white">Xaman Handshake Active</h4>
-                  <p className="text-xs text-gray-500 font-mono">
-                    Awaiting cryptographic signature on ledger channel. Escrowing token value payload.
-                  </p>
+                  <Loader2 className="w-8 h-8 text-[#ff2079] animate-spin mx-auto" />
+                  <h4 className="font-orbitron text-xs uppercase tracking-widest text-white">Xaman Handshake Active</h4>
+                  <p className="text-[10px] text-gray-500 font-mono">Signing fragmented asset distribution lease on-chain.</p>
                 </>
-              )}
-              {purchaseStatus === 'success' && (
+              ) : (
                 <>
-                  <CheckCircle2 className="w-10 h-10 text-[#2b82ff] mx-auto" />
-                  <h4 className="font-orbitron text-sm uppercase tracking-widest text-white">Payload Decrypted</h4>
-                  <p className="text-xs text-gray-400 font-sans">
-                    Transaction verified on-chain. Digital signature added. E-book unlocked in your command station.
-                  </p>
+                  <CheckCircle2 className="w-8 h-8 text-[#2b82ff] mx-auto" />
+                  <h4 className="font-orbitron text-xs uppercase tracking-widest text-white">Payload Decrypted</h4>
+                  <p className="text-[10px] text-gray-400 font-sans">Fragment securely pushed to your sovereign e-reader feed.</p>
                 </>
               )}
             </motion.div>
