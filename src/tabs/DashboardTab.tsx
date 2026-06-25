@@ -1,240 +1,221 @@
-import { useState } from 'react';
-import { Activity, ShieldCheck, Zap, Triangle, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { useState, useEffect } from 'react';
+import { ShieldCheck, Zap, Loader2, AlertCircle, RefreshCw, User } from 'lucide-react';
 
-export function DashboardTab() {
-  // Live saldi beheren in de state voor demonstratiedoeleinden
-  const [xrpBalance, setXrpBalance] = useState(4206.90);
-  const rlusdBalance = 1500.00;
-  const xrpPrice = 0.50; // Gefixeerde koers voor de totale waarde calculator
-  
-  // Dynamische trustline lijst
-  const [trustlines, setTrustlines] = useState([
-    { asset: "RLUSD", issuer: "rQp...xZ9", balance: "1,500.00", status: "Active", color: "text-[#2b82ff]" },
-    { asset: "SGB", issuer: "r3V...aK2", balance: "0.00", status: "Empty", color: "text-gray-400" }
-  ]);
+interface DashboardTabProps {
+  walletAddress: string;
+}
 
-  // Simulatie states voor de Trustline Reclaimer
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [reclaimStatus, setReclaimStatus] = useState<'idle' | 'pending' | 'success'>('idle');
+interface Trustline {
+  currency: string;
+  issuer: string;
+  balance: string;
+  limit: string;
+}
 
-  // Bereken de totale dollarwaarde live op basis van het XRP-saldo
-  const totalValueUSD = (xrpBalance * xrpPrice) + rlusdBalance;
+export function DashboardTab({ walletAddress }: DashboardTabProps) {
+  const [xrpBalance, setXrpBalance] = useState<number>(0);
+  const [trustlines, setTrustlines] = useState<Trustline[]>([]);
+  const [xrpPrice, setXrpPrice] = useState<number>(2.45); // Fallback live prijs indicator
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Start het opschoonproces
-  const handleStartReclaim = () => {
-    setIsModalOpen(true);
-    setReclaimStatus('idle');
+  // 🛰️ LIVE ON-CHAIN DATA RETRIEVAL FROM XRPL COMPLIANT NODES
+  const fetchOnChainData = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // 1. Fetch Live XRP Balans (account_info)
+      const accountInfoResponse = await fetch('https://xrplcluster.com', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          method: 'account_info',
+          params: [{ account: walletAddress, ledger_index: 'validated' }]
+        })
+      });
+      const accountData = await accountInfoResponse.json();
+
+      if (accountData.result?.error === 'actNotFound') {
+        // Wallet bestaat wel in Xaman, maar is nog niet gefund met de minimale 10 XRP op Mainnet
+        setXrpBalance(0);
+        setIsLoading(false);
+        return;
+      }
+
+      if (accountData.result?.account_data) {
+        // XRP Balans komt binnen in 'drops'. 1 XRP = 1.000.000 drops
+        const drops = accountData.result.account_data.Balance;
+        setXrpBalance(parseFloat(drops) / 1000000);
+      }
+
+      // 2. Fetch Live Trustlines (account_lines voor RLUSD, OTT, etc.)
+      const accountLinesResponse = await fetch('https://xrplcluster.com', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          method: 'account_lines',
+          params: [{ account: walletAddress, ledger_index: 'validated' }]
+        })
+      });
+      const linesData = await accountLinesResponse.json();
+
+      if (linesData.result?.lines) {
+        setTrustlines(linesData.result.lines);
+      }
+
+      // 3. Optioneel: Haal live XRP marktprijs op om net worth te berekenen
+      try {
+        const priceRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ripple&vs_currencies=usd');
+        const priceData = await priceRes.json();
+        if (priceData.ripple?.usd) {
+          setXrpPrice(priceData.ripple.usd);
+        }
+      } catch (e) {
+        console.warn("OTT Telemetry: Kon live prijsfeed niet bereiken, gebruik fallback.");
+      }
+
+    } catch (err) {
+      console.error("XRPL Ledger Error:", err);
+      setError("Kon on-chain data niet live synchroniseren.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Simuleer de Xaman handtekening en de on-chain transactie
-  const handleConfirmReclaim = () => {
-    setReclaimStatus('pending');
-    
-    setTimeout(() => {
-      setReclaimStatus('success');
-      // Voeg 2 XRP toe aan het saldo (vrijgekomen reserve)
-      setXrpBalance(prev => prev + 2.00);
-      // Filter de lege SGB trustline uit de lijst
-      setTrustlines(prev => prev.filter(tl => tl.asset !== "SGB"));
-    }, 2500);
-  };
+  useEffect(() => {
+    if (walletAddress) {
+      fetchOnChainData();
+    }
+  }, [walletAddress]);
+
+  // Bereken de exacte waarde op basis van je live on-chain balans
+  const rlusdLine = trustlines.find(l => l.currency === 'RLUSD' || l.currency === '524C555344000000000000000000000000000000');
+  const rlusdBalance = rlusdLine ? Math.abs(parseFloat(rlusdLine.balance)) : 0;
+  const totalNetWorth = (xrpBalance * xrpPrice) + rlusdBalance;
+
+  // Formateer het adres voor de UI: rAbC...xYz
+  const truncatedAddress = walletAddress 
+    ? `${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}`
+    : 'Niet verbonden';
+
+  if (isLoading) {
+    return (
+      <div className="h-96 flex flex-col items-center justify-center space-y-4 border border-gray-950 bg-black/40">
+        <Loader2 className="w-6 h-6 animate-spin text-[#ff2079]" />
+        <span className="text-[10px] font-mono text-gray-500 uppercase tracking-widest">Querying Ledger State...</span>
+      </div>
+    );
+  }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="space-y-8 max-w-5xl font-sans relative"
-    >
-      {/* Profile & Telemetry Matrix */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="group relative border border-transparent hover:border-transparent transition-all">
-          <div className="absolute inset-0 bg-ott-gradient opacity-50 blur-[2px] transition-all group-hover:opacity-100" style={{ padding: '1px', borderRadius: '1px' }}>
-             <div className="w-full h-full bg-black rounded-none"></div>
+    <div className="space-y-8 animate-fade-in">
+      {error && (
+        <div className="p-3 border border-red-900 bg-red-950/20 flex items-center justify-between text-left">
+          <div className="flex items-center space-x-2">
+            <AlertCircle className="w-4 h-4 text-red-500" />
+            <span className="text-[10px] font-mono text-red-400">{error}</span>
           </div>
-          <div className="relative p-6 bg-black/80 h-full flex flex-col justify-between">
-            <div className="absolute top-0 right-0 p-2 bg-ott-gradient text-white font-orbitron text-[10px] font-bold uppercase tracking-widest leading-none">
-              Identity
-            </div>
-            <div>
-              <h2 className="font-orbitron text-xl mb-4 text-white uppercase tracking-wider flex items-center space-x-2">
-                <Triangle className="w-5 h-5 text-[#a855f7]" />
-                <span>User Profile</span>
-              </h2>
-            </div>
-            <div className="space-y-4 font-sans mt-8">
-              <div>
-                <div className="text-gray-500 text-xs mb-1 uppercase tracking-widest">Your XRPL Address</div>
-                <div className="font-mono text-sm break-all text-[#2b82ff] font-bold">rOTT...fUzg</div>
-              </div>
-              <div>
-                <div className="text-gray-500 text-xs mb-1 uppercase tracking-widest">Network Node Status</div>
-                <div className="flex items-center space-x-2 text-sm text-white border border-[#ff2079]/50 w-fit px-3 py-1 bg-[#ff2079]/10">
-                  <div className="w-2 h-2 rounded-full bg-[#ff2079] animate-pulse shadow-[0_0_8px_#ff2079]" />
-                  <span>Terminal Active</span>
-                </div>
-              </div>
+          <button onClick={fetchOnChainData} className="p-1 hover:bg-gray-900 text-gray-400 hover:text-white transition-all">
+            <RefreshCw className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Grid: User Profile & Net Worth */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* User Profile / Identity */}
+        <div className="border border-gray-950 bg-black p-6 relative space-y-6">
+          <div className="absolute top-0 right-0 bg-[#2b82ff] text-black font-orbitron font-black text-[9px] tracking-widest uppercase px-2 py-0.5">
+            Identity
+          </div>
+          <div className="flex items-center space-x-3 text-white">
+            <User className="w-4 h-4 text-[#2b82ff]" />
+            <h2 className="font-orbitron text-xs font-black uppercase tracking-widest">User Profile</h2>
+          </div>
+          <div className="space-y-1">
+            <span className="text-[9px] font-mono text-gray-600 uppercase tracking-wider">Your XRPL Address</span>
+            <div className="font-orbitron text-sm font-black text-[#2b82ff] select-text">{truncatedAddress}</div>
+          </div>
+          <div className="space-y-1">
+            <span className="text-[9px] font-mono text-gray-600 uppercase tracking-wider">Network Node Status</span>
+            <div className="flex items-center space-x-2">
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-[10px] font-mono text-white uppercase tracking-wide">Mainnet Node Active</span>
             </div>
           </div>
         </div>
 
-        <div className="group relative border border-transparent hover:border-transparent transition-all">
-          <div className="absolute inset-0 bg-ott-gradient opacity-50 blur-[2px] transition-all group-hover:opacity-100" style={{ padding: '1px', borderRadius: '1px' }}>
-             <div className="w-full h-full bg-black rounded-none"></div>
+        {/* Net Worth / Telemetry */}
+        <div className="border border-gray-950 bg-black p-6 relative space-y-6">
+          <div className="absolute top-0 right-0 bg-[#ff2079] text-black font-orbitron font-black text-[9px] tracking-widest uppercase px-2 py-0.5">
+            Telemetry
           </div>
-          <div className="relative p-6 bg-black/80 h-full flex flex-col justify-between">
-            <div className="absolute top-0 right-0 p-2 bg-ott-gradient text-white font-orbitron text-[10px] font-bold uppercase tracking-widest leading-none">
-              Telemetry
+          <h2 className="font-orbitron text-xs font-black text-white uppercase tracking-widest">Net Worth</h2>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center border-b border-gray-950 pb-2">
+              <span className="text-[10px] font-mono text-gray-500 uppercase tracking-wider">XRP Balance</span>
+              <span className="font-orbitron text-sm font-black text-white">{xrpBalance.toFixed(2)} XRP</span>
             </div>
-            <h2 className="font-orbitron text-xl mb-4 text-white uppercase tracking-wider">Net Worth</h2>
-            <div className="mt-8 space-y-6 font-sans">
-              <div className="flex justify-between items-end border-b border-gray-800 pb-2">
-                <div className="text-gray-500 text-xs uppercase tracking-widest">XRP Balance</div>
-                <div className="font-orbitron text-2xl text-white">{xrpBalance.toFixed(2)}</div>
-              </div>
-              <div className="flex justify-between items-end border-b border-gray-800 pb-2">
-                <div className="text-gray-500 text-xs uppercase tracking-widest">RLUSD Balance</div>
-                <div className="font-orbitron text-2xl text-white">{rlusdBalance.toFixed(2)}</div>
-              </div>
-              <div className="flex justify-between items-end mt-4">
-                <div className="text-gray-500 text-xs uppercase tracking-widest">Total Value (USD)</div>
-                <div className="font-orbitron text-3xl font-bold text-ott-gradient">${totalValueUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-              </div>
+            <div className="flex justify-between items-center border-b border-gray-950 pb-2">
+              <span className="text-[10px] font-mono text-gray-500 uppercase tracking-wider">RLUSD Balance</span>
+              <span className="font-orbitron text-sm font-black text-white">{rlusdBalance.toFixed(2)} RLUSD</span>
+            </div>
+            <div className="flex justify-between items-center pt-2">
+              <span className="text-[10px] font-mono text-gray-400 uppercase tracking-wider font-bold">Total Value (USD)</span>
+              <span className="font-orbitron text-lg font-black text-[#2b82ff]">${totalNetWorth.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Trustline Manager Box */}
-      <div className="relative border border-transparent p-[1px]">
-        <div className="absolute inset-0 bg-ott-gradient opacity-30"></div>
-        <div className="relative bg-black p-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-            <h2 className="font-orbitron text-xl text-white uppercase tracking-wider flex items-center space-x-3">
-              <ShieldCheck className="w-6 h-6 text-[#2b82ff]" />
-              <span>Trustline Manager</span>
-            </h2>
-            
-            {/* Activeer reclaimer knop alleen als er lege trustlines zijn */}
-            {trustlines.some(tl => tl.status === "Empty") && (
-              <button 
-                onClick={handleStartReclaim}
-                className="border border-transparent bg-ott-gradient p-[1px] relative group overflow-hidden text-xs uppercase tracking-widest font-sans cursor-pointer hover:shadow-[0_0_15px_rgba(168,85,247,0.5)] transition-shadow"
-              >
-                <div className="bg-black px-4 py-2 flex items-center space-x-2 group-hover:bg-opacity-80 transition-all h-full w-full">
-                  <Zap className="w-4 h-4 text-[#ff2079]" />
-                  <span className="text-white">Clean empty trustlines (Reclaim 2 XRP)</span>
-                </div>
-              </button>
-            )}
+      {/* Trustline Manager */}
+      <div className="border border-gray-950 bg-black p-6 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center space-x-3 text-white">
+            <ShieldCheck className="w-4 h-4 text-white" />
+            <h2 className="font-orbitron text-xs font-black uppercase tracking-widest">Trustline Manager</h2>
           </div>
+          <button className="border border-gray-900 bg-gray-950/40 text-gray-400 hover:text-white hover:border-gray-700 text-[10px] font-orbitron font-bold uppercase tracking-widest px-4 py-2 transition-all flex items-center space-x-2 cursor-pointer">
+            <Zap className="w-3.5 h-3.5 text-[#ff2079]" />
+            <span>Clean Empty Trustlines (Reclaim 2 XRP)</span>
+          </button>
+        </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full font-sans text-sm text-left">
-              <thead className="text-gray-500 uppercase text-[10px] tracking-widest border-b border-gray-800">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-gray-950 text-[9px] font-mono text-gray-600 uppercase tracking-wider">
+                <th className="pb-3 font-medium">Asset</th>
+                <th className="pb-3 font-medium">Issuer Token Address</th>
+                <th className="pb-3 font-medium text-right">Balance</th>
+                <th className="pb-3 font-medium text-right">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-950 text-[11px] font-mono">
+              {trustlines.length === 0 ? (
                 <tr>
-                  <th className="py-3 px-4 font-normal">Asset</th>
-                  <th className="py-3 px-4 font-normal">Issuer Token Address</th>
-                  <th className="py-3 px-4 font-normal text-right">Balance</th>
-                  <th className="py-3 px-4 font-normal text-right">Status</th>
+                  <td colSpan={4} className="py-4 text-gray-600 uppercase text-[10px] tracking-wider text-center">
+                    Geen actieve token trustlines gevonden op dit account.
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-800 font-mono">
-                <AnimatePresence>
-                  {trustlines.map((pool, idx) => (
-                    <motion.tr 
-                      key={pool.asset}
-                      initial={{ opacity: 1 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      transition={{ duration: 0.4 }}
-                      className="hover:bg-gray-900/40 transition-colors"
-                    >
-                      <td className={`py-3 px-4 font-orbitron tracking-wider ${pool.color}`}>{pool.asset}</td>
-                      <td className="py-3 px-4 text-xs text-gray-500">{pool.issuer}</td>
-                      <td className="py-3 px-4 text-right text-white">{pool.balance}</td>
-                      <td className="py-3 px-4 text-right">
-                        <span className={`border text-[10px] px-2 py-1 uppercase tracking-wider ${
-                          pool.status === 'Active' 
-                            ? 'border-[#a855f7]/50 bg-[#a855f7]/10 text-[#a855f7]' 
-                            : 'border-gray-800 text-gray-500 bg-gray-900/20'
-                        }`}>
-                          {pool.status}
-                        </span>
-                      </td>
-                    </motion.tr>
-                  ))}
-                </AnimatePresence>
-              </tbody>
-            </table>
-          </div>
+              ) : (
+                trustlines.map((line, index) => (
+                  <tr key={index} className="text-gray-300 hover:text-white transition-colors">
+                    <td className="py-3 font-orbitron font-bold text-white">{line.currency.length > 4 ? 'Custom Token' : line.currency}</td>
+                    <td className="py-3 text-gray-500 select-text">{line.issuer}</td>
+                    <td className="py-3 text-right font-orbitron font-black text-white">{parseFloat(line.balance).toFixed(2)}</td>
+                    <td className="py-3 text-right">
+                      <span className="px-2 py-0.5 bg-gray-950 text-green-400 border border-gray-900 text-[9px] uppercase font-bold">
+                        Active
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
-
-      {/* INTERACTIEVE SIMULATIE MODAL (POP-UP) */}
-      <AnimatePresence>
-        {isModalOpen && (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-black border border-gray-800 p-6 max-w-md w-full relative"
-            >
-              <div className="absolute inset-0 bg-ott-gradient opacity-5 pointer-events-none" />
-              
-              {reclaimStatus === 'idle' && (
-                <div className="text-center space-y-4">
-                  <AlertTriangle className="w-12 h-12 text-[#ff2079] mx-auto animate-pulse" />
-                  <h3 className="font-orbitron text-lg uppercase tracking-wider text-white">Initialize Trustline Optimization</h3>
-                  <p className="text-sm text-gray-400 font-sans">
-                    You are about to sign an on-chain ledger operation to terminate <span className="text-white font-bold">1 empty trustline</span> (SGB). This action will release and reclaim your <span className="text-[#2b82ff] font-bold">2.00 XRP</span> network reserve back into your wallet.
-                  </p>
-                  <div className="flex space-x-3 pt-4">
-                    <button 
-                      onClick={() => setIsModalOpen(false)}
-                      className="flex-1 py-3 border border-gray-800 text-gray-400 text-xs font-orbitron uppercase tracking-widest hover:bg-gray-900 transition-colors cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                    <button 
-                      onClick={handleConfirmReclaim}
-                      className="flex-1 py-3 bg-white text-black text-xs font-orbitron uppercase tracking-widest font-bold hover:bg-gray-200 transition-colors cursor-pointer"
-                    >
-                      Push to Xaman
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {reclaimStatus === 'pending' && (
-                <div className="text-center py-8 space-y-4">
-                  <Loader2 className="w-12 h-12 text-[#a855f7] animate-spin mx-auto" />
-                  <h3 className="font-orbitron text-lg uppercase tracking-wider text-white">Awaiting Ledger Signature...</h3>
-                  <p className="text-xs text-gray-500 font-mono">
-                    Executing AccountSet / TrustSet Hook operation. Reclaiming 2 XRP drops container.
-                  </p>
-                </div>
-              )}
-
-              {reclaimStatus === 'success' && (
-                <div className="text-center space-y-4">
-                  <CheckCircle2 className="w-12 h-12 text-[#2b82ff] mx-auto" />
-                  <h3 className="font-orbitron text-lg uppercase tracking-wider text-white">Reserve Successfully Reclaimed</h3>
-                  <p className="text-sm text-gray-400 font-sans">
-                    The empty trustline has been permanently deleted from the ledger. <span className="text-white font-bold">+2.00 XRP</span> has been successfully credited back to your balance telemetry.
-                  </p>
-                  <button 
-                    onClick={() => setIsModalOpen(false)}
-                    className="w-full mt-4 py-3 border border-[#2b82ff] bg-[#2b82ff]/10 text-[#2b82ff] text-xs font-orbitron uppercase tracking-widest font-bold hover:bg-[#2b82ff]/20 transition-all cursor-pointer"
-                  >
-                    Return to Terminal
-                  </button>
-                </div>
-              )}
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+    </div>
   );
 }

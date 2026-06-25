@@ -1,267 +1,295 @@
-import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
-import { GraduationCap, Award, Brain, Zap, BookOpen, ShieldAlert, Cpu, CheckCircle2, Triangle, Sparkles, Download, ShoppingBag, Coins, Loader2, AlertOctagon, Ticket } from 'lucide-react';
+import { BookOpen, Award, CheckCircle2, AlertCircle, HelpCircle, ArrowRight, Layers, Sparkles } from 'lucide-react';
 
-interface AcademyTabProps {
-  onClaimGlobal: () => void;
+interface Lesson {
+  id: number;
+  title: string;
+  duration: string;
+  category: 'Crypto' | 'Awareness' | 'Health';
+  content: string[];
+  quiz: {
+    question: string;
+    options: string[];
+    correctIndex: number;
+    explanation: string;
+  };
 }
 
-export function AcademyTab({ onClaimGlobal }: AcademyTabProps) {
-  const [activeCategory, setActiveCategory] = useState<'all' | 'xls' | 'xaman' | 'core'>('all');
-  const [completedModules, setCompletedModules] = useState<string[]>(["core-1"]);
-  const [claimingModuleId, setClaimingModuleId] = useState<string | null>(null);
-
-  // --- PLATFORM SECURITY STATE (JOUW ANTI-DUMPING ENGINE) ---
-  const [isWalletRestricted, setIsWalletRestricted] = useState(false);
-  const [ticketRequested, setTicketRequested] = useState(false);
-  const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
-
-  // --- MARKETPLACE STATE ---
-  const [purchasedChapters, setPurchasedChapters] = useState<string[]>([]);
-  const [selectedAsset, setSelectedAsset] = useState<{ [key: string]: 'OTT' | 'XRP' | 'RLUSD' }>({
-    "ch-1": "OTT", "ch-2": "OTT", "ch-3": "OTT"
-  });
-  const [isBuyingId, setIsBuyingId] = useState<string | null>(null);
-  const [purchaseStatus, setPurchaseStatus] = useState<'idle' | 'signing' | 'success'>('idle');
-
-  // L2E Modules
-  const academyModules = [
-    { id: "core-1", category: "core", title: "XRPL Core: Ledger Fundamentals", description: "Understand consensus and trustlines.", reward: 50 },
-    { id: "xaman-1", category: "xaman", title: "Xaman Wallet Mastery", description: "Deep dive into secure key custody and signing.", reward: 100 },
-    { id: "xls-20", category: "xls", title: "XLS-20: Native NFTs on XRPL", description: "Learn native minting and metadata structure.", reward: 150 },
-    { id: "xls-30", category: "xls", title: "XLS-30d: Native AMM Mechanics", description: "Deconstruct continuous auction liquidity.", reward: 200 }
-  ];
-
-  // --- JOUW GEWENSCHTE EN ONTLEDEN HEARTH BOOK STRUCTUUR ---
-  const hearthBookChapters = [
-    {
-      id: "ch-1",
-      title: "The Hearth Book - Vol. I (Chapter 1)",
-      subtitle: "Decoded Symbolism & Ancestral Frequency",
-      description: "Unlocking the ancient wisdom strings and understanding how words act as direct vibratory creators of your reality.",
-      prices: { OTT: 75, XRP: 15, RLUSD: 8 }
-    },
-    {
-      id: "ch-2",
-      title: "The Hearth Book - Vol. I (Chapter 2)",
-      subtitle: "The Toxic Architecture",
-      description: "A deep structural analysis parsing how corporate financial systems and modern chemical nutrition cage human consciousness.",
-      prices: { OTT: 100, XRP: 20, RLUSD: 10 }
-    },
-    {
-      id: "ch-3",
-      title: "The Hearth Book - Vol. I (Chapter 3)",
-      subtitle: "Cellular Emancipation",
-      description: "Practical biometric protocols regarding deep tissue detoxification, advanced supplement matching, and energetic grid resetting.",
-      prices: { OTT: 125, XRP: 25, RLUSD: 12 }
+const XAMAN_COURSE_LESSONS: Lesson[] = [
+  {
+    id: 1,
+    title: "Sovereign Keys vs Toxic Systems",
+    duration: "5 min",
+    category: "Crypto",
+    content: [
+      "Bij traditionele exchanges (zoals Binance of Coinbase) bezit je in feite niks. Je logt in met een e-mailadres en wachtwoord, en de exchange beheert de private keys. Als zij omvallen, is je vermogen weg ('Not your keys, not your crypto').",
+      "Xaman is een non-custodial wallet. Dit betekent dat JIJ de absolute controle hebt. De 12 of 24 woorden (je geheime sleutel/seed phrase) worden cryptografisch versleuteld opgeslagen op jouw apparaat.",
+      "Woorden zijn vibraties en creëren realiteit. In de cryptowereld is jouw seed phrase de ultieme manifestatie van jouw financiële soevereiniteit. Deel deze nooit, met niemand, in geen enkele applicatie."
+    ],
+    quiz: {
+      question: "Waar worden jouw private keys opgeslagen als je Xaman gebruikt?",
+      options: [
+        "Veilig op de centrale servers van XRPL Labs.",
+        "Nergens, die worden elke keer opnieuw gegenereerd als je inlogt.",
+        "Lokaal op jouw eigen apparaat, volledig onder jouw beheer."
+      ],
+      correctIndex: 2,
+      explanation: "Xaman is non-custodial. Jouw sleutels verlaten nooit je eigen apparaat. Jij bent de baas, weg van het toxische gecentraliseerde systeem."
     }
-  ];
+  },
+  {
+    id: 2,
+    title: "The Cryptographic Handshake",
+    duration: "6 min",
+    category: "Crypto",
+    content: [
+      "Wanneer je inlogt op de OTT Terminal via Xaman, geef je de app geen toegang tot je geld of je sleutels. Er vindt een beveiligde OAuth2/PKCE handdruk plaats.",
+      "De Terminal stuurt een verzoek (payload) naar de Xaman app. Jij opent de app, scant de QR-code of accepteer de push-notificatie, en ondertekent de transactie cryptografisch met je pincode of FaceID.",
+      "De Terminal ontvangt alleen de cryptografisch geverifieerde bevestiging en jouw publieke r-adres. Dit is de meest veilige manier om met blockchain-ecosystemen te communiceren."
+    ],
+    quiz: {
+      question: "Wat geef je vrij aan de OTT Terminal als je inlogt met Xaman?",
+      options: [
+        "Je private keys zodat de terminal transacties voor je kan doen.",
+        "Alleen je publieke r-adres en een cryptografisch geverifieerde handdruk.",
+        "Je Xaman inlogpincode en herstelwoorden."
+      ],
+      correctIndex: 1,
+      explanation: "De app krijgt enkel je publieke r-adres te zien. Transacties onderteken je altijd zelf, handmatig, binnen de muren van de beveiligde Xaman app."
+    }
+  },
+  {
+    id: 3,
+    title: "Ledger Objects & Trustlines",
+    duration: "7 min",
+    category: "Crypto",
+    content: [
+      "Op het XRP Ledger kunnen accounts niet zomaar ongevraagd vage tokens naar je toe sturen. Dit beschermt je tegen spam en malafide airdrops.",
+      "Om een token zoals $OTT of $RLUSD te kunnen ontvangen, moet je expliciet een 'Trustline' openzetten. Dit is een on-chain contract waarmee je aangeeft: 'Ik vertrouw deze issuer en sta toe dat dit token in mijn wallet komt'.",
+      "Elke trustline die je opent, reserveert tijdelijk 2 XRP op het netwerk. Zodra je de trustline weer sluit via de Trustline Manager, krijg je die 2 XRP direct weer terug in je actieve saldo."
+    ],
+    quiz: {
+      question: "Waarom reserveert het XRPL netwerk 2 XRP per actieve trustline?",
+      options: [
+        "Als transactiekosten die je definitief kwijt bent aan de validators.",
+        "Als on-chain reserveer-vrijwaring, die je volledig terugkrijgt zodra je de trustline sluit.",
+        "Als winstuitkering voor het Xaman platform."
+      ],
+      correctIndex: 1,
+      explanation: "Dit is een on-chain object reserve. Het voorkomt spam op de blockchain. Als je de trustline opschoont, claim je die 2 XRP direct weer terug!"
+    }
+  }
+];
 
-  const filteredModules = activeCategory === 'all' ? academyModules : academyModules.filter(m => m.category === activeCategory);
+export function AcademyTab() {
+  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
+  const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [quizChecked, setQuizChecked] = useState<boolean>(false);
+  const [completedLessons, setCompletedLessons] = useState<number[]>([]);
 
-  const handleExecuteAirdrop = (id: string) => {
-    setClaimingModuleId(id);
-    setTimeout(() => {
-      setCompletedModules(prev => [...prev, id]);
-      setClaimingModuleId(null);
-      onClaimGlobal();
-    }, 1200);
+  const handleOptionSelect = (index: number) => {
+    if (quizChecked) return;
+    setSelectedOption(index);
   };
 
-  const handlePurchaseChapter = (id: string) => {
-    if (isWalletRestricted) return; // Blokeer aankopen als wallet restricted is!
-    setIsBuyingId(id);
-    setPurchaseStatus('signing');
-    setTimeout(() => {
-      setPurchaseStatus('success');
-      setTimeout(() => {
-        setPurchasedChapters(prev => [...prev, id]);
-        setIsBuyingId(null);
-        setPurchaseStatus('idle');
-      }, 1200);
-    }, 1500);
+  const handleCheckAnswer = () => {
+    if (selectedOption === null || !selectedLesson) return;
+    setQuizChecked(true);
+    
+    if (selectedOption === selectedLesson.quiz.correctIndex) {
+      if (!completedLessons.includes(selectedLesson.id)) {
+        setCompletedLessons([...completedLessons, selectedLesson.id]);
+      }
+    }
   };
 
-  const handleRequestTicket = () => {
-    setIsSubmittingTicket(true);
-    setTimeout(() => {
-      setIsSubmittingTicket(false);
-      setTicketRequested(true);
-    }, 2000);
+  const handleNextLesson = () => {
+    setSelectedOption(null);
+    setQuizChecked(false);
+    const nextId = selectedLesson ? selectedLesson.id + 1 : 1;
+    const nextLesson = XAMAN_COURSE_LESSONS.find(l => l.id === nextId);
+    if (nextLesson) {
+      setSelectedLesson(nextLesson);
+    } else {
+      setSelectedLesson(null); // Terug naar overzicht
+    }
   };
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-10 max-w-5xl font-sans text-white">
-      
-      {/* 🛡️ JOUW ANTI-DUMP SIMULATOR CONTROL PANEL (DEMO GOUD) */}
-      <div className="border border-gray-800 bg-gray-950/40 p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="space-y-8 animate-fade-in text-white font-sans">
+      {/* Dynamic Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-gray-950 pb-6">
         <div>
-          <div className="text-xs font-mono text-gray-500 uppercase tracking-widest">Jury Demonstration Modus</div>
-          <h4 className="font-orbitron text-xs font-bold uppercase text-white mt-1">Anti-Dump & Platform Gating Validator</h4>
+          <h1 className="font-orbitron text-md font-black uppercase tracking-[0.2em]">OTT Sovereign Academy</h1>
+          <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mt-1">Eradicating Systemic Ignorance • 589 Steps Ahead</p>
         </div>
-        <button 
-          onClick={() => {
-            setIsWalletRestricted(!isWalletRestricted);
-            if(isWalletRestricted) setTicketRequested(false);
-          }}
-          className={`px-4 py-2 text-[10px] font-orbitron uppercase tracking-widest font-bold border transition-all cursor-pointer ${
-            isWalletRestricted 
-              ? 'border-[#2b82ff] bg-[#2b82ff]/10 text-[#2b82ff]' 
-              : 'border-[#ff2079] bg-[#ff2079]/10 text-[#ff2079] animate-pulse'
-          }`}
-        >
-          {isWalletRestricted ? "⚡ Reset naar Transparante Modus" : "🚨 Simuleer Dump ($OTT onder limiet)"}
-        </button>
-      </div>
-
-      {/* BIJ VERGRENDELING: TOON TRANSPARANTE WARNING PANEL */}
-      <AnimatePresence>
-        {isWalletRestricted && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="border border-[#ff2079] bg-[#ff2079]/5 p-6 relative overflow-hidden">
-            <div className="flex items-start space-x-4">
-              <AlertOctagon className="w-8 h-8 text-[#ff2079] shrink-0" />
-              <div className="space-y-2">
-                <h3 className="font-orbitron text-sm font-black uppercase tracking-widest text-white">xApp Command Station: Access Suspended</h3>
-                <p className="text-xs text-gray-400 leading-relaxed max-w-3xl">
-                  Ledger analysis indicates your connected wallet address has deployed market-dumping parameters (holdings dropped below baseline). To maintain ecosystem equilibrium, premium features are gated. You cannot interact with the Marketplace until liquidity parameters are verified.
-                </p>
-                <div className="pt-2">
-                  {ticketRequested ? (
-                    <div className="border border-[#2b82ff]/40 bg-[#2b82ff]/5 px-4 py-2 w-fit text-[10px] font-mono text-[#2b82ff] uppercase tracking-wider">
-                      🎟️ Exit-Ticket Queue Active. Request pending internal liquidity match.
-                    </div>
-                  ) : (
-                    <button 
-                      onClick={handleRequestTicket}
-                      disabled={isSubmittingTicket}
-                      className="flex items-center space-x-2 bg-white text-black text-[10px] font-orbitron font-bold uppercase tracking-widest px-4 py-2 hover:bg-gray-200 transition-colors cursor-pointer"
-                    >
-                      {isSubmittingTicket ? (
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                      ) : (
-                        <Ticket className="w-3 h-3" />
-                      )}
-                      <span>Request Transparent Exit-Ticket</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* L2E Engine Grid */}
-      <div className={`space-y-6 transition-all ${isWalletRestricted ? 'opacity-30 pointer-events-none' : ''}`}>
-        <div className="border-b border-gray-800 pb-4">
-          <h2 className="font-orbitron text-xl uppercase tracking-widest flex items-center space-x-2">
-            <GraduationCap className="w-6 h-6 text-[#2b82ff]" />
-            <span>Learn-to-Earn (L2E) Matrix</span>
-          </h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredModules.map((mod) => {
-            const isCompleted = completedModules.includes(mod.id);
-            return (
-              <div key={mod.id} className={`border p-4 bg-black flex flex-col justify-between h-48 ${isCompleted ? 'border-gray-900 opacity-50' : 'border-gray-800'}`}>
-                <div>
-                  <h3 className="font-orbitron text-xs font-bold uppercase text-white tracking-wider">{mod.title}</h3>
-                  <p className="text-gray-400 text-[11px] mt-2 font-sans">{mod.description}</p>
-                </div>
-                <div className="flex justify-between items-center border-t border-gray-900 pt-3 mt-2">
-                  <span className="font-mono text-[11px] text-[#2b82ff]">+{mod.reward} $OTT</span>
-                  {isCompleted ? (
-                    <span className="text-[9px] uppercase font-mono text-gray-600">Airdropped</span>
-                  ) : (
-                    <button onClick={() => handleExecuteAirdrop(mod.id)} className="border border-gray-800 text-gray-400 text-[9px] font-orbitron uppercase py-1 px-2 hover:border-white hover:text-white cursor-pointer">
-                      {claimingModuleId === mod.id ? "Airdropping..." : "Launch Task"}
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* --- PREMIUM SERIËLE ER-READER MARKETPLACE --- */}
-      <div className={`space-y-6 pt-4 transition-all ${isWalletRestricted ? 'opacity-20 pointer-events-none' : ''}`}>
-        <div className="border-b border-gray-800 pb-4">
-          <h2 className="font-orbitron text-xl uppercase tracking-widest flex items-center space-x-2">
-            <ShoppingBag className="w-6 h-6 text-[#ff2079]" />
-            <span>Serialized Knowledge Marketplace</span>
-          </h2>
-          <p className="text-[11px] text-gray-500 uppercase font-mono mt-1">Unlock The Hearth Book chapter-by-chapter via verified ledger assets</p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {hearthBookChapters.map((book) => {
-            const hasPurchased = purchasedChapters.includes(book.id);
-            const activeAsset = selectedAsset[book.id];
-            const currentPrice = book.prices[activeAsset];
-
-            return (
-              <div key={book.id} className={`border p-5 bg-black flex flex-col justify-between h-80 relative ${hasPurchased ? 'border-[#2b82ff]/50' : 'border-gray-800'}`}>
-                <div className="space-y-2">
-                  <h3 className="font-orbitron text-xs text-white font-black uppercase tracking-wider">{book.title}</h3>
-                  <div className="text-[10px] text-[#ff2079] font-orbitron uppercase tracking-widest font-bold">{book.subtitle}</div>
-                  <p className="text-gray-400 text-[11px] font-sans leading-relaxed pt-2 line-clamp-4">{book.description}</p>
-                </div>
-
-                <div className="space-y-2 pt-4 border-t border-gray-900">
-                  {!hasPurchased && (
-                    <div className="flex justify-between items-center bg-gray-950 p-1 border border-gray-900">
-                      <span className="text-[8px] uppercase text-gray-600 font-mono pl-1">Asset:</span>
-                      <div className="flex space-x-1">
-                        {(['OTT', 'XRP', 'RLUSD'] as const).map((asset) => (
-                          <button key={asset} onClick={() => setSelectedAsset(prev => ({ ...prev, [book.id]: asset }))} className={`px-1.5 py-0.5 font-mono text-[8px] transition-all cursor-pointer ${activeAsset === asset ? 'bg-[#ff2079] text-white font-bold' : 'text-gray-600 hover:text-white'}`}>
-                            {asset}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {hasPurchased ? (
-                    <button className="w-full flex items-center justify-center space-x-1 border border-[#2b82ff] bg-[#2b82ff]/10 text-[#2b82ff] text-[10px] font-orbitron uppercase py-2 font-bold">
-                      <Download className="w-3 h-3 animate-bounce" />
-                      <span>Download Fragment PDF</span>
-                    </button>
-                  ) : (
-                    <button onClick={() => handlePurchaseChapter(book.id)} className="w-full flex items-center justify-center space-x-1 bg-white text-black text-[10px] font-orbitron uppercase py-2 font-black hover:bg-gray-200 transition-all cursor-pointer">
-                      <Coins className="w-3 h-3" />
-                      <span>Unlock: {currentPrice} {activeAsset}</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Handshake Loader Overlay */}
-      <AnimatePresence>
-        {isBuyingId && (
-          <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-black border border-gray-800 p-6 max-w-xs w-full text-center space-y-3">
-              {purchaseStatus === 'signing' ? (
-                <>
-                  <Loader2 className="w-8 h-8 text-[#ff2079] animate-spin mx-auto" />
-                  <h4 className="font-orbitron text-xs uppercase tracking-widest text-white">Xaman Handshake Active</h4>
-                  <p className="text-[10px] text-gray-500 font-mono">Signing fragmented asset distribution lease on-chain.</p>
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="w-8 h-8 text-[#2b82ff] mx-auto" />
-                  <h4 className="font-orbitron text-xs uppercase tracking-widest text-white">Payload Decrypted</h4>
-                  <p className="text-[10px] text-gray-400 font-sans">Fragment securely pushed to your sovereign e-reader feed.</p>
-                </>
-              )}
-            </motion.div>
+        <div className="flex items-center space-x-4 bg-gray-950/40 border border-gray-950 px-4 py-2.5">
+          <Layers className="w-4 h-4 text-[#2b82ff]" />
+          <div className="text-left">
+            <div className="text-[9px] font-mono text-gray-500 uppercase tracking-wider">Voltooid Saldo</div>
+            <div className="font-orbitron text-xs font-black">{completedLessons.length} / {XAMAN_COURSE_LESSONS.length} Intel Tracks</div>
           </div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+        </div>
+      </div>
+
+      {/* Monthly Dropping Strategy Ticker */}
+      <div className="p-3 border border-gray-950 bg-gray-950/20 rounded-sm flex items-center justify-between">
+        <div className="flex items-center space-x-2 text-[10px] font-mono text-gray-400">
+          <Sparkles className="w-3.5 h-3.5 text-[#ff2079] animate-pulse" />
+          <span>PROTOTYPE ENGINE ACTIVE: Elke maand worden er 5 nieuwe tracks toegevoegd (Inclusief The Hearth Book Chronicles).</span>
+        </div>
+      </div>
+
+      {!selectedLesson ? (
+        // OVERVIEW MODE
+        <div className="space-y-6">
+          <div>
+            <h2 className="font-orbitron text-xs font-black uppercase tracking-widest text-[#2b82ff] mb-1">Actieve Cursus: Mastering Xaman Wallet</h2>
+            <p className="text-[10px] font-mono text-gray-500 uppercase tracking-wider">Leer hoe cryptografische soevereiniteit in de praktijk werkt.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {XAMAN_COURSE_LESSONS.map((lesson) => {
+              const isCompleted = completedLessons.includes(lesson.id);
+              return (
+                <div 
+                  key={lesson.id}
+                  className="border border-gray-950 bg-black p-6 flex flex-col justify-between space-y-6 hover:border-gray-800 transition-all duration-300"
+                >
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center text-[9px] font-mono tracking-widest uppercase">
+                      <span className="px-2 py-0.5 bg-gray-950 border border-gray-900 text-gray-400">{lesson.category}</span>
+                      <span className="text-gray-600">{lesson.duration}</span>
+                    </div>
+                    <h3 className="font-orbitron text-xs font-black uppercase tracking-wide text-white leading-tight">{lesson.title}</h3>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setSelectedLesson(lesson);
+                      setSelectedOption(null);
+                      setQuizChecked(false);
+                    }}
+                    className={`w-full py-2.5 font-orbitron text-[10px] font-black uppercase tracking-widest border transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${
+                      isCompleted 
+                        ? 'bg-transparent border-green-950 text-green-400 hover:bg-green-950/10' 
+                        : 'bg-white text-black border-white hover:bg-black hover:text-white'
+                    }`}
+                  >
+                    {isCompleted ? (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Track Voltooid
+                      </>
+                    ) : (
+                      <>
+                        <span>Start Intel Track</span> <ArrowRight className="w-3.5 h-3.5" />
+                      </>
+                    )}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        // ACTIVE LESSON IN-DEPTH VIEW
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
+          {/* Content Space */}
+          <div className="xl:col-span-2 border border-gray-950 bg-black p-8 space-y-6">
+            <button 
+              onClick={() => setSelectedLesson(null)}
+              className="text-[10px] font-mono text-gray-500 hover:text-white uppercase tracking-widest transition-colors cursor-pointer"
+            >
+              ⬅ Terug naar overzicht
+            </button>
+            
+            <div className="space-y-1">
+              <span className="text-[9px] font-mono text-[#2b82ff] uppercase tracking-widest font-bold">Track 0{selectedLesson.id}</span>
+              <h2 className="font-orbitron text-sm font-black uppercase tracking-wide text-white">{selectedLesson.title}</h2>
+            </div>
+
+            <div className="space-y-4 pt-2 border-t border-gray-950 text-gray-300 text-xs font-sans leading-relaxed">
+              {selectedLesson.content.map((paragraph, index) => (
+                <p key={index} className="bg-gray-950/10 p-3 border-l-2 border-gray-900">{paragraph}</p>
+              ))}
+            </div>
+          </div>
+
+          {/* Quiz / Verification Space */}
+          <div className="border border-gray-950 bg-black p-6 space-y-6 relative">
+            <div className="absolute top-0 right-0 bg-[#ff2079] text-black font-orbitron font-black text-[9px] tracking-widest uppercase px-2 py-0.5">
+              Knowledge Check
+            </div>
+
+            <div className="flex items-center space-x-2 text-white pt-2">
+              <HelpCircle className="w-4 h-4 text-[#ff2079]" />
+              <h3 className="font-orbitron text-xs font-black uppercase tracking-widest">Verify Intelligence</h3>
+            </div>
+
+            <p className="text-[11px] font-mono text-gray-400 leading-tight border-b border-gray-950 pb-4">
+              {selectedLesson.quiz.question}
+            </p>
+
+            {/* Options List */}
+            <div className="space-y-3">
+              {selectedLesson.quiz.options.map((option, idx) => {
+                let borderStyle = "border-gray-950 bg-gray-950/20";
+                if (selectedOption === idx) borderStyle = "border-white bg-white/5";
+                
+                if (quizChecked) {
+                  if (idx === selectedLesson.quiz.correctIndex) {
+                    borderStyle = "border-green-500 bg-green-950/10 text-green-400";
+                  } else if (selectedOption === idx) {
+                    borderStyle = "border-red-500 bg-red-950/10 text-red-400";
+                  }
+                }
+
+                return (
+                  <button
+                    key={idx}
+                    disabled={quizChecked}
+                    onClick={() => handleOptionSelect(idx)}
+                    className={`w-full text-left p-4 border text-xs font-mono transition-all rounded-sm flex items-start space-x-2 ${borderStyle} ${!quizChecked && 'hover:border-gray-700 cursor-pointer'}`}
+                  >
+                    <span className="font-bold shrink-0">{String.fromCharCode(65 + idx)}.</span>
+                    <span>{option}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Action Section */}
+            {!quizChecked ? (
+              <button
+                onClick={handleCheckAnswer}
+                disabled={selectedOption === null}
+                className="w-full bg-white text-black hover:bg-black hover:text-white border border-white font-orbitron text-xs font-black uppercase tracking-widest py-3 transition-all disabled:opacity-40 cursor-pointer"
+              >
+                Verifieer Antwoord
+              </button>
+            ) : (
+              <div className="space-y-4 animate-fade-in">
+                <div className="p-3 border border-gray-950 bg-gray-950/30 text-[10px] font-mono text-gray-400 leading-tight">
+                  <div className="font-bold text-white uppercase tracking-wider mb-1 flex items-center gap-1">
+                    {selectedOption === selectedLesson.quiz.correctIndex ? (
+                      <span className="text-green-400">✓ Cryptografisch Correct</span>
+                    ) : (
+                      <span className="text-red-400">✗ Verificatie Mislukt</span>
+                    )}
+                  </div>
+                  {selectedLesson.quiz.explanation}
+                </div>
+                <button
+                  onClick={handleNextLesson}
+                  className="w-full border border-[#2b82ff] bg-[#2b82ff] text-black hover:bg-black hover:text-[#2b82ff] font-orbitron text-xs font-black uppercase tracking-widest py-3 transition-all cursor-pointer"
+                >
+                  Volgende Track
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
