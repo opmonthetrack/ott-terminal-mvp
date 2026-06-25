@@ -6,7 +6,7 @@ interface LoginScreenProps {
 
 const OTT_TREASURY_ADDRESS = "rGAs3npYy1VwLPE92kvKvA2QYLR6FSA9n6"; 
 const OTT_TREASURY_TAG = 2606170002;
-const CHALLENGE_SOURCE_TAG = 2606170002; // Nodig voor leaderboard tracking
+const CHALLENGE_SOURCE_TAG = 2606170002; 
 
 export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
@@ -28,7 +28,7 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
             Destination: OTT_TREASURY_ADDRESS, 
             DestinationTag: OTT_TREASURY_TAG,
             SourceTag: CHALLENGE_SOURCE_TAG,
-            Amount: "2000000" // 2 XRP
+            Amount: "2000000" // 2 XRP voor toegang
           } 
         })
       });
@@ -48,7 +48,7 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
           }
         };
       } else {
-        throw new Error("Geen QR ontvangen van gateway");
+        throw new Error("Geen QR ontvangen");
       }
     } catch (e) { 
       console.error(e);

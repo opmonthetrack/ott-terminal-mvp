@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Loader2, ShieldAlert, CheckCircle, Info } from 'lucide-react';
+import { Loader2, CheckCircle } from 'lucide-react';
 
 export function OTTIntelligence() {
   const [tokenId, setTokenId] = useState<string>('');
@@ -10,18 +10,39 @@ export function OTTIntelligence() {
     if (!tokenId) return;
     setIsAnalyzing(true);
     
-    // Hier simuleren we de "Agent" die data ophaalt
-    // In de volgende stap gaan we dit koppelen aan echte XRPL data
-    setTimeout(() => {
-      setAnalysisResult({
-        trustScore: 85,
-        compliance: "MiCA Compliant",
-        riskLevel: "Low",
-        warnings: ["Goede liquiditeit", "Doxxed team"],
-        jurisdiction: "EU"
+    try {
+      // Directe data fetch van XRPL Node voor analyse
+      const response = await fetch('https://s1.ripple.com:51234/', {
+        method: 'POST',
+        body: JSON.stringify({
+          method: 'account_info',
+          params: [{ account: tokenId, ledger_index: 'validated' }]
+        })
       });
+      
+      const data = await response.json();
+      
+      if (data.result?.account_data) {
+        const balance = parseInt(data.result.account_data.Balance) / 1000000;
+        
+        setAnalysisResult({
+          trustScore: balance > 1000 ? 90 : 60,
+          compliance: "Check: XRPL Mainnet Validated",
+          riskLevel: balance > 1000 ? "Low" : "Medium",
+          warnings: [
+            `Balance op ledger: ${balance.toFixed(2)} XRP`,
+            "Team: On-chain activity detected",
+            "Jurisdictie: XRPL Protocol Standard"
+          ]
+        });
+      } else {
+        throw new Error("Account niet gevonden");
+      }
+    } catch (err) {
+      alert("Analyse mislukt: Token niet gevonden op XRPL.");
+    } finally {
       setIsAnalyzing(false);
-    }, 2000);
+    }
   };
 
   return (

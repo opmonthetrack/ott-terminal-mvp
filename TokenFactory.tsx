@@ -2,29 +2,29 @@ import { useState } from 'react';
 import { Loader2, Zap } from 'lucide-react';
 
 export function TokenFactory() {
-  const [compiledJson, setCompiledJson] = useState<string>(JSON.stringify({
-    TransactionType: "NFTokenMint",
-    Account: "rYourWalletAddressHere",
-    NFTokenTaxon: 0,
-    Flags: 8,
-    SourceTag: 2606170002, // CRUCIAAL VOOR HET LEADERBOARD
-    TransferFee: 0,
-    URI: "68747470733a2f2f697066732e696f2f697066732f516d58...",
-    Fee: "12"
-  }, null, 2));
-
+  const [uri, setUri] = useState<string>(''); 
   const [isPushing, setIsPushing] = useState(false);
   const [qrCode, setQrCode] = useState<string | null>(null);
 
-  const pushToXaman = async () => {
-    if (!compiledJson) {
-      alert("Payload is leeg!");
-      return;
-    }
+  const stringToHex = (str: string) => {
+    return Array.from(str).map(c => c.charCodeAt(0).toString(16).toUpperCase().padStart(2, '0')).join('');
+  };
 
+  const pushToXaman = async () => {
+    if (!uri) { alert("Vul een IPFS URI in!"); return; }
+    
     setIsPushing(true);
     try {
-      const txData = JSON.parse(compiledJson);
+      const txData = {
+        TransactionType: "NFTokenMint",
+        Account: "rGAs3npYy1VwLPE92kvKvA2QYLR6FSA9n6", 
+        NFTokenTaxon: 0,
+        Flags: 8,
+        SourceTag: 2606170002, // Hackathon tracking
+        TransferFee: 500,
+        URI: stringToHex(uri),
+        Fee: "12"
+      };
 
       const res = await fetch('/xaman-api/platform/payload', {
         method: 'POST',
@@ -33,9 +33,7 @@ export function TokenFactory() {
             'X-API-Key': import.meta.env.VITE_XAMAN_API_KEY, 
             'X-API-Secret': import.meta.env.VITE_XAMAN_API_SECRET 
         },
-        body: JSON.stringify({ 
-          txjson: txData 
-        })
+        body: JSON.stringify({ txjson: txData })
       });
 
       const response = await res.json();
@@ -43,11 +41,11 @@ export function TokenFactory() {
       if (response.refs?.qr_png) {
         setQrCode(response.refs.qr_png);
       } else {
-        throw new Error(response.message || "Geen QR-code ontvangen van Xaman");
+        throw new Error(response.message || "Xaman weigerde de payload");
       }
     } catch (error: any) {
       console.error("Push Error:", error);
-      alert("Fout bij pushen naar Xaman: " + error.message);
+      alert("Mint Fout: " + error.message);
     } finally {
       setIsPushing(false);
     }
@@ -55,40 +53,38 @@ export function TokenFactory() {
 
   return (
     <div className="p-8 bg-black text-white min-h-screen">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-orbitron font-black uppercase tracking-widest mb-2">Token Factory</h1>
-        <p className="text-gray-500 font-mono text-sm mb-8">Compile & Mint on XRPL Mainnet</p>
-
-        <div className="border border-white/10 p-6 bg-gray-950/30 rounded-lg">
-          <label className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2 block">
-            Transaction JSON (Mainnet)
-          </label>
-          <textarea 
-            className="w-full h-80 bg-black border border-white/20 p-4 font-mono text-xs text-green-400 focus:border-[#ff2079] outline-none transition-colors"
-            value={compiledJson}
-            onChange={(e) => setCompiledJson(e.target.value)}
-          />
-          
-          <button 
-            onClick={pushToXaman}
-            disabled={isPushing}
-            className="mt-6 w-full bg-[#ff2079] py-4 font-black uppercase tracking-widest hover:bg-opacity-80 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {isPushing ? (
-              <><Loader2 className="animate-spin" /> VERWERKEN...</>
-            ) : (
-              <><Zap size={18} /> PUSH LEDGER SIGN REQUEST</>
-            )}
-          </button>
+      <h1 className="text-2xl font-orbitron font-black uppercase tracking-widest mb-8">Token Factory</h1>
+      
+      <div className="border border-white/10 p-6 bg-gray-950/30 rounded-lg max-w-xl">
+        <div className="mb-4 flex justify-between text-[10px] font-mono text-gray-500 uppercase">
+          <span>Service Fee</span>
+          <span>2 XRP</span>
         </div>
-
-        {qrCode && (
-          <div className="mt-8 p-6 bg-white rounded-xl flex flex-col items-center">
-            <img src={qrCode} alt="Xaman QR" className="w-64" />
-            <p className="text-black mt-4 font-orbitron font-bold uppercase tracking-widest text-sm">Scan met Xaman</p>
-          </div>
-        )}
+        
+        <label className="text-xs font-bold uppercase text-gray-400 mb-2 block">IPFS CID / URI</label>
+        <input 
+          type="text"
+          className="w-full bg-black border border-white/20 p-4 font-mono text-xs text-white"
+          value={uri}
+          onChange={(e) => setUri(e.target.value)}
+          placeholder="ipfs://..."
+        />
+        
+        <button 
+          onClick={pushToXaman}
+          disabled={isPushing}
+          className="mt-6 w-full bg-[#ff2079] py-4 font-black uppercase hover:bg-opacity-80 transition-all flex items-center justify-center gap-2"
+        >
+          {isPushing ? <><Loader2 className="animate-spin" /> VERWERKEN...</> : <><Zap size={18} /> MINT NFT (2 XRP FEE)</>}
+        </button>
       </div>
+
+      {qrCode && (
+        <div className="mt-8 p-6 bg-white w-fit mx-auto">
+          <img src={qrCode} className="w-64" alt="Scan met Xaman" />
+          <p className="text-black text-center mt-2 font-bold font-mono text-xs uppercase">Scan met Xaman</p>
+        </div>
+      )}
     </div>
   );
 }
