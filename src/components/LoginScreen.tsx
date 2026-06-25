@@ -28,7 +28,7 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
             Destination: OTT_TREASURY_ADDRESS, 
             DestinationTag: OTT_TREASURY_TAG,
             SourceTag: CHALLENGE_SOURCE_TAG,
-            Amount: "2000000" // 2 XRP voor toegang
+            Amount: "2000000" // 2 XRP
           } 
         })
       });
@@ -59,8 +59,11 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
 
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 text-white selection:bg-[#ff2079]/30">
+      {/* Logo inclusief */}
+      <img src="/logo.png" alt="OTT Logo" className="w-24 mb-6" />
+
       <div className="text-center space-y-4">
-        <h1 className="font-orbitron text-2xl font-black uppercase tracking-[0.25em]">XRPL OTT Terminal</h1>
+        <h1 className="font-orbitron text-2xl font-black uppercase tracking-[0.25em]">XRPL OTT TERMINAL</h1>
         <p className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">Stay humble, Stay positive, 589 steps ahead</p>
       </div>
 
