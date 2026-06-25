@@ -1,0 +1,9 @@
+// src/components/StatCard.tsx
+export function StatCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="bg-gray-950/40 border border-white/5 p-4 rounded-lg flex flex-col items-center justify-center">
+      <p className="text-[10px] uppercase text-gray-500 tracking-widest mb-1">{label}</p>
+      <p className="font-orbitron text-xl font-black text-white">{value}</p>
+    </div>
+  );
+}
