@@ -1,8 +1,12 @@
+// api/check-nft.js
 module.exports = async (req, res) => {
-  res.setHeader('Content-Type', 'application/json');
+  const { address } = req.body;
+
+  if (!address) {
+    return res.status(400).json({ error: "Geen adres opgegeven" });
+  }
 
   try {
-    const { address } = req.body;
     const response = await fetch('https://xrplcluster.com/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -16,6 +20,6 @@ module.exports = async (req, res) => {
     return res.status(200).json({ success: true, data: data });
   } catch (error) {
     console.error("Ledger Fetch Error:", error);
-    return res.status(500).json({ success: false, error: "Kon Ledger niet bereiken" });
+    return res.status(500).json({ error: "Kon Ledger niet bereiken" });
   }
 };
