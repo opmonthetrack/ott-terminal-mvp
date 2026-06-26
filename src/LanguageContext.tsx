@@ -1,8 +1,7 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 type Language = 'nl' | 'en';
 
-// 📚 OTT WOORDENBOEK: Hier voegen we later al je teksten toe!
 const translations = {
   nl: {
     menu_dashboard: "Dashboard",
@@ -30,7 +29,7 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-export const LanguageProvider = ({ children }: { children: React.ReactNode }) => {
+export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [lang, setLang] = useState<Language>('nl');
 
   const t = (key: TranslationKey) => {
@@ -46,6 +45,8 @@ export const LanguageProvider = ({ children }: { children: React.ReactNode }) =>
 
 export const useLanguage = () => {
   const context = useContext(LanguageContext);
-  if (!context) throw new Error("useLanguage moet binnen een LanguageProvider gebruikt worden");
+  if (!context) {
+    throw new Error("useLanguage moet binnen een LanguageProvider gebruikt worden");
+  }
   return context;
 };
