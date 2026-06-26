@@ -1,10 +1,17 @@
+// /api/check-nft.ts
 import { VercelRequest, VercelResponse } from '@vercel/node';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST') return res.status(405).json({ error: "Method not allowed" });
-  
+  // Zorg dat we alleen POST requests accepteren
+  if (req.method !== 'POST') {
+    return res.status(405).json({ success: false, error: "Method not allowed" });
+  }
+
   const { address } = req.body;
-  
+  if (!address) {
+    return res.status(400).json({ success: false, error: "No address provided" });
+  }
+
   try {
     const response = await fetch('https://s1.ripple.com:51234/', {
       method: 'POST',
@@ -14,13 +21,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         params: [{ account: address, ledger_index: "validated" }]
       })
     });
-    
+
     const data = await response.json();
     
-    // Stuur de data door naar je frontend
-    res.status(200).json(data);
+    // We sturen de data direct door, inclusief de eventuele Ledger-foutmeldingen
+    res.status(200).json({ success: true, data: data });
   } catch (error: any) {
-    console.error("Ledger Fetch Error:", error); // Dit verschijnt in je Vercel logs!
-    res.status(500).json({ error: "Failed to fetch from Ledger" });
+    console.error("Ledger Fetch Error:", error);
+    res.status(500).json({ success: false, error: "Kon Ledger niet bereiken" });
   }
 }
