@@ -84,6 +84,13 @@ type XlsWatchItem = {
   summary: string;
 };
 
+type UnlWatchItem = {
+  name: string;
+  category: string;
+  status: string;
+  summary: string;
+};
+
 const fallbackNews: NewsItem[] = [
   {
     title: "XRPL OnTheTrack Terminal intelligence layer ready for MVP build",
@@ -452,6 +459,65 @@ const xlsWatchItems: XlsWatchItem[] = [
   },
 ];
 
+const unlWatchItems: UnlWatchItem[] = [
+  {
+    name: "Validator Health",
+    category: "Network Reliability",
+    status: "Core",
+    summary:
+      "Volgen of validators online, stabiel en consistent zijn. Later kunnen we uptime, missed validations en server health live tonen.",
+  },
+  {
+    name: "UNL Membership",
+    category: "Trusted Validator List",
+    status: "Core",
+    summary:
+      "Volgen welke validators op een trusted list staan en hoe dit invloed heeft op consensus, decentralisatie en netwerkvertrouwen.",
+  },
+  {
+    name: "Amendment Voting",
+    category: "Protocol Governance",
+    status: "Watch",
+    summary:
+      "Volgen welke amendments open staan, hoeveel support ze hebben en wanneer ze mogelijk geactiveerd worden.",
+  },
+  {
+    name: "Consensus Threshold",
+    category: "Agreement Layer",
+    status: "Research",
+    summary:
+      "Belangrijk voor begrip van hoe XRPL consensus werkt en waarom validator overlap en betrouwbaarheid essentieel zijn.",
+  },
+  {
+    name: "Validator Operators",
+    category: "Ecosystem Actors",
+    status: "Watch",
+    summary:
+      "Volgen welke partijen validators draaien: community, bedrijven, universiteiten, infrastructuurpartijen en ecosystem builders.",
+  },
+  {
+    name: "XRPL Foundation / Commons Signals",
+    category: "Ecosystem Governance",
+    status: "Watch",
+    summary:
+      "Volgen voor ecosystem updates, validator guidance, community signals en netwerkgezondheid.",
+  },
+  {
+    name: "Node Geography",
+    category: "Decentralization Map",
+    status: "Later",
+    summary:
+      "Later visualiseren waar validators draaien om spreiding, redundantie en mogelijke concentratierisico’s te begrijpen.",
+  },
+  {
+    name: "OTT Validator Path",
+    category: "Future Infrastructure",
+    status: "Future",
+    summary:
+      "Later onderzoeken of OnTheTrack een eigen node, validator of observer-dashboard kan draaien als educatieve infrastructuur.",
+  },
+];
+
 function formatDate(date?: string) {
   if (!date) return "Unknown date";
 
@@ -612,6 +678,32 @@ function XlsWatchCard({ item }: { item: XlsWatchItem }) {
   );
 }
 
+function UnlWatchCard({ item }: { item: UnlWatchItem }) {
+  return (
+    <div className="border border-white/10 bg-black p-4 hover:bg-white/[0.03] transition-all">
+      <div className="flex items-start justify-between gap-4 mb-3">
+        <div>
+          <h4 className="font-orbitron text-sm font-bold uppercase mb-1">
+            {item.name}
+          </h4>
+
+          <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest">
+            {item.category}
+          </p>
+        </div>
+
+        <span className="border border-white/10 px-2 py-1 font-mono text-[9px] text-white/50 uppercase">
+          {item.status}
+        </span>
+      </div>
+
+      <p className="font-mono text-xs text-white/45 leading-relaxed">
+        {item.summary}
+      </p>
+    </div>
+  );
+}
+
 export function LedgerIntelTab() {
   const [activeTab, setActiveTab] = useState<ActiveIntelTab>("daily");
   const [news, setNews] = useState<NewsItem[]>(fallbackNews);
@@ -640,7 +732,7 @@ export function LedgerIntelTab() {
       id: "unl_voting",
       label: "UNL Voting",
       icon: Server,
-      status: "Soon",
+      status: "Watch",
     },
     {
       id: "hackathon",
@@ -1083,6 +1175,64 @@ export function LedgerIntelTab() {
         </div>
       )}
 
+      {activeTab === "unl_voting" && (
+        <div className="grid grid-cols-12 gap-4">
+          <div className="col-span-12 xl:col-span-8 border border-white/10 bg-white/[0.02] p-6">
+            <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-4">
+              Validator Governance & Network Health
+            </p>
+
+            <h3 className="font-orbitron text-2xl font-black uppercase mb-4">
+              UNL Voting Watch
+            </h3>
+
+            <p className="font-mono text-sm text-white/45 leading-relaxed mb-6">
+              Deze module volgt validators, UNL membership, amendment voting,
+              consensus health en netwerk decentralisatie. Later koppelen we dit
+              aan live XRPL validator data.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {unlWatchItems.map((item) => (
+                <UnlWatchCard key={item.name} item={item} />
+              ))}
+            </div>
+          </div>
+
+          <div className="col-span-12 xl:col-span-4 space-y-4">
+            <div className="border border-white/10 bg-white/[0.02] p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <Server size={17} className="text-white/60" />
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  Waarom belangrijk?
+                </p>
+              </div>
+
+              <p className="font-mono text-xs text-white/45 leading-relaxed">
+                XRPL draait niet alleen op wallets en transacties. Validators,
+                consensus, amendment voting en betrouwbare infrastructuur bepalen
+                hoe sterk het netwerk blijft.
+              </p>
+            </div>
+
+            <div className="border border-white/10 bg-white/[0.02] p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <AlertTriangle size={17} className="text-white/60" />
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  Later koppelen
+                </p>
+              </div>
+
+              <p className="font-mono text-xs text-white/45 leading-relaxed">
+                Later kunnen we hier XRPL validator registry, amendment voting,
+                node health, UNL data, validator maps en eigen OTT node metrics
+                aan koppelen.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {activeTab === "stable" && (
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-12 xl:col-span-8 border border-white/10 bg-white/[0.02] p-6">
@@ -1409,6 +1559,7 @@ export function LedgerIntelTab() {
       {activeTab !== "daily" &&
         activeTab !== "news" &&
         activeTab !== "rails" &&
+        activeTab !== "unl_voting" &&
         activeTab !== "stable" &&
         activeTab !== "cbdc" &&
         activeTab !== "iso" &&
