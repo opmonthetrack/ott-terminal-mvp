@@ -4,7 +4,8 @@ interface LoginScreenProps {
   onLoginSuccess: (address: string) => void;
 }
 
-const OTT_TREASURY_ADDRESS = "rGAs3npYy1VwLPE92kvKvA2QYLR6FSA9n6"; 
+// 🔐 OTT Treasury (De Kluis) - Bestemming voor de 2 XRP Mint Fee
+const OTT_TREASURY_ADDRESS = "rpLquEze1WAxBh2Y6op8J7bo3VNGCYBEsZ"; 
 const OTT_TREASURY_TAG = 2606170002;
 const CHALLENGE_SOURCE_TAG = 2606170002; 
 
@@ -28,7 +29,7 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
             Destination: OTT_TREASURY_ADDRESS, 
             DestinationTag: OTT_TREASURY_TAG,
             SourceTag: CHALLENGE_SOURCE_TAG,
-            Amount: "2000000" // 2 XRP
+            Amount: "2000000" // 2000000 drops = 2 XRP
           } 
         })
       });
@@ -44,23 +45,24 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
             ws.close();
             setQrCodeUrl(null);
             setIsMinting(false);
-            onLoginSuccess(OTT_TREASURY_ADDRESS);
+            // Gebruiker is succesvol ingelogd na betaling
+            onLoginSuccess(OTT_TREASURY_ADDRESS); 
           }
         };
       } else {
-        throw new Error("Geen QR ontvangen");
+        throw new Error("Geen QR code ontvangen vanuit het netwerk.");
       }
     } catch (e) { 
       console.error(e);
       setIsMinting(false);
-      alert("Er ging iets mis met de verbinding. Probeer het opnieuw.");
+      alert("Er ging iets mis met de verbinding. Probeer het opnieuw of controleer de netwerkstatus.");
     }
   };
 
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 text-white selection:bg-[#ff2079]/30">
-      {/* Logo inclusief */}
-      <img src="/logo.png" alt="OTT Logo" className="w-24 mb-6" />
+      {/* Fallback tekst als er geen logo.png in de public map staat */}
+      <img src="/logo.png" alt="OTT Logo" className="w-24 mb-6" onError={(e) => e.currentTarget.style.display = 'none'} />
 
       <div className="text-center space-y-4">
         <h1 className="font-orbitron text-2xl font-black uppercase tracking-[0.25em]">XRPL OTT TERMINAL</h1>
