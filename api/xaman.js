@@ -1,10 +1,14 @@
-// /api/xaman.js
+// api/xaman.js
 module.exports = async (req, res) => {
   const { endpoint, body } = req.body;
   
-  // De geheime keys die in Vercel staan
+  // Deze waarden worden vanuit Vercel Environment Variables gehaald
   const XAMAN_KEY = process.env.VITE_XAMAN_API_KEY;
   const XAMAN_SECRET = process.env.VITE_XAMAN_API_SECRET;
+
+  if (!XAMAN_KEY || !XAMAN_SECRET) {
+    return res.status(500).json({ error: "API Keys niet geconfigureerd op server" });
+  }
 
   try {
     const response = await fetch(`https://xumm.app/api/v1/${endpoint}`, {
