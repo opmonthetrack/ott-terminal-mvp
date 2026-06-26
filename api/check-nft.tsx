@@ -1,15 +1,8 @@
-// api/check-nft.js (Vercel ondersteunt dit als CommonJS)
+// api/check-nft.js
 module.exports = async (req, res) => {
-  // Zorg dat we alleen POST requests accepteren
-  if (req.method !== 'POST') {
-    return res.status(405).json({ success: false, error: "Method not allowed" });
-  }
-
   const { address } = req.body;
-  
-  if (!address) {
-    return res.status(400).json({ success: false, error: "No address provided" });
-  }
+
+  if (!address) return res.status(400).json({ error: "Geen adres" });
 
   try {
     const response = await fetch('https://xrplcluster.com/', {
@@ -22,11 +15,9 @@ module.exports = async (req, res) => {
     });
 
     const data = await response.json();
-    
-    // Stuur de data door naar je frontend
     return res.status(200).json({ success: true, data: data });
   } catch (error) {
     console.error("Ledger Fetch Error:", error);
-    return res.status(500).json({ success: false, error: "Kon Ledger niet bereiken" });
+    return res.status(500).json({ error: "Kon Ledger niet bereiken" });
   }
 };
