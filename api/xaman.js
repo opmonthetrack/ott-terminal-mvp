@@ -1,15 +1,18 @@
 export default async function handler(req, res) {
+  // Altijd JSON terugsturen
   res.setHeader("Content-Type", "application/json");
 
+  // Alleen POST toestaan
   if (req.method !== "POST") {
     return res.status(405).json({
-      error: "Method not allowed. Use POST only.",
+      error: "Method not allowed. Gebruik POST.",
     });
   }
 
   try {
     const { endpoint, body } = req.body || {};
 
+    // Deze keys moeten in Vercel staan ZONDER VITE_
     const XAMAN_KEY = process.env.XAMAN_API_KEY;
     const XAMAN_SECRET = process.env.XAMAN_API_SECRET;
 
