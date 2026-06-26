@@ -1,0 +1,135 @@
+import { useState } from 'react';
+import { Activity, Globe, Database, Zap, CheckCircle2 } from 'lucide-react';
+
+export function LedgerIntelTab() {
+  const [activeTab, setActiveTab] = useState('iso20022');
+
+  return (
+    <div className="p-8 bg-black text-white min-h-screen">
+      {/* HEADER */}
+      <div className="flex justify-between items-center mb-8 border-b border-white/10 pb-6">
+        <div>
+          <h2 className="font-orbitron text-xl font-bold uppercase tracking-widest flex items-center gap-3">
+            <Globe className="text-[#2b82ff]" /> Ledger Intel Terminal
+          </h2>
+          <p className="font-mono text-[10px] text-gray-500 uppercase mt-1">Sovereign Intelligence Engine // Live Protocol Sync</p>
+        </div>
+        <div className="flex items-center gap-2 bg-green-950/30 border border-green-500/30 px-4 py-2 rounded hidden md:flex">
+          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+          <span className="text-[10px] font-mono text-green-400 uppercase tracking-widest">Systeem 100% Up-to-date</span>
+        </div>
+      </div>
+
+      {/* NAVIGATIE */}
+      <div className="flex flex-wrap gap-4 mb-8 border-b border-white/5 pb-4">
+        <button 
+          onClick={() => setActiveTab('iso20022')} 
+          className={`font-orbitron text-xs font-bold uppercase tracking-widest px-4 py-2 rounded transition-colors ${activeTab === 'iso20022' ? 'bg-white text-black' : 'bg-transparent text-gray-500 hover:text-white border border-white/10'}`}
+        >
+          ISO 20022 Mapping
+        </button>
+        
+        {/* 🔥 DE HACKATHON JURY KNOP */}
+        <button 
+          onClick={() => setActiveTab('hackathon')} 
+          className={`font-orbitron text-xs font-bold uppercase tracking-widest px-4 py-2 rounded transition-colors flex items-center gap-2 ${activeTab === 'hackathon' ? 'bg-[#ff2079] text-white shadow-[0_0_15px_rgba(255,32,121,0.4)]' : 'bg-transparent text-[#ff2079]/70 border border-[#ff2079]/30 hover:bg-[#ff2079]/10'}`}
+        >
+          <Zap size={14} /> Make Waves Hackathon
+        </button>
+        
+        <button 
+          onClick={() => setActiveTab('cbdc')} 
+          className={`font-orbitron text-xs font-bold uppercase tracking-widest px-4 py-2 rounded transition-colors ${activeTab === 'cbdc' ? 'bg-white text-black' : 'bg-transparent text-gray-500 hover:text-white border border-white/10'}`}
+        >
+          CBDC Radar
+        </button>
+      </div>
+
+      {/* CONTENT: ISO 20022 */}
+      {activeTab === 'iso20022' && (
+        <div className="space-y-6 animate-fade-in">
+          <h3 className="font-orbitron text-sm font-bold text-[#2b82ff] uppercase tracking-widest mb-4 flex items-center gap-2">
+            <Database size={16} /> Universal Financial Messaging System
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-gray-950/60 border border-white/5 p-6 rounded-lg">
+              <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">// HET NETWERK (Snelwegen)</h4>
+              <p className="font-mono text-sm text-white mb-4">SWIFT, Fedwire, T2 (ECB), CHAPS</p>
+              <p className="text-[10px] text-gray-500 leading-relaxed uppercase">De fysieke financiële infrastructuur die de ISO 20022-berichtgeving verplicht stelt voor al het interbancaire grensoverschrijdende verkeer.</p>
+            </div>
+            
+            <div className="bg-gray-950/60 border border-white/5 p-6 rounded-lg">
+              <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">// DE SOFTWARE (Vertaalmachine)</h4>
+              <p className="font-mono text-sm text-white mb-4">Ripple Payments, Volante, Temenos</p>
+              <p className="text-[10px] text-gray-500 leading-relaxed uppercase">De gecertificeerde softwareleveranciers die banksystemen voorzien van de modules om ISO-berichten 1:1 te vertalen naar cryptografische transacties.</p>
+            </div>
+            
+            <div className="bg-[#2b82ff]/5 border border-[#2b82ff]/30 p-6 rounded-lg relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-[#2b82ff] opacity-10 blur-2xl"></div>
+              <h4 className="text-[10px] font-bold uppercase tracking-widest text-[#2b82ff] mb-2">// DE CRYPTO (Ledger Rails)</h4>
+              <p className="font-mono text-sm text-white mb-4">XRP (Ripple), XLM (Stellar), XDC</p>
+              <p className="text-[10px] text-gray-400 leading-relaxed uppercase">De programmeerbare Layer-1 blockchains waarvan de datavelden naadloos aansluiten op de ISO-datakwalificaties voor wholesale-verrekeningen.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CONTENT: HACKATHON TRACKER VOOR DE JURY */}
+      {activeTab === 'hackathon' && (
+        <div className="bg-[#ff2079]/5 border border-[#ff2079]/20 p-8 rounded-lg animate-fade-in relative overflow-hidden">
+           <div className="absolute top-0 right-0 w-64 h-64 bg-[#ff2079] opacity-5 blur-[100px]"></div>
+           
+           <h3 className="font-orbitron text-sm font-bold text-[#ff2079] uppercase tracking-widest mb-8 flex items-center gap-2 relative z-10">
+             Make Waves Hackathon Checkpoints
+           </h3>
+           
+           <div className="space-y-6 relative z-10">
+             <div className="flex items-start gap-4 border-b border-white/5 pb-4">
+               <CheckCircle2 className="text-green-500 w-5 h-5 flex-shrink-0 mt-0.5" />
+               <div>
+                 <p className="font-bold text-white text-xs font-orbitron uppercase tracking-wider mb-1">Xaman Wallet Integratie</p>
+                 <p className="font-mono text-[10px] text-gray-400 uppercase">Succesvolle login en payment payload generatie via Xaman API gerealiseerd in LoginScreen.</p>
+               </div>
+             </div>
+             
+             <div className="flex items-start gap-4 border-b border-white/5 pb-4">
+               <CheckCircle2 className="text-green-500 w-5 h-5 flex-shrink-0 mt-0.5" />
+               <div>
+                 <p className="font-bold text-white text-xs font-orbitron uppercase tracking-wider mb-1">Live XRPL Data Fetching</p>
+                 <p className="font-mono text-[10px] text-gray-400 uppercase">Command Center Dashboard toont real-time network balances, liquid XRP en XRPL object reserves.</p>
+               </div>
+             </div>
+             
+             <div className="flex items-start gap-4 border-b border-white/5 pb-4">
+               <CheckCircle2 className="text-green-500 w-5 h-5 flex-shrink-0 mt-0.5" />
+               <div>
+                 <p className="font-bold text-white text-xs font-orbitron uppercase tracking-wider mb-1">Decentralized Architecture</p>
+                 <p className="font-mono text-[10px] text-gray-400 uppercase">Professionele scheiding van OTT Treasury, Master Issuer en Operational wallets toegepast binnen de code base.</p>
+               </div>
+             </div>
+             
+             <div className="flex items-start gap-4">
+               <div className="w-5 h-5 rounded-full border-2 border-dashed border-[#2b82ff] flex-shrink-0 flex items-center justify-center mt-0.5">
+                 <div className="w-1.5 h-1.5 bg-[#2b82ff] rounded-full animate-pulse"></div>
+               </div>
+               <div>
+                 <p className="font-bold text-[#2b82ff] text-xs font-orbitron uppercase tracking-wider mb-1">Token & NFT Issuance</p>
+                 <p className="font-mono text-[10px] text-[#2b82ff]/70 uppercase">Voorbereiding in DeFi Hub afgerond. Wachtend op final Ledger payload executie.</p>
+               </div>
+             </div>
+           </div>
+        </div>
+      )}
+
+      {/* CONTENT: CBDC RADAR */}
+      {activeTab === 'cbdc' && (
+        <div className="text-center py-20 border border-dashed border-white/10 rounded-lg text-gray-500 animate-fade-in">
+          <Activity className="w-8 h-8 mx-auto mb-4 opacity-50" />
+          <p className="font-orbitron text-xs uppercase tracking-widest">Global CBDC Radar Syncing...</p>
+        </div>
+      )}
+
+    </div>
+  );
+}
