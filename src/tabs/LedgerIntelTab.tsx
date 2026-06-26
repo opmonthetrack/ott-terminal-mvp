@@ -13,8 +13,8 @@ export function LedgerIntelTab() {
         try {
           const res = await fetch('/api/news');
           const data = await res.json();
-          // CryptoPanic geeft de data in een 'results' array
-          setNews(data.results || []);
+          // RSS structuur gebruikt 'items'
+          setNews(data.items || []);
         } catch (e) {
           console.error("Nieuws feed error:", e);
         } finally {
@@ -41,6 +41,7 @@ export function LedgerIntelTab() {
         <h2 className="font-orbitron text-xl font-bold uppercase tracking-widest flex items-center gap-3">
           <Globe className="text-blue-500 w-6 h-6" /> Ledger Intel Terminal
         </h2>
+        <p className="font-mono text-[10px] text-gray-500 uppercase mt-1">Sovereign Intelligence Engine // Live RSS Protocol</p>
       </div>
 
       <div className="flex flex-wrap gap-2 mb-8 border-b border-white/5 pb-4">
@@ -55,24 +56,26 @@ export function LedgerIntelTab() {
         {activeTab === 'news' ? (
           <div className="bg-gray-950/40 border border-white/10 rounded-lg p-6">
             <h3 className="text-sm font-bold uppercase mb-6 flex items-center gap-2">
-              <Newspaper size={16} className="text-blue-500" /> Live XRPL News Feed
+              <Newspaper size={16} className="text-blue-500" /> Ripple Insights // Live Feed
             </h3>
             {isLoading ? (
               <div className="flex justify-center py-10"><Loader2 className="animate-spin text-blue-500" /></div>
             ) : (
               <div className="space-y-4">
-                {news.map((item, i) => (
-                  <a key={i} href={item.url} target="_blank" className="block border-b border-white/5 pb-4 hover:bg-white/5 p-2 rounded transition-all">
+                {news.length > 0 ? news.map((item, i) => (
+                  <a key={i} href={item.link} target="_blank" className="block border-b border-white/5 pb-4 hover:bg-white/5 p-2 rounded transition-all">
                     <h4 className="text-sm font-medium hover:text-blue-400">{item.title}</h4>
-                    <div className="mt-2 text-[10px] text-gray-500 font-mono uppercase">{item.source.title} • {new Date(item.created_at).toLocaleDateString()}</div>
+                    <div className="mt-2 text-[10px] text-gray-500 font-mono uppercase">
+                      {new Date(item.pubDate).toLocaleDateString()} • {item.author || 'Ripple Team'}
+                    </div>
                   </a>
-                ))}
+                )) : <p className="text-xs text-gray-500">Geen actuele feeds gevonden.</p>}
               </div>
             )}
           </div>
         ) : (
           <div className="p-10 text-center border border-dashed border-white/10 rounded-lg">
-             <p className="font-mono text-gray-500 text-xs">Systeem in sync. Data voor "{activeTab}" wordt opgeroepen.</p>
+             <p className="font-mono text-gray-500 text-xs">Systeem gereed voor "{activeTab}". Data stream actief.</p>
           </div>
         )}
       </div>
