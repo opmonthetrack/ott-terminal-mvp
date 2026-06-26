@@ -6,12 +6,15 @@ export function DeFiTab() {
   const [activeSubTab, setActiveSubTab] = useState('nft_forge');
   const [isMinting, setIsMinting] = useState(false);
   const [txResult, setTxResult] = useState<{ hash: string } | null>(null);
+  const { t } = useLanguage();
 
   const handleMintNFT = async () => {
     setIsMinting(true);
     try {
-      // 1. NFTokenMint Transactie opbouw
-      // Flags 8 = Transferable
+      // IPFS URI: ipfs://bafkreifw47mopkw7qq4fppxkhgcthyrjvger5uyrqybyj52aunqhsz2cbm
+      // Omgezet naar Hex voor de XRPL NFTokenMint transactie
+      const uriHex = "697066733a2f2f6261666b726569667734376d6f706b7737717134667070786b686763746879726a7667657235757972717962796a353261756e7168737a3263626d";
+
       const res = await fetch('/xaman-api/platform/payload', {
         method: 'POST',
         headers: { 
@@ -24,14 +27,14 @@ export function DeFiTab() {
             TransactionType: "NFTokenMint", 
             NFTokenTaxon: 0, 
             Flags: 8, 
-            URI: "68747470733a2f2f6f74742e747261636b2f6e66742f6d657461646174612e6a736f6e" // Hex voor je URI
+            URI: uriHex 
           } 
         })
       });
 
       const payload = await res.json();
       if (payload.refs?.qr_png) {
-        window.open(payload.next.always, '_blank'); // Redirect direct naar Xaman
+        window.open(payload.next.always, '_blank');
         
         const ws = new WebSocket(payload.refs.websocket_status);
         ws.onmessage = async (event) => {
@@ -44,6 +47,8 @@ export function DeFiTab() {
             setIsMinting(false);
           }
         };
+      } else {
+        throw new Error("Geen payload ontvangen");
       }
     } catch (e) {
       console.error(e);
@@ -54,6 +59,7 @@ export function DeFiTab() {
 
   return (
     <div className="p-8 bg-black text-white min-h-screen">
+      {/* Sub-navigatie */}
       <div className="flex space-x-8 border-b border-white/10 mb-8 pb-4">
         <button onClick={() => setActiveSubTab('token_factory')} className={`flex items-center gap-2 font-orbitron text-xs font-bold uppercase ${activeSubTab === 'token_factory' ? 'text-white border-b border-white pb-4' : 'text-gray-600'}`}>
           <Link size={14} /> Token Factory
@@ -66,6 +72,7 @@ export function DeFiTab() {
         </button>
       </div>
 
+      {/* Inhoud op basis van tab */}
       {activeSubTab === 'nft_forge' && (
         <div className="max-w-xl mx-auto mt-12 bg-gray-950/50 p-8 rounded-2xl border border-white/5">
           {!txResult ? (
@@ -89,12 +96,27 @@ export function DeFiTab() {
               <a 
                 href={`https://bithomp.com/explorer/${txResult.hash}`} 
                 target="_blank" 
+                rel="noreferrer"
                 className="block w-full border border-white/20 py-3 text-xs font-orbitron uppercase hover:bg-white hover:text-black transition-all"
               >
                 <ExternalLink className="inline mr-2" size={12} /> View op Bithomp
               </a>
             </div>
           )}
+        </div>
+      )}
+
+      {activeSubTab === 'token_factory' && (
+        <div className="text-center py-20 border border-dashed border-white/10 rounded-lg">
+          <Cpu className="w-12 h-12 mx-auto text-gray-700 mb-4" />
+          <p className="text-gray-500 font-mono text-xs uppercase tracking-widest">Token Factory under development</p>
+        </div>
+      )}
+
+      {activeSubTab === 'yield_matrix' && (
+        <div className="text-center py-20 border border-dashed border-white/10 rounded-lg">
+          <Landmark className="w-12 h-12 mx-auto text-gray-700 mb-4" />
+          <p className="text-gray-500 font-mono text-xs uppercase tracking-widest">Global Yield Matrix syncing...</p>
         </div>
       )}
     </div>
