@@ -13,10 +13,12 @@ import {
   Search,
   Server,
   ShieldCheck,
+  Sparkles,
   Zap,
 } from "lucide-react";
 
 type ActiveIntelTab =
+  | "daily"
   | "news"
   | "unl_voting"
   | "hackathon"
@@ -30,6 +32,8 @@ type NewsItem = {
   link?: string;
   pubDate?: string;
   author?: string;
+  source?: string;
+  category?: string;
   description?: string;
 };
 
@@ -80,12 +84,27 @@ function formatDate(date?: string) {
   });
 }
 
+function getTodayLabel() {
+  return new Date().toLocaleDateString("nl-NL", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+}
+
 export function LedgerIntelTab() {
-  const [activeTab, setActiveTab] = useState<ActiveIntelTab>("news");
+  const [activeTab, setActiveTab] = useState<ActiveIntelTab>("daily");
   const [news, setNews] = useState<NewsItem[]>(fallbackNews);
   const [isLoading, setIsLoading] = useState(false);
 
   const tabs: IntelTab[] = [
+    {
+      id: "daily",
+      label: "Daily Brief",
+      icon: Sparkles,
+      status: "Live",
+    },
     {
       id: "news",
       label: "XRPL News",
@@ -131,7 +150,7 @@ export function LedgerIntelTab() {
   ];
 
   useEffect(() => {
-    if (activeTab !== "news") return;
+    if (activeTab !== "news" && activeTab !== "daily") return;
 
     const fetchNews = async () => {
       setIsLoading(true);
@@ -162,6 +181,8 @@ export function LedgerIntelTab() {
 
     fetchNews();
   }, [activeTab]);
+
+  const dailyNews = news.slice(0, 3);
 
   return (
     <div className="p-6 bg-black text-white min-h-screen">
@@ -212,7 +233,7 @@ export function LedgerIntelTab() {
       </div>
 
       {/* TAB NAV */}
-      <div className="border border-white/10 bg-white/[0.02] p-2 mb-6 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-7 gap-2">
+      <div className="border border-white/10 bg-white/[0.02] p-2 mb-6 grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-2">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -241,6 +262,127 @@ export function LedgerIntelTab() {
           );
         })}
       </div>
+
+      {/* DAILY BRIEF */}
+      {activeTab === "daily" && (
+        <div className="grid grid-cols-12 gap-4">
+          <div className="col-span-12 xl:col-span-8 border border-white/10 bg-white/[0.02] p-6">
+            <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-4">
+              {getTodayLabel()}
+            </p>
+
+            <h3 className="font-orbitron text-2xl font-black uppercase mb-4">
+              Daily XRPL Intel Brief
+            </h3>
+
+            <p className="font-mono text-sm text-white/45 leading-relaxed mb-6">
+              Dit is straks de dagelijkse reden om terug te komen: nieuwe XRPL
+              updates, Ripple/Xaman nieuws, stablecoins, CBDC, ISO 20022 en
+              Make Waves voortgang.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+              <div className="border border-white/10 bg-black p-4">
+                <p className="font-mono text-[10px] text-white/35 uppercase mb-2">
+                  News Items
+                </p>
+                <p className="font-orbitron text-2xl font-black">
+                  {news.length}
+                </p>
+              </div>
+
+              <div className="border border-white/10 bg-black p-4">
+                <p className="font-mono text-[10px] text-white/35 uppercase mb-2">
+                  Daily XP
+                </p>
+                <p className="font-orbitron text-2xl font-black">Soon</p>
+              </div>
+
+              <div className="border border-white/10 bg-black p-4">
+                <p className="font-mono text-[10px] text-white/35 uppercase mb-2">
+                  Token Rewards
+                </p>
+                <p className="font-orbitron text-2xl font-black">Later</p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {dailyNews.map((item, index) => (
+                <div
+                  key={`${item.title}-${index}`}
+                  className="border border-white/10 bg-black p-4"
+                >
+                  <h4 className="font-orbitron text-sm font-bold uppercase mb-2 leading-relaxed">
+                    {item.title}
+                  </h4>
+
+                  <p className="font-mono text-xs text-white/40 leading-relaxed mb-3">
+                    {item.description ||
+                      "Geen omschrijving beschikbaar voor dit item."}
+                  </p>
+
+                  <p className="font-mono text-[10px] text-white/30 uppercase tracking-widest">
+                    {formatDate(item.pubDate)} •{" "}
+                    {item.author || item.source || "XRPL Source"}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="col-span-12 xl:col-span-4 space-y-4">
+            <div className="border border-white/10 bg-white/[0.02] p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <Sparkles size={17} className="text-white/60" />
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  Watch Today
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <div className="border border-white/10 bg-black p-3">
+                  <p className="font-mono text-xs text-white/70">
+                    mBridge / SWIFT / Fedwire
+                  </p>
+                </div>
+
+                <div className="border border-white/10 bg-black p-3">
+                  <p className="font-mono text-xs text-white/70">
+                    RLUSD & fiat-backed stablecoins
+                  </p>
+                </div>
+
+                <div className="border border-white/10 bg-black p-3">
+                  <p className="font-mono text-xs text-white/70">
+                    CBDC / Digital Euro / ISO 20022
+                  </p>
+                </div>
+
+                <div className="border border-white/10 bg-black p-3">
+                  <p className="font-mono text-xs text-white/70">
+                    Learn & Earn: XP nu, token later
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="border border-white/10 bg-white/[0.02] p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <AlertTriangle size={17} className="text-white/60" />
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  Reward Note
+                </p>
+              </div>
+
+              <p className="font-mono text-xs text-white/45 leading-relaxed">
+                Voor nu houden we rewards als veilig intern XP-systeem. Later
+                kunnen die punten mogelijk worden omgezet naar jouw eigen token,
+                NFT badge of claim reward.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* NEWS */}
       {activeTab === "news" && (
@@ -293,7 +435,7 @@ export function LedgerIntelTab() {
 
                       <p className="font-mono text-[10px] text-white/30 uppercase tracking-widest">
                         {formatDate(item.pubDate)} •{" "}
-                        {item.author || "XRPL Source"}
+                        {item.author || item.source || "XRPL Source"}
                       </p>
                     </div>
 
@@ -443,7 +585,7 @@ export function LedgerIntelTab() {
       )}
 
       {/* OTHER MODULES */}
-      {activeTab !== "news" && activeTab !== "hackathon" && (
+      {activeTab !== "daily" && activeTab !== "news" && activeTab !== "hackathon" && (
         <div className="border border-white/10 bg-white/[0.02] p-10 text-center">
           {(() => {
             const currentTab = tabs.find((tab) => tab.id === activeTab);
