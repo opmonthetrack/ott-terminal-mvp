@@ -1,3 +1,4 @@
+// src/components/LoginScreen.tsx
 import { useState } from 'react';
 import { Loader2, ShieldCheck, CreditCard } from 'lucide-react';
 
@@ -110,21 +111,25 @@ export function LoginScreen({ onLoginSuccess }) {
   };
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 text-white">
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 text-white selection:bg-[#ff2079]/30">
+      {/* Hier staat het logo weer */}
+      <img src="/logo.png" alt="TruthOnTheTrack Logo" className="w-32 h-32 mb-8 object-contain" />
+      
       <h1 className="font-orbitron text-2xl font-black uppercase mb-12">XRPL OTT TERMINAL</h1>
       <div className="w-full max-w-md space-y-4">
         {!qrCodeUrl ? (
           <>
-            <button onClick={handleSignIn} disabled={isChecking} className="w-full bg-white text-black py-4 font-orbitron font-black uppercase">
-              {isChecking ? <Loader2 className="animate-spin" size={16} /> : "SCAN QR & LOGIN"}
+            <button onClick={handleSignIn} disabled={isChecking} className="w-full bg-white text-black py-4 font-orbitron font-black uppercase hover:bg-gray-200 transition-all flex justify-center items-center gap-2">
+              {isChecking ? <Loader2 className="animate-spin" size={16} /> : <><ShieldCheck size={16}/> SCAN QR & LOGIN</>}
             </button>
-            <button onClick={handleMintPass} disabled={isMinting} className="w-full border border-white/20 py-4 font-orbitron uppercase">
-              {isMinting ? <Loader2 className="animate-spin" size={16} /> : "MINT ACCESS PASS"}
+            <button onClick={handleMintPass} disabled={isMinting} className="w-full border border-white/20 py-4 font-orbitron uppercase hover:bg-white/5 transition-all flex justify-center items-center gap-2">
+              {isMinting ? <Loader2 className="animate-spin" size={16} /> : <><CreditCard size={16}/> MINT ACCESS PASS</>}
             </button>
           </>
         ) : (
           <div className="bg-white p-6 rounded-xl text-center">
             <img src={qrCodeUrl} className="w-48 mx-auto" alt="Scan QR" />
+            <p className="text-black text-xs mt-4 font-mono uppercase">Scan met Xaman</p>
           </div>
         )}
       </div>
