@@ -1,19 +1,14 @@
 import { useState } from 'react';
 import { Loader2, ShieldCheck, CreditCard } from 'lucide-react';
 
-interface LoginScreenProps {
-  onLoginSuccess: (address: string) => void;
-}
-
-const OTT_ISSUER_ADDRESS = "rnz9im9849ztKyhe6nR5eeibDx3swosDjA"; 
-
-export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
+export function LoginScreen({ onLoginSuccess }) {
   const [isChecking, setIsChecking] = useState(false);
   const [isMinting, setIsMinting] = useState(false);
-  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+  const [qrCodeUrl, setQrCodeUrl] = useState(null);
 
-  const verifyNFTOwnership = async (address: string) => {
-    setIsChecking(true);
+  const OTT_ISSUER_ADDRESS = "rnz9im9849ztKyhe6nR5eeibDx3swosDjA";
+
+  const verifyNFTOwnership = async (address) => {
     try {
       const response = await fetch('/api/check-nft', {
         method: 'POST',
@@ -21,24 +16,19 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
         body: JSON.stringify({ address: address })
       });
       
-      // Controleer of de server antwoordt met succes
-      if (!response.ok) throw new Error(`Server fout: ${response.status}`);
-      
       const json = await response.json();
-      if (!json.success) throw new Error(json.error);
-
-      const hasAccessNFT = json.data.result?.account_nfts?.some(
-        (nft: any) => nft.Issuer === OTT_ISSUER_ADDRESS
-      );
+      const nfts = json.data?.result?.account_nfts || [];
+      
+      const hasAccessNFT = nfts.some(nft => nft.Issuer === OTT_ISSUER_ADDRESS);
 
       if (hasAccessNFT) {
         onLoginSuccess(address);
       } else {
-        alert("Toegang geweigerd: Geen OTT Access Pass gevonden.");
+        alert("Toegang geweigerd: Geen geldige OTT Access Pass gevonden.");
       }
-    } catch (e: any) {
+    } catch (e) {
       console.error(e);
-      alert("Verificatie fout: " + e.message);
+      alert("Fout bij verificatie.");
     } finally {
       setIsChecking(false);
     }
@@ -47,17 +37,14 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   const handleSignIn = async () => {
     setIsChecking(true);
     try {
-      const res = await fetch('/xaman-api/platform/payload', {
+      const res = await fetch('/api/xaman', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json', 
-          'x-api-key': import.meta.env.VITE_XAMAN_API_KEY || '', 
-          'x-api-secret': import.meta.env.VITE_XAMAN_API_SECRET || '' 
-        },
-        body: JSON.stringify({ txjson: { TransactionType: "SignIn" } })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          endpoint: 'platform/payload',
+          body: { txjson: { TransactionType: "SignIn" } }
+        })
       });
-
-      if (!res.ok) throw new Error(`Xaman API fout: ${res.status}`);
 
       const payload = await res.json();
       
@@ -71,16 +58,20 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
           if (msg.signed === true) {
             ws.close();
             setQrCodeUrl(null);
-            const result = await fetch(`/xaman-api/platform/payload/${payload.uuid}`);
-            const resultData = await result.json();
+            
+            const resResult = await fetch('/api/xaman', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ endpoint: `platform/payload/${payload.uuid}` })
+            });
+            const resultData = await resResult.json();
             verifyNFTOwnership(resultData.response?.signer);
           }
         };
       } else {
-        throw new Error("Geen QR code payload ontvangen");
+        throw new Error("Geen QR payload ontvangen");
       }
-    } catch (e: any) {
-      console.error(e);
+    } catch (e) {
       setIsChecking(false);
       alert("Inloggen mislukt: " + e.message);
     }
@@ -91,24 +82,14 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
     try {
       const uriHex = "697066733a2f2f6261666b726569667734376d6f706b7737717134667070786b686763746879726a7667657235757972717962796a353261756e7168737a3263626d";
       
-      const res = await fetch('/xaman-api/platform/payload', {
+      const res = await fetch('/api/xaman', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json', 
-          'x-api-key': import.meta.env.VITE_XAMAN_API_KEY || '', 
-          'x-api-secret': import.meta.env.VITE_XAMAN_API_SECRET || '' 
-        },
-        body: JSON.stringify({ 
-          txjson: { 
-            TransactionType: "NFTokenMint", 
-            NFTokenTaxon: 0, 
-            Flags: 8, 
-            URI: uriHex 
-          } 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            endpoint: 'platform/payload',
+            body: { txjson: { TransactionType: "NFTokenMint", NFTokenTaxon: 0, Flags: 8, URI: uriHex } }
         })
       });
-
-      if (!res.ok) throw new Error(`Minting API fout: ${res.status}`);
       
       const payload = await res.json();
       if (payload.refs?.qr_png) {
@@ -122,11 +103,11 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
             ws.close();
             setQrCodeUrl(null);
             setIsMinting(false);
-            alert("NFT succesvol gemint! Scan nu opnieuw om in te loggen.");
+            alert("NFT gemint! Scan nu opnieuw om in te loggen.");
           }
         };
       }
-    } catch (e: any) {
+    } catch (e) {
       setIsMinting(false);
       alert("Minting mislukt: " + e.message);
     }
