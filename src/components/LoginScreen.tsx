@@ -5,6 +5,7 @@ interface LoginScreenProps {
   onLoginSuccess: (address: string) => void;
 }
 
+// Jouw wallet-adres dat de NFT's uitgeeft (De Issuer)
 const OTT_ISSUER_ADDRESS = "rnz9im9849ztKyhe6nR5eeibDx3swosDjA"; 
 
 export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
@@ -12,7 +13,7 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   const [isMinting, setIsMinting] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
-  // VERNIEUWDE LOGICA: Gebruikt de /api/check-nft proxy
+  // 1. Validatie: Check of wallet de juiste NFT bezit via jouw proxy
   const verifyNFTOwnership = async (address: string) => {
     try {
       const response = await fetch('/api/check-nft', {
@@ -20,8 +21,10 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ address: address })
       });
+      
       const data = await response.json();
       
+      // Zoek naar NFT's uitgegeven door jouw adres
       const hasAccessNFT = data.result?.account_nfts?.some(
         (nft: any) => nft.Issuer === OTT_ISSUER_ADDRESS
       );
@@ -29,21 +32,26 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
       if (hasAccessNFT) {
         onLoginSuccess(address);
       } else {
-        alert("Geen geldig OTT Access Pass gevonden. Mint er eerst een.");
+        alert("Toegang geweigerd: Geen geldige OTT Access Pass gevonden in deze wallet.");
       }
-    } catch (e) {
-      alert("Kon Ledger niet bereiken via proxy. Probeer het opnieuw.");
+    } catch (e: any) {
+      alert("Proxy fout: " + e.message);
     } finally {
       setIsChecking(false);
     }
   };
 
+  // 2. Xaman Login: QR genereren voor Sign-In
   const handleSignIn = async () => {
     setIsChecking(true);
     try {
       const res = await fetch('/xaman-api/platform/payload', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': import.meta.env.VITE_XAMAN_API_KEY || '', 'x-api-secret': import.meta.env.VITE_XAMAN_API_SECRET || '' },
+        headers: { 
+          'Content-Type': 'application/json', 
+          'x-api-key': import.meta.env.VITE_XAMAN_API_KEY || '', 
+          'x-api-secret': import.meta.env.VITE_XAMAN_API_SECRET || '' 
+        },
         body: JSON.stringify({ txjson: { TransactionType: "SignIn" } })
       });
 
@@ -60,8 +68,7 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
             setQrCodeUrl(null);
             const result = await fetch(`/xaman-api/platform/payload/${payload.uuid}`);
             const resultData = await result.json();
-            const userAddress = resultData.response?.signer;
-            verifyNFTOwnership(userAddress);
+            verifyNFTOwnership(resultData.response?.signer);
           }
         };
       }
@@ -71,19 +78,35 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
     }
   };
 
+  // 3. Minting Flow
   const handleMintPass = async () => {
     setIsMinting(true);
     try {
+      // Hex voor ipfs://bafkreifw47mopkw7qq4fppxkhgcthyrjvger5uyrqybyj52aunqhsz2cbm
       const uriHex = "697066733a2f2f6261666b726569667734376d6f706b7737717134667070786b686763746879726a7667657235757972717962796a353261756e7168737a3263626d";
+      
       const res = await fetch('/xaman-api/platform/payload', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': import.meta.env.VITE_XAMAN_API_KEY || '', 'x-api-secret': import.meta.env.VITE_XAMAN_API_SECRET || '' },
-        body: JSON.stringify({ txjson: { TransactionType: "NFTokenMint", NFTokenTaxon: 0, Flags: 8, URI: uriHex } })
+        headers: { 
+          'Content-Type': 'application/json', 
+          'x-api-key': import.meta.env.VITE_XAMAN_API_KEY || '', 
+          'x-api-secret': import.meta.env.VITE_XAMAN_API_SECRET || '' 
+        },
+        body: JSON.stringify({ 
+          txjson: { 
+            TransactionType: "NFTokenMint", 
+            NFTokenTaxon: 0, 
+            Flags: 8, 
+            URI: uriHex 
+          } 
+        })
       });
+      
       const payload = await res.json();
       if (payload.refs?.qr_png) {
         setQrCodeUrl(payload.refs.qr_png);
         window.open(payload.next.always, '_blank');
+        
         const ws = new WebSocket(payload.refs.websocket_status);
         ws.onmessage = async (event) => {
           const msg = JSON.parse(event.data);
@@ -91,7 +114,7 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
             ws.close();
             setQrCodeUrl(null);
             setIsMinting(false);
-            alert("NFT succesvol gemint! Scan nu opnieuw om in te loggen.");
+            alert("NFT gemint! Scan nu opnieuw om in te loggen.");
           }
         };
       }
@@ -102,7 +125,7 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   };
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 text-white">
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 text-white selection:bg-[#ff2079]/30">
       <img src="/logo.png" alt="TruthOnTheTrack Logo" className="w-32 h-32 mb-8 object-contain" />
       <h1 className="font-orbitron text-2xl font-black uppercase mb-12">XRPL OTT TERMINAL</h1>
 
@@ -123,6 +146,7 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
           </div>
         )}
       </div>
+      <p className="mt-8 text-[10px] text-gray-600 uppercase font-mono">Stay humble, Stay positive, 589 steps ahead</p>
     </div>
   );
 }
