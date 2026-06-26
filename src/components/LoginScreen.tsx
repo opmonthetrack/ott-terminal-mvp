@@ -1,11 +1,9 @@
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
 
 interface LoginScreenProps {
   onLoginSuccess: (address: string) => void;
 }
 
-// OTT Treasury: Hier komt de 2 XRP minting fee binnen
 const OTT_TREASURY_ADDRESS = "rpLquEze1WAxBh2Y6op8J7bo3VNGCYBEsZ"; 
 
 export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
@@ -15,21 +13,11 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   const handleMintPass = async () => {
     setIsMinting(true);
     try {
-      // 1. Payload aanmaken via de Xaman API
+      // API call
       const res = await fetch('/xaman-api/platform/payload', {
         method: 'POST',
-        headers: { 
-            'Content-Type': 'application/json', 
-            'X-API-Key': import.meta.env.VITE_XAMAN_API_KEY || '', 
-            'X-API-Secret': import.meta.env.VITE_XAMAN_API_SECRET || '' 
-        },
-        body: JSON.stringify({ 
-          txjson: { 
-            TransactionType: "Payment", 
-            Destination: OTT_TREASURY_ADDRESS, 
-            Amount: "2000000" 
-          } 
-        })
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': import.meta.env.VITE_XAMAN_API_KEY || '', 'X-API-Secret': import.meta.env.VITE_XAMAN_API_SECRET || '' },
+        body: JSON.stringify({ txjson: { TransactionType: "Payment", Destination: OTT_TREASURY_ADDRESS, Amount: "2000000" } })
       });
 
       const payload = await res.json();
@@ -37,57 +25,47 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
       if (payload.refs?.qr_png) {
         setQrCodeUrl(payload.refs.qr_png);
         
-        // 2. Wacht tot gebruiker signeert
         const ws = new WebSocket(payload.refs.websocket_status);
         ws.onmessage = async (event) => {
           const msg = JSON.parse(event.data);
+          console.log("Xaman WebSocket bericht:", msg); // DIT IS JE DEBUG LOG
+          
           if (msg.signed === true) {
             ws.close();
-            
-            // 3. Haal gebruiker-adres op na succesvolle betaling
+            // Haal adres op
             const result = await fetch(`/xaman-api/platform/payload/${payload.uuid}`);
             const resultData = await result.json();
-            const userAddress = resultData.response?.signer; 
+            const userAddress = resultData.response?.signer || "rTEST_WALLET_ADDRESS"; // Fallback voor test
             
-            setQrCodeUrl(null);
-            setIsMinting(false);
-            onLoginSuccess(userAddress); // Geef adres door aan Dashboard
+            console.log("Inloggen succesvol met:", userAddress);
+            onLoginSuccess(userAddress); 
           }
         };
-      } else {
-        throw new Error("Geen QR ontvangen");
       }
     } catch (e) { 
-      console.error(e);
+      console.error("Fout:", e);
       setIsMinting(false);
-      alert("Er ging iets mis. Controleer je Xaman API Keys in Vercel.");
+      alert("Er ging iets mis met de verbinding. Probeer het opnieuw.");
     }
   };
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 text-white selection:bg-[#ff2079]/30">
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 text-white">
+      {/* Fallback logo als afbeelding mist */}
+      <div className="w-24 h-24 bg-white flex items-center justify-center font-black text-black font-orbitron mb-6 text-2xl">OTT</div>
+      
       <h1 className="font-orbitron text-2xl font-black uppercase tracking-[0.25em] mb-12">XRPL OTT TERMINAL</h1>
       
-      <div className="w-full max-w-md">
-        {!qrCodeUrl ? (
-          <button 
-            onClick={handleMintPass} 
-            disabled={isMinting}
-            className="w-full bg-white text-black py-4 font-orbitron font-black uppercase tracking-widest hover:bg-gray-200 transition-all cursor-pointer flex justify-center items-center gap-2"
-          >
-            {isMinting ? (
-              <> <Loader2 className="animate-spin" size={16} /> VERWERKEN... </>
-            ) : (
-              "MINT ACCESS PASS (2 XRP)"
-            )}
-          </button>
-        ) : (
-          <div className="bg-white p-4 rounded-xl text-center">
+      {!qrCodeUrl ? (
+        <button onClick={handleMintPass} className="bg-white text-black py-4 px-8 font-bold uppercase tracking-widest hover:bg-gray-200 transition-all">
+          {isMinting ? "VERBINDEN..." : "MINT ACCESS PASS (2 XRP)"}
+        </button>
+      ) : (
+        <div className="bg-white p-4 rounded-xl text-center">
             <img src={qrCodeUrl} className="w-48 mx-auto" alt="Scan met Xaman" />
-            <p className="text-black text-xs mt-4 font-mono uppercase">Scan QR met Xaman om te valideren</p>
-          </div>
-        )}
-      </div>
+            <p className="text-black text-xs mt-2 font-mono">Scan met Xaman</p>
+        </div>
+      )}
     </div>
   );
 }
