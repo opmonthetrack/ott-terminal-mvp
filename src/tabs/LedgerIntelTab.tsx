@@ -46,7 +46,7 @@ type IntelTab = {
   status: string;
 };
 
-type RailWatchItem = {
+type WatchItem = {
   name: string;
   category: string;
   status: string;
@@ -66,27 +66,6 @@ type CbdcWatchItem = {
   name: string;
   region: string;
   type: string;
-  status: string;
-  summary: string;
-};
-
-type IsoWatchItem = {
-  name: string;
-  layer: string;
-  status: string;
-  summary: string;
-};
-
-type XlsWatchItem = {
-  name: string;
-  category: string;
-  status: string;
-  summary: string;
-};
-
-type UnlWatchItem = {
-  name: string;
-  category: string;
   status: string;
   summary: string;
 };
@@ -115,7 +94,7 @@ const fallbackNews: NewsItem[] = [
   },
 ];
 
-const railsWatchItems: RailWatchItem[] = [
+const railsWatchItems: WatchItem[] = [
   {
     name: "mBridge",
     category: "Wholesale CBDC Rail",
@@ -300,107 +279,54 @@ const cbdcWatchItems: CbdcWatchItem[] = [
     summary:
       "Volgen voor programmable settlement, tokenized commercial bank deposits en samenwerking tussen publieke en private financiële infrastructuur.",
   },
-  {
-    name: "Project Guardian",
-    region: "Singapore",
-    type: "Tokenization Pilot",
-    status: "Watch",
-    summary:
-      "Belangrijk voor institutionele tokenization, DeFi-achtige marktstructuren en gereguleerde pilots met financiële instellingen.",
-  },
-  {
-    name: "Project Helvetia",
-    region: "Switzerland",
-    type: "Wholesale CBDC",
-    status: "Research",
-    summary:
-      "Volgen voor wholesale CBDC settlement, centrale bankgeld op DLT en institutionele financiële marktinfrastructuur.",
-  },
-  {
-    name: "Project Jura",
-    region: "France / Switzerland",
-    type: "Cross-Border CBDC",
-    status: "Research",
-    summary:
-      "Interessant als voorbeeld voor grensoverschrijdende wholesale CBDC settlement en tokenized asset delivery-versus-payment.",
-  },
-  {
-    name: "Launched CBDCs",
-    region: "Bahamas / Nigeria / Jamaica",
-    type: "Live Retail CBDC",
-    status: "Live",
-    summary:
-      "Gebruiken als vergelijkingsmateriaal: live lancering betekent niet automatisch massale adoptie of dagelijks gebruik.",
-  },
 ];
 
-const isoWatchItems: IsoWatchItem[] = [
+const isoWatchItems: WatchItem[] = [
   {
     name: "ISO 20022",
-    layer: "Financial Messaging Standard",
+    category: "Financial Messaging Standard",
     status: "Core",
     summary:
       "Geen blockchain en geen token, maar een wereldwijde berichtstandaard voor rijkere betaaldata tussen financiële instellingen.",
   },
   {
     name: "SWIFT MX Messages",
-    layer: "Bank Messaging",
+    category: "Bank Messaging",
     status: "Core",
     summary:
       "Volgen omdat SWIFT banken helpt migreren van legacy MT-berichten naar ISO 20022 MX-berichten.",
   },
   {
     name: "Fedwire ISO Migration",
-    layer: "US Payment Rail",
+    category: "US Payment Rail",
     status: "Core",
     summary:
       "Belangrijk voor Amerikaanse interbancaire betalingen, dollar settlement en rijkere betaalinformatie.",
   },
   {
     name: "T2 / TARGET Services",
-    layer: "Euro Settlement",
+    category: "Euro Settlement",
     status: "Core",
     summary:
       "Belangrijk voor eurobetalingen, centrale bank settlement en ISO 20022-compatibele infrastructuur in Europa.",
   },
   {
-    name: "CHAPS ISO Migration",
-    layer: "UK Payment Rail",
-    status: "Watch",
-    summary:
-      "Volgen voor Britse wholesale betalingen, bankinfrastructuur en datarijke betalingsberichten.",
-  },
-  {
     name: "Ripple Payments",
-    layer: "Payment Network",
+    category: "Payment Network",
     status: "Watch",
     summary:
       "Volgen als brug tussen institutionele betalingen, crypto rails, fiat settlement en enterprise payment software.",
   },
   {
-    name: "Finastra / Volante / Temenos",
-    layer: "Bank Software Layer",
-    status: "Watch",
-    summary:
-      "Softwarelagen die banken kunnen helpen om berichten, compliance, payment workflows en settlement rails te verbinden.",
-  },
-  {
     name: "XRPL / XRP",
-    layer: "Settlement Research Layer",
+    category: "Settlement Research Layer",
     status: "Research",
     summary:
-      "Niet claimen als 'ISO coin'. Wel volgen voor settlement, liquidity, tokenized assets en integratie met betaalinfrastructuur.",
-  },
-  {
-    name: "XLM / XDC / HBAR / ALGO / QNT",
-    layer: "Ledger Research Layer",
-    status: "Research",
-    summary:
-      "Volgen als bredere researchlaag rond betaalinfrastructuur, enterprise integraties, tokenization en interoperabiliteit.",
+      "Niet claimen als ISO coin. Wel volgen voor settlement, liquidity, tokenized assets en integratie met betaalinfrastructuur.",
   },
 ];
 
-const xlsWatchItems: XlsWatchItem[] = [
+const xlsWatchItems: WatchItem[] = [
   {
     name: "XLS-20",
     category: "Native NFTs",
@@ -437,29 +363,15 @@ const xlsWatchItems: XlsWatchItem[] = [
       "Belangrijk voor mogelijke native lending, collateral, credit markets en institutionele XRPL DeFi.",
   },
   {
-    name: "Hooks / Xahau",
-    category: "Smart Contract Logic",
-    status: "Research",
-    summary:
-      "Niet hetzelfde als XRPL mainnet, maar relevant voor conditional logic, app flows, rewards en advanced wallet actions.",
-  },
-  {
     name: "Credentials",
     category: "Compliance / Identity",
     status: "Watch",
     summary:
       "Volgen voor KYC-compatible flows, regulated assets, permissioned access en zakelijke XRPL use cases.",
   },
-  {
-    name: "Multi-Purpose Tokens",
-    category: "Token Standard",
-    status: "Watch",
-    summary:
-      "Volgen voor nieuwe tokenmodellen die meer kunnen dan simpele issued currencies of NFTs.",
-  },
 ];
 
-const unlWatchItems: UnlWatchItem[] = [
+const unlWatchItems: WatchItem[] = [
   {
     name: "Validator Health",
     category: "Network Reliability",
@@ -496,25 +408,70 @@ const unlWatchItems: UnlWatchItem[] = [
       "Volgen welke partijen validators draaien: community, bedrijven, universiteiten, infrastructuurpartijen en ecosystem builders.",
   },
   {
-    name: "XRPL Foundation / Commons Signals",
-    category: "Ecosystem Governance",
-    status: "Watch",
-    summary:
-      "Volgen voor ecosystem updates, validator guidance, community signals en netwerkgezondheid.",
-  },
-  {
-    name: "Node Geography",
-    category: "Decentralization Map",
-    status: "Later",
-    summary:
-      "Later visualiseren waar validators draaien om spreiding, redundantie en mogelijke concentratierisico’s te begrijpen.",
-  },
-  {
     name: "OTT Validator Path",
     category: "Future Infrastructure",
     status: "Future",
     summary:
       "Later onderzoeken of OnTheTrack een eigen node, validator of observer-dashboard kan draaien als educatieve infrastructuur.",
+  },
+];
+
+const makeWavesItems: WatchItem[] = [
+  {
+    name: "Live Mainnet Project",
+    category: "Challenge Requirement",
+    status: "Required",
+    summary:
+      "De terminal moet live op XRPL mainnet bruikbaar zijn. Testnet of alleen demo telt niet als echte challenge-activiteit.",
+  },
+  {
+    name: "Source Tag",
+    category: "User Tracking",
+    status: "Critical",
+    summary:
+      "Elke relevante transactie moet later de juiste source tag dragen zodat gebruikersactiviteit meetbaar wordt voor de leaderboard.",
+  },
+  {
+    name: "Daily Check-In",
+    category: "Mainnet Action",
+    status: "Next",
+    summary:
+      "Een simpele dagelijkse Xaman actie waarmee gebruikers terugkomen en echte mainnet activiteit kunnen uitvoeren.",
+  },
+  {
+    name: "Real Active Users",
+    category: "Growth Metric",
+    status: "Core",
+    summary:
+      "Niet alleen logins tellen. De focus ligt op echte gebruikers die via de terminal een XRPL mainnet actie doen.",
+  },
+  {
+    name: "2 Minute Demo",
+    category: "Pitch Asset",
+    status: "Soon",
+    summary:
+      "Een korte demo waarin login, daily intel, check-in, source-tagged actie en user value helder worden getoond.",
+  },
+  {
+    name: "Pitch Deck",
+    category: "Submission Asset",
+    status: "Soon",
+    summary:
+      "Deck moet het probleem, de oplossing, doelgroep, traction loop, XRPL gebruik en roadmap duidelijk uitleggen.",
+  },
+  {
+    name: "Learn & Earn Loop",
+    category: "Retention",
+    status: "Build",
+    summary:
+      "Gebruikers komen dagelijks terug voor nieuws, educatie, quizvragen, XP en later mogelijke token/badge rewards.",
+  },
+  {
+    name: "Anti-Bot Logic",
+    category: "Fair Usage",
+    status: "Later",
+    summary:
+      "Later toevoegen: limieten, wallet checks, streak-validatie en bescherming tegen nepactiviteit.",
   },
 ];
 
@@ -543,7 +500,7 @@ function getTodayLabel() {
   });
 }
 
-function RailWatchCard({ item }: { item: RailWatchItem }) {
+function WatchCard({ item }: { item: WatchItem }) {
   return (
     <div className="border border-white/10 bg-black p-4 hover:bg-white/[0.03] transition-all">
       <div className="flex items-start justify-between gap-4 mb-3">
@@ -626,144 +583,21 @@ function CbdcWatchCard({ item }: { item: CbdcWatchItem }) {
   );
 }
 
-function IsoWatchCard({ item }: { item: IsoWatchItem }) {
-  return (
-    <div className="border border-white/10 bg-black p-4 hover:bg-white/[0.03] transition-all">
-      <div className="flex items-start justify-between gap-4 mb-3">
-        <div>
-          <h4 className="font-orbitron text-sm font-bold uppercase mb-1">
-            {item.name}
-          </h4>
-
-          <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest">
-            {item.layer}
-          </p>
-        </div>
-
-        <span className="border border-white/10 px-2 py-1 font-mono text-[9px] text-white/50 uppercase">
-          {item.status}
-        </span>
-      </div>
-
-      <p className="font-mono text-xs text-white/45 leading-relaxed">
-        {item.summary}
-      </p>
-    </div>
-  );
-}
-
-function XlsWatchCard({ item }: { item: XlsWatchItem }) {
-  return (
-    <div className="border border-white/10 bg-black p-4 hover:bg-white/[0.03] transition-all">
-      <div className="flex items-start justify-between gap-4 mb-3">
-        <div>
-          <h4 className="font-orbitron text-sm font-bold uppercase mb-1">
-            {item.name}
-          </h4>
-
-          <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest">
-            {item.category}
-          </p>
-        </div>
-
-        <span className="border border-white/10 px-2 py-1 font-mono text-[9px] text-white/50 uppercase">
-          {item.status}
-        </span>
-      </div>
-
-      <p className="font-mono text-xs text-white/45 leading-relaxed">
-        {item.summary}
-      </p>
-    </div>
-  );
-}
-
-function UnlWatchCard({ item }: { item: UnlWatchItem }) {
-  return (
-    <div className="border border-white/10 bg-black p-4 hover:bg-white/[0.03] transition-all">
-      <div className="flex items-start justify-between gap-4 mb-3">
-        <div>
-          <h4 className="font-orbitron text-sm font-bold uppercase mb-1">
-            {item.name}
-          </h4>
-
-          <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest">
-            {item.category}
-          </p>
-        </div>
-
-        <span className="border border-white/10 px-2 py-1 font-mono text-[9px] text-white/50 uppercase">
-          {item.status}
-        </span>
-      </div>
-
-      <p className="font-mono text-xs text-white/45 leading-relaxed">
-        {item.summary}
-      </p>
-    </div>
-  );
-}
-
 export function LedgerIntelTab() {
   const [activeTab, setActiveTab] = useState<ActiveIntelTab>("daily");
   const [news, setNews] = useState<NewsItem[]>(fallbackNews);
   const [isLoading, setIsLoading] = useState(false);
 
   const tabs: IntelTab[] = [
-    {
-      id: "daily",
-      label: "Daily Brief",
-      icon: Sparkles,
-      status: "Live",
-    },
-    {
-      id: "news",
-      label: "XRPL News",
-      icon: Newspaper,
-      status: "Live",
-    },
-    {
-      id: "rails",
-      label: "Rails Watch",
-      icon: Layers,
-      status: "Macro",
-    },
-    {
-      id: "unl_voting",
-      label: "UNL Voting",
-      icon: Server,
-      status: "Watch",
-    },
-    {
-      id: "hackathon",
-      label: "Make Waves",
-      icon: Zap,
-      status: "MVP",
-    },
-    {
-      id: "cbdc",
-      label: "CBDC Tracker",
-      icon: Globe,
-      status: "Watch",
-    },
-    {
-      id: "stable",
-      label: "Stable Tokens",
-      icon: Landmark,
-      status: "Watch",
-    },
-    {
-      id: "xls",
-      label: "XLS Roadmap",
-      icon: FileText,
-      status: "Watch",
-    },
-    {
-      id: "iso",
-      label: "ISO 20022 & Law",
-      icon: Scale,
-      status: "Map",
-    },
+    { id: "daily", label: "Daily Brief", icon: Sparkles, status: "Live" },
+    { id: "news", label: "XRPL News", icon: Newspaper, status: "Live" },
+    { id: "rails", label: "Rails Watch", icon: Layers, status: "Macro" },
+    { id: "unl_voting", label: "UNL Voting", icon: Server, status: "Watch" },
+    { id: "hackathon", label: "Make Waves", icon: Zap, status: "MVP" },
+    { id: "cbdc", label: "CBDC Tracker", icon: Globe, status: "Watch" },
+    { id: "stable", label: "Stable Tokens", icon: Landmark, status: "Watch" },
+    { id: "xls", label: "XLS Roadmap", icon: FileText, status: "Watch" },
+    { id: "iso", label: "ISO 20022 & Law", icon: Scale, status: "Map" },
   ];
 
   useEffect(() => {
@@ -979,21 +813,6 @@ export function LedgerIntelTab() {
                 </div>
               </div>
             </div>
-
-            <div className="border border-white/10 bg-white/[0.02] p-6">
-              <div className="flex items-center gap-2 mb-5">
-                <AlertTriangle size={17} className="text-white/60" />
-                <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Reward Note
-                </p>
-              </div>
-
-              <p className="font-mono text-xs text-white/45 leading-relaxed">
-                Voor nu houden we rewards als veilig intern XP-systeem. Later
-                kunnen die punten mogelijk worden omgezet naar jouw eigen token,
-                NFT badge of claim reward.
-              </p>
-            </div>
           </div>
         </div>
       )}
@@ -1067,53 +886,6 @@ export function LedgerIntelTab() {
               ))}
             </div>
           </div>
-
-          <div className="col-span-12 xl:col-span-4 space-y-4">
-            <div className="border border-white/10 bg-white/[0.02] p-6">
-              <div className="flex items-center gap-2 mb-5">
-                <Newspaper size={17} className="text-white/60" />
-                <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Feed Status
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-xs border-b border-white/10 pb-3">
-                  <span className="font-mono text-white/45">RSS/API</span>
-                  <span className="font-mono text-white/70">
-                    {news === fallbackNews ? "Fallback" : "Connected"}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between text-xs border-b border-white/10 pb-3">
-                  <span className="font-mono text-white/45">Items</span>
-                  <span className="font-mono text-white/70">
-                    {news.length}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-mono text-white/45">AI Summary</span>
-                  <span className="font-mono text-white/35">Soon</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="border border-white/10 bg-white/[0.02] p-6">
-              <div className="flex items-center gap-2 mb-5">
-                <AlertTriangle size={17} className="text-white/60" />
-                <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Build Note
-                </p>
-              </div>
-
-              <p className="font-mono text-xs text-white/45 leading-relaxed">
-                Deze tab werkt nu ook zonder echte nieuws-API. Als `/api/news`
-                nog niet bestaat, toont de terminal automatisch veilige
-                placeholder-intelligence.
-              </p>
-            </div>
-          </div>
         </div>
       )}
 
@@ -1136,40 +908,8 @@ export function LedgerIntelTab() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {railsWatchItems.map((item) => (
-                <RailWatchCard key={item.name} item={item} />
+                <WatchCard key={item.name} item={item} />
               ))}
-            </div>
-          </div>
-
-          <div className="col-span-12 xl:col-span-4 space-y-4">
-            <div className="border border-white/10 bg-white/[0.02] p-6">
-              <div className="flex items-center gap-2 mb-5">
-                <Layers size={17} className="text-white/60" />
-                <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Waarom volgen?
-                </p>
-              </div>
-
-              <p className="font-mono text-xs text-white/45 leading-relaxed">
-                XRPL OnTheTrack Terminal kijkt niet alleen naar coins. De echte
-                adoptie zit ook in banken, settlement-netwerken,
-                berichtstandaarden, stablecoins en centrale bank pilots.
-              </p>
-            </div>
-
-            <div className="border border-white/10 bg-white/[0.02] p-6">
-              <div className="flex items-center gap-2 mb-5">
-                <AlertTriangle size={17} className="text-white/60" />
-                <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Later koppelen
-                </p>
-              </div>
-
-              <p className="font-mono text-xs text-white/45 leading-relaxed">
-                Later kunnen we hier aparte RSS-bronnen aan koppelen voor BIS,
-                SWIFT, Federal Reserve, ECB, Bank of England en stablecoin
-                regelgeving.
-              </p>
             </div>
           </div>
         </div>
@@ -1194,40 +934,8 @@ export function LedgerIntelTab() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {unlWatchItems.map((item) => (
-                <UnlWatchCard key={item.name} item={item} />
+                <WatchCard key={item.name} item={item} />
               ))}
-            </div>
-          </div>
-
-          <div className="col-span-12 xl:col-span-4 space-y-4">
-            <div className="border border-white/10 bg-white/[0.02] p-6">
-              <div className="flex items-center gap-2 mb-5">
-                <Server size={17} className="text-white/60" />
-                <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Waarom belangrijk?
-                </p>
-              </div>
-
-              <p className="font-mono text-xs text-white/45 leading-relaxed">
-                XRPL draait niet alleen op wallets en transacties. Validators,
-                consensus, amendment voting en betrouwbare infrastructuur bepalen
-                hoe sterk het netwerk blijft.
-              </p>
-            </div>
-
-            <div className="border border-white/10 bg-white/[0.02] p-6">
-              <div className="flex items-center gap-2 mb-5">
-                <AlertTriangle size={17} className="text-white/60" />
-                <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Later koppelen
-                </p>
-              </div>
-
-              <p className="font-mono text-xs text-white/45 leading-relaxed">
-                Later kunnen we hier XRPL validator registry, amendment voting,
-                node health, UNL data, validator maps en eigen OTT node metrics
-                aan koppelen.
-              </p>
             </div>
           </div>
         </div>
@@ -1256,51 +964,6 @@ export function LedgerIntelTab() {
               ))}
             </div>
           </div>
-
-          <div className="col-span-12 xl:col-span-4 space-y-4">
-            <div className="border border-white/10 bg-white/[0.02] p-6">
-              <div className="flex items-center gap-2 mb-5">
-                <Landmark size={17} className="text-white/60" />
-                <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Waarom belangrijk?
-                </p>
-              </div>
-
-              <p className="font-mono text-xs text-white/45 leading-relaxed">
-                Stablecoins worden de brug tussen fiatgeld, banken, exchanges,
-                DeFi, CBDC onderzoek en XRPL liquidity corridors.
-              </p>
-            </div>
-
-            <div className="border border-white/10 bg-white/[0.02] p-6">
-              <div className="flex items-center gap-2 mb-5">
-                <ShieldCheck size={17} className="text-white/60" />
-                <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Risk Shield
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <div className="border border-white/10 bg-black p-3">
-                  <p className="font-mono text-xs text-white/70">
-                    Fiat-backed ≠ crypto-backed
-                  </p>
-                </div>
-
-                <div className="border border-white/10 bg-black p-3">
-                  <p className="font-mono text-xs text-white/70">
-                    Synthetic dollar ≠ bank reserve
-                  </p>
-                </div>
-
-                <div className="border border-white/10 bg-black p-3">
-                  <p className="font-mono text-xs text-white/70">
-                    Gold-backed ≠ fiat stablecoin
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       )}
 
@@ -1327,37 +990,6 @@ export function LedgerIntelTab() {
               ))}
             </div>
           </div>
-
-          <div className="col-span-12 xl:col-span-4 space-y-4">
-            <div className="border border-white/10 bg-white/[0.02] p-6">
-              <div className="flex items-center gap-2 mb-5">
-                <Globe size={17} className="text-white/60" />
-                <p className="font-orbitron text-xs uppercase tracking-widest">
-                  CBDC vs Stablecoin
-                </p>
-              </div>
-
-              <p className="font-mono text-xs text-white/45 leading-relaxed">
-                CBDC komt van een centrale bank. Stablecoins komen van private
-                uitgevers. Dat verschil is belangrijk voor privacy, risico,
-                adoptie, regelgeving en controle.
-              </p>
-            </div>
-
-            <div className="border border-white/10 bg-white/[0.02] p-6">
-              <div className="flex items-center gap-2 mb-5">
-                <AlertTriangle size={17} className="text-white/60" />
-                <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Later koppelen
-                </p>
-              </div>
-
-              <p className="font-mono text-xs text-white/45 leading-relaxed">
-                Later kunnen we hier BIS, centrale banken, ECB, Fed, BoE en
-                CBDC Tracker RSS/API bronnen aan koppelen voor live updates.
-              </p>
-            </div>
-          </div>
         </div>
       )}
 
@@ -1381,40 +1013,8 @@ export function LedgerIntelTab() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {isoWatchItems.map((item) => (
-                <IsoWatchCard key={item.name} item={item} />
+                <WatchCard key={item.name} item={item} />
               ))}
-            </div>
-          </div>
-
-          <div className="col-span-12 xl:col-span-4 space-y-4">
-            <div className="border border-white/10 bg-white/[0.02] p-6">
-              <div className="flex items-center gap-2 mb-5">
-                <Scale size={17} className="text-white/60" />
-                <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Belangrijk verschil
-                </p>
-              </div>
-
-              <p className="font-mono text-xs text-white/45 leading-relaxed">
-                We zeggen niet zomaar “coin is ISO compliant”. We kijken naar
-                berichtenstandaarden, banksoftware, settlement rails,
-                integraties en daadwerkelijke gebruiksroutes.
-              </p>
-            </div>
-
-            <div className="border border-white/10 bg-white/[0.02] p-6">
-              <div className="flex items-center gap-2 mb-5">
-                <AlertTriangle size={17} className="text-white/60" />
-                <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Later koppelen
-                </p>
-              </div>
-
-              <p className="font-mono text-xs text-white/45 leading-relaxed">
-                Later kunnen we hier live bronnen koppelen voor SWIFT, Fedwire,
-                ECB/T2, CHAPS, ISO migration updates, banksoftware en Ripple
-                enterprise payment updates.
-              </p>
             </div>
           </div>
         </div>
@@ -1439,39 +1039,8 @@ export function LedgerIntelTab() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {xlsWatchItems.map((item) => (
-                <XlsWatchCard key={item.name} item={item} />
+                <WatchCard key={item.name} item={item} />
               ))}
-            </div>
-          </div>
-
-          <div className="col-span-12 xl:col-span-4 space-y-4">
-            <div className="border border-white/10 bg-white/[0.02] p-6">
-              <div className="flex items-center gap-2 mb-5">
-                <FileText size={17} className="text-white/60" />
-                <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Waarom volgen?
-                </p>
-              </div>
-
-              <p className="font-mono text-xs text-white/45 leading-relaxed">
-                De Terminal moet weten welke XRPL features live zijn, welke nog
-                in onderzoek zitten en welke later nuttig kunnen worden voor
-                DeFi, rewards, learn-and-earn en identity.
-              </p>
-            </div>
-
-            <div className="border border-white/10 bg-white/[0.02] p-6">
-              <div className="flex items-center gap-2 mb-5">
-                <AlertTriangle size={17} className="text-white/60" />
-                <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Later koppelen
-                </p>
-              </div>
-
-              <p className="font-mono text-xs text-white/45 leading-relaxed">
-                Later kunnen we hier XRPL.org docs, GitHub proposals, amendment
-                status, validator voting en dev updates aan koppelen.
-              </p>
             </div>
           </div>
         </div>
@@ -1479,24 +1048,22 @@ export function LedgerIntelTab() {
 
       {activeTab === "hackathon" && (
         <div className="grid grid-cols-12 gap-4">
-          <div className="col-span-12 xl:col-span-8 border border-white/10 bg-white/[0.02] p-8">
-            <Zap className="w-14 h-14 mb-6 text-white/60" />
-
+          <div className="col-span-12 xl:col-span-8 border border-white/10 bg-white/[0.02] p-6">
             <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-4">
-              Make Waves Challenge
+              Make Waves Challenge Cockpit
             </p>
 
             <h3 className="font-orbitron text-2xl font-black uppercase mb-4">
               Mainnet User Activation
             </h3>
 
-            <p className="font-mono text-sm text-white/45 leading-relaxed mb-8">
-              Deze module wordt de challenge cockpit: live projectstatus,
-              source tag, daily check-ins, gebruikersactivatie, demo flow en
-              pitch voorbereiding.
+            <p className="font-mono text-sm text-white/45 leading-relaxed mb-6">
+              Deze module bewaakt de challenge-flow: live mainnet project,
+              source tag, echte gebruikers, daily check-in, demo video en pitch
+              voorbereiding.
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
               <div className="border border-white/10 bg-black p-4">
                 <p className="font-mono text-[10px] text-white/35 uppercase mb-2">
                   Source Tag
@@ -1517,6 +1084,12 @@ export function LedgerIntelTab() {
                 </p>
                 <p className="font-orbitron text-lg font-black">Building</p>
               </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {makeWavesItems.map((item) => (
+                <WatchCard key={item.name} item={item} />
+              ))}
             </div>
           </div>
 
@@ -1555,48 +1128,6 @@ export function LedgerIntelTab() {
           </div>
         </div>
       )}
-
-      {activeTab !== "daily" &&
-        activeTab !== "news" &&
-        activeTab !== "rails" &&
-        activeTab !== "unl_voting" &&
-        activeTab !== "stable" &&
-        activeTab !== "cbdc" &&
-        activeTab !== "iso" &&
-        activeTab !== "xls" &&
-        activeTab !== "hackathon" && (
-          <div className="border border-white/10 bg-white/[0.02] p-10 text-center">
-            {(() => {
-              const currentTab = tabs.find((tab) => tab.id === activeTab);
-              const Icon = currentTab?.icon || FileText;
-
-              return (
-                <>
-                  <Icon className="w-14 h-14 mx-auto text-white/35 mb-6" />
-
-                  <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-4">
-                    Intelligence Module
-                  </p>
-
-                  <h3 className="font-orbitron text-2xl font-black uppercase mb-4">
-                    {currentTab?.label}
-                  </h3>
-
-                  <p className="font-mono text-sm text-white/45 max-w-2xl mx-auto leading-relaxed mb-8">
-                    Deze data stream staat klaar voor de volgende bouwfase.
-                    Eerst maken we de basis veilig: Xaman login, Daily Check-In
-                    en source-tagged mainnet activiteit.
-                  </p>
-
-                  <div className="inline-flex items-center gap-2 border border-white/10 px-5 py-3 text-white/40 font-mono text-xs uppercase tracking-widest">
-                    <Clock size={14} />
-                    Module in development
-                  </div>
-                </>
-              );
-            })()}
-          </div>
-        )}
     </div>
   );
 }
