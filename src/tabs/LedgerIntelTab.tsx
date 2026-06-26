@@ -53,6 +53,15 @@ type RailWatchItem = {
   summary: string;
 };
 
+type StableWatchItem = {
+  ticker: string;
+  name: string;
+  peg: string;
+  issuer: string;
+  status: string;
+  summary: string;
+};
+
 const fallbackNews: NewsItem[] = [
   {
     title: "XRPL OnTheTrack Terminal intelligence layer ready for MVP build",
@@ -122,6 +131,81 @@ const railsWatchItems: RailWatchItem[] = [
   },
 ];
 
+const stableWatchItems: StableWatchItem[] = [
+  {
+    ticker: "RLUSD",
+    name: "Ripple USD",
+    peg: "USD",
+    issuer: "Ripple",
+    status: "Priority",
+    summary:
+      "Belangrijk voor XRPL, institutionele betalingen, liquidity routes en toekomstige stablecoin modules binnen de terminal.",
+  },
+  {
+    ticker: "USDC",
+    name: "USD Coin",
+    peg: "USD",
+    issuer: "Circle",
+    status: "Core",
+    summary:
+      "Fiat-backed dollar-stablecoin om te volgen voor gereguleerde betalingen, multi-chain liquiditeit en institutionele adoptie.",
+  },
+  {
+    ticker: "USDT",
+    name: "Tether USD",
+    peg: "USD",
+    issuer: "Tether",
+    status: "Core",
+    summary:
+      "Grootste stablecoin-liquiditeit in de markt. Belangrijk voor volume, handelsroutes, exchange-activiteit en risk vergelijking.",
+  },
+  {
+    ticker: "PYUSD",
+    name: "PayPal USD",
+    peg: "USD",
+    issuer: "PayPal / Paxos",
+    status: "Watch",
+    summary:
+      "Interessant voor e-commerce, consumentenbetalingen en stablecoin adoption buiten alleen trading.",
+  },
+  {
+    ticker: "EURC",
+    name: "Euro Coin",
+    peg: "EUR",
+    issuer: "Circle",
+    status: "Watch",
+    summary:
+      "Belangrijk voor euro-stablecoin adoptie, MiCA-context en Europese on-chain betalingen.",
+  },
+  {
+    ticker: "EURe",
+    name: "Monerium Euro",
+    peg: "EUR",
+    issuer: "Monerium",
+    status: "Research",
+    summary:
+      "Interessant door de koppeling tussen on-chain euro’s en traditionele bankrekeningstructuren.",
+  },
+  {
+    ticker: "FDUSD",
+    name: "First Digital USD",
+    peg: "USD",
+    issuer: "First Digital",
+    status: "Watch",
+    summary:
+      "Aziatische stablecoin-liquiditeit volgen voor handelsvolume, exchange-activiteit en marktverschuivingen.",
+  },
+  {
+    ticker: "USDG",
+    name: "Global Dollar",
+    peg: "USD",
+    issuer: "Consortium / Paxos",
+    status: "Watch",
+    summary:
+      "Volgen als mogelijk gereguleerd consortium-model voor stablecoin distributie en reserve-opbrengsten.",
+  },
+];
+
 function formatDate(date?: string) {
   if (!date) return "Unknown date";
 
@@ -158,6 +242,37 @@ function RailWatchCard({ item }: { item: RailWatchItem }) {
 
           <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest">
             {item.category}
+          </p>
+        </div>
+
+        <span className="border border-white/10 px-2 py-1 font-mono text-[9px] text-white/50 uppercase">
+          {item.status}
+        </span>
+      </div>
+
+      <p className="font-mono text-xs text-white/45 leading-relaxed">
+        {item.summary}
+      </p>
+    </div>
+  );
+}
+
+function StableWatchCard({ item }: { item: StableWatchItem }) {
+  return (
+    <div className="border border-white/10 bg-black p-4 hover:bg-white/[0.03] transition-all">
+      <div className="flex items-start justify-between gap-4 mb-3">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <h4 className="font-orbitron text-sm font-bold uppercase">
+              {item.ticker}
+            </h4>
+            <span className="font-mono text-[9px] text-white/30 uppercase">
+              {item.peg}
+            </span>
+          </div>
+
+          <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest">
+            {item.name} • {item.issuer}
           </p>
         </div>
 
@@ -219,7 +334,7 @@ export function LedgerIntelTab() {
       id: "stable",
       label: "Stable Tokens",
       icon: Landmark,
-      status: "Soon",
+      status: "Watch",
     },
     {
       id: "xls",
@@ -272,7 +387,6 @@ export function LedgerIntelTab() {
 
   return (
     <div className="p-6 bg-black text-white min-h-screen">
-      {/* HEADER */}
       <div className="border border-white/10 bg-white/[0.02] p-6 mb-6">
         <div className="flex items-center gap-2 mb-4 text-white/45">
           <Globe size={16} />
@@ -318,7 +432,6 @@ export function LedgerIntelTab() {
         </div>
       </div>
 
-      {/* TAB NAV */}
       <div className="border border-white/10 bg-white/[0.02] p-2 mb-6 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-9 gap-2">
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -349,7 +462,6 @@ export function LedgerIntelTab() {
         })}
       </div>
 
-      {/* DAILY BRIEF */}
       {activeTab === "daily" && (
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-12 xl:col-span-8 border border-white/10 bg-white/[0.02] p-6">
@@ -470,7 +582,6 @@ export function LedgerIntelTab() {
         </div>
       )}
 
-      {/* NEWS */}
       {activeTab === "news" && (
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-12 xl:col-span-8 border border-white/10 bg-white/[0.02] p-6">
@@ -590,7 +701,6 @@ export function LedgerIntelTab() {
         </div>
       )}
 
-      {/* RAILS WATCH */}
       {activeTab === "rails" && (
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-12 xl:col-span-8 border border-white/10 bg-white/[0.02] p-6">
@@ -649,7 +759,77 @@ export function LedgerIntelTab() {
         </div>
       )}
 
-      {/* MAKE WAVES */}
+      {activeTab === "stable" && (
+        <div className="grid grid-cols-12 gap-4">
+          <div className="col-span-12 xl:col-span-8 border border-white/10 bg-white/[0.02] p-6">
+            <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-4">
+              Fiat-Backed Stablecoin Matrix
+            </p>
+
+            <h3 className="font-orbitron text-2xl font-black uppercase mb-4">
+              Stable Tokens Watch
+            </h3>
+
+            <p className="font-mono text-sm text-white/45 leading-relaxed mb-6">
+              Deze module volgt fiat-backed stablecoins, RLUSD, euro-stablecoins
+              en gereguleerde betaalrails. Later voegen we live data, issuers,
+              reserves, ledgers en risk scores toe.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {stableWatchItems.map((item) => (
+                <StableWatchCard key={item.ticker} item={item} />
+              ))}
+            </div>
+          </div>
+
+          <div className="col-span-12 xl:col-span-4 space-y-4">
+            <div className="border border-white/10 bg-white/[0.02] p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <Landmark size={17} className="text-white/60" />
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  Waarom belangrijk?
+                </p>
+              </div>
+
+              <p className="font-mono text-xs text-white/45 leading-relaxed">
+                Stablecoins worden de brug tussen fiatgeld, banken, exchanges,
+                DeFi, CBDC onderzoek en XRPL liquidity corridors.
+              </p>
+            </div>
+
+            <div className="border border-white/10 bg-white/[0.02] p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <ShieldCheck size={17} className="text-white/60" />
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  Risk Shield
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <div className="border border-white/10 bg-black p-3">
+                  <p className="font-mono text-xs text-white/70">
+                    Fiat-backed ≠ crypto-backed
+                  </p>
+                </div>
+
+                <div className="border border-white/10 bg-black p-3">
+                  <p className="font-mono text-xs text-white/70">
+                    Synthetic dollar ≠ bank reserve
+                  </p>
+                </div>
+
+                <div className="border border-white/10 bg-black p-3">
+                  <p className="font-mono text-xs text-white/70">
+                    Gold-backed ≠ fiat stablecoin
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {activeTab === "hackathon" && (
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-12 xl:col-span-8 border border-white/10 bg-white/[0.02] p-8">
@@ -729,10 +909,10 @@ export function LedgerIntelTab() {
         </div>
       )}
 
-      {/* OTHER MODULES */}
       {activeTab !== "daily" &&
         activeTab !== "news" &&
         activeTab !== "rails" &&
+        activeTab !== "stable" &&
         activeTab !== "hackathon" && (
           <div className="border border-white/10 bg-white/[0.02] p-10 text-center">
             {(() => {
