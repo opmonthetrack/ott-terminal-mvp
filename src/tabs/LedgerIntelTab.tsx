@@ -77,6 +77,13 @@ type IsoWatchItem = {
   summary: string;
 };
 
+type XlsWatchItem = {
+  name: string;
+  category: string;
+  status: string;
+  summary: string;
+};
+
 const fallbackNews: NewsItem[] = [
   {
     title: "XRPL OnTheTrack Terminal intelligence layer ready for MVP build",
@@ -386,6 +393,65 @@ const isoWatchItems: IsoWatchItem[] = [
   },
 ];
 
+const xlsWatchItems: XlsWatchItem[] = [
+  {
+    name: "XLS-20",
+    category: "Native NFTs",
+    status: "Enabled",
+    summary:
+      "Native NFT standaard op XRPL. Belangrijk voor badges, proof-of-learning, membership assets en toekomstige reward collectibles.",
+  },
+  {
+    name: "XLS-30",
+    category: "Automated Market Maker",
+    status: "Enabled",
+    summary:
+      "Native AMM functionaliteit op XRPL. Belangrijk voor liquidity analytics, LP insights, swap routes en yield modules.",
+  },
+  {
+    name: "XLS-40",
+    category: "Decentralized Identity",
+    status: "Research",
+    summary:
+      "DID-laag om te volgen voor reputation, credentials, wallet identity en later mogelijk proof-of-learning.",
+  },
+  {
+    name: "XLS-65",
+    category: "Single Asset Vaults",
+    status: "Watch",
+    summary:
+      "Belangrijk om te volgen voor single-asset liquidity, vault-structuren en mogelijke passieve rendementmodules.",
+  },
+  {
+    name: "XLS-66",
+    category: "Lending Protocol",
+    status: "Watch",
+    summary:
+      "Belangrijk voor mogelijke native lending, collateral, credit markets en institutionele XRPL DeFi.",
+  },
+  {
+    name: "Hooks / Xahau",
+    category: "Smart Contract Logic",
+    status: "Research",
+    summary:
+      "Niet hetzelfde als XRPL mainnet, maar relevant voor conditional logic, app flows, rewards en advanced wallet actions.",
+  },
+  {
+    name: "Credentials",
+    category: "Compliance / Identity",
+    status: "Watch",
+    summary:
+      "Volgen voor KYC-compatible flows, regulated assets, permissioned access en zakelijke XRPL use cases.",
+  },
+  {
+    name: "Multi-Purpose Tokens",
+    category: "Token Standard",
+    status: "Watch",
+    summary:
+      "Volgen voor nieuwe tokenmodellen die meer kunnen dan simpele issued currencies of NFTs.",
+  },
+];
+
 function formatDate(date?: string) {
   if (!date) return "Unknown date";
 
@@ -520,6 +586,32 @@ function IsoWatchCard({ item }: { item: IsoWatchItem }) {
   );
 }
 
+function XlsWatchCard({ item }: { item: XlsWatchItem }) {
+  return (
+    <div className="border border-white/10 bg-black p-4 hover:bg-white/[0.03] transition-all">
+      <div className="flex items-start justify-between gap-4 mb-3">
+        <div>
+          <h4 className="font-orbitron text-sm font-bold uppercase mb-1">
+            {item.name}
+          </h4>
+
+          <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest">
+            {item.category}
+          </p>
+        </div>
+
+        <span className="border border-white/10 px-2 py-1 font-mono text-[9px] text-white/50 uppercase">
+          {item.status}
+        </span>
+      </div>
+
+      <p className="font-mono text-xs text-white/45 leading-relaxed">
+        {item.summary}
+      </p>
+    </div>
+  );
+}
+
 export function LedgerIntelTab() {
   const [activeTab, setActiveTab] = useState<ActiveIntelTab>("daily");
   const [news, setNews] = useState<NewsItem[]>(fallbackNews);
@@ -572,7 +664,7 @@ export function LedgerIntelTab() {
       id: "xls",
       label: "XLS Roadmap",
       icon: FileText,
-      status: "Soon",
+      status: "Watch",
     },
     {
       id: "iso",
@@ -1178,6 +1270,63 @@ export function LedgerIntelTab() {
         </div>
       )}
 
+      {activeTab === "xls" && (
+        <div className="grid grid-cols-12 gap-4">
+          <div className="col-span-12 xl:col-span-8 border border-white/10 bg-white/[0.02] p-6">
+            <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-4">
+              XRPL Standards & Protocol Roadmap
+            </p>
+
+            <h3 className="font-orbitron text-2xl font-black uppercase mb-4">
+              XLS Roadmap
+            </h3>
+
+            <p className="font-mono text-sm text-white/45 leading-relaxed mb-6">
+              Deze module volgt XRPL-standaarden en protocolrichtingen die
+              belangrijk zijn voor NFTs, AMM, identity, vaults, lending,
+              credentials, rewards en toekomstige terminal modules.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {xlsWatchItems.map((item) => (
+                <XlsWatchCard key={item.name} item={item} />
+              ))}
+            </div>
+          </div>
+
+          <div className="col-span-12 xl:col-span-4 space-y-4">
+            <div className="border border-white/10 bg-white/[0.02] p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <FileText size={17} className="text-white/60" />
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  Waarom volgen?
+                </p>
+              </div>
+
+              <p className="font-mono text-xs text-white/45 leading-relaxed">
+                De Terminal moet weten welke XRPL features live zijn, welke nog
+                in onderzoek zitten en welke later nuttig kunnen worden voor
+                DeFi, rewards, learn-and-earn en identity.
+              </p>
+            </div>
+
+            <div className="border border-white/10 bg-white/[0.02] p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <AlertTriangle size={17} className="text-white/60" />
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  Later koppelen
+                </p>
+              </div>
+
+              <p className="font-mono text-xs text-white/45 leading-relaxed">
+                Later kunnen we hier XRPL.org docs, GitHub proposals, amendment
+                status, validator voting en dev updates aan koppelen.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {activeTab === "hackathon" && (
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-12 xl:col-span-8 border border-white/10 bg-white/[0.02] p-8">
@@ -1263,6 +1412,7 @@ export function LedgerIntelTab() {
         activeTab !== "stable" &&
         activeTab !== "cbdc" &&
         activeTab !== "iso" &&
+        activeTab !== "xls" &&
         activeTab !== "hackathon" && (
           <div className="border border-white/10 bg-white/[0.02] p-10 text-center">
             {(() => {
