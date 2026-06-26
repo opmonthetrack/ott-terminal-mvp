@@ -1,15 +1,14 @@
-// src/components/LoginScreen.tsx
 import { useState } from 'react';
 import { Loader2, ShieldCheck, CreditCard } from 'lucide-react';
 
-export function LoginScreen({ onLoginSuccess }) {
+export function LoginScreen({ onLoginSuccess }: { onLoginSuccess: (addr: string) => void }) {
   const [isChecking, setIsChecking] = useState(false);
   const [isMinting, setIsMinting] = useState(false);
-  const [qrCodeUrl, setQrCodeUrl] = useState(null);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
   const OTT_ISSUER_ADDRESS = "rnz9im9849ztKyhe6nR5eeibDx3swosDjA";
 
-  const verifyNFTOwnership = async (address) => {
+  const verifyNFTOwnership = async (address: string) => {
     setIsChecking(true);
     try {
       const response = await fetch('/api/check-nft', {
@@ -22,12 +21,12 @@ export function LoginScreen({ onLoginSuccess }) {
       if (!json.success) throw new Error(json.error);
       
       const nfts = json.data?.result?.account_nfts || [];
-      if (nfts.some(nft => nft.Issuer === OTT_ISSUER_ADDRESS)) {
+      if (nfts.some((nft: any) => nft.Issuer === OTT_ISSUER_ADDRESS)) {
         onLoginSuccess(address);
       } else {
         alert("Geen Access Pass gevonden in deze wallet.");
       }
-    } catch (e) {
+    } catch (e: any) {
       alert("Verificatie fout: " + e.message);
     } finally {
       setIsChecking(false);
@@ -37,16 +36,18 @@ export function LoginScreen({ onLoginSuccess }) {
   const handleSignIn = async () => {
     setIsChecking(true);
     try {
-      const res = await fetch('/api/xaman', {
+      const res = await fetch('https://xumm.app/api/v1/platform/payload', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          endpoint: 'platform/payload',
-          body: { txjson: { TransactionType: "SignIn" } }
-        })
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-api-key': import.meta.env.VITE_XAMAN_API_KEY,
+          'x-api-secret': import.meta.env.VITE_XAMAN_API_SECRET
+        },
+        body: JSON.stringify({ txjson: { TransactionType: "SignIn" } })
       });
 
       const payload = await res.json();
+      
       if (payload.refs?.qr_png) {
         setQrCodeUrl(payload.refs.qr_png);
         window.open(payload.next.always, '_blank');
@@ -57,19 +58,21 @@ export function LoginScreen({ onLoginSuccess }) {
           if (msg.signed === true) {
             ws.close();
             setQrCodeUrl(null);
-            const resResult = await fetch('/api/xaman', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ endpoint: `platform/payload/${payload.uuid}` })
+            
+            const resultRes = await fetch(`https://xumm.app/api/v1/platform/payload/${payload.uuid}`, {
+                headers: {
+                    'x-api-key': import.meta.env.VITE_XAMAN_API_KEY,
+                    'x-api-secret': import.meta.env.VITE_XAMAN_API_SECRET
+                }
             });
-            const resultData = await resResult.json();
+            const resultData = await resultRes.json();
             verifyNFTOwnership(resultData.response?.signer);
           }
         };
       } else {
         throw new Error(payload.error || "Geen QR ontvangen");
       }
-    } catch (e) {
+    } catch (e: any) {
       setIsChecking(false);
       alert("Inloggen mislukt: " + e.message);
     }
@@ -79,12 +82,15 @@ export function LoginScreen({ onLoginSuccess }) {
     setIsMinting(true);
     try {
       const uriHex = "697066733a2f2f6261666b726569667734376d6f706b7737717134667070786b686763746879726a7667657235757972717962796a353261756e7168737a3263626d";
-      const res = await fetch('/api/xaman', {
+      const res = await fetch('https://xumm.app/api/v1/platform/payload', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            endpoint: 'platform/payload',
-            body: { txjson: { TransactionType: "NFTokenMint", NFTokenTaxon: 0, Flags: 8, URI: uriHex } }
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-api-key': import.meta.env.VITE_XAMAN_API_KEY,
+          'x-api-secret': import.meta.env.VITE_XAMAN_API_SECRET
+        },
+        body: JSON.stringify({ 
+            txjson: { TransactionType: "NFTokenMint", NFTokenTaxon: 0, Flags: 8, URI: uriHex } 
         })
       });
       const payload = await res.json();
@@ -104,7 +110,7 @@ export function LoginScreen({ onLoginSuccess }) {
       } else {
         throw new Error(payload.error || "Geen QR ontvangen");
       }
-    } catch (e) {
+    } catch (e: any) {
       setIsMinting(false);
       alert("Minting mislukt: " + e.message);
     }
@@ -112,7 +118,6 @@ export function LoginScreen({ onLoginSuccess }) {
 
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 text-white selection:bg-[#ff2079]/30">
-      {/* Hier staat het logo weer */}
       <img src="/logo.png" alt="TruthOnTheTrack Logo" className="w-32 h-32 mb-8 object-contain" />
       
       <h1 className="font-orbitron text-2xl font-black uppercase mb-12">XRPL OTT TERMINAL</h1>
