@@ -1,13 +1,12 @@
 import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
 
 interface LoginScreenProps {
   onLoginSuccess: (address: string) => void;
 }
 
-// 🔐 OTT Treasury (De Kluis) - Bestemming voor de 2 XRP Mint Fee
+// OTT Treasury: Hier komt de 2 XRP minting fee binnen
 const OTT_TREASURY_ADDRESS = "rpLquEze1WAxBh2Y6op8J7bo3VNGCYBEsZ"; 
-const OTT_TREASURY_TAG = 2606170002;
-const CHALLENGE_SOURCE_TAG = 2606170002; 
 
 export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
@@ -16,71 +15,76 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   const handleMintPass = async () => {
     setIsMinting(true);
     try {
+      // 1. Payload aanmaken via de Xaman API
       const res = await fetch('/xaman-api/platform/payload', {
         method: 'POST',
         headers: { 
             'Content-Type': 'application/json', 
-            'X-API-Key': import.meta.env.VITE_XAMAN_API_KEY, 
-            'X-API-Secret': import.meta.env.VITE_XAMAN_API_SECRET 
+            'X-API-Key': import.meta.env.VITE_XAMAN_API_KEY || '', 
+            'X-API-Secret': import.meta.env.VITE_XAMAN_API_SECRET || '' 
         },
         body: JSON.stringify({ 
           txjson: { 
             TransactionType: "Payment", 
             Destination: OTT_TREASURY_ADDRESS, 
-            DestinationTag: OTT_TREASURY_TAG,
-            SourceTag: CHALLENGE_SOURCE_TAG,
-            Amount: "2000000" // 2000000 drops = 2 XRP
+            Amount: "2000000" 
           } 
         })
       });
 
       const payload = await res.json();
+      
       if (payload.refs?.qr_png) {
         setQrCodeUrl(payload.refs.qr_png);
         
+        // 2. Wacht tot gebruiker signeert
         const ws = new WebSocket(payload.refs.websocket_status);
-        ws.onmessage = (event) => {
+        ws.onmessage = async (event) => {
           const msg = JSON.parse(event.data);
           if (msg.signed === true) {
             ws.close();
+            
+            // 3. Haal gebruiker-adres op na succesvolle betaling
+            const result = await fetch(`/xaman-api/platform/payload/${payload.uuid}`);
+            const resultData = await result.json();
+            const userAddress = resultData.response?.signer; 
+            
             setQrCodeUrl(null);
             setIsMinting(false);
-            // Gebruiker is succesvol ingelogd na betaling
-            onLoginSuccess(OTT_TREASURY_ADDRESS); 
+            onLoginSuccess(userAddress); // Geef adres door aan Dashboard
           }
         };
       } else {
-        throw new Error("Geen QR code ontvangen vanuit het netwerk.");
+        throw new Error("Geen QR ontvangen");
       }
     } catch (e) { 
       console.error(e);
       setIsMinting(false);
-      alert("Er ging iets mis met de verbinding. Probeer het opnieuw of controleer de netwerkstatus.");
+      alert("Er ging iets mis. Controleer je Xaman API Keys in Vercel.");
     }
   };
 
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 text-white selection:bg-[#ff2079]/30">
-      {/* Fallback tekst als er geen logo.png in de public map staat */}
-      <img src="/logo.png" alt="OTT Logo" className="w-24 mb-6" onError={(e) => e.currentTarget.style.display = 'none'} />
-
-      <div className="text-center space-y-4">
-        <h1 className="font-orbitron text-2xl font-black uppercase tracking-[0.25em]">XRPL OTT TERMINAL</h1>
-        <p className="font-mono text-[10px] text-gray-500 uppercase tracking-widest">Stay humble, Stay positive, 589 steps ahead</p>
-      </div>
-
-      <div className="w-full max-w-md mt-12">
+      <h1 className="font-orbitron text-2xl font-black uppercase tracking-[0.25em] mb-12">XRPL OTT TERMINAL</h1>
+      
+      <div className="w-full max-w-md">
         {!qrCodeUrl ? (
           <button 
             onClick={handleMintPass} 
-            className="w-full bg-white text-black py-4 font-orbitron font-black uppercase tracking-widest hover:bg-gray-200 transition-colors cursor-pointer"
+            disabled={isMinting}
+            className="w-full bg-white text-black py-4 font-orbitron font-black uppercase tracking-widest hover:bg-gray-200 transition-all cursor-pointer flex justify-center items-center gap-2"
           >
-            {isMinting ? "VERWERKEN..." : "MINT ACCESS PASS (2 XRP)"}
+            {isMinting ? (
+              <> <Loader2 className="animate-spin" size={16} /> VERWERKEN... </>
+            ) : (
+              "MINT ACCESS PASS (2 XRP)"
+            )}
           </button>
         ) : (
-          <div className="bg-white p-2 rounded-lg text-center mx-auto w-fit">
-            <img src={qrCodeUrl} className="w-48" alt="Scan met Xaman" />
-            <p className="text-black text-[10px] font-mono mt-2 uppercase tracking-widest">Scan met Xaman</p>
+          <div className="bg-white p-4 rounded-xl text-center">
+            <img src={qrCodeUrl} className="w-48 mx-auto" alt="Scan met Xaman" />
+            <p className="text-black text-xs mt-4 font-mono uppercase">Scan QR met Xaman om te valideren</p>
           </div>
         )}
       </div>
