@@ -15,7 +15,6 @@ export function DashboardTab({ walletAddress }: { walletAddress: string }) {
     const fetchWalletData = async () => {
       setLoading(true);
       try {
-        // 1. Haal Account Info op (voor XRP balans en reserves)
         const infoRes = await fetch('https://s1.ripple.com:51234/', {
           method: 'POST',
           body: JSON.stringify({
@@ -25,7 +24,6 @@ export function DashboardTab({ walletAddress }: { walletAddress: string }) {
         });
         const infoData = await infoRes.json();
         
-        // 2. Haal Tokens (Trustlines) op
         const linesRes = await fetch('https://s1.ripple.com:51234/', {
           method: 'POST',
           body: JSON.stringify({
@@ -40,7 +38,6 @@ export function DashboardTab({ walletAddress }: { walletAddress: string }) {
           const totalXrp = parseFloat(account.Balance) / 1000000;
           const ownerCount = account.OwnerCount || 0;
           
-          // Bereken XRPL reserves (10 XRP basis + 2 XRP per object)
           const reserveXrp = 10 + (ownerCount * 2);
           const liquidXrp = Math.max(0, totalXrp - reserveXrp);
 
@@ -53,7 +50,6 @@ export function DashboardTab({ walletAddress }: { walletAddress: string }) {
         }
 
         if (linesData.result?.lines) {
-          // Filter tokens met een positieve balans
           const activeTokens = linesData.result.lines.filter((line: any) => parseFloat(line.balance) > 0);
           setTokens(activeTokens);
         }
@@ -81,7 +77,6 @@ export function DashboardTab({ walletAddress }: { walletAddress: string }) {
 
   return (
     <div className="p-8 bg-black text-white min-h-screen">
-      {/* HEADER */}
       <div className="flex items-center justify-between mb-8 border-b border-white/10 pb-6">
         <div className="flex items-center space-x-3">
           <User className="text-[#ff2079] w-8 h-8" />
@@ -96,7 +91,6 @@ export function DashboardTab({ walletAddress }: { walletAddress: string }) {
         </div>
       </div>
 
-      {/* TOP GRID: BALANCES & RESERVES */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-gray-950/60 border border-white/5 p-6 rounded-lg relative overflow-hidden">
           <div className="absolute top-0 right-0 w-16 h-16 bg-[#2b82ff] opacity-10 blur-2xl"></div>
@@ -127,10 +121,8 @@ export function DashboardTab({ walletAddress }: { walletAddress: string }) {
         </div>
       </div>
 
-      {/* BOTTOM GRID: PORTFOLIO & ACTIVITY */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* ASSET PORTFOLIO */}
         <div className="col-span-2 bg-gray-950/40 border border-white/10 rounded-lg p-6">
           <h3 className="font-orbitron text-sm font-bold uppercase tracking-widest text-gray-300 mb-6 flex items-center gap-2">
             Asset Portfolio <span className="text-[10px] bg-white/10 px-2 py-1 rounded">{tokens.length} Trustlines</span>
@@ -158,7 +150,7 @@ export function DashboardTab({ walletAddress }: { walletAddress: string }) {
                           {token.currency.substring(0, 1)}
                         </div>
                         {token.currency.length > 3 && token.currency.match(/^[0-9A-F]+$/) 
-                          ? "HEX Token" // Simpele weergave voor lange HEX currencies
+                          ? "HEX Token" 
                           : token.currency}
                       </td>
                       <td className="py-4 text-green-400">{parseFloat(token.balance).toLocaleString()}</td>
@@ -171,12 +163,10 @@ export function DashboardTab({ walletAddress }: { walletAddress: string }) {
           )}
         </div>
 
-        {/* RECENT ACTIVITY (MVP VISUALIZATION) */}
         <div className="col-span-1 bg-gray-950/40 border border-white/10 rounded-lg p-6">
           <h3 className="font-orbitron text-sm font-bold uppercase tracking-widest text-gray-300 mb-6">Recent Ledger Activity</h3>
           
           <div className="space-y-4">
-            {/* MVP Fake Activity voor de visuele demo - later te koppelen aan account_tx */}
             <div className="flex items-center justify-between p-3 bg-black/50 border border-white/5 rounded">
               <div className="flex items-center gap-3">
                 <div className="bg-green-500/20 p-2 rounded">
@@ -198,3 +188,31 @@ export function DashboardTab({ walletAddress }: { walletAddress: string }) {
                 <div>
                   <p className="text-xs font-bold text-white">TrustLine Set</p>
                   <p className="text-[9px] text-gray-500 font-mono">Gisteren</p>
+                </div>
+              </div>
+              <p className="text-xs font-mono text-gray-400">0.00 XRP</p>
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-black/50 border border-white/5 rounded">
+              <div className="flex items-center gap-3">
+                <div className="bg-[#ff2079]/20 p-2 rounded">
+                  <ArrowUpRight className="text-[#ff2079] w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-white">NFT Mint</p>
+                  <p className="text-[9px] text-gray-500 font-mono">2 dagen geleden</p>
+                </div>
+              </div>
+              <p className="text-xs font-mono text-[#ff2079]">-12 Drops</p>
+            </div>
+            
+            <button className="w-full mt-4 py-3 border border-white/10 text-[10px] uppercase tracking-widest text-gray-400 hover:text-white hover:bg-white/5 transition-all">
+              Bekijk Volledige Historie
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
