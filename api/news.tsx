@@ -1,14 +1,17 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // We halen de RSS feed direct van Ripple Insights
+  const RSS_FEED_URL = "https://ripple.com/insights/feed/";
+  
   try {
-    // We roepen de CryptoPanic API aan (de industriestandaard)
-    const response = await fetch('https://cryptopanic.com/api/v1/posts/?auth_token=' + process.env.CRYPTO_PANIC_API_KEY + '&currencies=XRP&kind=news');
+    // Gebruik rss2json (gratis & publiek) om RSS om te zetten naar bruikbare JSON
+    const response = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(RSS_FEED_URL)}`);
     const data = await response.json();
     
-    // Stuur de data door naar je frontend
-    res.status(200).json(data);
+    // We sturen de 'items' (de nieuwsberichten) terug naar je frontend
+    res.status(200).json({ items: data.items || [] });
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch news" });
+    res.status(500).json({ error: "Failed to fetch feed" });
   }
 }
