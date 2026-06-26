@@ -70,6 +70,13 @@ type CbdcWatchItem = {
   summary: string;
 };
 
+type IsoWatchItem = {
+  name: string;
+  layer: string;
+  status: string;
+  summary: string;
+};
+
 const fallbackNews: NewsItem[] = [
   {
     title: "XRPL OnTheTrack Terminal intelligence layer ready for MVP build",
@@ -313,6 +320,72 @@ const cbdcWatchItems: CbdcWatchItem[] = [
   },
 ];
 
+const isoWatchItems: IsoWatchItem[] = [
+  {
+    name: "ISO 20022",
+    layer: "Financial Messaging Standard",
+    status: "Core",
+    summary:
+      "Geen blockchain en geen token, maar een wereldwijde berichtstandaard voor rijkere betaaldata tussen financiële instellingen.",
+  },
+  {
+    name: "SWIFT MX Messages",
+    layer: "Bank Messaging",
+    status: "Core",
+    summary:
+      "Volgen omdat SWIFT banken helpt migreren van legacy MT-berichten naar ISO 20022 MX-berichten.",
+  },
+  {
+    name: "Fedwire ISO Migration",
+    layer: "US Payment Rail",
+    status: "Core",
+    summary:
+      "Belangrijk voor Amerikaanse interbancaire betalingen, dollar settlement en rijkere betaalinformatie.",
+  },
+  {
+    name: "T2 / TARGET Services",
+    layer: "Euro Settlement",
+    status: "Core",
+    summary:
+      "Belangrijk voor eurobetalingen, centrale bank settlement en ISO 20022-compatibele infrastructuur in Europa.",
+  },
+  {
+    name: "CHAPS ISO Migration",
+    layer: "UK Payment Rail",
+    status: "Watch",
+    summary:
+      "Volgen voor Britse wholesale betalingen, bankinfrastructuur en datarijke betalingsberichten.",
+  },
+  {
+    name: "Ripple Payments",
+    layer: "Payment Network",
+    status: "Watch",
+    summary:
+      "Volgen als brug tussen institutionele betalingen, crypto rails, fiat settlement en enterprise payment software.",
+  },
+  {
+    name: "Finastra / Volante / Temenos",
+    layer: "Bank Software Layer",
+    status: "Watch",
+    summary:
+      "Softwarelagen die banken kunnen helpen om berichten, compliance, payment workflows en settlement rails te verbinden.",
+  },
+  {
+    name: "XRPL / XRP",
+    layer: "Settlement Research Layer",
+    status: "Research",
+    summary:
+      "Niet claimen als 'ISO coin'. Wel volgen voor settlement, liquidity, tokenized assets en integratie met betaalinfrastructuur.",
+  },
+  {
+    name: "XLM / XDC / HBAR / ALGO / QNT",
+    layer: "Ledger Research Layer",
+    status: "Research",
+    summary:
+      "Volgen als bredere researchlaag rond betaalinfrastructuur, enterprise integraties, tokenization en interoperabiliteit.",
+  },
+];
+
 function formatDate(date?: string) {
   if (!date) return "Unknown date";
 
@@ -421,6 +494,32 @@ function CbdcWatchCard({ item }: { item: CbdcWatchItem }) {
   );
 }
 
+function IsoWatchCard({ item }: { item: IsoWatchItem }) {
+  return (
+    <div className="border border-white/10 bg-black p-4 hover:bg-white/[0.03] transition-all">
+      <div className="flex items-start justify-between gap-4 mb-3">
+        <div>
+          <h4 className="font-orbitron text-sm font-bold uppercase mb-1">
+            {item.name}
+          </h4>
+
+          <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest">
+            {item.layer}
+          </p>
+        </div>
+
+        <span className="border border-white/10 px-2 py-1 font-mono text-[9px] text-white/50 uppercase">
+          {item.status}
+        </span>
+      </div>
+
+      <p className="font-mono text-xs text-white/45 leading-relaxed">
+        {item.summary}
+      </p>
+    </div>
+  );
+}
+
 export function LedgerIntelTab() {
   const [activeTab, setActiveTab] = useState<ActiveIntelTab>("daily");
   const [news, setNews] = useState<NewsItem[]>(fallbackNews);
@@ -479,7 +578,7 @@ export function LedgerIntelTab() {
       id: "iso",
       label: "ISO 20022 & Law",
       icon: Scale,
-      status: "Research",
+      status: "Map",
     },
   ];
 
@@ -1020,6 +1119,65 @@ export function LedgerIntelTab() {
         </div>
       )}
 
+      {activeTab === "iso" && (
+        <div className="grid grid-cols-12 gap-4">
+          <div className="col-span-12 xl:col-span-8 border border-white/10 bg-white/[0.02] p-6">
+            <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-4">
+              ISO 20022 Intelligence Map
+            </p>
+
+            <h3 className="font-orbitron text-2xl font-black uppercase mb-4">
+              ISO 20022 Monitor
+            </h3>
+
+            <p className="font-mono text-sm text-white/45 leading-relaxed mb-6">
+              ISO 20022 is geen crypto-token, maar een financiële
+              berichtstandaard. Deze module volgt banknetwerken,
+              softwarelagen, settlement rails en ledger research zonder
+              hype-taal.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {isoWatchItems.map((item) => (
+                <IsoWatchCard key={item.name} item={item} />
+              ))}
+            </div>
+          </div>
+
+          <div className="col-span-12 xl:col-span-4 space-y-4">
+            <div className="border border-white/10 bg-white/[0.02] p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <Scale size={17} className="text-white/60" />
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  Belangrijk verschil
+                </p>
+              </div>
+
+              <p className="font-mono text-xs text-white/45 leading-relaxed">
+                We zeggen niet zomaar “coin is ISO compliant”. We kijken naar
+                berichtenstandaarden, banksoftware, settlement rails,
+                integraties en daadwerkelijke gebruiksroutes.
+              </p>
+            </div>
+
+            <div className="border border-white/10 bg-white/[0.02] p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <AlertTriangle size={17} className="text-white/60" />
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  Later koppelen
+                </p>
+              </div>
+
+              <p className="font-mono text-xs text-white/45 leading-relaxed">
+                Later kunnen we hier live bronnen koppelen voor SWIFT, Fedwire,
+                ECB/T2, CHAPS, ISO migration updates, banksoftware en Ripple
+                enterprise payment updates.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {activeTab === "hackathon" && (
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-12 xl:col-span-8 border border-white/10 bg-white/[0.02] p-8">
@@ -1104,6 +1262,7 @@ export function LedgerIntelTab() {
         activeTab !== "rails" &&
         activeTab !== "stable" &&
         activeTab !== "cbdc" &&
+        activeTab !== "iso" &&
         activeTab !== "hackathon" && (
           <div className="border border-white/10 bg-white/[0.02] p-10 text-center">
             {(() => {
