@@ -1,14 +1,21 @@
+// src/components/LoginScreen.tsx
 import { useState } from 'react';
 import { Loader2, ShieldCheck, CreditCard } from 'lucide-react';
 
-export function LoginScreen({ onLoginSuccess }) {
+interface LoginScreenProps {
+  onLoginSuccess: (address: string) => void;
+}
+
+export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   const [isChecking, setIsChecking] = useState(false);
   const [isMinting, setIsMinting] = useState(false);
-  const [qrCodeUrl, setQrCodeUrl] = useState(null);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
   const OTT_ISSUER_ADDRESS = "rnz9im9849ztKyhe6nR5eeibDx3swosDjA";
 
-  const verifyNFTOwnership = async (address) => {
+  // 1. NFT VERIFICATIE (Roept backend aan)
+  const verifyNFTOwnership = async (address: string) => {
+    setIsChecking(true);
     try {
       const response = await fetch('/api/check-nft', {
         method: 'POST',
@@ -17,23 +24,25 @@ export function LoginScreen({ onLoginSuccess }) {
       });
       
       const json = await response.json();
-      const nfts = json.data?.result?.account_nfts || [];
+      if (!json.success) throw new Error(json.error);
       
-      const hasAccessNFT = nfts.some(nft => nft.Issuer === OTT_ISSUER_ADDRESS);
+      const nfts = json.data?.result?.account_nfts || [];
+      const hasAccessNFT = nfts.some((nft: any) => nft.Issuer === OTT_ISSUER_ADDRESS);
 
       if (hasAccessNFT) {
         onLoginSuccess(address);
       } else {
         alert("Toegang geweigerd: Geen geldige OTT Access Pass gevonden.");
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert("Fout bij verificatie.");
+      alert("Fout bij verificatie: " + e.message);
     } finally {
       setIsChecking(false);
     }
   };
 
+  // 2. SIGN IN LOGICA (Roept backend proxy aan)
   const handleSignIn = async () => {
     setIsChecking(true);
     try {
@@ -71,12 +80,13 @@ export function LoginScreen({ onLoginSuccess }) {
       } else {
         throw new Error("Geen QR payload ontvangen");
       }
-    } catch (e) {
+    } catch (e: any) {
       setIsChecking(false);
       alert("Inloggen mislukt: " + e.message);
     }
   };
 
+  // 3. MINT LOGICA (Roept backend proxy aan)
   const handleMintPass = async () => {
     setIsMinting(true);
     try {
@@ -107,7 +117,7 @@ export function LoginScreen({ onLoginSuccess }) {
           }
         };
       }
-    } catch (e) {
+    } catch (e: any) {
       setIsMinting(false);
       alert("Minting mislukt: " + e.message);
     }
