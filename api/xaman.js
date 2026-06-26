@@ -1,30 +1,48 @@
-module.exports = async (req, res) => {
-  // Zorg dat we altijd JSON terugsturen, ook bij fouten
-  res.setHeader('Content-Type', 'application/json');
+export default async function handler(req, res) {
+  res.setHeader("Content-Type", "application/json");
+
+  if (req.method !== "POST") {
+    return res.status(405).json({
+      error: "Method not allowed. Use POST only.",
+    });
+  }
 
   try {
-    const { endpoint, body } = req.body;
-    const XAMAN_KEY = process.env.VITE_XAMAN_API_KEY;
-    const XAMAN_SECRET = process.env.VITE_XAMAN_API_SECRET;
+    const { endpoint, body } = req.body || {};
+
+    const XAMAN_KEY = process.env.XAMAN_API_KEY;
+    const XAMAN_SECRET = process.env.XAMAN_API_SECRET;
 
     if (!XAMAN_KEY || !XAMAN_SECRET) {
-      return res.status(500).json({ error: "API Keys missen op server" });
+      return res.status(500).json({
+        error: "Xaman API keys missen op de server.",
+      });
+    }
+
+    if (!endpoint) {
+      return res.status(400).json({
+        error: "Endpoint ontbreekt.",
+      });
     }
 
     const response = await fetch(`https://xumm.app/api/v1/${endpoint}`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': XAMAN_KEY,
-        'x-api-secret': XAMAN_SECRET
+        "Content-Type": "application/json",
+        "x-api-key": XAMAN_KEY,
+        "x-api-secret": XAMAN_SECRET,
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body || {}),
     });
 
     const data = await response.json();
-    return res.status(200).json(data);
+
+    return res.status(response.status).json(data);
   } catch (error) {
     console.error("Xaman Proxy Error:", error);
-    return res.status(500).json({ error: "Server error in proxy" });
+
+    return res.status(500).json({
+      error: "Server error in Xaman proxy.",
+    });
   }
-};
+}
