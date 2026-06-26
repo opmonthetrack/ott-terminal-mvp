@@ -6,6 +6,7 @@ import {
   FileText,
   Globe,
   Landmark,
+  Layers,
   Loader2,
   Newspaper,
   Radio,
@@ -20,6 +21,7 @@ import {
 type ActiveIntelTab =
   | "daily"
   | "news"
+  | "rails"
   | "unl_voting"
   | "hackathon"
   | "cbdc"
@@ -44,6 +46,13 @@ type IntelTab = {
   status: string;
 };
 
+type RailWatchItem = {
+  name: string;
+  category: string;
+  status: string;
+  summary: string;
+};
+
 const fallbackNews: NewsItem[] = [
   {
     title: "XRPL OnTheTrack Terminal intelligence layer ready for MVP build",
@@ -65,6 +74,51 @@ const fallbackNews: NewsItem[] = [
     pubDate: new Date().toISOString(),
     description:
       "De volgende grote stap is een veilige Xaman-flow met een mainnet-transactie en source tag.",
+  },
+];
+
+const railsWatchItems: RailWatchItem[] = [
+  {
+    name: "mBridge",
+    category: "Wholesale CBDC Rail",
+    status: "Watch",
+    summary:
+      "Volgen als grensoverschrijdende wholesale CBDC-rail tussen centrale banken, banken en nieuwe settlement-systemen.",
+  },
+  {
+    name: "SWIFT",
+    category: "Global Messaging Network",
+    status: "Core",
+    summary:
+      "Belangrijk voor ISO 20022 berichten, bankcommunicatie en de overgang van oude financiële rails naar rijkere data.",
+  },
+  {
+    name: "Fedwire",
+    category: "US Payment Rail",
+    status: "Core",
+    summary:
+      "Volgen voor Amerikaanse interbancaire betalingen, dollar settlement, stablecoin-regulatie en ISO 20022 context.",
+  },
+  {
+    name: "T2 / ECB",
+    category: "Euro Settlement Rail",
+    status: "Core",
+    summary:
+      "Belangrijk voor grote eurobetalingen, digitale euro research, Europese bankinfrastructuur en institutionele settlement.",
+  },
+  {
+    name: "CHAPS",
+    category: "UK Payment Rail",
+    status: "Watch",
+    summary:
+      "Volgen voor Britse wholesale betalingen, Digital Pound onderzoek en tokenized deposit ontwikkelingen.",
+  },
+  {
+    name: "Project Agorá",
+    category: "Tokenized Deposits",
+    status: "Research",
+    summary:
+      "Volgen als researchlaag rond tokenized commercial bank deposits, programmable settlement en internationale banken.",
   },
 ];
 
@@ -93,6 +147,32 @@ function getTodayLabel() {
   });
 }
 
+function RailWatchCard({ item }: { item: RailWatchItem }) {
+  return (
+    <div className="border border-white/10 bg-black p-4 hover:bg-white/[0.03] transition-all">
+      <div className="flex items-start justify-between gap-4 mb-3">
+        <div>
+          <h4 className="font-orbitron text-sm font-bold uppercase mb-1">
+            {item.name}
+          </h4>
+
+          <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest">
+            {item.category}
+          </p>
+        </div>
+
+        <span className="border border-white/10 px-2 py-1 font-mono text-[9px] text-white/50 uppercase">
+          {item.status}
+        </span>
+      </div>
+
+      <p className="font-mono text-xs text-white/45 leading-relaxed">
+        {item.summary}
+      </p>
+    </div>
+  );
+}
+
 export function LedgerIntelTab() {
   const [activeTab, setActiveTab] = useState<ActiveIntelTab>("daily");
   const [news, setNews] = useState<NewsItem[]>(fallbackNews);
@@ -110,6 +190,12 @@ export function LedgerIntelTab() {
       label: "XRPL News",
       icon: Newspaper,
       status: "Live",
+    },
+    {
+      id: "rails",
+      label: "Rails Watch",
+      icon: Layers,
+      status: "Macro",
     },
     {
       id: "unl_voting",
@@ -233,7 +319,7 @@ export function LedgerIntelTab() {
       </div>
 
       {/* TAB NAV */}
-      <div className="border border-white/10 bg-white/[0.02] p-2 mb-6 grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-2">
+      <div className="border border-white/10 bg-white/[0.02] p-2 mb-6 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-9 gap-2">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -504,6 +590,65 @@ export function LedgerIntelTab() {
         </div>
       )}
 
+      {/* RAILS WATCH */}
+      {activeTab === "rails" && (
+        <div className="grid grid-cols-12 gap-4">
+          <div className="col-span-12 xl:col-span-8 border border-white/10 bg-white/[0.02] p-6">
+            <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-4">
+              Macro Payment Rails
+            </p>
+
+            <h3 className="font-orbitron text-2xl font-black uppercase mb-4">
+              mBridge / SWIFT / Fedwire Watch
+            </h3>
+
+            <p className="font-mono text-sm text-white/45 leading-relaxed mb-6">
+              Deze module volgt de grote betaalrails achter het wereldwijde
+              financiële systeem. Dit is belangrijk voor stablecoins, CBDC,
+              tokenized deposits, ISO 20022 en toekomstige settlement-routes.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {railsWatchItems.map((item) => (
+                <RailWatchCard key={item.name} item={item} />
+              ))}
+            </div>
+          </div>
+
+          <div className="col-span-12 xl:col-span-4 space-y-4">
+            <div className="border border-white/10 bg-white/[0.02] p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <Layers size={17} className="text-white/60" />
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  Waarom volgen?
+                </p>
+              </div>
+
+              <p className="font-mono text-xs text-white/45 leading-relaxed">
+                XRPL OnTheTrack Terminal kijkt niet alleen naar coins. De echte
+                adoptie zit ook in banken, settlement-netwerken,
+                berichtstandaarden, stablecoins en centrale bank pilots.
+              </p>
+            </div>
+
+            <div className="border border-white/10 bg-white/[0.02] p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <AlertTriangle size={17} className="text-white/60" />
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  Later koppelen
+                </p>
+              </div>
+
+              <p className="font-mono text-xs text-white/45 leading-relaxed">
+                Later kunnen we hier aparte RSS-bronnen aan koppelen voor BIS,
+                SWIFT, Federal Reserve, ECB, Bank of England en stablecoin
+                regelgeving.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* MAKE WAVES */}
       {activeTab === "hackathon" && (
         <div className="grid grid-cols-12 gap-4">
@@ -585,39 +730,42 @@ export function LedgerIntelTab() {
       )}
 
       {/* OTHER MODULES */}
-      {activeTab !== "daily" && activeTab !== "news" && activeTab !== "hackathon" && (
-        <div className="border border-white/10 bg-white/[0.02] p-10 text-center">
-          {(() => {
-            const currentTab = tabs.find((tab) => tab.id === activeTab);
-            const Icon = currentTab?.icon || FileText;
+      {activeTab !== "daily" &&
+        activeTab !== "news" &&
+        activeTab !== "rails" &&
+        activeTab !== "hackathon" && (
+          <div className="border border-white/10 bg-white/[0.02] p-10 text-center">
+            {(() => {
+              const currentTab = tabs.find((tab) => tab.id === activeTab);
+              const Icon = currentTab?.icon || FileText;
 
-            return (
-              <>
-                <Icon className="w-14 h-14 mx-auto text-white/35 mb-6" />
+              return (
+                <>
+                  <Icon className="w-14 h-14 mx-auto text-white/35 mb-6" />
 
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-4">
-                  Intelligence Module
-                </p>
+                  <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-4">
+                    Intelligence Module
+                  </p>
 
-                <h3 className="font-orbitron text-2xl font-black uppercase mb-4">
-                  {currentTab?.label}
-                </h3>
+                  <h3 className="font-orbitron text-2xl font-black uppercase mb-4">
+                    {currentTab?.label}
+                  </h3>
 
-                <p className="font-mono text-sm text-white/45 max-w-2xl mx-auto leading-relaxed mb-8">
-                  Deze data stream staat klaar voor de volgende bouwfase. Eerst
-                  maken we de basis veilig: Xaman login, Daily Check-In en
-                  source-tagged mainnet activiteit.
-                </p>
+                  <p className="font-mono text-sm text-white/45 max-w-2xl mx-auto leading-relaxed mb-8">
+                    Deze data stream staat klaar voor de volgende bouwfase.
+                    Eerst maken we de basis veilig: Xaman login, Daily Check-In
+                    en source-tagged mainnet activiteit.
+                  </p>
 
-                <div className="inline-flex items-center gap-2 border border-white/10 px-5 py-3 text-white/40 font-mono text-xs uppercase tracking-widest">
-                  <Clock size={14} />
-                  Module in development
-                </div>
-              </>
-            );
-          })()}
-        </div>
-      )}
+                  <div className="inline-flex items-center gap-2 border border-white/10 px-5 py-3 text-white/40 font-mono text-xs uppercase tracking-widest">
+                    <Clock size={14} />
+                    Module in development
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        )}
     </div>
   );
 }
