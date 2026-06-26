@@ -5,7 +5,6 @@ interface LoginScreenProps {
   onLoginSuccess: (address: string) => void;
 }
 
-// Jouw wallet-adres dat de NFT's uitgeeft (De Issuer)
 const OTT_ISSUER_ADDRESS = "rnz9im9849ztKyhe6nR5eeibDx3swosDjA"; 
 
 export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
@@ -13,8 +12,8 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   const [isMinting, setIsMinting] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
-  // 1. Validatie: Check of wallet de juiste NFT bezit via jouw proxy
   const verifyNFTOwnership = async (address: string) => {
+    setIsChecking(true);
     try {
       const response = await fetch('/api/check-nft', {
         method: 'POST',
@@ -22,26 +21,29 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
         body: JSON.stringify({ address: address })
       });
       
-      const data = await response.json();
+      // Controleer of de server antwoordt met succes
+      if (!response.ok) throw new Error(`Server fout: ${response.status}`);
       
-      // Zoek naar NFT's uitgegeven door jouw adres
-      const hasAccessNFT = data.result?.account_nfts?.some(
+      const json = await response.json();
+      if (!json.success) throw new Error(json.error);
+
+      const hasAccessNFT = json.data.result?.account_nfts?.some(
         (nft: any) => nft.Issuer === OTT_ISSUER_ADDRESS
       );
 
       if (hasAccessNFT) {
         onLoginSuccess(address);
       } else {
-        alert("Toegang geweigerd: Geen geldige OTT Access Pass gevonden in deze wallet.");
+        alert("Toegang geweigerd: Geen OTT Access Pass gevonden.");
       }
     } catch (e: any) {
-      alert("Proxy fout: " + e.message);
+      console.error(e);
+      alert("Verificatie fout: " + e.message);
     } finally {
       setIsChecking(false);
     }
   };
 
-  // 2. Xaman Login: QR genereren voor Sign-In
   const handleSignIn = async () => {
     setIsChecking(true);
     try {
@@ -55,7 +57,10 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
         body: JSON.stringify({ txjson: { TransactionType: "SignIn" } })
       });
 
+      if (!res.ok) throw new Error(`Xaman API fout: ${res.status}`);
+
       const payload = await res.json();
+      
       if (payload.refs?.qr_png) {
         setQrCodeUrl(payload.refs.qr_png);
         window.open(payload.next.always, '_blank');
@@ -71,18 +76,19 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
             verifyNFTOwnership(resultData.response?.signer);
           }
         };
+      } else {
+        throw new Error("Geen QR code payload ontvangen");
       }
-    } catch (e) {
+    } catch (e: any) {
+      console.error(e);
       setIsChecking(false);
-      alert("Inloggen mislukt.");
+      alert("Inloggen mislukt: " + e.message);
     }
   };
 
-  // 3. Minting Flow
   const handleMintPass = async () => {
     setIsMinting(true);
     try {
-      // Hex voor ipfs://bafkreifw47mopkw7qq4fppxkhgcthyrjvger5uyrqybyj52aunqhsz2cbm
       const uriHex = "697066733a2f2f6261666b726569667734376d6f706b7737717134667070786b686763746879726a7667657235757972717962796a353261756e7168737a3263626d";
       
       const res = await fetch('/xaman-api/platform/payload', {
@@ -101,6 +107,8 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
           } 
         })
       });
+
+      if (!res.ok) throw new Error(`Minting API fout: ${res.status}`);
       
       const payload = await res.json();
       if (payload.refs?.qr_png) {
@@ -114,13 +122,13 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
             ws.close();
             setQrCodeUrl(null);
             setIsMinting(false);
-            alert("NFT gemint! Scan nu opnieuw om in te loggen.");
+            alert("NFT succesvol gemint! Scan nu opnieuw om in te loggen.");
           }
         };
       }
-    } catch (e) {
+    } catch (e: any) {
       setIsMinting(false);
-      alert("Minting mislukt.");
+      alert("Minting mislukt: " + e.message);
     }
   };
 
@@ -146,7 +154,6 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
           </div>
         )}
       </div>
-      <p className="mt-8 text-[10px] text-gray-600 uppercase font-mono">Stay humble, Stay positive, 589 steps ahead</p>
     </div>
   );
 }
