@@ -62,6 +62,14 @@ type StableWatchItem = {
   summary: string;
 };
 
+type CbdcWatchItem = {
+  name: string;
+  region: string;
+  type: string;
+  status: string;
+  summary: string;
+};
+
 const fallbackNews: NewsItem[] = [
   {
     title: "XRPL OnTheTrack Terminal intelligence layer ready for MVP build",
@@ -206,6 +214,105 @@ const stableWatchItems: StableWatchItem[] = [
   },
 ];
 
+const cbdcWatchItems: CbdcWatchItem[] = [
+  {
+    name: "Digital Euro",
+    region: "Eurozone",
+    type: "Retail CBDC",
+    status: "Research",
+    summary:
+      "Volgen voor privacy, bankenimpact, digitale euro wallet-modellen, offline betalingen en verhouding tot euro-stablecoins.",
+  },
+  {
+    name: "Digital Dollar",
+    region: "United States",
+    type: "CBDC Debate",
+    status: "Watch",
+    summary:
+      "Volgen in combinatie met Fedwire, FedNow, stablecoin-regulatie, tokenized deposits en dollar-dominantie.",
+  },
+  {
+    name: "e-CNY",
+    region: "China",
+    type: "Retail CBDC",
+    status: "Pilot",
+    summary:
+      "Belangrijk als grootschalige CBDC-pilot en mogelijke koppeling met wholesale corridors, handel en grensoverschrijdende betalingen.",
+  },
+  {
+    name: "Drex",
+    region: "Brazil",
+    type: "Wholesale / Tokenization",
+    status: "Pilot",
+    summary:
+      "Interessant vanwege programmable money, tokenized assets, zakelijke betalingen en financiële marktinfrastructuur.",
+  },
+  {
+    name: "Digital Rupee",
+    region: "India",
+    type: "Retail / Wholesale CBDC",
+    status: "Pilot",
+    summary:
+      "Volgen door grote markt, retailbetalingen, wholesale settlement, remittance en mogelijke massale adoptie.",
+  },
+  {
+    name: "Digital Pound",
+    region: "United Kingdom",
+    type: "Retail CBDC",
+    status: "Research",
+    summary:
+      "Volgen samen met CHAPS, tokenized deposits, stablecoin-regulatie en Britse bankinfrastructuur.",
+  },
+  {
+    name: "mBridge",
+    region: "Multi-Country",
+    type: "Wholesale CBDC Bridge",
+    status: "Watch",
+    summary:
+      "Belangrijk voor grensoverschrijdende wholesale CBDC settlement tussen centrale banken en commerciële banken.",
+  },
+  {
+    name: "Project Agorá",
+    region: "BIS / Global",
+    type: "Tokenized Deposits",
+    status: "Research",
+    summary:
+      "Volgen voor programmable settlement, tokenized commercial bank deposits en samenwerking tussen publieke en private financiële infrastructuur.",
+  },
+  {
+    name: "Project Guardian",
+    region: "Singapore",
+    type: "Tokenization Pilot",
+    status: "Watch",
+    summary:
+      "Belangrijk voor institutionele tokenization, DeFi-achtige marktstructuren en gereguleerde pilots met financiële instellingen.",
+  },
+  {
+    name: "Project Helvetia",
+    region: "Switzerland",
+    type: "Wholesale CBDC",
+    status: "Research",
+    summary:
+      "Volgen voor wholesale CBDC settlement, centrale bankgeld op DLT en institutionele financiële marktinfrastructuur.",
+  },
+  {
+    name: "Project Jura",
+    region: "France / Switzerland",
+    type: "Cross-Border CBDC",
+    status: "Research",
+    summary:
+      "Interessant als voorbeeld voor grensoverschrijdende wholesale CBDC settlement en tokenized asset delivery-versus-payment.",
+  },
+  {
+    name: "Launched CBDCs",
+    region: "Bahamas / Nigeria / Jamaica",
+    type: "Live Retail CBDC",
+    status: "Live",
+    summary:
+      "Gebruiken als vergelijkingsmateriaal: live lancering betekent niet automatisch massale adoptie of dagelijks gebruik.",
+  },
+];
+
 function formatDate(date?: string) {
   if (!date) return "Unknown date";
 
@@ -288,6 +395,32 @@ function StableWatchCard({ item }: { item: StableWatchItem }) {
   );
 }
 
+function CbdcWatchCard({ item }: { item: CbdcWatchItem }) {
+  return (
+    <div className="border border-white/10 bg-black p-4 hover:bg-white/[0.03] transition-all">
+      <div className="flex items-start justify-between gap-4 mb-3">
+        <div>
+          <h4 className="font-orbitron text-sm font-bold uppercase mb-1">
+            {item.name}
+          </h4>
+
+          <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest">
+            {item.region} • {item.type}
+          </p>
+        </div>
+
+        <span className="border border-white/10 px-2 py-1 font-mono text-[9px] text-white/50 uppercase">
+          {item.status}
+        </span>
+      </div>
+
+      <p className="font-mono text-xs text-white/45 leading-relaxed">
+        {item.summary}
+      </p>
+    </div>
+  );
+}
+
 export function LedgerIntelTab() {
   const [activeTab, setActiveTab] = useState<ActiveIntelTab>("daily");
   const [news, setNews] = useState<NewsItem[]>(fallbackNews);
@@ -328,7 +461,7 @@ export function LedgerIntelTab() {
       id: "cbdc",
       label: "CBDC Tracker",
       icon: Globe,
-      status: "Research",
+      status: "Watch",
     },
     {
       id: "stable",
@@ -830,6 +963,63 @@ export function LedgerIntelTab() {
         </div>
       )}
 
+      {activeTab === "cbdc" && (
+        <div className="grid grid-cols-12 gap-4">
+          <div className="col-span-12 xl:col-span-8 border border-white/10 bg-white/[0.02] p-6">
+            <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-4">
+              Central Bank Digital Currency Radar
+            </p>
+
+            <h3 className="font-orbitron text-2xl font-black uppercase mb-4">
+              CBDC Tracker
+            </h3>
+
+            <p className="font-mono text-sm text-white/45 leading-relaxed mb-6">
+              Deze module volgt CBDC-pilots, wholesale CBDC, retail CBDC,
+              tokenized deposits, BIS-projecten en digitale valuta van centrale
+              banken.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {cbdcWatchItems.map((item) => (
+                <CbdcWatchCard key={item.name} item={item} />
+              ))}
+            </div>
+          </div>
+
+          <div className="col-span-12 xl:col-span-4 space-y-4">
+            <div className="border border-white/10 bg-white/[0.02] p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <Globe size={17} className="text-white/60" />
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  CBDC vs Stablecoin
+                </p>
+              </div>
+
+              <p className="font-mono text-xs text-white/45 leading-relaxed">
+                CBDC komt van een centrale bank. Stablecoins komen van private
+                uitgevers. Dat verschil is belangrijk voor privacy, risico,
+                adoptie, regelgeving en controle.
+              </p>
+            </div>
+
+            <div className="border border-white/10 bg-white/[0.02] p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <AlertTriangle size={17} className="text-white/60" />
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  Later koppelen
+                </p>
+              </div>
+
+              <p className="font-mono text-xs text-white/45 leading-relaxed">
+                Later kunnen we hier BIS, centrale banken, ECB, Fed, BoE en
+                CBDC Tracker RSS/API bronnen aan koppelen voor live updates.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {activeTab === "hackathon" && (
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-12 xl:col-span-8 border border-white/10 bg-white/[0.02] p-8">
@@ -913,6 +1103,7 @@ export function LedgerIntelTab() {
         activeTab !== "news" &&
         activeTab !== "rails" &&
         activeTab !== "stable" &&
+        activeTab !== "cbdc" &&
         activeTab !== "hackathon" && (
           <div className="border border-white/10 bg-white/[0.02] p-10 text-center">
             {(() => {
