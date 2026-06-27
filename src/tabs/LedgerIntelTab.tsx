@@ -28,6 +28,7 @@ type ActiveIntelTab =
   | "cbdc"
   | "stable"
   | "rewards"
+  | "checkin"
   | "xls"
   | "iso";
 
@@ -536,6 +537,65 @@ const rewardsWatchItems: WatchItem[] = [
   },
 ];
 
+const checkInItems: WatchItem[] = [
+  {
+    name: "Xaman Sign Request",
+    category: "Wallet Action",
+    status: "Next",
+    summary:
+      "Gebruiker bevestigt straks via Xaman een simpele check-in payload. Eerst veilig bouwen, daarna pas live mainnet.",
+  },
+  {
+    name: "Source Tag Attachment",
+    category: "Make Waves Metric",
+    status: "Critical",
+    summary:
+      "De check-in transactie moet later de toegewezen source tag dragen zodat activiteit aan XRPL OnTheTrack Terminal gekoppeld wordt.",
+  },
+  {
+    name: "Memo: OTT Daily Check-In",
+    category: "Ledger Proof",
+    status: "Planned",
+    summary:
+      "Een herkenbare memo maakt de actie begrijpelijk voor gebruiker, demo en explorer-weergave.",
+  },
+  {
+    name: "XP Reward Trigger",
+    category: "Reward Engine",
+    status: "+15 XP",
+    summary:
+      "Na succesvolle check-in krijgt de gebruiker interne XP. Token rewards blijven uit tot de safety-flow staat.",
+  },
+  {
+    name: "One Check-In Per Day",
+    category: "Anti-Spam",
+    status: "Required",
+    summary:
+      "Daglimiet voorkomt farming. Later koppelen aan wallet-adres, datum, transaction hash en streak status.",
+  },
+  {
+    name: "Explorer Receipt",
+    category: "Proof Link",
+    status: "Later",
+    summary:
+      "Na signing tonen we later de transactiehash met link naar Bithomp of XRPL explorer.",
+  },
+  {
+    name: "Streak Builder",
+    category: "Retention",
+    status: "Build",
+    summary:
+      "Dagelijkse check-ins bouwen een streak op voor badges, toegangsniveaus en toekomstige claimmogelijkheden.",
+  },
+  {
+    name: "Debug First",
+    category: "Safe Build",
+    status: "Now",
+    summary:
+      "Eerst als UI-flow en mock-status bouwen. Daarna pas Xaman payload, source tag en live mainnet activatie.",
+  },
+];
+
 function formatDate(date?: string) {
   if (!date) return "Unknown date";
 
@@ -658,6 +718,12 @@ export function LedgerIntelTab() {
     { id: "cbdc", label: "CBDC Tracker", icon: Globe, status: "Watch" },
     { id: "stable", label: "Stable Tokens", icon: Landmark, status: "Watch" },
     { id: "rewards", label: "OTT Rewards", icon: Award, status: "XP" },
+    {
+      id: "checkin",
+      label: "Daily Check-In",
+      icon: ShieldCheck,
+      status: "Next",
+    },
     { id: "xls", label: "XLS Roadmap", icon: FileText, status: "Watch" },
     { id: "iso", label: "ISO 20022 & Law", icon: Scale, status: "Map" },
   ];
@@ -874,6 +940,15 @@ export function LedgerIntelTab() {
                 >
                   <p className="font-mono text-xs text-white/70">
                     Learn & Earn: XP nu, token later
+                  </p>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab("checkin")}
+                  className="w-full text-left border border-white/10 bg-black p-3 hover:bg-white/5 transition-all"
+                >
+                  <p className="font-mono text-xs text-white/70">
+                    Daily Check-In: source tag later
                   </p>
                 </button>
               </div>
@@ -1119,6 +1194,89 @@ export function LedgerIntelTab() {
               <p className="font-mono text-xs text-white/45 leading-relaxed">
                 Later kan de Daily Check-In een echte Xaman mainnet actie worden
                 met source tag, zodat activiteit meetelt voor echte gebruikers.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "checkin" && (
+        <div className="grid grid-cols-12 gap-4">
+          <div className="col-span-12 xl:col-span-8 border border-white/10 bg-white/[0.02] p-6">
+            <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-4">
+              Source-Tagged Mainnet Habit
+            </p>
+
+            <h3 className="font-orbitron text-2xl font-black uppercase mb-4">
+              Daily Check-In
+            </h3>
+
+            <p className="font-mono text-sm text-white/45 leading-relaxed mb-6">
+              Deze module wordt de dagelijkse Xaman actie. Eerst als veilige
+              debug-flow, daarna als echte source-tagged XRPL mainnet transactie
+              voor Make Waves activiteit en gebruikersretentie.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+              <div className="border border-white/10 bg-black p-4">
+                <p className="font-mono text-[10px] text-white/35 uppercase mb-2">
+                  Current Mode
+                </p>
+                <p className="font-orbitron text-lg font-black">Debug</p>
+              </div>
+
+              <div className="border border-white/10 bg-black p-4">
+                <p className="font-mono text-[10px] text-white/35 uppercase mb-2">
+                  Mainnet
+                </p>
+                <p className="font-orbitron text-lg font-black">Later</p>
+              </div>
+
+              <div className="border border-white/10 bg-black p-4">
+                <p className="font-mono text-[10px] text-white/35 uppercase mb-2">
+                  Reward
+                </p>
+                <p className="font-orbitron text-lg font-black">+15 XP</p>
+              </div>
+            </div>
+
+            <button className="w-full border border-white/20 bg-white text-black py-4 font-orbitron text-xs font-black uppercase tracking-widest hover:bg-white/80 transition-all mb-6">
+              Simulate Daily Check-In
+            </button>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {checkInItems.map((item) => (
+                <WatchCard key={item.name} item={item} />
+              ))}
+            </div>
+          </div>
+
+          <div className="col-span-12 xl:col-span-4 space-y-4">
+            <div className="border border-white/10 bg-white/[0.02] p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <ShieldCheck size={17} className="text-white/60" />
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  Safety First
+                </p>
+              </div>
+
+              <p className="font-mono text-xs text-white/45 leading-relaxed">
+                De knop is nu nog simulatie. Zo breken we niks. Daarna koppelen
+                we pas Xaman, payload, source tag en transaction receipt.
+              </p>
+            </div>
+
+            <div className="border border-white/10 bg-white/[0.02] p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <Award size={17} className="text-white/60" />
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  Reward Route
+                </p>
+              </div>
+
+              <p className="font-mono text-xs text-white/45 leading-relaxed">
+                Check-in geeft eerst XP. Later kan dat gekoppeld worden aan
+                streaks, badges, NFT proof, token claims en leaderboard logic.
               </p>
             </div>
           </div>
