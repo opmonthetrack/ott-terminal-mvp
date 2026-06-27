@@ -20,6 +20,7 @@ import {
   Wallet,
   Waves,
 } from "lucide-react";
+import { OTTProfileCard } from "../components/OTTProfileCard";
 
 type BalanceData = {
   total: string;
@@ -179,6 +180,8 @@ export function DashboardTab({ walletAddress }: DashboardTabProps) {
           </div>
         </div>
       </div>
+
+      <OTTProfileCard />
 
       {/* MAIN GRID */}
       <div className="grid grid-cols-12 gap-4">
