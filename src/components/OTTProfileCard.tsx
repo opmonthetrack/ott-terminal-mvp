@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import {
   Award,
   BadgeCheck,
@@ -16,7 +17,12 @@ import {
   Zap,
 } from "lucide-react";
 
+type OTTProfileCardProps = {
+  walletAddress?: string;
+};
+
 type MissionItem = {
+  id: string;
   label: string;
   xp: number;
   done: boolean;
@@ -32,23 +38,23 @@ type BadgeItem = {
   unlocked: boolean;
 };
 
-const profile = {
+const baseProfile = {
   name: "TruthOnTheTrack",
   rank: "XRPL Explorer",
   level: 1,
-  xp: 125,
+  startingXp: 125,
   nextLevelXp: 500,
   dailyStreak: 3,
   weeklyStreak: 1,
   wallet: "rDEBUG_MOCK_ADDRESS_123",
 };
 
-const missions: MissionItem[] = [
-  { label: "Daily Login", xp: 5, done: true },
-  { label: "Read 3 Intel Items", xp: 10, done: false },
-  { label: "Finish 1 Lesson", xp: 25, done: false },
-  { label: "Daily Check-In", xp: 15, done: false },
-  { label: "Complete Quiz", xp: 20, done: false },
+const initialMissions: MissionItem[] = [
+  { id: "login", label: "Daily Login", xp: 5, done: true },
+  { id: "intel", label: "Read 3 Intel Items", xp: 10, done: false },
+  { id: "lesson", label: "Finish 1 Lesson", xp: 25, done: false },
+  { id: "checkin", label: "Daily Check-In", xp: 15, done: false },
+  { id: "quiz", label: "Complete Quiz", xp: 20, done: false },
 ];
 
 const progressItems: ProgressItem[] = [
@@ -59,18 +65,8 @@ const progressItems: ProgressItem[] = [
   { label: "Developer", value: 0 },
 ];
 
-const badges: BadgeItem[] = [
-  { label: "First Login", unlocked: true },
-  { label: "XRPL Beginner", unlocked: true },
-  { label: "News Reader", unlocked: false },
-  { label: "Daily Streak", unlocked: false },
-  { label: "NFT Collector", unlocked: false },
-  { label: "Academy Graduate", unlocked: false },
-  { label: "Validator Watcher", unlocked: false },
-  { label: "OTT Legend", unlocked: false },
-];
-
 function shortenWallet(address: string) {
+  if (!address) return "Unknown";
   if (address.length <= 14) return address;
   return `${address.slice(0, 6)}...${address.slice(-6)}`;
 }
@@ -79,19 +75,52 @@ function ProgressBar({ value }: { value: number }) {
   return (
     <div className="h-2 w-full bg-white/10 overflow-hidden">
       <div
-        className="h-full bg-white transition-all"
+        className="h-full bg-white transition-all duration-500"
         style={{ width: `${Math.max(0, Math.min(value, 100))}%` }}
       />
     </div>
   );
 }
 
-export function OTTProfileCard() {
-  const xpProgress = Math.round((profile.xp / profile.nextLevelXp) * 100);
-  const totalMissionXp = missions.reduce((total, mission) => total + mission.xp, 0);
-  const completedMissionXp = missions
-    .filter((mission) => mission.done)
-    .reduce((total, mission) => total + mission.xp, 0);
+export function OTTProfileCard({ walletAddress }: OTTProfileCardProps) {
+  const [missions, setMissions] = useState<MissionItem[]>(initialMissions);
+
+  const currentWallet = walletAddress || baseProfile.wallet;
+
+  const completedXp = useMemo(
+    () =>
+      missions
+        .filter((mission) => mission.done)
+        .reduce((total, mission) => total + mission.xp, 0),
+    [missions]
+  );
+
+  const totalMissionXp = useMemo(
+    () => missions.reduce((total, mission) => total + mission.xp, 0),
+    [missions]
+  );
+
+  const currentXp = baseProfile.startingXp + completedXp;
+  const xpProgress = Math.round((currentXp / baseProfile.nextLevelXp) * 100);
+
+  const badges: BadgeItem[] = [
+    { label: "First Login", unlocked: true },
+    { label: "XRPL Beginner", unlocked: true },
+    { label: "News Reader", unlocked: missions.find((m) => m.id === "intel")?.done || false },
+    { label: "Daily Streak", unlocked: missions.find((m) => m.id === "checkin")?.done || false },
+    { label: "NFT Collector", unlocked: false },
+    { label: "Academy Graduate", unlocked: missions.find((m) => m.id === "lesson")?.done || false },
+    { label: "Validator Watcher", unlocked: false },
+    { label: "OTT Legend", unlocked: false },
+  ];
+
+  const toggleMission = (missionId: string) => {
+    setMissions((currentMissions) =>
+      currentMissions.map((mission) =>
+        mission.id === missionId ? { ...mission, done: !mission.done } : mission
+      )
+    );
+  };
 
   return (
     <div className="grid grid-cols-12 gap-4 mb-6">
@@ -103,13 +132,13 @@ export function OTTProfileCard() {
             </p>
 
             <h2 className="font-orbitron text-2xl font-black uppercase mb-2">
-              {profile.name}
+              {baseProfile.name}
             </h2>
 
             <div className="flex items-center gap-2 text-white/50">
               <BadgeCheck size={15} />
               <p className="font-mono text-xs uppercase tracking-widest">
-                {profile.rank}
+                {baseProfile.rank}
               </p>
             </div>
           </div>
@@ -118,7 +147,9 @@ export function OTTProfileCard() {
             <p className="font-mono text-[9px] text-white/35 uppercase mb-2">
               Level
             </p>
-            <p className="font-orbitron text-3xl font-black">{profile.level}</p>
+            <p className="font-orbitron text-3xl font-black">
+              {baseProfile.level}
+            </p>
           </div>
         </div>
 
@@ -129,7 +160,7 @@ export function OTTProfileCard() {
               <p className="font-mono text-[10px] uppercase">Wallet</p>
             </div>
             <p className="font-mono text-xs text-white/70">
-              {shortenWallet(profile.wallet)}
+              {shortenWallet(currentWallet)}
             </p>
           </div>
 
@@ -138,7 +169,7 @@ export function OTTProfileCard() {
               <Zap size={15} />
               <p className="font-mono text-[10px] uppercase">OTT XP</p>
             </div>
-            <p className="font-orbitron text-xl font-black">{profile.xp}</p>
+            <p className="font-orbitron text-xl font-black">{currentXp}</p>
           </div>
 
           <div className="border border-white/10 bg-black p-4">
@@ -147,7 +178,7 @@ export function OTTProfileCard() {
               <p className="font-mono text-[10px] uppercase">Daily Streak</p>
             </div>
             <p className="font-orbitron text-xl font-black">
-              {profile.dailyStreak} Days
+              {baseProfile.dailyStreak} Days
             </p>
           </div>
 
@@ -157,7 +188,7 @@ export function OTTProfileCard() {
               <p className="font-mono text-[10px] uppercase">Weekly</p>
             </div>
             <p className="font-orbitron text-xl font-black">
-              {profile.weeklyStreak} Week
+              {baseProfile.weeklyStreak} Week
             </p>
           </div>
         </div>
@@ -168,7 +199,7 @@ export function OTTProfileCard() {
               Level Progress
             </p>
             <p className="font-mono text-[10px] text-white/45">
-              {profile.xp}/{profile.nextLevelXp} XP
+              {currentXp}/{baseProfile.nextLevelXp} XP
             </p>
           </div>
 
@@ -186,15 +217,16 @@ export function OTTProfileCard() {
           </div>
 
           <p className="font-mono text-[10px] text-white/40">
-            {completedMissionXp}/{totalMissionXp} XP
+            {completedXp}/{totalMissionXp} XP
           </p>
         </div>
 
         <div className="space-y-3">
           {missions.map((mission) => (
-            <div
-              key={mission.label}
-              className="flex items-center justify-between border border-white/10 bg-black p-3"
+            <button
+              key={mission.id}
+              onClick={() => toggleMission(mission.id)}
+              className="w-full flex items-center justify-between border border-white/10 bg-black p-3 hover:bg-white/5 transition-all"
             >
               <div className="flex items-center gap-3">
                 {mission.done ? (
@@ -215,7 +247,7 @@ export function OTTProfileCard() {
               <p className="font-mono text-[10px] text-white/45">
                 +{mission.xp} XP
               </p>
-            </div>
+            </button>
           ))}
         </div>
       </div>
