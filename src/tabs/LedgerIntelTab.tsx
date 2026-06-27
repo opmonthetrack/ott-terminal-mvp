@@ -1,6 +1,6 @@
 import { useEffect, useState, type ElementType } from "react";
 import {
-  AlertTriangle,
+  Award,
   Clock,
   ExternalLink,
   FileText,
@@ -15,6 +15,7 @@ import {
   Server,
   ShieldCheck,
   Sparkles,
+  WalletCards,
   Zap,
 } from "lucide-react";
 
@@ -26,6 +27,7 @@ type ActiveIntelTab =
   | "hackathon"
   | "cbdc"
   | "stable"
+  | "rewards"
   | "xls"
   | "iso";
 
@@ -475,6 +477,65 @@ const makeWavesItems: WatchItem[] = [
   },
 ];
 
+const rewardsWatchItems: WatchItem[] = [
+  {
+    name: "Daily Login XP",
+    category: "Retention",
+    status: "+5 XP",
+    summary:
+      "Gebruiker opent dagelijks de terminal en krijgt interne OTT XP. Nog geen token, eerst veilig off-chain punten sparen.",
+  },
+  {
+    name: "Read 3 Intel Items",
+    category: "Learn Loop",
+    status: "+10 XP",
+    summary:
+      "Gebruiker leest drie intelligence items over XRPL, Ripple, Xaman, stablecoins, CBDC, ISO of rails.",
+  },
+  {
+    name: "Quiz Completion",
+    category: "Learn & Earn",
+    status: "+25 XP",
+    summary:
+      "Gebruiker beantwoordt korte vragen over de gelezen onderwerpen en verdient extra XP voor begrip en activiteit.",
+  },
+  {
+    name: "Daily Check-In",
+    category: "Mainnet Action",
+    status: "Later",
+    summary:
+      "Later koppelen aan Xaman met een echte source-tagged XRPL mainnet transactie voor challenge-metrics.",
+  },
+  {
+    name: "7 Day Streak",
+    category: "Habit Formation",
+    status: "Badge",
+    summary:
+      "Gebruiker bouwt een streak op. Later kan dit een NFT badge, achievement of speciale claim-status worden.",
+  },
+  {
+    name: "OTT XP Balance",
+    category: "Internal Points",
+    status: "Safe",
+    summary:
+      "XP blijft eerst intern in de app. Pas later onderzoeken we tokenomics, claim logic, anti-bot regels en compliance.",
+  },
+  {
+    name: "XP To Token",
+    category: "Future Conversion",
+    status: "Future",
+    summary:
+      "Interne XP kan later mogelijk worden omgezet naar jouw eigen token, claim reward, badge of access level.",
+  },
+  {
+    name: "Anti-Abuse Shield",
+    category: "Fair Rewards",
+    status: "Required",
+    summary:
+      "Rewards moeten beschermd worden tegen bots, multi-wallet farming, spam en nepgebruik voordat tokens live gaan.",
+  },
+];
+
 function formatDate(date?: string) {
   if (!date) return "Unknown date";
 
@@ -596,6 +657,7 @@ export function LedgerIntelTab() {
     { id: "hackathon", label: "Make Waves", icon: Zap, status: "MVP" },
     { id: "cbdc", label: "CBDC Tracker", icon: Globe, status: "Watch" },
     { id: "stable", label: "Stable Tokens", icon: Landmark, status: "Watch" },
+    { id: "rewards", label: "OTT Rewards", icon: Award, status: "XP" },
     { id: "xls", label: "XLS Roadmap", icon: FileText, status: "Watch" },
     { id: "iso", label: "ISO 20022 & Law", icon: Scale, status: "Map" },
   ];
@@ -671,18 +733,18 @@ export function LedgerIntelTab() {
 
             <div className="border border-white/10 bg-black p-4">
               <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
-                Mode
+                Rewards
               </p>
               <div className="flex items-center gap-2">
-                <ShieldCheck size={15} className="text-white/60" />
-                <p className="font-orbitron text-xs uppercase">Safe Preview</p>
+                <WalletCards size={15} className="text-white/60" />
+                <p className="font-orbitron text-xs uppercase">XP Now</p>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="border border-white/10 bg-white/[0.02] p-2 mb-6 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-9 gap-2">
+      <div className="border border-white/10 bg-white/[0.02] p-2 mb-6 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-10 gap-2">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -743,7 +805,7 @@ export function LedgerIntelTab() {
                 <p className="font-mono text-[10px] text-white/35 uppercase mb-2">
                   Daily XP
                 </p>
-                <p className="font-orbitron text-2xl font-black">Soon</p>
+                <p className="font-orbitron text-2xl font-black">+5</p>
               </div>
 
               <div className="border border-white/10 bg-black p-4">
@@ -806,12 +868,29 @@ export function LedgerIntelTab() {
                   </p>
                 </div>
 
-                <div className="border border-white/10 bg-black p-3">
+                <button
+                  onClick={() => setActiveTab("rewards")}
+                  className="w-full text-left border border-white/10 bg-black p-3 hover:bg-white/5 transition-all"
+                >
                   <p className="font-mono text-xs text-white/70">
                     Learn & Earn: XP nu, token later
                   </p>
-                </div>
+                </button>
               </div>
+            </div>
+
+            <div className="border border-white/10 bg-white/[0.02] p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <Award size={17} className="text-white/60" />
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  XP Status
+                </p>
+              </div>
+
+              <p className="font-mono text-xs text-white/45 leading-relaxed">
+                Rewards blijven nu veilig als interne OTT XP. Later pas
+                koppelen aan token, claim, badge of source-tagged mainnet actie.
+              </p>
             </div>
           </div>
         </div>
@@ -962,6 +1041,85 @@ export function LedgerIntelTab() {
               {stableWatchItems.map((item) => (
                 <StableWatchCard key={item.ticker} item={item} />
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "rewards" && (
+        <div className="grid grid-cols-12 gap-4">
+          <div className="col-span-12 xl:col-span-8 border border-white/10 bg-white/[0.02] p-6">
+            <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-4">
+              Learn & Earn Reward Engine
+            </p>
+
+            <h3 className="font-orbitron text-2xl font-black uppercase mb-4">
+              OTT XP Rewards
+            </h3>
+
+            <p className="font-mono text-sm text-white/45 leading-relaxed mb-6">
+              Deze module bouwt de dagelijkse motivatie-laag: XP verdienen door
+              lezen, leren, quizzen, terugkomen en later source-tagged XRPL
+              acties uitvoeren.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+              <div className="border border-white/10 bg-black p-4">
+                <p className="font-mono text-[10px] text-white/35 uppercase mb-2">
+                  Current Mode
+                </p>
+                <p className="font-orbitron text-lg font-black">OTT XP</p>
+              </div>
+
+              <div className="border border-white/10 bg-black p-4">
+                <p className="font-mono text-[10px] text-white/35 uppercase mb-2">
+                  Token Mode
+                </p>
+                <p className="font-orbitron text-lg font-black">Later</p>
+              </div>
+
+              <div className="border border-white/10 bg-black p-4">
+                <p className="font-mono text-[10px] text-white/35 uppercase mb-2">
+                  Safety
+                </p>
+                <p className="font-orbitron text-lg font-black">Off-Chain</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {rewardsWatchItems.map((item) => (
+                <WatchCard key={item.name} item={item} />
+              ))}
+            </div>
+          </div>
+
+          <div className="col-span-12 xl:col-span-4 space-y-4">
+            <div className="border border-white/10 bg-white/[0.02] p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <ShieldCheck size={17} className="text-white/60" />
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  Safe Reward Path
+                </p>
+              </div>
+
+              <p className="font-mono text-xs text-white/45 leading-relaxed">
+                Eerst XP. Daarna pas badges. Daarna pas claims. Daarna pas
+                tokenomics. Zo bouwen we zonder onnodig risico.
+              </p>
+            </div>
+
+            <div className="border border-white/10 bg-white/[0.02] p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <Zap size={17} className="text-white/60" />
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  Make Waves Link
+                </p>
+              </div>
+
+              <p className="font-mono text-xs text-white/45 leading-relaxed">
+                Later kan de Daily Check-In een echte Xaman mainnet actie worden
+                met source tag, zodat activiteit meetelt voor echte gebruikers.
+              </p>
             </div>
           </div>
         </div>
