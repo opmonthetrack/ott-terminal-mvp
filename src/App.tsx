@@ -3,9 +3,10 @@ import { LoginScreen } from "./components/LoginScreen";
 import { DashboardTab } from "./tabs/DashboardTab";
 import { DeFiTab } from "./tabs/DeFiTab";
 import { LedgerIntelTab } from "./tabs/LedgerIntelTab";
+import { ProfileTab } from "./tabs/ProfileTab";
 import { LanguageProvider, useLanguage } from "./LanguageContext";
 
-type ActiveTab = "dashboard" | "defi" | "academy" | "intel";
+type ActiveTab = "dashboard" | "profile" | "defi" | "academy" | "intel";
 
 function MainApp() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -22,6 +23,11 @@ function MainApp() {
       id: "dashboard",
       label: t("menu_dashboard"),
       status: "Live",
+    },
+    {
+      id: "profile",
+      label: "Profile",
+      status: "New",
     },
     {
       id: "defi",
@@ -42,10 +48,8 @@ function MainApp() {
 
   return (
     <div className="flex min-h-screen bg-black text-white selection:bg-white/20">
-      {/* SIDEBAR */}
       <aside className="w-64 border-r border-white/10 flex flex-col justify-between bg-black z-10 relative">
         <div className="p-6">
-          {/* BRAND */}
           <div className="flex items-center gap-3 mb-10">
             <div className="w-11 h-11 bg-white flex items-center justify-center font-black text-black font-orbitron rounded-sm">
               OTT
@@ -61,7 +65,6 @@ function MainApp() {
             </div>
           </div>
 
-          {/* STATUS BLOCK */}
           <div className="border border-white/10 bg-white/[0.02] p-4 mb-8">
             <p className="font-orbitron text-[10px] uppercase tracking-widest text-white/60 mb-2">
               Terminal Status
@@ -79,7 +82,6 @@ function MainApp() {
             </p>
           </div>
 
-          {/* NAVIGATION */}
           <nav className="space-y-2">
             {menuItems.map((item) => {
               const isActive = activeTab === item.id;
@@ -114,7 +116,6 @@ function MainApp() {
         </div>
 
         <div className="p-6 space-y-6">
-          {/* LANGUAGE SWITCH */}
           <div className="bg-gray-950 border border-white/10 rounded-lg p-1 flex relative">
             <div
               className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded shadow transition-all duration-300 ${
@@ -154,7 +155,6 @@ function MainApp() {
         </div>
       </aside>
 
-      {/* MAIN CONTENT AREA */}
       <main className="flex-1 h-screen overflow-y-auto bg-black">
         <div className="border-b border-white/10 px-8 py-5 flex items-center justify-between">
           <div>
@@ -171,7 +171,7 @@ function MainApp() {
               Build Phase
             </p>
             <p className="font-orbitron text-xs text-white/70 uppercase">
-              Dashboard MVP
+              Identity System
             </p>
           </div>
         </div>
@@ -179,6 +179,8 @@ function MainApp() {
         {activeTab === "dashboard" && (
           <DashboardTab walletAddress={walletAddress} />
         )}
+
+        {activeTab === "profile" && <ProfileTab />}
 
         {activeTab === "defi" && <DeFiTab />}
 
