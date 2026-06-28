@@ -5,6 +5,7 @@ import { WalletTab } from "./tabs/WalletTab";
 import { PortfolioTab } from "./tabs/PortfolioTab";
 import { EcosystemTab } from "./tabs/EcosystemTab";
 import { ValidatorTab } from "./tabs/ValidatorTab";
+import { DeveloperHubTab } from "./tabs/DeveloperHubTab";
 import { DeFiTab } from "./tabs/DeFiTab";
 import { LedgerIntelTab } from "./tabs/LedgerIntelTab";
 import { ProfileTab } from "./tabs/ProfileTab";
@@ -20,6 +21,7 @@ type ActiveTab =
   | "portfolio"
   | "ecosystem"
   | "validator"
+  | "developer"
   | "profile"
   | "token"
   | "ai"
@@ -63,6 +65,11 @@ function MainApp() {
       id: "validator",
       label: "Validators",
       status: "UNL",
+    },
+    {
+      id: "developer",
+      label: "Developer",
+      status: "Build",
     },
     {
       id: "profile",
@@ -244,6 +251,8 @@ function MainApp() {
         {activeTab === "ecosystem" && <EcosystemTab />}
 
         {activeTab === "validator" && <ValidatorTab />}
+
+        {activeTab === "developer" && <DeveloperHubTab />}
 
         {activeTab === "profile" && <ProfileTab />}
 
