@@ -1,20 +1,18 @@
+import { useState } from "react";
 import type { ElementType } from "react";
 import {
-  Activity,
   AlertTriangle,
   ArrowDownLeft,
-  ArrowUpRight,
   BadgeCheck,
   CheckCircle2,
-  Clock,
   Copy,
   Eye,
   Fingerprint,
   KeyRound,
-  Layers,
   Lock,
   QrCode,
   Radio,
+  RefreshCw,
   ScanLine,
   Send,
   ShieldAlert,
@@ -28,74 +26,111 @@ type WalletTabProps = {
   walletAddress: string;
 };
 
-type Transaction = {
-  type: string;
-  amount: string;
+type WalletAction = {
+  id: string;
+  title: string;
   status: string;
-  time: string;
+  text: string;
+  icon: ElementType;
 };
 
-type Trustline = {
-  token: string;
+type TrustlineItem = {
+  asset: string;
   issuer: string;
-  risk: string;
   status: string;
+  risk: string;
 };
 
-const transactions: Transaction[] = [
+type SafetyItem = {
+  title: string;
+  text: string;
+  status: string;
+  icon: ElementType;
+};
+
+const walletActions: WalletAction[] = [
   {
-    type: "Daily Check-In",
-    amount: "Source Tag 2606",
-    status: "Soon",
-    time: "Make Waves",
+    id: "receive",
+    title: "Receive XRP",
+    status: "Safe",
+    text: "Toon je wallet adres en QR-code voor inkomende transacties.",
+    icon: ArrowDownLeft,
   },
   {
-    type: "Receive XRP",
-    amount: "+25 XRP",
-    status: "Mock",
-    time: "Today",
+    id: "send",
+    title: "Send XRP",
+    status: "Xaman Later",
+    text: "Maak later een veilige Xaman payload. Geen automatische signing.",
+    icon: Send,
   },
   {
-    type: "Trustline Review",
-    amount: "Risk Scan",
-    status: "Planned",
-    time: "Soon",
+    id: "trustline",
+    title: "Trustline Review",
+    status: "Safety",
+    text: "Controleer tokens, issuers, limieten en mogelijke wallet risico's.",
+    icon: ShieldAlert,
   },
   {
-    type: "Academy Reward",
-    amount: "+25 XP",
-    status: "Live",
-    time: "Now",
+    id: "checkin",
+    title: "Daily Check-In",
+    status: "2606",
+    text: "Koppel straks de Make Waves check-in aan source tag 2606.",
+    icon: Zap,
   },
 ];
 
-const trustlines: Trustline[] = [
+const trustlines: TrustlineItem[] = [
   {
-    token: "RLUSD",
-    issuer: "Ripple Stablecoin",
-    risk: "Low",
+    asset: "RLUSD",
+    issuer: "Ripple USD issuer",
     status: "Watch",
-  },
-  {
-    token: "USDC",
-    issuer: "Circle",
     risk: "Low",
-    status: "Research",
   },
   {
-    token: "Unknown Token",
-    issuer: "Unknown Issuer",
+    asset: "USDC",
+    issuer: "Circle stablecoin issuer",
+    status: "Research",
+    risk: "Low",
+  },
+  {
+    asset: "MEME",
+    issuer: "Unknown issuer",
+    status: "Warning",
     risk: "High",
-    status: "Warn",
+  },
+  {
+    asset: "OTT XP",
+    issuer: "Off-chain points",
+    status: "Safe Mock",
+    risk: "None",
   },
 ];
 
-const securityChecks = [
-  "No automatic signing",
-  "No hidden wallet actions",
-  "Xaman confirmation required",
-  "Trustline warnings before action",
-  "Source tag visible before check-in",
+const safetyItems: SafetyItem[] = [
+  {
+    title: "No Seed Phrase",
+    text: "Deze terminal vraagt nooit om je seed phrase of private key.",
+    status: "Rule",
+    icon: KeyRound,
+  },
+  {
+    title: "Xaman Confirm",
+    text: "Elke echte walletactie moet zichtbaar in Xaman bevestigd worden.",
+    status: "Required",
+    icon: Wallet,
+  },
+  {
+    title: "Source Tag Visible",
+    text: "Bij Make Waves transacties tonen we source tag 2606 vooraf.",
+    status: "2606",
+    icon: Fingerprint,
+  },
+  {
+    title: "Trustline Warning",
+    text: "Onbekende tokens en issuers krijgen duidelijke waarschuwingen.",
+    status: "Safety",
+    icon: ShieldAlert,
+  },
 ];
 
 function shortAddress(address: string) {
@@ -105,7 +140,21 @@ function shortAddress(address: string) {
 }
 
 export function WalletTab({ walletAddress }: WalletTabProps) {
-  const isDebugWallet = walletAddress.includes("DEBUG");
+  const [copied, setCopied] = useState(false);
+  const [selectedAction, setSelectedAction] = useState<WalletAction>(walletActions[0]);
+  const [selectedTrustline, setSelectedTrustline] = useState<TrustlineItem>(trustlines[0]);
+
+  const SelectedActionIcon = selectedAction.icon;
+
+  async function copyWalletAddress() {
+    try {
+      await navigator.clipboard.writeText(walletAddress);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
+    } catch {
+      setCopied(false);
+    }
+  }
 
   return (
     <div className="p-6 bg-black min-h-screen text-white">
@@ -122,25 +171,21 @@ export function WalletTab({ walletAddress }: WalletTabProps) {
             </div>
 
             <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
-              Wallet. Identity. Safety.
+              Wallet Identity & Safety
             </h2>
 
             <p className="font-mono text-sm text-white/45 max-w-3xl leading-relaxed">
-              De wallet-laag van de OTT Terminal. Hier komen Xaman login,
-              balances, transacties, trustlines, NFT badges, security warnings
-              en Make Waves source-tagged check-ins samen.
+              De wallet-laag van de OTT Terminal. Hier komen je XRPL account,
+              trustline safety, Xaman acties, source tag 2606 en gebruikersidentiteit
+              samen.
             </p>
           </div>
 
           <div className="col-span-12 xl:col-span-4 grid grid-cols-2 gap-3">
+            <StatBox icon={ShieldCheck} label="Status" value="Connected" />
             <StatBox icon={Radio} label="Network" value="XRPL" />
-            <StatBox
-              icon={ShieldCheck}
-              label="Mode"
-              value={isDebugWallet ? "Debug" : "Live"}
-            />
-            <StatBox icon={Zap} label="Source Tag" value="2606" />
-            <StatBox icon={BadgeCheck} label="Identity" value="Connected" />
+            <StatBox icon={Fingerprint} label="Source Tag" value="2606" />
+            <StatBox icon={BadgeCheck} label="Mode" value="Debug" />
           </div>
         </div>
       </div>
@@ -149,62 +194,58 @@ export function WalletTab({ walletAddress }: WalletTabProps) {
         <div className="col-span-12 xl:col-span-4 space-y-4">
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Fingerprint size={18} className="text-white/60" />
+              <Wallet size={18} className="text-white/60" />
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                Wallet Identity
+                Connected Wallet
               </p>
             </div>
 
-            <div className="border border-white/10 bg-black p-5 mb-4">
+            <div className="border border-white/10 bg-black p-4 mb-4">
               <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
-                Connected Address
+                Address
               </p>
 
-              <p className="font-orbitron text-lg font-black uppercase mb-2">
-                {shortAddress(walletAddress)}
-              </p>
-
-              <p className="font-mono text-[10px] text-white/30 break-all">
+              <p className="font-mono text-xs text-white/70 break-all">
                 {walletAddress}
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <MiniButton icon={Copy} label="Copy" />
-              <MiniButton icon={QrCode} label="QR Code" />
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={copyWalletAddress}
+                className="flex items-center justify-center gap-2 bg-white text-black py-3 font-orbitron text-xs font-black uppercase"
+              >
+                {copied ? <CheckCircle2 size={15} /> : <Copy size={15} />}
+                {copied ? "Copied" : "Copy"}
+              </button>
+
+              <button
+                onClick={() => setSelectedAction(walletActions[0])}
+                className="flex items-center justify-center gap-2 border border-white/15 py-3 font-orbitron text-xs font-black uppercase text-white/70 hover:bg-white/[0.03] transition-all"
+              >
+                <QrCode size={15} />
+                QR
+              </button>
             </div>
           </div>
 
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Sparkles size={18} className="text-white/60" />
+              <ScanLine size={18} className="text-white/60" />
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                Mock Balance
-              </p>
-            </div>
-
-            <p className="font-orbitron text-4xl font-black mb-2">589.0000</p>
-            <p className="font-mono text-xs text-white/40 mb-6">XRP</p>
-
-            <div className="grid grid-cols-2 gap-3">
-              <ActionButton icon={ArrowDownLeft} label="Receive" active />
-              <ActionButton icon={Send} label="Send" />
-            </div>
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Lock size={18} className="text-white/60" />
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Xaman Actions
+                Wallet Actions
               </p>
             </div>
 
             <div className="space-y-3">
-              <ActionLine label="Login with Xaman" status="Later" />
-              <ActionLine label="Payment Payload" status="Soon" />
-              <ActionLine label="Trustline Payload" status="Soon" />
-              <ActionLine label="Daily Check-In" status="Priority" />
+              {walletActions.map((action) => (
+                <ActionButton
+                  key={action.id}
+                  action={action}
+                  active={selectedAction.id === action.id}
+                  onClick={() => setSelectedAction(action)}
+                />
+              ))}
             </div>
           </div>
         </div>
@@ -214,21 +255,29 @@ export function WalletTab({ walletAddress }: WalletTabProps) {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
-                  Activity Feed
+                  Selected Action
                 </p>
 
                 <h3 className="font-orbitron text-xl font-black uppercase">
-                  Wallet Timeline
+                  {selectedAction.title}
                 </h3>
               </div>
 
-              <Activity size={20} className="text-white/60" />
+              <SelectedActionIcon size={22} className="text-white/60" />
             </div>
 
-            <div className="space-y-3">
-              {transactions.map((tx) => (
-                <TransactionRow key={`${tx.type}-${tx.time}`} transaction={tx} />
-              ))}
+            <p className="font-mono text-sm text-white/45 leading-relaxed mb-5">
+              {selectedAction.text}
+            </p>
+
+            <div className="border border-white/10 bg-black p-4">
+              <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+                Action Status
+              </p>
+
+              <p className="font-orbitron text-sm font-black uppercase">
+                {selectedAction.status}
+              </p>
             </div>
           </div>
 
@@ -240,16 +289,21 @@ export function WalletTab({ walletAddress }: WalletTabProps) {
                 </p>
 
                 <h3 className="font-orbitron text-xl font-black uppercase">
-                  Token Safety
+                  Token Safety Review
                 </h3>
               </div>
 
-              <ScanLine size={20} className="text-white/60" />
+              <Eye size={20} className="text-white/60" />
             </div>
 
             <div className="space-y-3">
-              {trustlines.map((trustline) => (
-                <TrustlineRow key={trustline.token} trustline={trustline} />
+              {trustlines.map((item) => (
+                <TrustlineRow
+                  key={item.asset}
+                  item={item}
+                  active={selectedTrustline.asset === item.asset}
+                  onClick={() => setSelectedTrustline(item)}
+                />
               ))}
             </div>
           </div>
@@ -258,64 +312,47 @@ export function WalletTab({ walletAddress }: WalletTabProps) {
         <div className="col-span-12 xl:col-span-3 space-y-4">
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
-              <ShieldAlert size={18} className="text-white/60" />
+              <AlertTriangle size={18} className="text-white/60" />
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                Risk Scanner
+                Selected Token
               </p>
             </div>
 
-            <p className="font-mono text-xs text-white/45 leading-relaxed mb-5">
-              Later scant OTT wallet acties, tokens, issuers, trustlines,
-              airdrops en verdachte transacties voordat de gebruiker tekent.
+            <p className="font-orbitron text-2xl font-black uppercase mb-2">
+              {selectedTrustline.asset}
             </p>
 
+            <p className="font-mono text-xs text-white/40 leading-relaxed mb-5">
+              {selectedTrustline.issuer}
+            </p>
+
+            <div className="grid grid-cols-2 gap-2">
+              <MiniStatus label="Status" value={selectedTrustline.status} />
+              <MiniStatus label="Risk" value={selectedTrustline.risk} />
+            </div>
+          </div>
+
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Lock size={18} className="text-white/60" />
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Safety Rules
+              </p>
+            </div>
+
             <div className="space-y-3">
-              {securityChecks.map((check) => (
-                <SecurityLine key={check} label={check} />
+              {safetyItems.map((item) => (
+                <SafetyRow key={item.title} item={item} />
               ))}
-            </div>
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Zap size={18} className="text-white/60" />
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Make Waves Check-In
-              </p>
-            </div>
-
-            <p className="font-mono text-xs text-white/45 leading-relaxed mb-5">
-              De eerste echte mainnet actie wordt later een veilige Xaman
-              check-in met source tag 2606, zodat actieve gebruikers meetellen.
-            </p>
-
-            <button className="w-full border border-white/15 py-3 font-orbitron text-xs uppercase tracking-widest text-white/40 cursor-not-allowed">
-              Check-In Coming Soon
-            </button>
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Layers size={18} className="text-white/60" />
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Future Wallet Modules
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <FutureLine label="NFT Badges" />
-              <FutureLine label="Portfolio" />
-              <FutureLine label="AMM Positions" />
-              <FutureLine label="Reputation Score" />
             </div>
           </div>
         </div>
 
         <div className="col-span-12 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <FeatureBox icon={Eye} title="Explorer" text="Bithomp / XRPL.org" />
-          <FeatureBox icon={KeyRound} title="Keys" text="Safety education" />
-          <FeatureBox icon={AlertTriangle} title="Warnings" text="Risk alerts" />
-          <FeatureBox icon={ArrowUpRight} title="Actions" text="Xaman flows later" />
+          <FeatureBox icon={ArrowDownLeft} title="Receive" text="Wallet address and QR" />
+          <FeatureBox icon={Send} title="Send Later" text="Xaman payload only" />
+          <FeatureBox icon={RefreshCw} title="Trustlines" text="Token safety scan" />
+          <FeatureBox icon={Sparkles} title="AI Explain" text="Wallet coach later" />
         </div>
       </div>
     </div>
@@ -339,129 +376,117 @@ function StatBox({
         {label}
       </p>
 
-      <p className="font-orbitron text-lg font-black uppercase">{value}</p>
+      <p className="font-orbitron text-sm font-black uppercase">{value}</p>
     </div>
-  );
-}
-
-function MiniButton({
-  icon: Icon,
-  label,
-}: {
-  icon: ElementType;
-  label: string;
-}) {
-  return (
-    <button className="border border-white/10 bg-black p-3 flex items-center justify-center gap-2 font-orbitron text-[10px] uppercase tracking-widest text-white/50 hover:text-white hover:bg-white/[0.03] transition-all">
-      <Icon size={14} />
-      {label}
-    </button>
   );
 }
 
 function ActionButton({
-  icon: Icon,
-  label,
+  action,
   active,
+  onClick,
 }: {
-  icon: ElementType;
-  label: string;
-  active?: boolean;
+  action: WalletAction;
+  active: boolean;
+  onClick: () => void;
 }) {
+  const Icon = action.icon;
+
   return (
     <button
-      className={`flex items-center justify-center gap-2 py-3 font-orbitron text-xs font-black uppercase transition-all ${
+      onClick={onClick}
+      className={`w-full border p-4 text-left transition-all ${
         active
-          ? "bg-white text-black"
-          : "border border-white/15 text-white/70 hover:bg-white/[0.03]"
+          ? "border-white/30 bg-white/[0.08]"
+          : "border-white/10 bg-black hover:bg-white/[0.03]"
       }`}
     >
-      <Icon size={15} />
-      {label}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Icon size={16} className="text-white/60" />
+
+          <p className="font-orbitron text-xs font-bold uppercase">
+            {action.title}
+          </p>
+        </div>
+
+        <p className="font-mono text-[10px] text-white/35 uppercase">
+          {action.status}
+        </p>
+      </div>
     </button>
   );
 }
 
-function ActionLine({ label, status }: { label: string; status: string }) {
+function TrustlineRow({
+  item,
+  active,
+  onClick,
+}: {
+  item: TrustlineItem;
+  active: boolean;
+  onClick: () => void;
+}) {
   return (
-    <div className="flex items-center justify-between border border-white/10 bg-black p-3">
-      <p className="font-mono text-xs text-white/50">{label}</p>
-
-      <p className="font-mono text-[10px] text-white/35 uppercase">{status}</p>
-    </div>
-  );
-}
-
-function TransactionRow({ transaction }: { transaction: Transaction }) {
-  return (
-    <div className="border border-white/10 bg-black p-4 hover:bg-white/[0.03] transition-all">
+    <button
+      onClick={onClick}
+      className={`w-full border p-4 text-left transition-all ${
+        active
+          ? "border-white/30 bg-white/[0.08]"
+          : "border-white/10 bg-black hover:bg-white/[0.03]"
+      }`}
+    >
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="font-orbitron text-sm font-bold uppercase mb-1">
-            {transaction.type}
+            {item.asset}
           </p>
 
-          <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest">
-            {transaction.amount} • {transaction.time}
+          <p className="font-mono text-[10px] text-white/35 uppercase">
+            {item.status}
           </p>
         </div>
 
         <p className="font-mono text-[10px] text-white/45 uppercase">
-          {transaction.status}
+          Risk: {item.risk}
         </p>
       </div>
+    </button>
+  );
+}
+
+function MiniStatus({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-white/10 bg-black p-3">
+      <p className="font-mono text-[10px] text-white/30 uppercase mb-2">
+        {label}
+      </p>
+
+      <p className="font-orbitron text-xs font-black uppercase">{value}</p>
     </div>
   );
 }
 
-function TrustlineRow({ trustline }: { trustline: Trustline }) {
-  const isHighRisk = trustline.risk === "High";
+function SafetyRow({ item }: { item: SafetyItem }) {
+  const Icon = item.icon;
 
   return (
-    <div className="border border-white/10 bg-black p-4 hover:bg-white/[0.03] transition-all">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="font-orbitron text-sm font-bold uppercase mb-1">
-            {trustline.token}
-          </p>
+    <div className="border border-white/10 bg-black p-3">
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <Icon size={14} className="text-white/60" />
 
-          <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest">
-            {trustline.issuer}
-          </p>
-        </div>
-
-        <div className="text-right">
-          <p
-            className={`font-mono text-[10px] uppercase mb-1 ${
-              isHighRisk ? "text-white/70" : "text-white/35"
-            }`}
-          >
-            Risk: {trustline.risk}
-          </p>
-
-          <p className="font-mono text-[10px] text-white/30 uppercase">
-            {trustline.status}
-          </p>
-        </div>
+        <p className="font-mono text-[10px] text-white/30 uppercase">
+          {item.status}
+        </p>
       </div>
-    </div>
-  );
-}
 
-function SecurityLine({ label }: { label: string }) {
-  return (
-    <div className="flex items-center gap-2 border border-white/10 bg-black p-3">
-      <CheckCircle2 size={14} className="text-white/60" />
-      <p className="font-mono text-xs text-white/50">{label}</p>
-    </div>
-  );
-}
+      <p className="font-orbitron text-xs font-bold uppercase mb-2">
+        {item.title}
+      </p>
 
-function FutureLine({ label }: { label: string }) {
-  return (
-    <div className="flex items-center gap-2 border-b border-white/10 pb-3 last:border-b-0 last:pb-0">
-      <Clock size={14} className="text-white/40" />
-      <p className="font-mono text-xs text-white/45">{label}</p>
+      <p className="font-mono text-[10px] text-white/40 leading-relaxed">
+        {item.text}
+      </p>
     </div>
   );
 }
