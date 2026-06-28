@@ -1,147 +1,197 @@
+import { useState } from "react";
 import type { ElementType } from "react";
 import {
   Activity,
-  AlertTriangle,
   BadgeCheck,
+  BarChart3,
   CheckCircle2,
   Clock,
+  Cpu,
+  Database,
   Globe2,
-  Layers,
+  Lock,
   Network,
   Radio,
   Server,
   ShieldCheck,
   Signal,
   Sparkles,
-  Terminal,
+  Target,
+  TrendingUp,
   Users,
   Vote,
+  Waves,
   Zap,
 } from "lucide-react";
 
-type Validator = {
-  name: string;
-  region: string;
-  status: string;
-  uptime: string;
-  role: string;
-};
-
-type Amendment = {
-  title: string;
-  status: string;
-  support: string;
-  description: string;
-};
-
-type NetworkMetric = {
+type ValidatorMetric = {
   label: string;
   value: string;
   subtitle: string;
   icon: ElementType;
 };
 
-const validators: Validator[] = [
-  {
-    name: "XRPL Foundation",
-    region: "Global",
-    status: "Active",
-    uptime: "99.9%",
-    role: "UNL",
-  },
-  {
-    name: "Ripple Validator",
-    region: "Global",
-    status: "Active",
-    uptime: "99.9%",
-    role: "UNL",
-  },
-  {
-    name: "Community Validator",
-    region: "EU",
-    status: "Watch",
-    uptime: "99.5%",
-    role: "Public",
-  },
-  {
-    name: "University Validator",
-    region: "Research",
-    status: "Watch",
-    uptime: "99.2%",
-    role: "Education",
-  },
-];
+type ValidatorNode = {
+  name: string;
+  country: string;
+  status: string;
+  uptime: string;
+  description: string;
+};
 
-const amendments: Amendment[] = [
-  {
-    title: "AMM Enhancements",
-    status: "Watch",
-    support: "Research",
-    description:
-      "Voor toekomstige DeFi, liquidity pools, LP analytics en AMM intelligence.",
-  },
-  {
-    title: "Clawback",
-    status: "Live / Research",
-    support: "Compliance",
-    description:
-      "Belangrijk voor regulated assets, stablecoins en institutionele tokenization.",
-  },
-  {
-    title: "DID",
-    status: "Research",
-    support: "Identity",
-    description:
-      "Kan later relevant zijn voor identity, reputation en verified user profiles.",
-  },
-  {
-    title: "Permissioned Domains",
-    status: "Watch",
-    support: "Enterprise",
-    description:
-      "Interessant voor enterprise, compliance, institutions en regulated DeFi.",
-  },
-];
+type Amendment = {
+  title: string;
+  status: string;
+  impact: string;
+  description: string;
+};
 
-const networkMetrics: NetworkMetric[] = [
+type NetworkLayer = {
+  title: string;
+  value: string;
+  text: string;
+  icon: ElementType;
+};
+
+const validatorMetrics: ValidatorMetric[] = [
   {
     label: "Network",
-    value: "XRPL Mainnet",
-    subtitle: "Live network focus",
+    value: "XRPL",
+    subtitle: "Mainnet focus",
     icon: Globe2,
   },
   {
     label: "Consensus",
     value: "Active",
-    subtitle: "Validator agreement",
+    subtitle: "Live concept",
     icon: Network,
   },
   {
-    label: "Ledger Speed",
-    value: "Fast",
-    subtitle: "Low-cost settlement",
-    icon: Zap,
+    label: "UNL",
+    value: "Watch",
+    subtitle: "Validator list",
+    icon: ShieldCheck,
   },
   {
-    label: "Monitoring",
-    value: "Mock",
-    subtitle: "Live data later",
+    label: "Health",
+    value: "Good",
+    subtitle: "Mock score",
     icon: Activity,
   },
 ];
 
-const validatorRoadmap = [
-  "Live XRPL network status",
-  "Validator uptime tracking",
-  "UNL monitoring",
-  "Amendment voting dashboard",
-  "Governance education pages",
-  "Validator risk labels",
-  "AI amendment summaries",
-  "Community voting explainers",
+const validators: ValidatorNode[] = [
+  {
+    name: "XRPL Foundation",
+    country: "Global",
+    status: "Trusted",
+    uptime: "99.9%",
+    description:
+      "Publieke validator-laag voor educatie, UNL awareness en network monitoring.",
+  },
+  {
+    name: "Ripple Validator",
+    country: "Global",
+    status: "Core",
+    uptime: "99.9%",
+    description:
+      "Belangrijke infrastructuurlaag binnen het XRPL ecosysteem en consensus monitoring.",
+  },
+  {
+    name: "Community Validator",
+    country: "EU",
+    status: "Watch",
+    uptime: "99.5%",
+    description:
+      "Community node voorbeeld voor decentralisatie, governance en uptime uitleg.",
+  },
+  {
+    name: "OTT Future Node",
+    country: "Netherlands",
+    status: "Planned",
+    uptime: "Soon",
+    description:
+      "Toekomstige OTT validator of observer node voor education, metrics en transparency.",
+  },
+];
+
+const amendments: Amendment[] = [
+  {
+    title: "AMM",
+    status: "Education",
+    impact: "DeFi",
+    description:
+      "AMM uitleg voor liquidity pools, swaps, fees, risico en XRPL DeFi adoptie.",
+  },
+  {
+    title: "Clawback",
+    status: "Watch",
+    impact: "Tokens",
+    description:
+      "Token issuer control, compliance discussie en user risk education.",
+  },
+  {
+    title: "DID",
+    status: "Identity",
+    impact: "Web3 ID",
+    description:
+      "Decentralized identity als toekomstige laag voor profiles, credentials en badges.",
+  },
+  {
+    title: "Hooks / Smart Features",
+    status: "Research",
+    impact: "Builders",
+    description:
+      "Educatieve researchlaag voor automatisering, logic en developer tooling.",
+  },
+];
+
+const networkLayers: NetworkLayer[] = [
+  {
+    title: "Consensus",
+    value: "Fast Finality",
+    text: "XRPL validators bereiken consensus zonder mining.",
+    icon: Signal,
+  },
+  {
+    title: "Validators",
+    value: "UNL",
+    text: "Node operators helpen het netwerk betrouwbaar houden.",
+    icon: Server,
+  },
+  {
+    title: "Governance",
+    value: "Amendments",
+    text: "Protocolwijzigingen worden via amendment voting gevolgd.",
+    icon: Vote,
+  },
+  {
+    title: "Education",
+    value: "OTT Layer",
+    text: "OTT vertaalt technische data naar begrijpelijke uitleg.",
+    icon: Sparkles,
+  },
+];
+
+const roadmap = [
+  "Live validator list koppelen",
+  "UNL status zichtbaar maken",
+  "Amendment voting feed bouwen",
+  "Network health score maken",
+  "XRPL node endpoint toevoegen",
+  "Validator education cards maken",
+  "OTT observer node onderzoeken",
+  "Alerts voor network changes toevoegen",
 ];
 
 export function ValidatorTab() {
+  const [selectedValidator, setSelectedValidator] = useState<ValidatorNode>(
+    validators[0]
+  );
+  const [selectedAmendment, setSelectedAmendment] = useState<Amendment>(
+    amendments[0]
+  );
+
   return (
     <div className="p-6 bg-black min-h-screen text-white">
       <div className="relative overflow-hidden border border-white/10 bg-white/[0.02] p-6 mb-6">
@@ -151,24 +201,25 @@ export function ValidatorTab() {
           <div className="col-span-12 xl:col-span-8">
             <div className="flex items-center gap-2 mb-4 text-white/45">
               <Server size={17} />
+
               <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
                 XRPL Validator Monitor
               </p>
             </div>
 
             <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
-              Network. Validators. Governance.
+              Network Health & Consensus
             </h2>
 
             <p className="font-mono text-sm text-white/45 max-w-3xl leading-relaxed">
-              De netwerklaag van de OTT Terminal. Hier komen validators, UNL,
-              uptime, amendments, governance, consensus uitleg en AI-samenvattingen
-              samen voor gebruikers die willen begrijpen hoe XRPL veilig blijft.
+              De validator-laag van OTT Terminal. Hier maken we XRPL consensus,
+              UNL, amendments, validator health en governance begrijpelijk voor
+              gebruikers, builders en partners.
             </p>
           </div>
 
           <div className="col-span-12 xl:col-span-4 grid grid-cols-2 gap-3">
-            {networkMetrics.map((metric) => (
+            {validatorMetrics.map((metric) => (
               <MetricBox key={metric.label} metric={metric} />
             ))}
           </div>
@@ -181,20 +232,25 @@ export function ValidatorTab() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
-                  Validator Watchlist
+                  Validators
                 </p>
 
                 <h3 className="font-orbitron text-xl font-black uppercase">
-                  Network Operators
+                  Validator Directory
                 </h3>
               </div>
 
-              <Radio size={20} className="text-white/60" />
+              <Users size={20} className="text-white/60" />
             </div>
 
             <div className="space-y-3">
               {validators.map((validator) => (
-                <ValidatorRow key={validator.name} validator={validator} />
+                <ValidatorRow
+                  key={validator.name}
+                  validator={validator}
+                  active={selectedValidator.name === validator.name}
+                  onClick={() => setSelectedValidator(validator)}
+                />
               ))}
             </div>
           </div>
@@ -203,21 +259,25 @@ export function ValidatorTab() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
-                  Amendment Tracker
+                  Selected Validator
                 </p>
 
                 <h3 className="font-orbitron text-xl font-black uppercase">
-                  Governance Signals
+                  {selectedValidator.name}
                 </h3>
               </div>
 
-              <Vote size={20} className="text-white/60" />
+              <ShieldCheck size={22} className="text-white/60" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {amendments.map((amendment) => (
-                <AmendmentCard key={amendment.title} amendment={amendment} />
-              ))}
+            <p className="font-mono text-sm text-white/45 leading-relaxed mb-5">
+              {selectedValidator.description}
+            </p>
+
+            <div className="grid grid-cols-3 gap-3">
+              <MiniStatus label="Country" value={selectedValidator.country} />
+              <MiniStatus label="Status" value={selectedValidator.status} />
+              <MiniStatus label="Uptime" value={selectedValidator.uptime} />
             </div>
           </div>
 
@@ -225,7 +285,7 @@ export function ValidatorTab() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
-                  Consensus Education
+                  Network Layers
                 </p>
 
                 <h3 className="font-orbitron text-xl font-black uppercase">
@@ -233,25 +293,13 @@ export function ValidatorTab() {
                 </h3>
               </div>
 
-              <Terminal size={20} className="text-white/60" />
+              <Database size={20} className="text-white/60" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <EducationBox
-                icon={Users}
-                title="Validators"
-                text="Servers die transacties controleren en consensus bereiken."
-              />
-              <EducationBox
-                icon={Layers}
-                title="UNL"
-                text="Trusted validator lists die helpen bepalen welke validators gevolgd worden."
-              />
-              <EducationBox
-                icon={ShieldCheck}
-                title="Consensus"
-                text="Het proces waarmee XRPL snel en veilig overeenstemming bereikt."
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {networkLayers.map((layer) => (
+                <LayerCard key={layer.title} layer={layer} />
+              ))}
             </div>
           </div>
         </div>
@@ -259,51 +307,58 @@ export function ValidatorTab() {
         <div className="col-span-12 xl:col-span-4 space-y-4">
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Signal size={18} className="text-white/60" />
+              <Vote size={18} className="text-white/60" />
+
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                Network Signal
+                Amendments
               </p>
             </div>
 
-            <p className="font-mono text-xs text-white/45 leading-relaxed mb-5">
-              Deze module wordt later verbonden met echte XRPL-data. Voor nu
-              bouwen we de interface, structuur en educatielaag zodat de app
-              straks snel kan groeien.
-            </p>
-
             <div className="space-y-3">
-              <SignalLine label="Mainnet monitoring" status="Soon" />
-              <SignalLine label="UNL visibility" status="Planned" />
-              <SignalLine label="Validator uptime" status="Planned" />
-              <SignalLine label="Amendment alerts" status="Planned" />
+              {amendments.map((amendment) => (
+                <AmendmentButton
+                  key={amendment.title}
+                  amendment={amendment}
+                  active={selectedAmendment.title === amendment.title}
+                  onClick={() => setSelectedAmendment(amendment)}
+                />
+              ))}
             </div>
           </div>
 
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Sparkles size={18} className="text-white/60" />
+              <Target size={18} className="text-white/60" />
+
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                AI Governance Explainer
+                Selected Amendment
               </p>
             </div>
 
+            <p className="font-orbitron text-2xl font-black uppercase mb-2">
+              {selectedAmendment.title}
+            </p>
+
+            <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-4">
+              {selectedAmendment.status} • {selectedAmendment.impact}
+            </p>
+
             <p className="font-mono text-xs text-white/45 leading-relaxed">
-              Later kan AI moeilijke governance onderwerpen simpel uitleggen:
-              wat een amendment doet, waarom validators stemmen en wat het
-              betekent voor gebruikers, builders en bedrijven.
+              {selectedAmendment.description}
             </p>
           </div>
 
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
               <Clock size={18} className="text-white/60" />
+
               <p className="font-orbitron text-xs uppercase tracking-widest">
                 Roadmap
               </p>
             </div>
 
             <div className="space-y-3">
-              {validatorRoadmap.map((item) => (
+              {roadmap.map((item) => (
                 <RoadmapLine key={item} label={item} />
               ))}
             </div>
@@ -311,17 +366,17 @@ export function ValidatorTab() {
         </div>
 
         <div className="col-span-12 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <FeatureBox icon={CheckCircle2} title="Uptime" text="Validator health" />
-          <FeatureBox icon={Vote} title="Voting" text="Amendment support" />
-          <FeatureBox icon={AlertTriangle} title="Alerts" text="Network warnings" />
-          <FeatureBox icon={BadgeCheck} title="Trust" text="Education first" />
+          <FeatureBox icon={Cpu} title="Nodes" text="Network infrastructure" />
+          <FeatureBox icon={TrendingUp} title="Health" text="Metrics later" />
+          <FeatureBox icon={Waves} title="Make Waves" text="Mainnet proof" />
+          <FeatureBox icon={Lock} title="Trust Layer" text="Safety education" />
         </div>
       </div>
     </div>
   );
 }
 
-function MetricBox({ metric }: { metric: NetworkMetric }) {
+function MetricBox({ metric }: { metric: ValidatorMetric }) {
   const Icon = metric.icon;
 
   return (
@@ -336,99 +391,129 @@ function MetricBox({ metric }: { metric: NetworkMetric }) {
         {metric.value}
       </p>
 
-      <p className="font-mono text-[10px] text-white/30">{metric.subtitle}</p>
+      <p className="font-mono text-[10px] text-white/30 uppercase">
+        {metric.subtitle}
+      </p>
     </div>
   );
 }
 
-function ValidatorRow({ validator }: { validator: Validator }) {
+function ValidatorRow({
+  validator,
+  active,
+  onClick,
+}: {
+  validator: ValidatorNode;
+  active: boolean;
+  onClick: () => void;
+}) {
   return (
-    <div className="border border-white/10 bg-black p-4 hover:bg-white/[0.03] transition-all">
+    <button
+      onClick={onClick}
+      className={`w-full border p-4 text-left transition-all ${
+        active
+          ? "border-white/30 bg-white/[0.08]"
+          : "border-white/10 bg-black hover:bg-white/[0.03]"
+      }`}
+    >
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="font-orbitron text-sm font-bold uppercase mb-1">
             {validator.name}
           </p>
 
-          <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest">
-            {validator.region} • {validator.role}
+          <p className="font-mono text-[10px] text-white/35 uppercase">
+            {validator.country}
           </p>
         </div>
 
         <div className="text-right">
-          <p className="font-orbitron text-sm font-black uppercase mb-1">
-            {validator.uptime}
+          <p className="font-mono text-[10px] text-white/45 uppercase mb-1">
+            {validator.status}
           </p>
 
-          <p className="font-mono text-[10px] text-white/35 uppercase">
-            {validator.status}
+          <p className="font-mono text-[10px] text-white/30 uppercase">
+            {validator.uptime}
           </p>
         </div>
       </div>
-    </div>
+    </button>
   );
 }
 
-function AmendmentCard({ amendment }: { amendment: Amendment }) {
+function MiniStatus({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border border-white/10 bg-black p-5 hover:bg-white/[0.03] transition-all">
-      <div className="flex items-start justify-between mb-4">
-        <Vote size={20} className="text-white/70" />
-
-        <span className="font-mono text-[10px] uppercase text-white/45">
-          {amendment.status}
-        </span>
-      </div>
-
-      <h4 className="font-orbitron text-sm font-bold uppercase mb-2">
-        {amendment.title}
-      </h4>
-
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-4">
-        {amendment.support}
+    <div className="border border-white/10 bg-black p-4">
+      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+        {label}
       </p>
 
-      <p className="font-mono text-xs text-white/45 leading-relaxed">
-        {amendment.description}
-      </p>
+      <p className="font-orbitron text-sm font-black uppercase">{value}</p>
     </div>
   );
 }
 
-function EducationBox({
-  icon: Icon,
-  title,
-  text,
-}: {
-  icon: ElementType;
-  title: string;
-  text: string;
-}) {
+function LayerCard({ layer }: { layer: NetworkLayer }) {
+  const Icon = layer.icon;
+
   return (
     <div className="border border-white/10 bg-black p-5">
-      <Icon size={19} className="text-white/60 mb-4" />
+      <div className="flex items-start justify-between mb-4">
+        <Icon size={20} className="text-white/60" />
 
-      <p className="font-orbitron text-sm font-bold uppercase mb-2">{title}</p>
+        <p className="font-mono text-[10px] uppercase text-white/35">
+          {layer.value}
+        </p>
+      </div>
 
-      <p className="font-mono text-xs text-white/40 leading-relaxed">{text}</p>
+      <p className="font-orbitron text-sm font-bold uppercase mb-2">
+        {layer.title}
+      </p>
+
+      <p className="font-mono text-xs text-white/40 leading-relaxed">
+        {layer.text}
+      </p>
     </div>
   );
 }
 
-function SignalLine({ label, status }: { label: string; status: string }) {
+function AmendmentButton({
+  amendment,
+  active,
+  onClick,
+}: {
+  amendment: Amendment;
+  active: boolean;
+  onClick: () => void;
+}) {
   return (
-    <div className="border border-white/10 bg-black p-3 flex items-center justify-between gap-3">
-      <p className="font-mono text-xs text-white/50">{label}</p>
+    <button
+      onClick={onClick}
+      className={`w-full border p-4 text-left transition-all ${
+        active
+          ? "border-white/30 bg-white/[0.08]"
+          : "border-white/10 bg-black hover:bg-white/[0.03]"
+      }`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <p className="font-orbitron text-xs font-bold uppercase">
+          {amendment.title}
+        </p>
 
-      <p className="font-mono text-[10px] text-white/35 uppercase">{status}</p>
-    </div>
+        <p className="font-mono text-[10px] text-white/35 uppercase">
+          {amendment.status}
+        </p>
+      </div>
+    </button>
   );
 }
 
 function RoadmapLine({ label }: { label: string }) {
   return (
-    <div className="border-b border-white/10 pb-3 last:border-b-0 last:pb-0">
-      <p className="font-mono text-xs text-white/45 leading-relaxed">{label}</p>
+    <div className="border border-white/10 bg-black p-3 flex items-center gap-2">
+      <CheckCircle2 size={14} className="text-white/60" />
+
+      <p className="font-mono text-xs text-white/50">{label}</p>
     </div>
   );
 }
