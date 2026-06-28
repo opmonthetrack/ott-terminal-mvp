@@ -1,136 +1,195 @@
+import { useState } from "react";
 import type { ElementType } from "react";
 import {
-  ArrowUpRight,
-  Award,
   BadgeCheck,
-  BookOpen,
+  Boxes,
+  CheckCircle2,
   Coins,
   CreditCard,
   Gift,
+  Gem,
   GraduationCap,
+  Layers,
   Lock,
   Package,
+  Receipt,
+  Search,
   ShieldCheck,
   ShoppingBag,
   Sparkles,
   Star,
-  Tag,
+  Store,
   Ticket,
+  Trophy,
   Wallet,
+  Zap,
 } from "lucide-react";
+
+type MarketCategory = {
+  id: string;
+  title: string;
+  status: string;
+  text: string;
+  icon: ElementType;
+};
 
 type MarketItem = {
   title: string;
   category: string;
   price: string;
   status: string;
-  description: string;
-  icon: ElementType;
+  text: string;
 };
 
-type PaymentOption = {
+type CheckoutRule = {
   title: string;
   status: string;
-  description: string;
+  text: string;
   icon: ElementType;
 };
 
-const marketItems: MarketItem[] = [
+const categories: MarketCategory[] = [
   {
-    title: "OTT Founder Pass",
-    category: "Membership NFT",
-    price: "Coming Soon",
-    status: "Locked",
-    description:
-      "Early supporter badge met toekomstige toegang tot private updates, founder rewards en community governance.",
-    icon: BadgeCheck,
-  },
-  {
-    title: "XRPL Academy Certificate",
-    category: "Education",
-    price: "XP Claim",
-    status: "Soon",
-    description:
-      "Certificaat voor gebruikers die Academy tracks afronden en hun kennis willen bewijzen.",
-    icon: GraduationCap,
-  },
-  {
-    title: "OTT Terminal Hoodie",
-    category: "Merch",
-    price: "Fiat / XRP Later",
-    status: "Planned",
-    description:
-      "Premium OnTheTrack merchandise voor community, events en XRPL meetups.",
+    id: "merch",
+    title: "OTT Merch",
+    status: "Shop",
+    text: "Caps, shirts, hoodies, stickers en physical drops voor de OTT community.",
     icon: ShoppingBag,
   },
   {
-    title: "Daily Streak Reward",
-    category: "Reward",
-    price: "Free Claim",
-    status: "Soon",
-    description:
-      "Beloning voor gebruikers die dagelijks terugkomen, leren en interactie hebben met de terminal.",
+    id: "badges",
+    title: "NFT Badges",
+    status: "Proof",
+    text: "Achievement badges, member proof, Academy certificates en event access.",
+    icon: BadgeCheck,
+  },
+  {
+    id: "courses",
+    title: "Courses",
+    status: "Learn",
+    text: "XRPL, wallet safety, DeFi, AI, tokenization en builder education.",
+    icon: GraduationCap,
+  },
+  {
+    id: "tickets",
+    title: "Event Tickets",
+    status: "Access",
+    text: "Meetups, livestreams, workshops, AMAs, hackathon sessions en partner events.",
+    icon: Ticket,
+  },
+  {
+    id: "rewards",
+    title: "Reward Store",
+    status: "XP",
+    text: "Gebruik XP, streaks en badges later voor toegang, perks en community rewards.",
     icon: Gift,
   },
   {
-    title: "XRPL Starter Course",
-    category: "Course",
-    price: "Free / Premium",
-    status: "Planned",
-    description:
-      "Betaalde of gratis cursus voor beginners, retailers en ondernemers die XRPL willen begrijpen.",
-    icon: BookOpen,
-  },
-  {
-    title: "Event Access Ticket",
-    category: "Events",
-    price: "XRP / RLUSD Later",
-    status: "Future",
-    description:
-      "Digitale tickets voor webinars, workshops, community calls en live XRPL sessions.",
-    icon: Ticket,
+    id: "partners",
+    title: "Partner Offers",
+    status: "Later",
+    text: "Partner tools, builder services, ecosystem perks en curated XRPL resources.",
+    icon: Store,
   },
 ];
 
-const paymentOptions: PaymentOption[] = [
+const items: MarketItem[] = [
   {
-    title: "Fiat Payments",
-    status: "Standard",
-    description: "Voor normale gebruikers en retailers die nog niet crypto-native zijn.",
-    icon: CreditCard,
+    title: "OTT Founder Badge",
+    category: "NFT Badges",
+    price: "260 XP",
+    status: "Mock",
+    text: "Early supporter badge voor OTT Terminal testers en Make Waves users.",
   },
   {
-    title: "XRP Payments",
-    status: "XRPL",
-    description: "Voor snelle betalingen met lage kosten binnen het XRPL ecosysteem.",
-    icon: Wallet,
+    title: "XRPL Starter Course",
+    category: "Courses",
+    price: "Free",
+    status: "Academy",
+    text: "Beginner course voor wallets, XRP Ledger basics en safe onboarding.",
   },
   {
-    title: "RLUSD Payments",
-    status: "Stablecoin",
-    description: "Voor stabiele prijsstelling, subscriptions en business use cases.",
+    title: "Make Waves Ticket",
+    category: "Event Tickets",
+    price: "589 XP",
+    status: "Soon",
+    text: "Toegang tot community demo, AMA of builder session rond source tag 2606.",
+  },
+  {
+    title: "OTT Black Cap",
+    category: "OTT Merch",
+    price: "€29",
+    status: "Concept",
+    text: "Minimal black/white OTT cap voor community merch drops.",
+  },
+  {
+    title: "Wallet Guardian Badge",
+    category: "NFT Badges",
+    price: "Safety XP",
+    status: "Locked",
+    text: "Badge voor gebruikers die wallet safety en trustline lessons afronden.",
+  },
+  {
+    title: "Builder Toolkit",
+    category: "Partner Offers",
+    price: "Partner",
+    status: "Later",
+    text: "Curated tools voor XRPL builders, xApps, APIs en secure backend flows.",
+  },
+];
+
+const checkoutRules: CheckoutRule[] = [
+  {
+    title: "No Hidden Payments",
+    status: "Rule",
+    text: "Elke echte betaling moet zichtbaar zijn voordat de gebruiker bevestigt.",
     icon: ShieldCheck,
   },
   {
-    title: "OTT Token Utility",
-    status: "Future",
-    description: "Voor korting, rewards, access, staking en community benefits.",
-    icon: Coins,
+    title: "Wallet Confirmation",
+    status: "Required",
+    text: "XRPL betalingen of claims gaan later alleen via wallet confirmation.",
+    icon: Wallet,
+  },
+  {
+    title: "Clear Price",
+    status: "Rule",
+    text: "Prijs, asset, issuer, fees en voorwaarden moeten vooraf duidelijk zijn.",
+    icon: Receipt,
+  },
+  {
+    title: "Digital Proof",
+    status: "Later",
+    text: "Badges, tickets en certificates kunnen later als XRPL proof worden uitgegeven.",
+    icon: Gem,
   },
 ];
 
-const marketplaceRoadmap = [
-  "Start met mock marketplace in de MVP",
-  "Voeg merch, courses, badges en rewards toe",
-  "Koppel Academy progress aan certificaten",
-  "Maak XP redeemable voor kortingen en badges",
-  "Voeg later Xaman payment flows toe",
-  "Voeg XRP en RLUSD checkout toe",
-  "Voeg OTT Token utility toe",
-  "Bouw partner marketplace voor XRPL projecten",
+const roadmap = [
+  "Product cards bouwen",
+  "XP reward store koppelen",
+  "Academy badges toevoegen",
+  "Event ticket flow maken",
+  "NFT certificate preview bouwen",
+  "Xaman checkout later koppelen",
+  "Partner marketplace openen",
+  "Order history per wallet tonen",
 ];
 
 export function MarketplaceTab() {
+  const [selectedCategory, setSelectedCategory] = useState<MarketCategory>(
+    categories[0]
+  );
+  const [selectedItem, setSelectedItem] = useState<MarketItem>(items[0]);
+
+  const SelectedCategoryIcon = selectedCategory.icon;
+
+  const filteredItems = items.filter(
+    (item) => item.category === selectedCategory.title
+  );
+
+  const visibleItems = filteredItems.length > 0 ? filteredItems : items.slice(0, 4);
+
   return (
     <div className="p-6 bg-black min-h-screen text-white">
       <div className="relative overflow-hidden border border-white/10 bg-white/[0.02] p-6 mb-6">
@@ -140,126 +199,179 @@ export function MarketplaceTab() {
           <div className="col-span-12 xl:col-span-8">
             <div className="flex items-center gap-2 mb-4 text-white/45">
               <ShoppingBag size={17} />
+
               <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
                 OTT Marketplace
               </p>
             </div>
 
             <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
-              Rewards. Merch. Access.
+              Rewards. Merch. Badges. Access.
             </h2>
 
             <p className="font-mono text-sm text-white/45 max-w-3xl leading-relaxed">
-              De commerciële laag van de OTT Terminal. Hier komen merchandise,
-              courses, NFT badges, event tickets, certificaten, XP rewards en
-              toekomstige betalingen met fiat, XRP, RLUSD en OTT Token samen.
+              De marketplace-laag van OTT Terminal. Hier komen merch, NFT badges,
+              Academy certificates, tickets, XP rewards, partner offers en veilige
+              checkout flows samen.
             </p>
           </div>
 
           <div className="col-span-12 xl:col-span-4 grid grid-cols-2 gap-3">
-            <StatBox icon={Package} label="Items" value="6" />
-            <StatBox icon={Coins} label="Payments" value="4" />
-            <StatBox icon={Star} label="XP Rewards" value="Soon" />
-            <StatBox icon={Sparkles} label="Utility" value="Future" />
+            <StatBox icon={Boxes} label="Items" value="24+" />
+            <StatBox icon={Zap} label="XP Store" value="Ready" />
+            <StatBox icon={Ticket} label="Tickets" value="Soon" />
+            <StatBox icon={ShieldCheck} label="Checkout" value="Safe" />
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-12 xl:col-span-8 space-y-4">
+        <div className="col-span-12 xl:col-span-4 space-y-4">
           <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
-                  Marketplace Items
-                </p>
+            <div className="flex items-center gap-2 mb-5">
+              <Layers size={18} className="text-white/60" />
 
-                <h3 className="font-orbitron text-xl font-black uppercase">
-                  Products & Rewards
-                </h3>
-              </div>
-
-              <Package size={20} className="text-white/60" />
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Categories
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {marketItems.map((item) => (
-                <MarketItemCard key={item.title} item={item} />
-              ))}
-            </div>
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
-                  Payment Layer
-                </p>
-
-                <h3 className="font-orbitron text-xl font-black uppercase">
-                  Checkout Options
-                </h3>
-              </div>
-
-              <CreditCard size={20} className="text-white/60" />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {paymentOptions.map((option) => (
-                <PaymentCard key={option.title} option={option} />
+            <div className="space-y-3">
+              {categories.map((category) => (
+                <CategoryButton
+                  key={category.id}
+                  category={category}
+                  active={selectedCategory.id === category.id}
+                  onClick={() => setSelectedCategory(category)}
+                />
               ))}
             </div>
           </div>
         </div>
 
-        <div className="col-span-12 xl:col-span-4 space-y-4">
+        <div className="col-span-12 xl:col-span-5 space-y-4">
           <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Tag size={18} className="text-white/60" />
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                XP Utility
-              </p>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
+                  Selected Category
+                </p>
+
+                <h3 className="font-orbitron text-xl font-black uppercase">
+                  {selectedCategory.title}
+                </h3>
+              </div>
+
+              <SelectedCategoryIcon size={22} className="text-white/60" />
             </div>
 
-            <p className="font-mono text-xs text-white/45 leading-relaxed mb-5">
-              XP begint off-chain als veilige reputatie- en engagementlaag.
-              Later kan XP worden gebruikt voor kortingen, badges, claims,
-              challenges en community access.
+            <p className="font-mono text-sm text-white/45 leading-relaxed mb-5">
+              {selectedCategory.text}
             </p>
 
+            <MiniStatus label="Status" value={selectedCategory.status} />
+          </div>
+
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
+                  Items
+                </p>
+
+                <h3 className="font-orbitron text-xl font-black uppercase">
+                  Marketplace Feed
+                </h3>
+              </div>
+
+              <Search size={20} className="text-white/60" />
+            </div>
+
             <div className="space-y-3">
-              <UtilityLine label="Discount unlocks" />
-              <UtilityLine label="Badge claims" />
-              <UtilityLine label="Course progress" />
-              <UtilityLine label="Leaderboard access" />
+              {visibleItems.map((item) => (
+                <ItemRow
+                  key={`${item.title}-${item.category}`}
+                  item={item}
+                  active={selectedItem.title === item.title}
+                  onClick={() => setSelectedItem(item)}
+                />
+              ))}
             </div>
           </div>
 
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Lock size={18} className="text-white/60" />
+              <Package size={18} className="text-white/60" />
+
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                Locked Until Safe
+                Selected Item
               </p>
             </div>
 
-            <p className="font-mono text-xs text-white/45 leading-relaxed">
-              Echte betalingen, claims en token utility komen pas nadat wallet
-              flows, user consent, anti-bot bescherming en duidelijke
-              voorwaarden goed staan.
+            <p className="font-orbitron text-2xl font-black uppercase mb-2">
+              {selectedItem.title}
             </p>
+
+            <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-4">
+              {selectedItem.category} • {selectedItem.status}
+            </p>
+
+            <p className="font-mono text-sm text-white/45 leading-relaxed mb-5">
+              {selectedItem.text}
+            </p>
+
+            <div className="grid grid-cols-2 gap-3">
+              <MiniStatus label="Price" value={selectedItem.price} />
+              <MiniStatus label="Status" value={selectedItem.status} />
+            </div>
+          </div>
+        </div>
+
+        <div className="col-span-12 xl:col-span-3 space-y-4">
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <CreditCard size={18} className="text-white/60" />
+
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Checkout Rules
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {checkoutRules.map((rule) => (
+                <RuleCard key={rule.title} rule={rule} />
+              ))}
+            </div>
+          </div>
+
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Trophy size={18} className="text-white/60" />
+
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Reward Logic
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <RewardLine icon={Star} label="XP unlocks access" />
+              <RewardLine icon={Flame} label="Streak boosts rewards" />
+              <RewardLine icon={BadgeCheck} label="Badges unlock drops" />
+              <RewardLine icon={Coins} label="OTT utility later" />
+            </div>
           </div>
 
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
               <Sparkles size={18} className="text-white/60" />
+
               <p className="font-orbitron text-xs uppercase tracking-widest">
                 Roadmap
               </p>
             </div>
 
             <div className="space-y-3">
-              {marketplaceRoadmap.map((item) => (
+              {roadmap.map((item) => (
                 <RoadmapLine key={item} label={item} />
               ))}
             </div>
@@ -267,10 +379,10 @@ export function MarketplaceTab() {
         </div>
 
         <div className="col-span-12 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <FeatureBox icon={Award} title="NFT Badges" text="Proof of learning" />
-          <FeatureBox icon={Gift} title="Rewards" text="Daily engagement" />
-          <FeatureBox icon={ShoppingBag} title="Merch" text="OTT products" />
-          <FeatureBox icon={Coins} title="Token Utility" text="Future layer" />
+          <FeatureBox icon={ShoppingBag} title="Merch" text="OTT product drops" />
+          <FeatureBox icon={BadgeCheck} title="Badges" text="Proof and access" />
+          <FeatureBox icon={Ticket} title="Tickets" text="Events and AMAs" />
+          <FeatureBox icon={Wallet} title="Checkout" text="Xaman later" />
         </div>
       </div>
     </div>
@@ -294,80 +406,130 @@ function StatBox({
         {label}
       </p>
 
-      <p className="font-orbitron text-lg font-black uppercase">{value}</p>
+      <p className="font-orbitron text-sm font-black uppercase">{value}</p>
     </div>
   );
 }
 
-function MarketItemCard({ item }: { item: MarketItem }) {
-  const Icon = item.icon;
-  const isLocked = item.status === "Locked";
+function CategoryButton({
+  category,
+  active,
+  onClick,
+}: {
+  category: MarketCategory;
+  active: boolean;
+  onClick: () => void;
+}) {
+  const Icon = category.icon;
 
   return (
-    <div className="border border-white/10 bg-black hover:bg-white/[0.03] transition-all p-5 cursor-pointer">
-      <div className="flex items-start justify-between mb-4">
-        <Icon size={20} className="text-white/70" />
+    <button
+      onClick={onClick}
+      className={`w-full border p-4 text-left transition-all ${
+        active
+          ? "border-white/30 bg-white/[0.08]"
+          : "border-white/10 bg-black hover:bg-white/[0.03]"
+      }`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Icon size={16} className="text-white/60" />
 
-        <span className="font-mono text-[10px] uppercase text-white/45">
-          {item.status}
-        </span>
+          <p className="font-orbitron text-xs font-bold uppercase">
+            {category.title}
+          </p>
+        </div>
+
+        <p className="font-mono text-[10px] text-white/35 uppercase">
+          {category.status}
+        </p>
       </div>
+    </button>
+  );
+}
 
-      <h4 className="font-orbitron text-sm font-bold uppercase mb-2">
-        {item.title}
-      </h4>
-
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-4">
-        {item.category}
-      </p>
-
-      <p className="font-mono text-xs text-white/45 leading-relaxed mb-4">
-        {item.description}
-      </p>
-
-      <div className="flex items-center justify-between border-t border-white/10 pt-4">
-        <p className="font-orbitron text-xs font-black uppercase">
-          {item.price}
+function ItemRow({
+  item,
+  active,
+  onClick,
+}: {
+  item: MarketItem;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full border p-4 text-left transition-all ${
+        active
+          ? "border-white/30 bg-white/[0.08]"
+          : "border-white/10 bg-black hover:bg-white/[0.03]"
+      }`}
+    >
+      <div className="flex items-center justify-between gap-4 mb-2">
+        <p className="font-orbitron text-sm font-bold uppercase">
+          {item.title}
         </p>
 
-        {isLocked ? (
-          <Lock size={15} className="text-white/30" />
-        ) : (
-          <ArrowUpRight size={15} className="text-white/30" />
-        )}
+        <p className="font-mono text-[10px] text-white/45 uppercase">
+          {item.price}
+        </p>
       </div>
+
+      <p className="font-mono text-[10px] text-white/35 uppercase">
+        {item.category} • {item.status}
+      </p>
+    </button>
+  );
+}
+
+function MiniStatus({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-white/10 bg-black p-4">
+      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+        {label}
+      </p>
+
+      <p className="font-orbitron text-sm font-black uppercase">{value}</p>
     </div>
   );
 }
 
-function PaymentCard({ option }: { option: PaymentOption }) {
-  const Icon = option.icon;
+function RuleCard({ rule }: { rule: CheckoutRule }) {
+  const Icon = rule.icon;
 
   return (
-    <div className="border border-white/10 bg-black p-5">
-      <div className="flex items-start justify-between mb-4">
-        <Icon size={20} className="text-white/70" />
+    <div className="border border-white/10 bg-black p-4">
+      <div className="flex items-start justify-between mb-3">
+        <Icon size={17} className="text-white/60" />
 
-        <span className="font-mono text-[10px] uppercase text-white/45">
-          {option.status}
-        </span>
+        <p className="font-mono text-[10px] text-white/30 uppercase">
+          {rule.status}
+        </p>
       </div>
 
-      <h4 className="font-orbitron text-sm font-bold uppercase mb-3">
-        {option.title}
-      </h4>
+      <p className="font-orbitron text-xs font-bold uppercase mb-2">
+        {rule.title}
+      </p>
 
-      <p className="font-mono text-xs text-white/45 leading-relaxed">
-        {option.description}
+      <p className="font-mono text-[10px] text-white/40 leading-relaxed">
+        {rule.text}
       </p>
     </div>
   );
 }
 
-function UtilityLine({ label }: { label: string }) {
+function RewardLine({
+  icon: Icon,
+  label,
+}: {
+  icon: ElementType;
+  label: string;
+}) {
   return (
     <div className="border border-white/10 bg-black p-3 flex items-center gap-2">
-      <Star size={14} className="text-white/60" />
+      <Icon size={14} className="text-white/60" />
+
       <p className="font-mono text-xs text-white/50">{label}</p>
     </div>
   );
@@ -375,8 +537,10 @@ function UtilityLine({ label }: { label: string }) {
 
 function RoadmapLine({ label }: { label: string }) {
   return (
-    <div className="border-b border-white/10 pb-3 last:border-b-0 last:pb-0">
-      <p className="font-mono text-xs text-white/45 leading-relaxed">{label}</p>
+    <div className="border border-white/10 bg-black p-3 flex items-center gap-2">
+      <CheckCircle2 size={14} className="text-white/60" />
+
+      <p className="font-mono text-xs text-white/50">{label}</p>
     </div>
   );
 }
