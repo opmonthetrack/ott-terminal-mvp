@@ -6,6 +6,7 @@ import { PortfolioTab } from "./tabs/PortfolioTab";
 import { EcosystemTab } from "./tabs/EcosystemTab";
 import { ValidatorTab } from "./tabs/ValidatorTab";
 import { DeveloperHubTab } from "./tabs/DeveloperHubTab";
+import { TokenizationTab } from "./tabs/TokenizationTab";
 import { DeFiTab } from "./tabs/DeFiTab";
 import { LedgerIntelTab } from "./tabs/LedgerIntelTab";
 import { ProfileTab } from "./tabs/ProfileTab";
@@ -22,6 +23,7 @@ type ActiveTab =
   | "ecosystem"
   | "validator"
   | "developer"
+  | "tokenization"
   | "profile"
   | "token"
   | "ai"
@@ -70,6 +72,11 @@ function MainApp() {
       id: "developer",
       label: "Developer",
       status: "Build",
+    },
+    {
+      id: "tokenization",
+      label: "Tokenization",
+      status: "RWA",
     },
     {
       id: "profile",
@@ -121,6 +128,7 @@ function MainApp() {
               <p className="font-orbitron font-bold text-xs tracking-widest uppercase">
                 XRPL Terminal
               </p>
+
               <p className="font-mono text-[8px] text-gray-500 uppercase tracking-widest">
                 OnTheTrack / Make Waves MVP
               </p>
@@ -134,6 +142,7 @@ function MainApp() {
 
             <div className="flex items-center gap-2 mb-2">
               <span className="w-2 h-2 rounded-full bg-white/60"></span>
+
               <p className="font-mono text-xs text-white/70">
                 Debug Mode Active
               </p>
@@ -223,6 +232,7 @@ function MainApp() {
             <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
               XRPL OnTheTrack Terminal
             </p>
+
             <h1 className="font-orbitron text-xl font-black uppercase tracking-widest">
               The Home Screen of the XRP Ledger
             </h1>
@@ -232,6 +242,7 @@ function MainApp() {
             <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest">
               Build Phase
             </p>
+
             <p className="font-orbitron text-xs text-white/70 uppercase">
               Platform Modules
             </p>
@@ -253,6 +264,8 @@ function MainApp() {
         {activeTab === "validator" && <ValidatorTab />}
 
         {activeTab === "developer" && <DeveloperHubTab />}
+
+        {activeTab === "tokenization" && <TokenizationTab />}
 
         {activeTab === "profile" && <ProfileTab />}
 
