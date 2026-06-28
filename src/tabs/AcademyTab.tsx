@@ -1,295 +1,431 @@
-import { useState } from 'react';
-import { BookOpen, Award, CheckCircle2, AlertCircle, HelpCircle, ArrowRight, Layers, Sparkles } from 'lucide-react';
+import type { ElementType } from "react";
+import {
+  Award,
+  BookOpen,
+  Bot,
+  BrainCircuit,
+  CheckCircle2,
+  Coins,
+  FileText,
+  GraduationCap,
+  Layers,
+  Lock,
+  PlayCircle,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  Trophy,
+  Wallet,
+  Zap,
+} from "lucide-react";
 
-interface Lesson {
-  id: number;
+type Track = {
   title: string;
-  duration: string;
-  category: 'Crypto' | 'Awareness' | 'Health';
-  content: string[];
-  quiz: {
-    question: string;
-    options: string[];
-    correctIndex: number;
-    explanation: string;
-  };
-}
+  level: string;
+  lessons: number;
+  xp: number;
+  status: string;
+  icon: ElementType;
+};
 
-const XAMAN_COURSE_LESSONS: Lesson[] = [
+type Lesson = {
+  title: string;
+  track: string;
+  duration: string;
+  xp: number;
+  status: string;
+};
+
+const tracks: Track[] = [
   {
-    id: 1,
-    title: "Sovereign Keys vs Toxic Systems",
-    duration: "5 min",
-    category: "Crypto",
-    content: [
-      "Bij traditionele exchanges (zoals Binance of Coinbase) bezit je in feite niks. Je logt in met een e-mailadres en wachtwoord, en de exchange beheert de private keys. Als zij omvallen, is je vermogen weg ('Not your keys, not your crypto').",
-      "Xaman is een non-custodial wallet. Dit betekent dat JIJ de absolute controle hebt. De 12 of 24 woorden (je geheime sleutel/seed phrase) worden cryptografisch versleuteld opgeslagen op jouw apparaat.",
-      "Woorden zijn vibraties en creëren realiteit. In de cryptowereld is jouw seed phrase de ultieme manifestatie van jouw financiële soevereiniteit. Deel deze nooit, met niemand, in geen enkele applicatie."
-    ],
-    quiz: {
-      question: "Waar worden jouw private keys opgeslagen als je Xaman gebruikt?",
-      options: [
-        "Veilig op de centrale servers van XRPL Labs.",
-        "Nergens, die worden elke keer opnieuw gegenereerd als je inlogt.",
-        "Lokaal op jouw eigen apparaat, volledig onder jouw beheer."
-      ],
-      correctIndex: 2,
-      explanation: "Xaman is non-custodial. Jouw sleutels verlaten nooit je eigen apparaat. Jij bent de baas, weg van het toxische gecentraliseerde systeem."
-    }
+    title: "Blockchain Basics",
+    level: "Beginner",
+    lessons: 8,
+    xp: 200,
+    status: "Open",
+    icon: BookOpen,
   },
   {
-    id: 2,
-    title: "The Cryptographic Handshake",
-    duration: "6 min",
-    category: "Crypto",
-    content: [
-      "Wanneer je inlogt op de OTT Terminal via Xaman, geef je de app geen toegang tot je geld of je sleutels. Er vindt een beveiligde OAuth2/PKCE handdruk plaats.",
-      "De Terminal stuurt een verzoek (payload) naar de Xaman app. Jij opent de app, scant de QR-code of accepteer de push-notificatie, en ondertekent de transactie cryptografisch met je pincode of FaceID.",
-      "De Terminal ontvangt alleen de cryptografisch geverifieerde bevestiging en jouw publieke r-adres. Dit is de meest veilige manier om met blockchain-ecosystemen te communiceren."
-    ],
-    quiz: {
-      question: "Wat geef je vrij aan de OTT Terminal als je inlogt met Xaman?",
-      options: [
-        "Je private keys zodat de terminal transacties voor je kan doen.",
-        "Alleen je publieke r-adres en een cryptografisch geverifieerde handdruk.",
-        "Je Xaman inlogpincode en herstelwoorden."
-      ],
-      correctIndex: 1,
-      explanation: "De app krijgt enkel je publieke r-adres te zien. Transacties onderteken je altijd zelf, handmatig, binnen de muren van de beveiligde Xaman app."
-    }
+    title: "Crypto Fundamentals",
+    level: "Beginner",
+    lessons: 10,
+    xp: 250,
+    status: "Open",
+    icon: Coins,
   },
   {
-    id: 3,
-    title: "Ledger Objects & Trustlines",
-    duration: "7 min",
-    category: "Crypto",
-    content: [
-      "Op het XRP Ledger kunnen accounts niet zomaar ongevraagd vage tokens naar je toe sturen. Dit beschermt je tegen spam en malafide airdrops.",
-      "Om een token zoals $OTT of $RLUSD te kunnen ontvangen, moet je expliciet een 'Trustline' openzetten. Dit is een on-chain contract waarmee je aangeeft: 'Ik vertrouw deze issuer en sta toe dat dit token in mijn wallet komt'.",
-      "Elke trustline die je opent, reserveert tijdelijk 2 XRP op het netwerk. Zodra je de trustline weer sluit via de Trustline Manager, krijg je die 2 XRP direct weer terug in je actieve saldo."
-    ],
-    quiz: {
-      question: "Waarom reserveert het XRPL netwerk 2 XRP per actieve trustline?",
-      options: [
-        "Als transactiekosten die je definitief kwijt bent aan de validators.",
-        "Als on-chain reserveer-vrijwaring, die je volledig terugkrijgt zodra je de trustline sluit.",
-        "Als winstuitkering voor het Xaman platform."
-      ],
-      correctIndex: 1,
-      explanation: "Dit is een on-chain object reserve. Het voorkomt spam op de blockchain. Als je de trustline opschoont, claim je die 2 XRP direct weer terug!"
-    }
-  }
+    title: "XRP Ledger Essentials",
+    level: "Intermediate",
+    lessons: 14,
+    xp: 500,
+    status: "Open",
+    icon: Layers,
+  },
+  {
+    title: "Xaman Wallet Mastery",
+    level: "Intermediate",
+    lessons: 9,
+    xp: 350,
+    status: "Soon",
+    icon: Wallet,
+  },
+  {
+    title: "RLUSD & Stablecoins",
+    level: "Intermediate",
+    lessons: 12,
+    xp: 450,
+    status: "Soon",
+    icon: ShieldCheck,
+  },
+  {
+    title: "CBDC / ISO 20022 / Rails",
+    level: "Advanced",
+    lessons: 16,
+    xp: 650,
+    status: "Locked",
+    icon: FileText,
+  },
+  {
+    title: "AI on XRPL",
+    level: "Advanced",
+    lessons: 12,
+    xp: 700,
+    status: "Locked",
+    icon: Bot,
+  },
+  {
+    title: "Developer Bootcamp",
+    level: "Expert",
+    lessons: 24,
+    xp: 1500,
+    status: "Locked",
+    icon: BrainCircuit,
+  },
+];
+
+const lessons: Lesson[] = [
+  {
+    title: "What is blockchain?",
+    track: "Blockchain Basics",
+    duration: "8 min",
+    xp: 25,
+    status: "Start",
+  },
+  {
+    title: "What makes XRPL different?",
+    track: "XRP Ledger Essentials",
+    duration: "12 min",
+    xp: 40,
+    status: "Start",
+  },
+  {
+    title: "How wallets and keys work",
+    track: "Crypto Fundamentals",
+    duration: "10 min",
+    xp: 35,
+    status: "Start",
+  },
+  {
+    title: "Understanding trustlines",
+    track: "XRP Ledger Essentials",
+    duration: "14 min",
+    xp: 50,
+    status: "Soon",
+  },
+  {
+    title: "RLUSD and fiat-backed stablecoins",
+    track: "Stablecoins",
+    duration: "15 min",
+    xp: 60,
+    status: "Soon",
+  },
+  {
+    title: "AI payments and X402",
+    track: "AI on XRPL",
+    duration: "18 min",
+    xp: 80,
+    status: "Locked",
+  },
 ];
 
 export function AcademyTab() {
-  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
-  const [selectedOption, setSelectedOption] = useState<number | null>(null);
-  const [quizChecked, setQuizChecked] = useState<boolean>(false);
-  const [completedLessons, setCompletedLessons] = useState<number[]>([]);
-
-  const handleOptionSelect = (index: number) => {
-    if (quizChecked) return;
-    setSelectedOption(index);
-  };
-
-  const handleCheckAnswer = () => {
-    if (selectedOption === null || !selectedLesson) return;
-    setQuizChecked(true);
-    
-    if (selectedOption === selectedLesson.quiz.correctIndex) {
-      if (!completedLessons.includes(selectedLesson.id)) {
-        setCompletedLessons([...completedLessons, selectedLesson.id]);
-      }
-    }
-  };
-
-  const handleNextLesson = () => {
-    setSelectedOption(null);
-    setQuizChecked(false);
-    const nextId = selectedLesson ? selectedLesson.id + 1 : 1;
-    const nextLesson = XAMAN_COURSE_LESSONS.find(l => l.id === nextId);
-    if (nextLesson) {
-      setSelectedLesson(nextLesson);
-    } else {
-      setSelectedLesson(null); // Terug naar overzicht
-    }
-  };
-
   return (
-    <div className="space-y-8 animate-fade-in text-white font-sans">
-      {/* Dynamic Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-gray-950 pb-6">
-        <div>
-          <h1 className="font-orbitron text-md font-black uppercase tracking-[0.2em]">OTT Sovereign Academy</h1>
-          <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mt-1">Eradicating Systemic Ignorance • 589 Steps Ahead</p>
-        </div>
-        <div className="flex items-center space-x-4 bg-gray-950/40 border border-gray-950 px-4 py-2.5">
-          <Layers className="w-4 h-4 text-[#2b82ff]" />
-          <div className="text-left">
-            <div className="text-[9px] font-mono text-gray-500 uppercase tracking-wider">Voltooid Saldo</div>
-            <div className="font-orbitron text-xs font-black">{completedLessons.length} / {XAMAN_COURSE_LESSONS.length} Intel Tracks</div>
-          </div>
-        </div>
-      </div>
+    <div className="p-6 bg-black min-h-screen text-white">
+      <div className="relative overflow-hidden border border-white/10 bg-white/[0.02] p-6 mb-6">
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_white,_transparent_35%)]" />
 
-      {/* Monthly Dropping Strategy Ticker */}
-      <div className="p-3 border border-gray-950 bg-gray-950/20 rounded-sm flex items-center justify-between">
-        <div className="flex items-center space-x-2 text-[10px] font-mono text-gray-400">
-          <Sparkles className="w-3.5 h-3.5 text-[#ff2079] animate-pulse" />
-          <span>PROTOTYPE ENGINE ACTIVE: Elke maand worden er 5 nieuwe tracks toegevoegd (Inclusief The Hearth Book Chronicles).</span>
-        </div>
-      </div>
-
-      {!selectedLesson ? (
-        // OVERVIEW MODE
-        <div className="space-y-6">
-          <div>
-            <h2 className="font-orbitron text-xs font-black uppercase tracking-widest text-[#2b82ff] mb-1">Actieve Cursus: Mastering Xaman Wallet</h2>
-            <p className="text-[10px] font-mono text-gray-500 uppercase tracking-wider">Leer hoe cryptografische soevereiniteit in de praktijk werkt.</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {XAMAN_COURSE_LESSONS.map((lesson) => {
-              const isCompleted = completedLessons.includes(lesson.id);
-              return (
-                <div 
-                  key={lesson.id}
-                  className="border border-gray-950 bg-black p-6 flex flex-col justify-between space-y-6 hover:border-gray-800 transition-all duration-300"
-                >
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center text-[9px] font-mono tracking-widest uppercase">
-                      <span className="px-2 py-0.5 bg-gray-950 border border-gray-900 text-gray-400">{lesson.category}</span>
-                      <span className="text-gray-600">{lesson.duration}</span>
-                    </div>
-                    <h3 className="font-orbitron text-xs font-black uppercase tracking-wide text-white leading-tight">{lesson.title}</h3>
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      setSelectedLesson(lesson);
-                      setSelectedOption(null);
-                      setQuizChecked(false);
-                    }}
-                    className={`w-full py-2.5 font-orbitron text-[10px] font-black uppercase tracking-widest border transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${
-                      isCompleted 
-                        ? 'bg-transparent border-green-950 text-green-400 hover:bg-green-950/10' 
-                        : 'bg-white text-black border-white hover:bg-black hover:text-white'
-                    }`}
-                  >
-                    {isCompleted ? (
-                      <>
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Track Voltooid
-                      </>
-                    ) : (
-                      <>
-                        <span>Start Intel Track</span> <ArrowRight className="w-3.5 h-3.5" />
-                      </>
-                    )}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ) : (
-        // ACTIVE LESSON IN-DEPTH VIEW
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
-          {/* Content Space */}
-          <div className="xl:col-span-2 border border-gray-950 bg-black p-8 space-y-6">
-            <button 
-              onClick={() => setSelectedLesson(null)}
-              className="text-[10px] font-mono text-gray-500 hover:text-white uppercase tracking-widest transition-colors cursor-pointer"
-            >
-              ⬅ Terug naar overzicht
-            </button>
-            
-            <div className="space-y-1">
-              <span className="text-[9px] font-mono text-[#2b82ff] uppercase tracking-widest font-bold">Track 0{selectedLesson.id}</span>
-              <h2 className="font-orbitron text-sm font-black uppercase tracking-wide text-white">{selectedLesson.title}</h2>
+        <div className="relative z-10 grid grid-cols-12 gap-6 items-center">
+          <div className="col-span-12 xl:col-span-8">
+            <div className="flex items-center gap-2 mb-4 text-white/45">
+              <GraduationCap size={17} />
+              <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
+                OTT Academy
+              </p>
             </div>
 
-            <div className="space-y-4 pt-2 border-t border-gray-950 text-gray-300 text-xs font-sans leading-relaxed">
-              {selectedLesson.content.map((paragraph, index) => (
-                <p key={index} className="bg-gray-950/10 p-3 border-l-2 border-gray-900">{paragraph}</p>
+            <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
+              Learn. Earn. Build.
+            </h2>
+
+            <p className="font-mono text-sm text-white/45 max-w-3xl leading-relaxed">
+              De educatiehub van de OTT Terminal. Gebruikers leren XRPL,
+              wallets, stablecoins, CBDC, ISO 20022, AI en developer skills
+              terwijl ze XP, badges, certificaten en later tokens verdienen.
+            </p>
+          </div>
+
+          <div className="col-span-12 xl:col-span-4 grid grid-cols-2 gap-3">
+            <StatBox icon={BookOpen} label="Courses" value="8" />
+            <StatBox icon={PlayCircle} label="Lessons" value="105+" />
+            <StatBox icon={Star} label="XP Pool" value="4,605" />
+            <StatBox icon={Award} label="Badges" value="Soon" />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-12 gap-4">
+        <div className="col-span-12 xl:col-span-8 space-y-4">
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
+                  Course Tracks
+                </p>
+
+                <h3 className="font-orbitron text-xl font-black uppercase">
+                  Learning Paths
+                </h3>
+              </div>
+
+              <Sparkles size={20} className="text-white/60" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {tracks.map((track) => (
+                <TrackCard key={track.title} track={track} />
               ))}
             </div>
           </div>
 
-          {/* Quiz / Verification Space */}
-          <div className="border border-gray-950 bg-black p-6 space-y-6 relative">
-            <div className="absolute top-0 right-0 bg-[#ff2079] text-black font-orbitron font-black text-[9px] tracking-widest uppercase px-2 py-0.5">
-              Knowledge Check
-            </div>
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
+                  Today&apos;s Lessons
+                </p>
 
-            <div className="flex items-center space-x-2 text-white pt-2">
-              <HelpCircle className="w-4 h-4 text-[#ff2079]" />
-              <h3 className="font-orbitron text-xs font-black uppercase tracking-widest">Verify Intelligence</h3>
-            </div>
-
-            <p className="text-[11px] font-mono text-gray-400 leading-tight border-b border-gray-950 pb-4">
-              {selectedLesson.quiz.question}
-            </p>
-
-            {/* Options List */}
-            <div className="space-y-3">
-              {selectedLesson.quiz.options.map((option, idx) => {
-                let borderStyle = "border-gray-950 bg-gray-950/20";
-                if (selectedOption === idx) borderStyle = "border-white bg-white/5";
-                
-                if (quizChecked) {
-                  if (idx === selectedLesson.quiz.correctIndex) {
-                    borderStyle = "border-green-500 bg-green-950/10 text-green-400";
-                  } else if (selectedOption === idx) {
-                    borderStyle = "border-red-500 bg-red-950/10 text-red-400";
-                  }
-                }
-
-                return (
-                  <button
-                    key={idx}
-                    disabled={quizChecked}
-                    onClick={() => handleOptionSelect(idx)}
-                    className={`w-full text-left p-4 border text-xs font-mono transition-all rounded-sm flex items-start space-x-2 ${borderStyle} ${!quizChecked && 'hover:border-gray-700 cursor-pointer'}`}
-                  >
-                    <span className="font-bold shrink-0">{String.fromCharCode(65 + idx)}.</span>
-                    <span>{option}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Action Section */}
-            {!quizChecked ? (
-              <button
-                onClick={handleCheckAnswer}
-                disabled={selectedOption === null}
-                className="w-full bg-white text-black hover:bg-black hover:text-white border border-white font-orbitron text-xs font-black uppercase tracking-widest py-3 transition-all disabled:opacity-40 cursor-pointer"
-              >
-                Verifieer Antwoord
-              </button>
-            ) : (
-              <div className="space-y-4 animate-fade-in">
-                <div className="p-3 border border-gray-950 bg-gray-950/30 text-[10px] font-mono text-gray-400 leading-tight">
-                  <div className="font-bold text-white uppercase tracking-wider mb-1 flex items-center gap-1">
-                    {selectedOption === selectedLesson.quiz.correctIndex ? (
-                      <span className="text-green-400">✓ Cryptografisch Correct</span>
-                    ) : (
-                      <span className="text-red-400">✗ Verificatie Mislukt</span>
-                    )}
-                  </div>
-                  {selectedLesson.quiz.explanation}
-                </div>
-                <button
-                  onClick={handleNextLesson}
-                  className="w-full border border-[#2b82ff] bg-[#2b82ff] text-black hover:bg-black hover:text-[#2b82ff] font-orbitron text-xs font-black uppercase tracking-widest py-3 transition-all cursor-pointer"
-                >
-                  Volgende Track
-                </button>
+                <h3 className="font-orbitron text-xl font-black uppercase">
+                  Start Learning
+                </h3>
               </div>
-            )}
+
+              <PlayCircle size={20} className="text-white/60" />
+            </div>
+
+            <div className="space-y-3">
+              {lessons.map((lesson) => (
+                <LessonRow key={lesson.title} lesson={lesson} />
+              ))}
+            </div>
           </div>
         </div>
+
+        <div className="col-span-12 xl:col-span-4 space-y-4">
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Trophy size={18} className="text-white/60" />
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Learn & Earn Progress
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <ProgressItem label="Academy Progress" value={12} />
+              <ProgressItem label="XRPL Knowledge" value={18} />
+              <ProgressItem label="Wallet Skills" value={8} />
+              <ProgressItem label="Developer Path" value={0} />
+            </div>
+          </div>
+
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Bot size={18} className="text-white/60" />
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                AI Tutor
+              </p>
+            </div>
+
+            <p className="font-mono text-xs text-white/45 leading-relaxed mb-5">
+              Later krijgt iedere les een AI Tutor. Gebruikers kunnen vragen
+              stellen, voorbeelden krijgen, quizvragen oefenen en moeilijke
+              onderwerpen eenvoudig laten uitleggen.
+            </p>
+
+            <button className="w-full border border-white/15 py-3 font-orbitron text-xs uppercase tracking-widest text-white/40 cursor-not-allowed">
+              AI Tutor Coming Soon
+            </button>
+          </div>
+
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <ShieldCheck size={18} className="text-white/60" />
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Certificates
+              </p>
+            </div>
+
+            <p className="font-mono text-xs text-white/45 leading-relaxed">
+              Certificaten en NFT badges komen later als bewijs van afgeronde
+              tracks. Eerst bouwen we XP, quizzen en voortgang veilig in de app.
+            </p>
+          </div>
+        </div>
+
+        <div className="col-span-12 grid grid-cols-1 md:grid-cols-4 gap-4">
+          <FeatureBox icon={CheckCircle2} title="Quizzes" text="Knowledge checks" />
+          <FeatureBox icon={Award} title="NFT Badges" text="Proof of learning" />
+          <FeatureBox icon={Coins} title="OTT Rewards" text="Token utility later" />
+          <FeatureBox icon={Zap} title="Daily Missions" text="Retention engine" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatBox({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: ElementType;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="border border-white/10 bg-black/60 p-4">
+      <Icon size={18} className="text-white/60 mb-3" />
+
+      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+        {label}
+      </p>
+
+      <p className="font-orbitron text-lg font-black uppercase">{value}</p>
+    </div>
+  );
+}
+
+function TrackCard({ track }: { track: Track }) {
+  const Icon = track.icon;
+  const isLocked = track.status === "Locked";
+
+  return (
+    <div className="border border-white/10 bg-black hover:bg-white/[0.03] transition-all p-5 cursor-pointer">
+      <div className="flex items-start justify-between mb-4">
+        <Icon size={20} className="text-white/70" />
+
+        <span className="font-mono text-[10px] uppercase text-white/45">
+          {track.status}
+        </span>
+      </div>
+
+      <h4 className="font-orbitron text-sm font-bold uppercase mb-2">
+        {track.title}
+      </h4>
+
+      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-4">
+        {track.level}
+      </p>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="border border-white/10 p-3">
+          <p className="font-mono text-[10px] text-white/35 uppercase mb-1">
+            Lessons
+          </p>
+          <p className="font-orbitron text-sm font-black">{track.lessons}</p>
+        </div>
+
+        <div className="border border-white/10 p-3">
+          <p className="font-mono text-[10px] text-white/35 uppercase mb-1">
+            XP
+          </p>
+          <p className="font-orbitron text-sm font-black">{track.xp}</p>
+        </div>
+      </div>
+
+      {isLocked && (
+        <div className="flex items-center gap-2 mt-4 text-white/30">
+          <Lock size={13} />
+          <p className="font-mono text-[10px] uppercase">Unlock later</p>
+        </div>
       )}
+    </div>
+  );
+}
+
+function LessonRow({ lesson }: { lesson: Lesson }) {
+  const isLocked = lesson.status === "Locked";
+
+  return (
+    <div className="border border-white/10 bg-black p-4 flex items-center justify-between hover:bg-white/[0.03] transition-all cursor-pointer">
+      <div className="flex items-center gap-3">
+        {isLocked ? (
+          <Lock size={17} className="text-white/35" />
+        ) : (
+          <PlayCircle size={17} className="text-white/60" />
+        )}
+
+        <div>
+          <p className="font-orbitron text-sm font-bold uppercase mb-1">
+            {lesson.title}
+          </p>
+
+          <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest">
+            {lesson.track} • {lesson.duration} • {lesson.xp} XP
+          </p>
+        </div>
+      </div>
+
+      <p className="font-mono text-[10px] text-white/45 uppercase">
+        {lesson.status}
+      </p>
+    </div>
+  );
+}
+
+function ProgressItem({ label, value }: { label: string; value: number }) {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <p className="font-mono text-xs text-white/55 uppercase">{label}</p>
+        <p className="font-mono text-[10px] text-white/35">{value}%</p>
+      </div>
+
+      <div className="h-2 bg-white/10 overflow-hidden">
+        <div
+          className="h-full bg-white transition-all"
+          style={{ width: `${Math.max(0, Math.min(value, 100))}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function FeatureBox({
+  icon: Icon,
+  title,
+  text,
+}: {
+  icon: ElementType;
+  title: string;
+  text: string;
+}) {
+  return (
+    <div className="border border-white/10 bg-white/[0.02] p-5">
+      <Icon size={19} className="text-white/60 mb-4" />
+
+      <p className="font-orbitron text-sm font-bold uppercase mb-2">{title}</p>
+
+      <p className="font-mono text-xs text-white/40">{text}</p>
     </div>
   );
 }
