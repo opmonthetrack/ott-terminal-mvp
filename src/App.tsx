@@ -4,9 +4,16 @@ import { DashboardTab } from "./tabs/DashboardTab";
 import { DeFiTab } from "./tabs/DeFiTab";
 import { LedgerIntelTab } from "./tabs/LedgerIntelTab";
 import { ProfileTab } from "./tabs/ProfileTab";
+import { OTTTokenCenterTab } from "./tabs/OTTTokenCenterTab";
 import { LanguageProvider, useLanguage } from "./LanguageContext";
 
-type ActiveTab = "dashboard" | "profile" | "defi" | "academy" | "intel";
+type ActiveTab =
+  | "dashboard"
+  | "profile"
+  | "token"
+  | "defi"
+  | "academy"
+  | "intel";
 
 function MainApp() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -28,6 +35,11 @@ function MainApp() {
       id: "profile",
       label: "Profile",
       status: "New",
+    },
+    {
+      id: "token",
+      label: "OTT Token",
+      status: "XP",
     },
     {
       id: "defi",
@@ -171,7 +183,7 @@ function MainApp() {
               Build Phase
             </p>
             <p className="font-orbitron text-xs text-white/70 uppercase">
-              Identity System
+              Platform Modules
             </p>
           </div>
         </div>
@@ -181,6 +193,8 @@ function MainApp() {
         )}
 
         {activeTab === "profile" && <ProfileTab />}
+
+        {activeTab === "token" && <OTTTokenCenterTab />}
 
         {activeTab === "defi" && <DeFiTab />}
 
