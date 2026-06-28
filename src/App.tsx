@@ -2,6 +2,7 @@ import { useState } from "react";
 import { LoginScreen } from "./components/LoginScreen";
 import { DashboardTab } from "./tabs/DashboardTab";
 import { DailyCheckInTab } from "./tabs/DailyCheckInTab";
+import { SourceTagMonitorTab } from "./tabs/SourceTagMonitorTab";
 import { WalletTab } from "./tabs/WalletTab";
 import { PortfolioTab } from "./tabs/PortfolioTab";
 import { EcosystemTab } from "./tabs/EcosystemTab";
@@ -20,6 +21,7 @@ import { LanguageProvider, useLanguage } from "./LanguageContext";
 type ActiveTab =
   | "dashboard"
   | "checkin"
+  | "source"
   | "wallet"
   | "portfolio"
   | "ecosystem"
@@ -54,6 +56,11 @@ function MainApp() {
       id: "checkin",
       label: "Check-In",
       status: "2606",
+    },
+    {
+      id: "source",
+      label: "Source Tag",
+      status: "Track",
     },
     {
       id: "wallet",
@@ -264,6 +271,10 @@ function MainApp() {
           <DailyCheckInTab walletAddress={walletAddress} />
         )}
 
+        {activeTab === "source" && (
+          <SourceTagMonitorTab walletAddress={walletAddress} />
+        )}
+
         {activeTab === "wallet" && <WalletTab walletAddress={walletAddress} />}
 
         {activeTab === "portfolio" && (
@@ -292,3 +303,14 @@ function MainApp() {
 
         {activeTab === "intel" && <LedgerIntelTab />}
       </main>
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <LanguageProvider>
+      <MainApp />
+    </LanguageProvider>
+  );
+}
