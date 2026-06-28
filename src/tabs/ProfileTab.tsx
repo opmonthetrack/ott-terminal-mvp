@@ -1,66 +1,87 @@
 import type { ElementType } from "react";
 import {
-  ArrowUpRight,
-  BarChart3,
-  Coins,
-  Eye,
-  PieChart,
+  Activity,
+  Award,
+  BadgeCheck,
+  BookOpen,
+  Clock,
+  Gem,
+  Medal,
   ShieldCheck,
-  Sparkles,
-  TrendingUp,
+  Star,
+  Trophy,
+  User,
   Wallet,
+  Zap,
 } from "lucide-react";
 
-type PortfolioTabProps = {
-  walletAddress: string;
-};
-
-type Asset = {
-  symbol: string;
-  name: string;
-  balance: string;
+type Stat = {
+  label: string;
   value: string;
-  status: string;
+  icon: ElementType;
 };
 
-const assets: Asset[] = [
+type Badge = {
+  title: string;
+  status: string;
+  icon: ElementType;
+};
+
+const stats: Stat[] = [
   {
-    symbol: "XRP",
-    name: "XRP Ledger Native Asset",
-    balance: "589.0000",
-    value: "$1,178.00",
-    status: "Mock",
+    label: "OTT XP",
+    value: "130 XP",
+    icon: Star,
   },
   {
-    symbol: "RLUSD",
-    name: "Ripple USD",
-    balance: "250.00",
-    value: "$250.00",
-    status: "Watch",
+    label: "Daily Streak",
+    value: "3 Days",
+    icon: Zap,
   },
   {
-    symbol: "USDC",
-    name: "Circle USD",
-    balance: "100.00",
-    value: "$100.00",
-    status: "Research",
+    label: "Badges",
+    value: "4",
+    icon: Award,
   },
   {
-    symbol: "OTT XP",
-    name: "Off-chain Reputation Points",
-    balance: "130 XP",
-    value: "Utility",
-    status: "Live",
+    label: "Wallet Rank",
+    value: "Builder",
+    icon: ShieldCheck,
   },
 ];
 
-function shortAddress(address: string) {
-  if (!address) return "Unknown";
-  if (address.length <= 18) return address;
-  return `${address.slice(0, 9)}...${address.slice(-7)}`;
-}
+const badges: Badge[] = [
+  {
+    title: "Early Builder",
+    status: "Unlocked",
+    icon: BadgeCheck,
+  },
+  {
+    title: "XRPL Student",
+    status: "Unlocked",
+    icon: BookOpen,
+  },
+  {
+    title: "Daily Streak",
+    status: "Active",
+    icon: Trophy,
+  },
+  {
+    title: "Make Waves",
+    status: "Soon",
+    icon: Gem,
+  },
+];
 
-export function PortfolioTab({ walletAddress }: PortfolioTabProps) {
+const activity = [
+  "Logged into OTT Terminal",
+  "Opened Academy module",
+  "Reviewed Ledger Intelligence",
+  "Earned 25 XP",
+  "Checked Wallet Center",
+];
+
+export function ProfileTab() {
   return (
     <div className="p-6 bg-black min-h-screen text-white">
       <div className="relative overflow-hidden border border-white/10 bg-white/[0.02] p-6 mb-6">
@@ -69,128 +90,147 @@ export function PortfolioTab({ walletAddress }: PortfolioTabProps) {
         <div className="relative z-10 grid grid-cols-12 gap-6 items-center">
           <div className="col-span-12 xl:col-span-8">
             <div className="flex items-center gap-2 mb-4 text-white/45">
-              <PieChart size={17} />
+              <User size={17} />
               <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
-                OTT Portfolio Center
+                OTT Profile
               </p>
             </div>
 
             <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
-              Portfolio. Risk. Intelligence.
+              Identity. Progress. Reputation.
             </h2>
 
             <p className="font-mono text-sm text-white/45 max-w-3xl leading-relaxed">
-              De portfolio-laag van de OTT Terminal. Hier komen balances,
-              tokenwaarden, stablecoins, NFT badges, AMM-posities, wallet
-              health, risico-analyse en AI-uitleg samen.
+              Jouw profiel binnen de OTT Terminal. Hier komen XP, badges,
+              wallet reputation, Academy progress, daily streaks en toekomstige
+              OTT Token utility samen.
             </p>
           </div>
 
-          <div className="col-span-12 xl:col-span-4 grid grid-cols-2 gap-3">
-            <StatBox icon={Wallet} label="Wallet" value={shortAddress(walletAddress)} />
-            <StatBox icon={Coins} label="Mock Value" value="$1,528" />
-            <StatBox icon={TrendingUp} label="Daily Move" value="+4.8%" />
-            <StatBox icon={ShieldCheck} label="Risk" value="Low" />
+          <div className="col-span-12 xl:col-span-4 border border-white/10 bg-black/60 p-5">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-white text-black flex items-center justify-center font-orbitron font-black text-xl">
+                OTT
+              </div>
+
+              <div>
+                <p className="font-orbitron text-lg font-black uppercase">
+                  Oswald
+                </p>
+                <p className="font-mono text-xs text-white/35">
+                  TruthOnTheTrack / Founder
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-12 gap-4">
         <div className="col-span-12 xl:col-span-8 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {stats.map((stat) => (
+              <StatBox key={stat.label} stat={stat} />
+            ))}
+          </div>
+
           <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
-                  Assets
-                </p>
-
-                <h3 className="font-orbitron text-xl font-black uppercase">
-                  Portfolio Holdings
-                </h3>
-              </div>
-
-              <BarChart3 size={20} className="text-white/60" />
+            <div className="flex items-center gap-2 mb-5">
+              <Activity size={18} className="text-white/60" />
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Recent Activity
+              </p>
             </div>
 
             <div className="space-y-3">
-              {assets.map((asset) => (
-                <AssetRow key={asset.symbol} asset={asset} />
+              {activity.map((item) => (
+                <ActivityLine key={item} label={item} />
               ))}
             </div>
           </div>
 
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Sparkles size={18} className="text-white/60" />
+              <Award size={18} className="text-white/60" />
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                AI Portfolio Notes
+                Badge Vault
               </p>
             </div>
 
-            <p className="font-mono text-xs text-white/45 leading-relaxed">
-              Later kan AI jouw portfolio uitleggen in gewone taal. Niet als
-              financieel advies, maar als educatieve analyse van balans,
-              stablecoin exposure, trustlines en risico.
-            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {badges.map((badge) => (
+                <BadgeCard key={badge.title} badge={badge} />
+              ))}
+            </div>
           </div>
         </div>
 
         <div className="col-span-12 xl:col-span-4 space-y-4">
-          <SideBox icon={Eye} title="Wallet Health" text="Risk scanner later" />
-          <SideBox icon={ShieldCheck} title="Trustline Safety" text="Warnings before action" />
-          <SideBox icon={ArrowUpRight} title="Explorer Links" text="Bithomp / XRPL.org later" />
+          <SideBox
+            icon={Wallet}
+            title="Wallet Identity"
+            text="Later koppelen we echte XRPL wallet identity, badges en reputation score."
+          />
+
+          <SideBox
+            icon={Medal}
+            title="Founder Rank"
+            text="Ranks worden later gebaseerd op leren, dagelijkse activiteit, check-ins en community bijdrage."
+          />
+
+          <SideBox
+            icon={Clock}
+            title="Daily Progress"
+            text="Daily missions zorgen straks voor terugkerende gebruikers en meetbare engagement."
+          />
         </div>
       </div>
     </div>
   );
 }
 
-function StatBox({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: ElementType;
-  label: string;
-  value: string;
-}) {
+function StatBox({ stat }: { stat: Stat }) {
+  const Icon = stat.icon;
+
   return (
-    <div className="border border-white/10 bg-black/60 p-4">
-      <Icon size={18} className="text-white/60 mb-3" />
+    <div className="border border-white/10 bg-white/[0.02] p-5">
+      <Icon size={18} className="text-white/60 mb-4" />
 
       <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
-        {label}
+        {stat.label}
       </p>
 
-      <p className="font-orbitron text-lg font-black uppercase">{value}</p>
+      <p className="font-orbitron text-lg font-black uppercase">
+        {stat.value}
+      </p>
     </div>
   );
 }
 
-function AssetRow({ asset }: { asset: Asset }) {
+function ActivityLine({ label }: { label: string }) {
   return (
-    <div className="border border-white/10 bg-black p-4 hover:bg-white/[0.03] transition-all">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="font-orbitron text-sm font-bold uppercase mb-1">
-            {asset.symbol}
-          </p>
+    <div className="border border-white/10 bg-black p-4 flex items-center justify-between">
+      <p className="font-mono text-xs text-white/50">{label}</p>
 
-          <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest">
-            {asset.name}
-          </p>
-        </div>
+      <p className="font-mono text-[10px] text-white/30 uppercase">Now</p>
+    </div>
+  );
+}
 
-        <div className="text-right">
-          <p className="font-orbitron text-sm font-black uppercase mb-1">
-            {asset.balance}
-          </p>
+function BadgeCard({ badge }: { badge: Badge }) {
+  const Icon = badge.icon;
 
-          <p className="font-mono text-[10px] text-white/35 uppercase">
-            {asset.value} • {asset.status}
-          </p>
-        </div>
-      </div>
+  return (
+    <div className="border border-white/10 bg-black p-5">
+      <Icon size={20} className="text-white/60 mb-4" />
+
+      <p className="font-orbitron text-sm font-bold uppercase mb-2">
+        {badge.title}
+      </p>
+
+      <p className="font-mono text-[10px] text-white/35 uppercase">
+        {badge.status}
+      </p>
     </div>
   );
 }
@@ -210,7 +250,7 @@ function SideBox({
 
       <p className="font-orbitron text-sm font-bold uppercase mb-2">{title}</p>
 
-      <p className="font-mono text-xs text-white/40">{text}</p>
+      <p className="font-mono text-xs text-white/40 leading-relaxed">{text}</p>
     </div>
   );
 }
