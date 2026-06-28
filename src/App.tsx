@@ -9,13 +9,14 @@ import { EcosystemTab } from "./tabs/EcosystemTab";
 import { ValidatorTab } from "./tabs/ValidatorTab";
 import { DeveloperHubTab } from "./tabs/DeveloperHubTab";
 import { TokenizationTab } from "./tabs/TokenizationTab";
-import { DeFiTab } from "./tabs/DeFiTab";
-import { LedgerIntelTab } from "./tabs/LedgerIntelTab";
 import { ProfileTab } from "./tabs/ProfileTab";
 import { OTTTokenCenterTab } from "./tabs/OTTTokenCenterTab";
-import { AcademyTab } from "./tabs/AcademyTab";
 import { AIHubTab } from "./tabs/AIHubTab";
 import { MarketplaceTab } from "./tabs/MarketplaceTab";
+import { NewsTab } from "./tabs/NewsTab";
+import { DeFiTab } from "./tabs/DeFiTab";
+import { AcademyTab } from "./tabs/AcademyTab";
+import { LedgerIntelTab } from "./tabs/LedgerIntelTab";
 import { LanguageProvider, useLanguage } from "./LanguageContext";
 
 type ActiveTab =
@@ -32,6 +33,7 @@ type ActiveTab =
   | "token"
   | "ai"
   | "marketplace"
+  | "news"
   | "defi"
   | "academy"
   | "intel";
@@ -111,6 +113,11 @@ function MainApp() {
       id: "marketplace",
       label: "Marketplace",
       status: "Shop",
+    },
+    {
+      id: "news",
+      label: "Newsroom",
+      status: "News",
     },
     {
       id: "defi",
@@ -296,6 +303,8 @@ function MainApp() {
         {activeTab === "ai" && <AIHubTab />}
 
         {activeTab === "marketplace" && <MarketplaceTab />}
+
+        {activeTab === "news" && <NewsTab />}
 
         {activeTab === "defi" && <DeFiTab />}
 
