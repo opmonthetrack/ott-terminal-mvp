@@ -3,6 +3,7 @@ import { LoginScreen } from "./components/LoginScreen";
 import { DashboardTab } from "./tabs/DashboardTab";
 import { WalletTab } from "./tabs/WalletTab";
 import { PortfolioTab } from "./tabs/PortfolioTab";
+import { EcosystemTab } from "./tabs/EcosystemTab";
 import { DeFiTab } from "./tabs/DeFiTab";
 import { LedgerIntelTab } from "./tabs/LedgerIntelTab";
 import { ProfileTab } from "./tabs/ProfileTab";
@@ -16,6 +17,7 @@ type ActiveTab =
   | "dashboard"
   | "wallet"
   | "portfolio"
+  | "ecosystem"
   | "profile"
   | "token"
   | "ai"
@@ -49,6 +51,11 @@ function MainApp() {
       id: "portfolio",
       label: "Portfolio",
       status: "Mock",
+    },
+    {
+      id: "ecosystem",
+      label: "Ecosystem",
+      status: "Map",
     },
     {
       id: "profile",
@@ -90,8 +97,8 @@ function MainApp() {
   return (
     <div className="flex min-h-screen bg-black text-white selection:bg-white/20">
       <aside className="w-64 border-r border-white/10 flex flex-col justify-between bg-black z-10 relative">
-        <div className="p-6">
-          <div className="flex items-center gap-3 mb-10">
+        <div className="p-6 overflow-y-auto">
+          <div className="flex items-center gap-3 mb-8">
             <div className="w-11 h-11 bg-white flex items-center justify-center font-black text-black font-orbitron rounded-sm">
               OTT
             </div>
@@ -106,7 +113,7 @@ function MainApp() {
             </div>
           </div>
 
-          <div className="border border-white/10 bg-white/[0.02] p-4 mb-8">
+          <div className="border border-white/10 bg-white/[0.02] p-4 mb-6">
             <p className="font-orbitron text-[10px] uppercase tracking-widest text-white/60 mb-2">
               Terminal Status
             </p>
@@ -156,7 +163,7 @@ function MainApp() {
           </nav>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 border-t border-white/10">
           <div className="bg-gray-950 border border-white/10 rounded-lg p-1 flex relative">
             <div
               className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded shadow transition-all duration-300 ${
@@ -226,6 +233,8 @@ function MainApp() {
         {activeTab === "portfolio" && (
           <PortfolioTab walletAddress={walletAddress} />
         )}
+
+        {activeTab === "ecosystem" && <EcosystemTab />}
 
         {activeTab === "profile" && <ProfileTab />}
 
