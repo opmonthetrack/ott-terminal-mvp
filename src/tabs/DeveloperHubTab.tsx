@@ -1,192 +1,172 @@
+import { useState } from "react";
 import type { ElementType } from "react";
 import {
   Activity,
-  ArrowUpRight,
   BadgeCheck,
   BookOpen,
-  Bot,
+  Boxes,
   Braces,
-  CheckCircle2,
   Code2,
-  Coins,
-  Cpu,
   Database,
   FileCode2,
-  GitBranch,
-  Globe2,
+  Fingerprint,
   KeyRound,
   Layers,
   Lock,
-  Network,
+  Radio,
   Rocket,
+  ScanLine,
   Server,
   ShieldCheck,
-  Sparkles,
   Terminal,
   Wallet,
+  Waves,
   Zap,
 } from "lucide-react";
 
 type DevTool = {
+  id: string;
   title: string;
-  category: string;
   status: string;
-  description: string;
+  text: string;
   icon: ElementType;
 };
 
 type CodeExample = {
   title: string;
-  language: string;
-  status: string;
-  snippet: string;
-};
-
-type Integration = {
-  title: string;
   status: string;
   description: string;
+  code: string;
+};
+
+type BuildStep = {
+  title: string;
+  status: string;
+  text: string;
   icon: ElementType;
 };
 
 const devTools: DevTool[] = [
   {
-    title: "XRPL JS Starter",
-    category: "SDK",
-    status: "Planned",
-    description:
-      "Basisvoorbeelden voor payments, account info, trustlines, NFTs, AMM en ledger data.",
-    icon: Code2,
-  },
-  {
+    id: "xaman",
     title: "Xaman Payload Builder",
-    category: "Wallet Actions",
-    status: "Priority",
-    description:
-      "Maak veilige Xaman payloads voor login, payments, trustlines en Daily Check-In transacties.",
+    status: "Soon",
+    text: "Maak later veilige Xaman payloads voor Daily Check-In, source tag 2606 en user confirmation.",
     icon: Wallet,
   },
   {
-    title: "Source Tag 2606 Helper",
-    category: "Make Waves",
-    status: "Priority",
-    description:
-      "Helper voor mainnet transacties met de juiste source tag zodat actieve gebruikers meetellen.",
-    icon: Zap,
+    id: "source",
+    title: "Source Tag Helper",
+    status: "2606",
+    text: "Helper om Make Waves transacties altijd met de juiste source tag zichtbaar te maken.",
+    icon: Fingerprint,
   },
   {
-    title: "API Explorer",
-    category: "Data",
-    status: "Soon",
-    description:
-      "Test XRPL endpoints, backend routes, news feeds, wallet data en toekomstige OTT APIs.",
-    icon: Server,
+    id: "xrpl",
+    title: "XRPL API Explorer",
+    status: "Build",
+    text: "Lees wallet info, account lines, ledger data, AMM info en transaction history.",
+    icon: Database,
   },
   {
-    title: "Trustline Lab",
-    category: "Token Tools",
-    status: "Planned",
-    description:
-      "Educatieve omgeving om trustlines, issuers, risico's en token settings beter te begrijpen.",
-    icon: ShieldCheck,
-  },
-  {
-    title: "AI Code Assistant",
-    category: "AI Developer Mode",
-    status: "Future",
-    description:
-      "AI helpt developers met voorbeeldcode, uitleg, debugging en XRPL integraties.",
-    icon: Bot,
+    id: "docs",
+    title: "Developer Docs",
+    status: "Live UI",
+    text: "Interne documentatie voor builders, partners, API routes en frontend modules.",
+    icon: BookOpen,
   },
 ];
 
 const codeExamples: CodeExample[] = [
   {
-    title: "Xaman Payment Payload",
-    language: "TypeScript",
-    status: "Mock",
-    snippet: [
-      "const payload = {",
-      '  txjson: {',
-      '    TransactionType: "Payment",',
-      '    Destination: "rDestinationAddress",',
-      '    Amount: "1000000",',
-      "    SourceTag: 2606,",
-      "  },",
-      "};",
-    ].join("\n"),
+    title: "Source Tag 2606",
+    status: "Make Waves",
+    description: "Voorbeeldstructuur voor een XRPL transactie met source tag.",
+    code: `{
+  TransactionType: "Payment",
+  Account: userWallet,
+  Destination: ottWallet,
+  Amount: "1000",
+  SourceTag: 2606
+}`,
   },
   {
-    title: "XRPL Account Info",
-    language: "JavaScript",
-    status: "Mock",
-    snippet: [
-      "const request = {",
-      '  method: "account_info",',
-      '  params: [{',
-      '    account: walletAddress,',
-      '    ledger_index: "validated",',
-      "  }],",
-      "};",
-    ].join("\n"),
+    title: "Safe Xaman Flow",
+    status: "Wallet",
+    description: "Echte signing gebeurt later alleen via Xaman bevestiging.",
+    code: `const payload = {
+  txjson: transaction,
+  options: {
+    submit: true
+  }
+};`,
   },
   {
-    title: "Trustline Warning Flow",
-    language: "Pseudo",
-    status: "Planned",
-    snippet: [
-      "checkIssuer();",
-      "checkTokenMetadata();",
-      "showRiskWarning();",
-      "requireUserConfirm();",
-      "openXamanPayload();",
-    ].join("\n"),
+    title: "Read Account Lines",
+    status: "XRPL",
+    description: "Trustlines uitlezen voor wallet safety en portfolio data.",
+    code: `{
+  command: "account_lines",
+  account: walletAddress,
+  ledger_index: "validated"
+}`,
   },
 ];
 
-const integrations: Integration[] = [
+const buildSteps: BuildStep[] = [
   {
-    title: "XRPL Mainnet",
-    status: "Core",
-    description:
-      "Ledger data, payments, account activity, trustlines, NFT badges en AMM informatie.",
-    icon: Globe2,
+    title: "Frontend Modules",
+    status: "Active",
+    text: "Dashboard, Wallet, Portfolio, Ecosystem, Validators en Check-In staan in de terminal.",
+    icon: Layers,
   },
   {
-    title: "Xaman",
-    status: "Priority",
-    description:
-      "Veilige wallet login, payload signing, user consent en mainnet transacties.",
-    icon: Wallet,
+    title: "Mock Safety First",
+    status: "Safe",
+    text: "Alle walletacties blijven eerst mock tot de UX en warnings goed staan.",
+    icon: ShieldCheck,
   },
   {
-    title: "OTT Backend",
-    status: "Build",
-    description:
-      "Server routes voor API keys, AI, news feeds, source tag checks en toekomstige rewards.",
-    icon: Database,
+    title: "API Layer",
+    status: "Next",
+    text: "Serverless API routes voor Xaman, XRPL reads en secure secrets komen later.",
+    icon: Server,
   },
   {
-    title: "AI Layer",
-    status: "Future",
-    description:
-      "AI summaries, code helper, wallet uitleg, risk scanner en Academy tutor.",
-    icon: Cpu,
+    title: "Mainnet Proof",
+    status: "Later",
+    text: "Daily Check-In krijgt later echte mainnet proof met source tag 2606.",
+    icon: Waves,
   },
 ];
 
-const devRoadmap = [
-  "Maak developer hub interface",
-  "Voeg code examples en API explorer toe",
-  "Koppel Xaman payload builder",
-  "Voeg Daily Check-In source tag helper toe",
-  "Voeg XRPL account info endpoint toe",
-  "Voeg trustline safety lab toe",
-  "Voeg AI code assistant toe",
-  "Maak builder docs voor externe developers",
+const apiRoutes = [
+  {
+    path: "/api/xaman",
+    status: "Secure Backend",
+  },
+  {
+    path: "/api/xrpl-account",
+    status: "Wallet Reads",
+  },
+  {
+    path: "/api/source-tag",
+    status: "2606 Helper",
+  },
+  {
+    path: "/api/check-in",
+    status: "Daily Action",
+  },
 ];
 
 export function DeveloperHubTab() {
+  const [selectedTool, setSelectedTool] = useState<DevTool>(devTools[0]);
+  const [selectedExample, setSelectedExample] = useState<CodeExample>(
+    codeExamples[0]
+  );
+
+  const SelectedToolIcon = selectedTool.icon;
+
   return (
     <div className="p-6 bg-black min-h-screen text-white">
       <div className="relative overflow-hidden border border-white/10 bg-white/[0.02] p-6 mb-6">
@@ -196,52 +176,100 @@ export function DeveloperHubTab() {
           <div className="col-span-12 xl:col-span-8">
             <div className="flex items-center gap-2 mb-4 text-white/45">
               <Terminal size={17} />
+
               <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
                 OTT Developer Hub
               </p>
             </div>
 
             <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
-              Build On The XRP Ledger
+              Build Layer For XRPL
             </h2>
 
             <p className="font-mono text-sm text-white/45 max-w-3xl leading-relaxed">
-              De developer-laag van de OTT Terminal. Hier komen XRPL examples,
-              Xaman payloads, API tools, source tag helpers, trustline labs,
-              AI-code support en builder documentatie samen.
+              De builder-laag van OTT Terminal. Hier komen Xaman payloads,
+              XRPL API voorbeelden, source tag helpers, docs, code snippets en
+              partner integrations samen.
             </p>
           </div>
 
           <div className="col-span-12 xl:col-span-4 grid grid-cols-2 gap-3">
-            <StatBox icon={Code2} label="Dev Tools" value="6" />
-            <StatBox icon={FileCode2} label="Examples" value="3" />
-            <StatBox icon={Wallet} label="Xaman" value="Priority" />
-            <StatBox icon={Zap} label="Source Tag" value="2606" />
+            <StatBox icon={Code2} label="Modules" value="14+" />
+            <StatBox icon={Fingerprint} label="Source Tag" value="2606" />
+            <StatBox icon={Lock} label="Secrets" value="Backend" />
+            <StatBox icon={Rocket} label="Build" value="MVP" />
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-12 xl:col-span-8 space-y-4">
+        <div className="col-span-12 xl:col-span-4 space-y-4">
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Boxes size={18} className="text-white/60" />
+
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Developer Tools
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {devTools.map((tool) => (
+                <ToolButton
+                  key={tool.id}
+                  tool={tool}
+                  active={selectedTool.id === tool.id}
+                  onClick={() => setSelectedTool(tool)}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Radio size={18} className="text-white/60" />
+
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                API Routes
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {apiRoutes.map((route) => (
+                <ApiRouteRow key={route.path} path={route.path} status={route.status} />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="col-span-12 xl:col-span-5 space-y-4">
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
-                  Builder Tools
+                  Selected Tool
                 </p>
 
                 <h3 className="font-orbitron text-xl font-black uppercase">
-                  Developer Modules
+                  {selectedTool.title}
                 </h3>
               </div>
 
-              <Braces size={20} className="text-white/60" />
+              <SelectedToolIcon size={22} className="text-white/60" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {devTools.map((tool) => (
-                <DevToolCard key={tool.title} tool={tool} />
-              ))}
+            <p className="font-mono text-sm text-white/45 leading-relaxed mb-5">
+              {selectedTool.text}
+            </p>
+
+            <div className="border border-white/10 bg-black p-4">
+              <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+                Status
+              </p>
+
+              <p className="font-orbitron text-sm font-black uppercase">
+                {selectedTool.status}
+              </p>
             </div>
           </div>
 
@@ -253,101 +281,88 @@ export function DeveloperHubTab() {
                 </p>
 
                 <h3 className="font-orbitron text-xl font-black uppercase">
-                  Copy-Paste Starters
+                  Copy-Ready Snippets
                 </h3>
               </div>
 
               <FileCode2 size={20} className="text-white/60" />
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-3 mb-5">
               {codeExamples.map((example) => (
-                <CodeExampleCard key={example.title} example={example} />
+                <ExampleButton
+                  key={example.title}
+                  example={example}
+                  active={selectedExample.title === example.title}
+                  onClick={() => setSelectedExample(example)}
+                />
               ))}
             </div>
-          </div>
 
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
-                  Integrations
+            <div className="border border-white/10 bg-black p-5">
+              <div className="flex items-center justify-between mb-4">
+                <p className="font-orbitron text-sm font-bold uppercase">
+                  {selectedExample.title}
                 </p>
 
-                <h3 className="font-orbitron text-xl font-black uppercase">
-                  Technical Stack
-                </h3>
+                <p className="font-mono text-[10px] text-white/35 uppercase">
+                  {selectedExample.status}
+                </p>
               </div>
 
-              <Network size={20} className="text-white/60" />
-            </div>
+              <p className="font-mono text-xs text-white/45 leading-relaxed mb-4">
+                {selectedExample.description}
+              </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {integrations.map((item) => (
-                <IntegrationCard key={item.title} item={item} />
-              ))}
+              <pre className="bg-white/[0.03] border border-white/10 p-4 overflow-x-auto">
+                <code className="font-mono text-xs text-white/65 whitespace-pre">
+                  {selectedExample.code}
+                </code>
+              </pre>
             </div>
           </div>
         </div>
 
-        <div className="col-span-12 xl:col-span-4 space-y-4">
+        <div className="col-span-12 xl:col-span-3 space-y-4">
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
               <ShieldCheck size={18} className="text-white/60" />
+
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                Developer Safety
+                Security Rules
               </p>
             </div>
 
-            <p className="font-mono text-xs text-white/45 leading-relaxed mb-5">
-              Elke walletactie moet zichtbaar, begrijpelijk en veilig zijn.
-              Developers mogen nooit geheime transacties of automatische signing
-              flows bouwen.
-            </p>
-
             <div className="space-y-3">
-              <SafetyLine label="No hidden transactions" />
-              <SafetyLine label="No secret client keys" />
-              <SafetyLine label="Server-side API secrets only" />
-              <SafetyLine label="User confirms before signing" />
+              <SecurityLine icon={KeyRound} label="Never expose Xaman secrets" />
+              <SecurityLine icon={Wallet} label="User confirms in Xaman" />
+              <SecurityLine icon={Fingerprint} label="Show source tag before sign" />
+              <SecurityLine icon={Lock} label="Backend handles secrets only" />
             </div>
           </div>
 
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Rocket size={18} className="text-white/60" />
+              <Activity size={18} className="text-white/60" />
+
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                Builder Roadmap
+                Build Steps
               </p>
             </div>
 
             <div className="space-y-3">
-              {devRoadmap.map((item) => (
-                <RoadmapLine key={item} label={item} />
+              {buildSteps.map((step) => (
+                <BuildStepCard key={step.title} step={step} />
               ))}
             </div>
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Sparkles size={18} className="text-white/60" />
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                AI Builder Mode
-              </p>
-            </div>
-
-            <p className="font-mono text-xs text-white/45 leading-relaxed">
-              Later kan AI developers helpen met XRPL code, Xaman payloads,
-              API calls, debugging, uitleg en veilige voorbeeldflows.
-            </p>
           </div>
         </div>
 
         <div className="col-span-12 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <FeatureBox icon={BookOpen} title="Docs" text="Developer guides" />
-          <FeatureBox icon={GitBranch} title="Examples" text="Code starters" />
-          <FeatureBox icon={KeyRound} title="Security" text="Safe flows" />
-          <FeatureBox icon={ArrowUpRight} title="APIs" text="Explorer later" />
+          <FeatureBox icon={Braces} title="Code" text="Snippets and helpers" />
+          <FeatureBox icon={Zap} title="Xaman" text="Payloads later" />
+          <FeatureBox icon={ScanLine} title="XRPL API" text="Read ledger data" />
+          <FeatureBox icon={BadgeCheck} title="Partners" text="Builder ready" />
         </div>
       </div>
     </div>
@@ -371,101 +386,127 @@ function StatBox({
         {label}
       </p>
 
-      <p className="font-orbitron text-lg font-black uppercase">{value}</p>
+      <p className="font-orbitron text-sm font-black uppercase">{value}</p>
     </div>
   );
 }
 
-function DevToolCard({ tool }: { tool: DevTool }) {
+function ToolButton({
+  tool,
+  active,
+  onClick,
+}: {
+  tool: DevTool;
+  active: boolean;
+  onClick: () => void;
+}) {
   const Icon = tool.icon;
 
   return (
-    <div className="border border-white/10 bg-black hover:bg-white/[0.03] transition-all p-5 cursor-pointer">
-      <div className="flex items-start justify-between mb-4">
-        <Icon size={20} className="text-white/70" />
+    <button
+      onClick={onClick}
+      className={`w-full border p-4 text-left transition-all ${
+        active
+          ? "border-white/30 bg-white/[0.08]"
+          : "border-white/10 bg-black hover:bg-white/[0.03]"
+      }`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Icon size={16} className="text-white/60" />
 
-        <span className="font-mono text-[10px] uppercase text-white/45">
-          {tool.status}
-        </span>
-      </div>
-
-      <h4 className="font-orbitron text-sm font-bold uppercase mb-2">
-        {tool.title}
-      </h4>
-
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-4">
-        {tool.category}
-      </p>
-
-      <p className="font-mono text-xs text-white/45 leading-relaxed">
-        {tool.description}
-      </p>
-    </div>
-  );
-}
-
-function CodeExampleCard({ example }: { example: CodeExample }) {
-  return (
-    <div className="border border-white/10 bg-black p-5 hover:bg-white/[0.03] transition-all">
-      <div className="flex items-start justify-between gap-4 mb-4">
-        <div>
-          <p className="font-orbitron text-sm font-bold uppercase mb-1">
-            {example.title}
-          </p>
-
-          <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest">
-            {example.language} • {example.status}
+          <p className="font-orbitron text-xs font-bold uppercase">
+            {tool.title}
           </p>
         </div>
 
-        <ArrowUpRight size={15} className="text-white/20 shrink-0" />
+        <p className="font-mono text-[10px] text-white/35 uppercase">
+          {tool.status}
+        </p>
       </div>
-
-      <pre className="border border-white/10 bg-white/[0.02] p-4 overflow-x-auto text-[11px] text-white/50 font-mono leading-relaxed">
-        {example.snippet}
-      </pre>
-    </div>
+    </button>
   );
 }
 
-function IntegrationCard({ item }: { item: Integration }) {
-  const Icon = item.icon;
-
+function ApiRouteRow({ path, status }: { path: string; status: string }) {
   return (
-    <div className="border border-white/10 bg-black p-5">
-      <div className="flex items-start justify-between mb-4">
-        <Icon size={20} className="text-white/70" />
+    <div className="border border-white/10 bg-black p-3">
+      <p className="font-mono text-xs text-white/60 mb-1">{path}</p>
 
-        <span className="font-mono text-[10px] uppercase text-white/45">
-          {item.status}
-        </span>
-      </div>
-
-      <h4 className="font-orbitron text-sm font-bold uppercase mb-3">
-        {item.title}
-      </h4>
-
-      <p className="font-mono text-xs text-white/45 leading-relaxed">
-        {item.description}
+      <p className="font-mono text-[10px] text-white/30 uppercase">
+        {status}
       </p>
     </div>
   );
 }
 
-function SafetyLine({ label }: { label: string }) {
+function ExampleButton({
+  example,
+  active,
+  onClick,
+}: {
+  example: CodeExample;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full border p-4 text-left transition-all ${
+        active
+          ? "border-white/30 bg-white/[0.08]"
+          : "border-white/10 bg-black hover:bg-white/[0.03]"
+      }`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <p className="font-orbitron text-xs font-bold uppercase">
+          {example.title}
+        </p>
+
+        <p className="font-mono text-[10px] text-white/35 uppercase">
+          {example.status}
+        </p>
+      </div>
+    </button>
+  );
+}
+
+function SecurityLine({
+  icon: Icon,
+  label,
+}: {
+  icon: ElementType;
+  label: string;
+}) {
   return (
     <div className="border border-white/10 bg-black p-3 flex items-center gap-2">
-      <CheckCircle2 size={14} className="text-white/60" />
+      <Icon size={14} className="text-white/60" />
 
       <p className="font-mono text-xs text-white/50">{label}</p>
     </div>
   );
 }
 
-function RoadmapLine({ label }: { label: string }) {
+function BuildStepCard({ step }: { step: BuildStep }) {
+  const Icon = step.icon;
+
   return (
-    <div className="border-b border-white/10 pb-3 last:border-b-0 last:pb-0">
-      <p className="font-mono text-xs text-white/45 leading-relaxed">{label}</p>
+    <div className="border border-white/10 bg-black p-4">
+      <div className="flex items-start justify-between mb-3">
+        <Icon size={17} className="text-white/60" />
+
+        <p className="font-mono text-[10px] text-white/30 uppercase">
+          {step.status}
+        </p>
+      </div>
+
+      <p className="font-orbitron text-xs font-bold uppercase mb-2">
+        {step.title}
+      </p>
+
+      <p className="font-mono text-[10px] text-white/40 leading-relaxed">
+        {step.text}
+      </p>
     </div>
   );
 }
