@@ -4,6 +4,7 @@ import { DashboardTab } from "./tabs/DashboardTab";
 import { WalletTab } from "./tabs/WalletTab";
 import { PortfolioTab } from "./tabs/PortfolioTab";
 import { EcosystemTab } from "./tabs/EcosystemTab";
+import { ValidatorTab } from "./tabs/ValidatorTab";
 import { DeFiTab } from "./tabs/DeFiTab";
 import { LedgerIntelTab } from "./tabs/LedgerIntelTab";
 import { ProfileTab } from "./tabs/ProfileTab";
@@ -18,6 +19,7 @@ type ActiveTab =
   | "wallet"
   | "portfolio"
   | "ecosystem"
+  | "validator"
   | "profile"
   | "token"
   | "ai"
@@ -58,6 +60,11 @@ function MainApp() {
       status: "Map",
     },
     {
+      id: "validator",
+      label: "Validators",
+      status: "UNL",
+    },
+    {
       id: "profile",
       label: "Profile",
       status: "New",
@@ -95,9 +102,9 @@ function MainApp() {
   ];
 
   return (
-    <div className="flex min-h-screen bg-black text-white selection:bg-white/20">
-      <aside className="w-64 border-r border-white/10 flex flex-col justify-between bg-black z-10 relative">
-        <div className="p-6 overflow-y-auto">
+    <div className="flex h-screen bg-black text-white selection:bg-white/20">
+      <aside className="w-64 border-r border-white/10 flex flex-col justify-between bg-black z-10 relative shrink-0">
+        <div className="p-6 overflow-y-auto flex-1">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-11 h-11 bg-white flex items-center justify-center font-black text-black font-orbitron rounded-sm">
               OTT
@@ -235,6 +242,8 @@ function MainApp() {
         )}
 
         {activeTab === "ecosystem" && <EcosystemTab />}
+
+        {activeTab === "validator" && <ValidatorTab />}
 
         {activeTab === "profile" && <ProfileTab />}
 
