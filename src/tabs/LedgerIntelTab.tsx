@@ -1,1449 +1,588 @@
-import { useEffect, useState, type ElementType } from "react";
+import { useState } from "react";
+import type { ElementType } from "react";
 import {
-  Award,
+  Activity,
+  AlertTriangle,
+  BarChart3,
+  Bell,
+  BookOpen,
+  Brain,
+  CheckCircle2,
   Clock,
-  ExternalLink,
-  FileText,
-  Globe,
+  Coins,
+  Database,
+  Eye,
+  FileSearch,
+  Fingerprint,
+  Globe2,
   Landmark,
-  Layers,
-  Loader2,
   Newspaper,
   Radio,
-  Scale,
+  Radar,
   Search,
-  Server,
   ShieldCheck,
   Sparkles,
-  WalletCards,
+  Target,
+  TrendingUp,
+  Wallet,
+  Waves,
   Zap,
 } from "lucide-react";
 
-type ActiveIntelTab =
-  | "daily"
-  | "news"
-  | "rails"
-  | "unl_voting"
-  | "hackathon"
-  | "cbdc"
-  | "stable"
-  | "rewards"
-  | "checkin"
-  | "xls"
-  | "iso";
-
-type NewsItem = {
+type IntelCategory = {
+  id: string;
   title: string;
-  link?: string;
-  pubDate?: string;
-  author?: string;
-  source?: string;
-  category?: string;
-  description?: string;
-};
-
-type IntelTab = {
-  id: ActiveIntelTab;
-  label: string;
+  status: string;
+  text: string;
   icon: ElementType;
-  status: string;
 };
 
-type WatchItem = {
-  name: string;
+type IntelItem = {
+  title: string;
   category: string;
+  priority: string;
   status: string;
-  summary: string;
+  text: string;
 };
 
-type StableWatchItem = {
-  ticker: string;
-  name: string;
-  peg: string;
-  issuer: string;
+type WatchSignal = {
+  title: string;
+  value: string;
   status: string;
-  summary: string;
+  icon: ElementType;
 };
 
-type CbdcWatchItem = {
-  name: string;
-  region: string;
-  type: string;
+type RiskNote = {
+  title: string;
   status: string;
-  summary: string;
+  text: string;
+  icon: ElementType;
 };
 
-const fallbackNews: NewsItem[] = [
+const categories: IntelCategory[] = [
   {
-    title: "XRPL OnTheTrack Terminal intelligence layer ready for MVP build",
-    author: "OTT Terminal",
-    pubDate: new Date().toISOString(),
-    description:
-      "De Ledger Intel module is klaar om later live XRPL nieuws, amendments, validators en ecosystem updates te tonen.",
+    id: "xrpl-news",
+    title: "XRPL News",
+    status: "Daily",
+    text: "Ecosystem updates, builder news, wallet releases, amendments en network changes.",
+    icon: Newspaper,
   },
   {
-    title: "Make Waves focus: mainnet usage, real users and source-tagged activity",
-    author: "Make Waves MVP",
-    pubDate: new Date().toISOString(),
-    description:
-      "De terminal wordt gebouwd rondom echte gebruikersactivatie en dagelijkse terugkeer.",
+    id: "stablecoins",
+    title: "Stablecoins",
+    status: "Watch",
+    text: "RLUSD, USDC, EUR rails, liquidity, payment corridors en stablecoin adoption.",
+    icon: Coins,
   },
   {
-    title: "Next technical milestone: Xaman login and Daily Check-In transaction",
-    author: "Build Roadmap",
-    pubDate: new Date().toISOString(),
-    description:
-      "De volgende grote stap is een veilige Xaman-flow met een mainnet-transactie en source tag.",
+    id: "defi",
+    title: "DeFi Signals",
+    status: "AMM",
+    text: "DEX, AMM pools, liquidity, yield, slippage, issuer risk en wallet exposure.",
+    icon: BarChart3,
+  },
+  {
+    id: "tokenization",
+    title: "Tokenization",
+    status: "RWA",
+    text: "Real world assets, certificates, issuers, compliance en on-chain proof.",
+    icon: Landmark,
+  },
+  {
+    id: "ai",
+    title: "AI + Web3",
+    status: "AI",
+    text: "AI agents, wallet assistants, automation, prompt tools en safety scanning.",
+    icon: Brain,
+  },
+  {
+    id: "make-waves",
+    title: "Make Waves",
+    status: "2606",
+    text: "Source tag 2606, active users, daily check-ins, demo readiness en metrics.",
+    icon: Waves,
   },
 ];
 
-const railsWatchItems: WatchItem[] = [
+const intelItems: IntelItem[] = [
   {
-    name: "mBridge",
-    category: "Wholesale CBDC Rail",
-    status: "Watch",
-    summary:
-      "Volgen als grensoverschrijdende wholesale CBDC-rail tussen centrale banken, banken en nieuwe settlement-systemen.",
-  },
-  {
-    name: "SWIFT",
-    category: "Global Messaging Network",
-    status: "Core",
-    summary:
-      "Belangrijk voor ISO 20022 berichten, bankcommunicatie en de overgang van oude financiële rails naar rijkere data.",
-  },
-  {
-    name: "Fedwire",
-    category: "US Payment Rail",
-    status: "Core",
-    summary:
-      "Volgen voor Amerikaanse interbancaire betalingen, dollar settlement, stablecoin-regulatie en ISO 20022 context.",
-  },
-  {
-    name: "T2 / ECB",
-    category: "Euro Settlement Rail",
-    status: "Core",
-    summary:
-      "Belangrijk voor grote eurobetalingen, digitale euro research, Europese bankinfrastructuur en institutionele settlement.",
-  },
-  {
-    name: "CHAPS",
-    category: "UK Payment Rail",
-    status: "Watch",
-    summary:
-      "Volgen voor Britse wholesale betalingen, Digital Pound onderzoek en tokenized deposit ontwikkelingen.",
-  },
-  {
-    name: "Project Agorá",
-    category: "Tokenized Deposits",
-    status: "Research",
-    summary:
-      "Volgen als researchlaag rond tokenized commercial bank deposits, programmable settlement en internationale banken.",
-  },
-];
-
-const stableWatchItems: StableWatchItem[] = [
-  {
-    ticker: "RLUSD",
-    name: "Ripple USD",
-    peg: "USD",
-    issuer: "Ripple",
-    status: "Priority",
-    summary:
-      "Belangrijk voor XRPL, institutionele betalingen, liquidity routes en toekomstige stablecoin modules binnen de terminal.",
-  },
-  {
-    ticker: "USDC",
-    name: "USD Coin",
-    peg: "USD",
-    issuer: "Circle",
-    status: "Core",
-    summary:
-      "Fiat-backed dollar-stablecoin om te volgen voor gereguleerde betalingen, multi-chain liquiditeit en institutionele adoptie.",
-  },
-  {
-    ticker: "USDT",
-    name: "Tether USD",
-    peg: "USD",
-    issuer: "Tether",
-    status: "Core",
-    summary:
-      "Grootste stablecoin-liquiditeit in de markt. Belangrijk voor volume, handelsroutes, exchange-activiteit en risk vergelijking.",
-  },
-  {
-    ticker: "PYUSD",
-    name: "PayPal USD",
-    peg: "USD",
-    issuer: "PayPal / Paxos",
-    status: "Watch",
-    summary:
-      "Interessant voor e-commerce, consumentenbetalingen en stablecoin adoption buiten alleen trading.",
-  },
-  {
-    ticker: "EURC",
-    name: "Euro Coin",
-    peg: "EUR",
-    issuer: "Circle",
-    status: "Watch",
-    summary:
-      "Belangrijk voor euro-stablecoin adoptie, MiCA-context en Europese on-chain betalingen.",
-  },
-  {
-    ticker: "EURe",
-    name: "Monerium Euro",
-    peg: "EUR",
-    issuer: "Monerium",
-    status: "Research",
-    summary:
-      "Interessant door de koppeling tussen on-chain euro’s en traditionele bankrekeningstructuren.",
-  },
-  {
-    ticker: "FDUSD",
-    name: "First Digital USD",
-    peg: "USD",
-    issuer: "First Digital",
-    status: "Watch",
-    summary:
-      "Aziatische stablecoin-liquiditeit volgen voor handelsvolume, exchange-activiteit en marktverschuivingen.",
-  },
-  {
-    ticker: "USDG",
-    name: "Global Dollar",
-    peg: "USD",
-    issuer: "Consortium / Paxos",
-    status: "Watch",
-    summary:
-      "Volgen als mogelijk gereguleerd consortium-model voor stablecoin distributie en reserve-opbrengsten.",
-  },
-];
-
-const cbdcWatchItems: CbdcWatchItem[] = [
-  {
-    name: "Digital Euro",
-    region: "Eurozone",
-    type: "Retail CBDC",
-    status: "Research",
-    summary:
-      "Volgen voor privacy, bankenimpact, digitale euro wallet-modellen, offline betalingen en verhouding tot euro-stablecoins.",
-  },
-  {
-    name: "Digital Dollar",
-    region: "United States",
-    type: "CBDC Debate",
-    status: "Watch",
-    summary:
-      "Volgen in combinatie met Fedwire, FedNow, stablecoin-regulatie, tokenized deposits en dollar-dominantie.",
-  },
-  {
-    name: "e-CNY",
-    region: "China",
-    type: "Retail CBDC",
-    status: "Pilot",
-    summary:
-      "Belangrijk als grootschalige CBDC-pilot en mogelijke koppeling met wholesale corridors, handel en grensoverschrijdende betalingen.",
-  },
-  {
-    name: "Drex",
-    region: "Brazil",
-    type: "Wholesale / Tokenization",
-    status: "Pilot",
-    summary:
-      "Interessant vanwege programmable money, tokenized assets, zakelijke betalingen en financiële marktinfrastructuur.",
-  },
-  {
-    name: "Digital Rupee",
-    region: "India",
-    type: "Retail / Wholesale CBDC",
-    status: "Pilot",
-    summary:
-      "Volgen door grote markt, retailbetalingen, wholesale settlement, remittance en mogelijke massale adoptie.",
-  },
-  {
-    name: "Digital Pound",
-    region: "United Kingdom",
-    type: "Retail CBDC",
-    status: "Research",
-    summary:
-      "Volgen samen met CHAPS, tokenized deposits, stablecoin-regulatie en Britse bankinfrastructuur.",
-  },
-  {
-    name: "mBridge",
-    region: "Multi-Country",
-    type: "Wholesale CBDC Bridge",
-    status: "Watch",
-    summary:
-      "Belangrijk voor grensoverschrijdende wholesale CBDC settlement tussen centrale banken en commerciële banken.",
-  },
-  {
-    name: "Project Agorá",
-    region: "BIS / Global",
-    type: "Tokenized Deposits",
-    status: "Research",
-    summary:
-      "Volgen voor programmable settlement, tokenized commercial bank deposits en samenwerking tussen publieke en private financiële infrastructuur.",
-  },
-];
-
-const isoWatchItems: WatchItem[] = [
-  {
-    name: "ISO 20022",
-    category: "Financial Messaging Standard",
-    status: "Core",
-    summary:
-      "Geen blockchain en geen token, maar een wereldwijde berichtstandaard voor rijkere betaaldata tussen financiële instellingen.",
-  },
-  {
-    name: "SWIFT MX Messages",
-    category: "Bank Messaging",
-    status: "Core",
-    summary:
-      "Volgen omdat SWIFT banken helpt migreren van legacy MT-berichten naar ISO 20022 MX-berichten.",
-  },
-  {
-    name: "Fedwire ISO Migration",
-    category: "US Payment Rail",
-    status: "Core",
-    summary:
-      "Belangrijk voor Amerikaanse interbancaire betalingen, dollar settlement en rijkere betaalinformatie.",
-  },
-  {
-    name: "T2 / TARGET Services",
-    category: "Euro Settlement",
-    status: "Core",
-    summary:
-      "Belangrijk voor eurobetalingen, centrale bank settlement en ISO 20022-compatibele infrastructuur in Europa.",
-  },
-  {
-    name: "Ripple Payments",
-    category: "Payment Network",
-    status: "Watch",
-    summary:
-      "Volgen als brug tussen institutionele betalingen, crypto rails, fiat settlement en enterprise payment software.",
-  },
-  {
-    name: "XRPL / XRP",
-    category: "Settlement Research Layer",
-    status: "Research",
-    summary:
-      "Niet claimen als ISO coin. Wel volgen voor settlement, liquidity, tokenized assets en integratie met betaalinfrastructuur.",
-  },
-];
-
-const xlsWatchItems: WatchItem[] = [
-  {
-    name: "XLS-20",
-    category: "Native NFTs",
-    status: "Enabled",
-    summary:
-      "Native NFT standaard op XRPL. Belangrijk voor badges, proof-of-learning, membership assets en toekomstige reward collectibles.",
-  },
-  {
-    name: "XLS-30",
-    category: "Automated Market Maker",
-    status: "Enabled",
-    summary:
-      "Native AMM functionaliteit op XRPL. Belangrijk voor liquidity analytics, LP insights, swap routes en yield modules.",
-  },
-  {
-    name: "XLS-40",
-    category: "Decentralized Identity",
-    status: "Research",
-    summary:
-      "DID-laag om te volgen voor reputation, credentials, wallet identity en later mogelijk proof-of-learning.",
-  },
-  {
-    name: "XLS-65",
-    category: "Single Asset Vaults",
-    status: "Watch",
-    summary:
-      "Belangrijk om te volgen voor single-asset liquidity, vault-structuren en mogelijke passieve rendementmodules.",
-  },
-  {
-    name: "XLS-66",
-    category: "Lending Protocol",
-    status: "Watch",
-    summary:
-      "Belangrijk voor mogelijke native lending, collateral, credit markets en institutionele XRPL DeFi.",
-  },
-  {
-    name: "Credentials",
-    category: "Compliance / Identity",
-    status: "Watch",
-    summary:
-      "Volgen voor KYC-compatible flows, regulated assets, permissioned access en zakelijke XRPL use cases.",
-  },
-];
-
-const unlWatchItems: WatchItem[] = [
-  {
-    name: "Validator Health",
-    category: "Network Reliability",
-    status: "Core",
-    summary:
-      "Volgen of validators online, stabiel en consistent zijn. Later kunnen we uptime, missed validations en server health live tonen.",
-  },
-  {
-    name: "UNL Membership",
-    category: "Trusted Validator List",
-    status: "Core",
-    summary:
-      "Volgen welke validators op een trusted list staan en hoe dit invloed heeft op consensus, decentralisatie en netwerkvertrouwen.",
-  },
-  {
-    name: "Amendment Voting",
-    category: "Protocol Governance",
-    status: "Watch",
-    summary:
-      "Volgen welke amendments open staan, hoeveel support ze hebben en wanneer ze mogelijk geactiveerd worden.",
-  },
-  {
-    name: "Consensus Threshold",
-    category: "Agreement Layer",
-    status: "Research",
-    summary:
-      "Belangrijk voor begrip van hoe XRPL consensus werkt en waarom validator overlap en betrouwbaarheid essentieel zijn.",
-  },
-  {
-    name: "Validator Operators",
-    category: "Ecosystem Actors",
-    status: "Watch",
-    summary:
-      "Volgen welke partijen validators draaien: community, bedrijven, universiteiten, infrastructuurpartijen en ecosystem builders.",
-  },
-  {
-    name: "OTT Validator Path",
-    category: "Future Infrastructure",
-    status: "Future",
-    summary:
-      "Later onderzoeken of OnTheTrack een eigen node, validator of observer-dashboard kan draaien als educatieve infrastructuur.",
-  },
-];
-
-const makeWavesItems: WatchItem[] = [
-  {
-    name: "Live Mainnet Project",
-    category: "Challenge Requirement",
-    status: "Required",
-    summary:
-      "De terminal moet live op XRPL mainnet bruikbaar zijn. Testnet of alleen demo telt niet als echte challenge-activiteit.",
-  },
-  {
-    name: "Source Tag",
-    category: "User Tracking",
-    status: "Critical",
-    summary:
-      "Elke relevante transactie moet later de juiste source tag dragen zodat gebruikersactiviteit meetbaar wordt voor de leaderboard.",
-  },
-  {
-    name: "Daily Check-In",
-    category: "Mainnet Action",
-    status: "Next",
-    summary:
-      "Een simpele dagelijkse Xaman actie waarmee gebruikers terugkomen en echte mainnet activiteit kunnen uitvoeren.",
-  },
-  {
-    name: "Real Active Users",
-    category: "Growth Metric",
-    status: "Core",
-    summary:
-      "Niet alleen logins tellen. De focus ligt op echte gebruikers die via de terminal een XRPL mainnet actie doen.",
-  },
-  {
-    name: "2 Minute Demo",
-    category: "Pitch Asset",
-    status: "Soon",
-    summary:
-      "Een korte demo waarin login, daily intel, check-in, source-tagged actie en user value helder worden getoond.",
-  },
-  {
-    name: "Pitch Deck",
-    category: "Submission Asset",
-    status: "Soon",
-    summary:
-      "Deck moet het probleem, de oplossing, doelgroep, traction loop, XRPL gebruik en roadmap duidelijk uitleggen.",
-  },
-  {
-    name: "Learn & Earn Loop",
-    category: "Retention",
+    title: "Daily Check-In Metrics",
+    category: "Make Waves",
+    priority: "High",
     status: "Build",
-    summary:
-      "Gebruikers komen dagelijks terug voor nieuws, educatie, quizvragen, XP en later mogelijke token/badge rewards.",
+    text: "Track active users, source tag 2606 readiness and mainnet proof flow.",
   },
   {
-    name: "Anti-Bot Logic",
-    category: "Fair Usage",
-    status: "Later",
-    summary:
-      "Later toevoegen: limieten, wallet checks, streak-validatie en bescherming tegen nepactiviteit.",
+    title: "Stablecoin Rail Watch",
+    category: "Stablecoins",
+    priority: "Medium",
+    status: "Watch",
+    text: "Monitor stablecoin liquidity, issuer transparency and payment rail adoption.",
+  },
+  {
+    title: "AMM Pool Education",
+    category: "DeFi Signals",
+    priority: "Medium",
+    status: "Learn",
+    text: "Explain pool health, liquidity risk, impermanent loss and slippage to users.",
+  },
+  {
+    title: "Wallet Safety Alerts",
+    category: "XRPL News",
+    priority: "High",
+    status: "Safety",
+    text: "Surface warnings for trustlines, unknown issuers, risky links and signing behavior.",
+  },
+  {
+    title: "RWA Compliance Notes",
+    category: "Tokenization",
+    priority: "High",
+    status: "Research",
+    text: "Collect tokenization checks around issuers, documents, rights and legal clarity.",
+  },
+  {
+    title: "AI Research Agent",
+    category: "AI + Web3",
+    priority: "Future",
+    status: "AI",
+    text: "Summarize XRPL, AI, DeFi and tokenization updates inside the terminal.",
   },
 ];
 
-const rewardsWatchItems: WatchItem[] = [
+const watchSignals: WatchSignal[] = [
   {
-    name: "Daily Login XP",
-    category: "Retention",
-    status: "+5 XP",
-    summary:
-      "Gebruiker opent dagelijks de terminal en krijgt interne OTT XP. Nog geen token, eerst veilig off-chain punten sparen.",
+    title: "Network",
+    value: "XRPL",
+    status: "Live Focus",
+    icon: Globe2,
   },
   {
-    name: "Read 3 Intel Items",
-    category: "Learn Loop",
-    status: "+10 XP",
-    summary:
-      "Gebruiker leest drie intelligence items over XRPL, Ripple, Xaman, stablecoins, CBDC, ISO of rails.",
+    title: "Source Tag",
+    value: "2606",
+    status: "Make Waves",
+    icon: Fingerprint,
   },
   {
-    name: "Quiz Completion",
-    category: "Learn & Earn",
-    status: "+25 XP",
-    summary:
-      "Gebruiker beantwoordt korte vragen over de gelezen onderwerpen en verdient extra XP voor begrip en activiteit.",
+    title: "Risk Level",
+    value: "Guarded",
+    status: "Safety",
+    icon: ShieldCheck,
   },
   {
-    name: "Daily Check-In",
-    category: "Mainnet Action",
-    status: "Later",
-    summary:
-      "Later koppelen aan Xaman met een echte source-tagged XRPL mainnet transactie voor challenge-metrics.",
-  },
-  {
-    name: "7 Day Streak",
-    category: "Habit Formation",
-    status: "Badge",
-    summary:
-      "Gebruiker bouwt een streak op. Later kan dit een NFT badge, achievement of speciale claim-status worden.",
-  },
-  {
-    name: "OTT XP Balance",
-    category: "Internal Points",
-    status: "Safe",
-    summary:
-      "XP blijft eerst intern in de app. Pas later onderzoeken we tokenomics, claim logic, anti-bot regels en compliance.",
-  },
-  {
-    name: "XP To Token",
-    category: "Future Conversion",
-    status: "Future",
-    summary:
-      "Interne XP kan later mogelijk worden omgezet naar jouw eigen token, claim reward, badge of access level.",
-  },
-  {
-    name: "Anti-Abuse Shield",
-    category: "Fair Rewards",
-    status: "Required",
-    summary:
-      "Rewards moeten beschermd worden tegen bots, multi-wallet farming, spam en nepgebruik voordat tokens live gaan.",
+    title: "AI Brief",
+    value: "Ready",
+    status: "Mock",
+    icon: Sparkles,
   },
 ];
 
-const checkInItems: WatchItem[] = [
+const riskNotes: RiskNote[] = [
   {
-    name: "Xaman Sign Request",
-    category: "Wallet Action",
-    status: "Next",
-    summary:
-      "Gebruiker bevestigt straks via Xaman een simpele check-in payload. Eerst veilig bouwen, daarna pas live mainnet.",
+    title: "Verify Sources",
+    status: "Rule",
+    text: "Intel moet altijd gecontroleerd worden voordat het als waarheid of actie wordt gebruikt.",
+    icon: Search,
   },
   {
-    name: "Source Tag Attachment",
-    category: "Make Waves Metric",
-    status: "Critical",
-    summary:
-      "De check-in transactie moet later de toegewezen source tag dragen zodat activiteit aan XRPL OnTheTrack Terminal gekoppeld wordt.",
+    title: "No Financial Advice",
+    status: "Rule",
+    text: "Signalering en uitleg zijn educatief. Geen koop-, verkoop- of winstadvies.",
+    icon: AlertTriangle,
   },
   {
-    name: "Memo: OTT Daily Check-In",
-    category: "Ledger Proof",
-    status: "Planned",
-    summary:
-      "Een herkenbare memo maakt de actie begrijpelijk voor gebruiker, demo en explorer-weergave.",
+    title: "Wallet Safety First",
+    status: "Safety",
+    text: "Elke intel flow moet gebruikers beschermen tegen scams, fake tokens en hidden signing.",
+    icon: Wallet,
   },
   {
-    name: "XP Reward Trigger",
-    category: "Reward Engine",
-    status: "+15 XP",
-    summary:
-      "Na succesvolle check-in krijgt de gebruiker interne XP. Token rewards blijven uit tot de safety-flow staat.",
-  },
-  {
-    name: "One Check-In Per Day",
-    category: "Anti-Spam",
-    status: "Required",
-    summary:
-      "Daglimiet voorkomt farming. Later koppelen aan wallet-adres, datum, transaction hash en streak status.",
-  },
-  {
-    name: "Explorer Receipt",
-    category: "Proof Link",
-    status: "Later",
-    summary:
-      "Na signing tonen we later de transactiehash met link naar Bithomp of XRPL explorer.",
-  },
-  {
-    name: "Streak Builder",
-    category: "Retention",
-    status: "Build",
-    summary:
-      "Dagelijkse check-ins bouwen een streak op voor badges, toegangsniveaus en toekomstige claimmogelijkheden.",
-  },
-  {
-    name: "Debug First",
-    category: "Safe Build",
-    status: "Now",
-    summary:
-      "Eerst als UI-flow en mock-status bouwen. Daarna pas Xaman payload, source tag en live mainnet activatie.",
+    title: "Timestamp Everything",
+    status: "Data",
+    text: "Nieuws, signals en research moeten later datum, bron en status meekrijgen.",
+    icon: Clock,
   },
 ];
 
-function formatDate(date?: string) {
-  if (!date) return "Unknown date";
-
-  const parsedDate = new Date(date);
-
-  if (Number.isNaN(parsedDate.getTime())) {
-    return "Unknown date";
-  }
-
-  return parsedDate.toLocaleDateString("nl-NL", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-function getTodayLabel() {
-  return new Date().toLocaleDateString("nl-NL", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-}
-
-function WatchCard({ item }: { item: WatchItem }) {
-  return (
-    <div className="border border-white/10 bg-black p-4 hover:bg-white/[0.03] transition-all">
-      <div className="flex items-start justify-between gap-4 mb-3">
-        <div>
-          <h4 className="font-orbitron text-sm font-bold uppercase mb-1">
-            {item.name}
-          </h4>
-
-          <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest">
-            {item.category}
-          </p>
-        </div>
-
-        <span className="border border-white/10 px-2 py-1 font-mono text-[9px] text-white/50 uppercase">
-          {item.status}
-        </span>
-      </div>
-
-      <p className="font-mono text-xs text-white/45 leading-relaxed">
-        {item.summary}
-      </p>
-    </div>
-  );
-}
-
-function StableWatchCard({ item }: { item: StableWatchItem }) {
-  return (
-    <div className="border border-white/10 bg-black p-4 hover:bg-white/[0.03] transition-all">
-      <div className="flex items-start justify-between gap-4 mb-3">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h4 className="font-orbitron text-sm font-bold uppercase">
-              {item.ticker}
-            </h4>
-            <span className="font-mono text-[9px] text-white/30 uppercase">
-              {item.peg}
-            </span>
-          </div>
-
-          <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest">
-            {item.name} • {item.issuer}
-          </p>
-        </div>
-
-        <span className="border border-white/10 px-2 py-1 font-mono text-[9px] text-white/50 uppercase">
-          {item.status}
-        </span>
-      </div>
-
-      <p className="font-mono text-xs text-white/45 leading-relaxed">
-        {item.summary}
-      </p>
-    </div>
-  );
-}
-
-function CbdcWatchCard({ item }: { item: CbdcWatchItem }) {
-  return (
-    <div className="border border-white/10 bg-black p-4 hover:bg-white/[0.03] transition-all">
-      <div className="flex items-start justify-between gap-4 mb-3">
-        <div>
-          <h4 className="font-orbitron text-sm font-bold uppercase mb-1">
-            {item.name}
-          </h4>
-
-          <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest">
-            {item.region} • {item.type}
-          </p>
-        </div>
-
-        <span className="border border-white/10 px-2 py-1 font-mono text-[9px] text-white/50 uppercase">
-          {item.status}
-        </span>
-      </div>
-
-      <p className="font-mono text-xs text-white/45 leading-relaxed">
-        {item.summary}
-      </p>
-    </div>
-  );
-}
+const roadmap = [
+  "Daily intel cards bouwen",
+  "XRPL news feed koppelen",
+  "Stablecoin monitor toevoegen",
+  "AMM signal feed maken",
+  "Source tag 2606 metrics tonen",
+  "AI research summaries toevoegen",
+  "Risk alerts koppelen aan wallet",
+  "Partner signal dashboard bouwen",
+];
 
 export function LedgerIntelTab() {
-  const [activeTab, setActiveTab] = useState<ActiveIntelTab>("daily");
-  const [news, setNews] = useState<NewsItem[]>(fallbackNews);
-  const [isLoading, setIsLoading] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<IntelCategory>(
+    categories[0]
+  );
+  const [selectedIntel, setSelectedIntel] = useState<IntelItem>(intelItems[0]);
 
-  const tabs: IntelTab[] = [
-    { id: "daily", label: "Daily Brief", icon: Sparkles, status: "Live" },
-    { id: "news", label: "XRPL News", icon: Newspaper, status: "Live" },
-    { id: "rails", label: "Rails Watch", icon: Layers, status: "Macro" },
-    { id: "unl_voting", label: "UNL Voting", icon: Server, status: "Watch" },
-    { id: "hackathon", label: "Make Waves", icon: Zap, status: "MVP" },
-    { id: "cbdc", label: "CBDC Tracker", icon: Globe, status: "Watch" },
-    { id: "stable", label: "Stable Tokens", icon: Landmark, status: "Watch" },
-    { id: "rewards", label: "OTT Rewards", icon: Award, status: "XP" },
-    {
-      id: "checkin",
-      label: "Daily Check-In",
-      icon: ShieldCheck,
-      status: "Next",
-    },
-    { id: "xls", label: "XLS Roadmap", icon: FileText, status: "Watch" },
-    { id: "iso", label: "ISO 20022 & Law", icon: Scale, status: "Map" },
-  ];
+  const SelectedCategoryIcon = selectedCategory.icon;
 
-  useEffect(() => {
-    if (activeTab !== "news" && activeTab !== "daily") return;
+  const filteredIntel = intelItems.filter(
+    (item) => item.category === selectedCategory.title
+  );
 
-    const fetchNews = async () => {
-      setIsLoading(true);
-
-      try {
-        const res = await fetch("/api/news");
-
-        if (!res.ok) {
-          setNews(fallbackNews);
-          return;
-        }
-
-        const data = await res.json();
-        const items = Array.isArray(data.items) ? data.items : [];
-
-        if (items.length > 0) {
-          setNews(items);
-        } else {
-          setNews(fallbackNews);
-        }
-      } catch (error) {
-        console.error("Nieuws feed error:", error);
-        setNews(fallbackNews);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchNews();
-  }, [activeTab]);
-
-  const dailyNews = news.slice(0, 3);
+  const visibleIntel = filteredIntel.length > 0 ? filteredIntel : intelItems.slice(0, 4);
 
   return (
-    <div className="p-6 bg-black text-white min-h-screen">
-      <div className="border border-white/10 bg-white/[0.02] p-6 mb-6">
-        <div className="flex items-center gap-2 mb-4 text-white/45">
-          <Globe size={16} />
-          <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
-            XRPL Intelligence Engine
-          </p>
-        </div>
+    <div className="p-6 bg-black min-h-screen text-white">
+      <div className="relative overflow-hidden border border-white/10 bg-white/[0.02] p-6 mb-6">
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_white,_transparent_35%)]" />
 
-        <div className="grid grid-cols-12 gap-6 items-end">
+        <div className="relative z-10 grid grid-cols-12 gap-6 items-center">
           <div className="col-span-12 xl:col-span-8">
-            <h2 className="font-orbitron text-3xl font-black uppercase mb-4">
-              Ledger Intel Terminal
+            <div className="flex items-center gap-2 mb-4 text-white/45">
+              <Radar size={17} />
+
+              <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
+                XRPL Ledger Intel
+              </p>
+            </div>
+
+            <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
+              Signals. Research. Risk. Awareness.
             </h2>
 
             <p className="font-mono text-sm text-white/45 max-w-3xl leading-relaxed">
-              De intelligence-laag van XRPL OnTheTrack Terminal. Hier komen
-              nieuws, validators, amendments, Make Waves updates, stablecoins,
-              CBDC, XLS-roadmaps en wetgeving samen.
+              De intelligence-laag van OTT Terminal. Hier komen XRPL nieuws,
+              stablecoins, DeFi signals, tokenization, AI research, risk alerts
+              en Make Waves metrics samen.
             </p>
           </div>
 
           <div className="col-span-12 xl:col-span-4 grid grid-cols-2 gap-3">
-            <div className="border border-white/10 bg-black p-4">
-              <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
-                Feed
-              </p>
-              <div className="flex items-center gap-2">
-                <Radio size={15} className="text-white/60" />
-                <p className="font-orbitron text-xs uppercase">Optional API</p>
-              </div>
-            </div>
-
-            <div className="border border-white/10 bg-black p-4">
-              <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
-                Rewards
-              </p>
-              <div className="flex items-center gap-2">
-                <WalletCards size={15} className="text-white/60" />
-                <p className="font-orbitron text-xs uppercase">XP Now</p>
-              </div>
-            </div>
+            {watchSignals.map((signal) => (
+              <SignalBox key={signal.title} signal={signal} />
+            ))}
           </div>
         </div>
       </div>
 
-      <div className="border border-white/10 bg-white/[0.02] p-2 mb-6 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-10 gap-2">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
+      <div className="grid grid-cols-12 gap-4">
+        <div className="col-span-12 xl:col-span-4 space-y-4">
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Database size={18} className="text-white/60" />
 
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`p-4 text-left border transition-all ${
-                isActive
-                  ? "bg-white text-black border-white"
-                  : "bg-black border-white/10 text-white/50 hover:text-white hover:bg-white/5"
-              }`}
-            >
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <Icon size={17} />
-                <span className="font-mono text-[8px] uppercase tracking-widest">
-                  {tab.status}
-                </span>
-              </div>
-
-              <p className="font-orbitron text-[10px] font-black uppercase tracking-widest">
-                {tab.label}
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Intel Categories
               </p>
-            </button>
-          );
-        })}
-      </div>
-
-      {activeTab === "daily" && (
-        <div className="grid grid-cols-12 gap-4">
-          <div className="col-span-12 xl:col-span-8 border border-white/10 bg-white/[0.02] p-6">
-            <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-4">
-              {getTodayLabel()}
-            </p>
-
-            <h3 className="font-orbitron text-2xl font-black uppercase mb-4">
-              Daily XRPL Intel Brief
-            </h3>
-
-            <p className="font-mono text-sm text-white/45 leading-relaxed mb-6">
-              Dit is straks de dagelijkse reden om terug te komen: nieuwe XRPL
-              updates, Ripple/Xaman nieuws, stablecoins, CBDC, ISO 20022 en
-              Make Waves voortgang.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-              <div className="border border-white/10 bg-black p-4">
-                <p className="font-mono text-[10px] text-white/35 uppercase mb-2">
-                  News Items
-                </p>
-                <p className="font-orbitron text-2xl font-black">
-                  {news.length}
-                </p>
-              </div>
-
-              <div className="border border-white/10 bg-black p-4">
-                <p className="font-mono text-[10px] text-white/35 uppercase mb-2">
-                  Daily XP
-                </p>
-                <p className="font-orbitron text-2xl font-black">+5</p>
-              </div>
-
-              <div className="border border-white/10 bg-black p-4">
-                <p className="font-mono text-[10px] text-white/35 uppercase mb-2">
-                  Token Rewards
-                </p>
-                <p className="font-orbitron text-2xl font-black">Later</p>
-              </div>
             </div>
 
             <div className="space-y-3">
-              {dailyNews.map((item, index) => (
-                <div
-                  key={`${item.title}-${index}`}
-                  className="border border-white/10 bg-black p-4"
-                >
-                  <h4 className="font-orbitron text-sm font-bold uppercase mb-2 leading-relaxed">
-                    {item.title}
-                  </h4>
-
-                  <p className="font-mono text-xs text-white/40 leading-relaxed mb-3">
-                    {item.description ||
-                      "Geen omschrijving beschikbaar voor dit item."}
-                  </p>
-
-                  <p className="font-mono text-[10px] text-white/30 uppercase tracking-widest">
-                    {formatDate(item.pubDate)} •{" "}
-                    {item.author || item.source || "XRPL Source"}
-                  </p>
-                </div>
+              {categories.map((category) => (
+                <CategoryButton
+                  key={category.id}
+                  category={category}
+                  active={selectedCategory.id === category.id}
+                  onClick={() => setSelectedCategory(category)}
+                />
               ))}
             </div>
           </div>
 
-          <div className="col-span-12 xl:col-span-4 space-y-4">
-            <div className="border border-white/10 bg-white/[0.02] p-6">
-              <div className="flex items-center gap-2 mb-5">
-                <Sparkles size={17} className="text-white/60" />
-                <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Watch Today
-                </p>
-              </div>
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Target size={18} className="text-white/60" />
 
-              <div className="space-y-3">
-                <div className="border border-white/10 bg-black p-3">
-                  <p className="font-mono text-xs text-white/70">
-                    mBridge / SWIFT / Fedwire
-                  </p>
-                </div>
-
-                <div className="border border-white/10 bg-black p-3">
-                  <p className="font-mono text-xs text-white/70">
-                    RLUSD & fiat-backed stablecoins
-                  </p>
-                </div>
-
-                <div className="border border-white/10 bg-black p-3">
-                  <p className="font-mono text-xs text-white/70">
-                    CBDC / Digital Euro / ISO 20022
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => setActiveTab("rewards")}
-                  className="w-full text-left border border-white/10 bg-black p-3 hover:bg-white/5 transition-all"
-                >
-                  <p className="font-mono text-xs text-white/70">
-                    Learn & Earn: XP nu, token later
-                  </p>
-                </button>
-
-                <button
-                  onClick={() => setActiveTab("checkin")}
-                  className="w-full text-left border border-white/10 bg-black p-3 hover:bg-white/5 transition-all"
-                >
-                  <p className="font-mono text-xs text-white/70">
-                    Daily Check-In: source tag later
-                  </p>
-                </button>
-              </div>
-            </div>
-
-            <div className="border border-white/10 bg-white/[0.02] p-6">
-              <div className="flex items-center gap-2 mb-5">
-                <Award size={17} className="text-white/60" />
-                <p className="font-orbitron text-xs uppercase tracking-widest">
-                  XP Status
-                </p>
-              </div>
-
-              <p className="font-mono text-xs text-white/45 leading-relaxed">
-                Rewards blijven nu veilig als interne OTT XP. Later pas
-                koppelen aan token, claim, badge of source-tagged mainnet actie.
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Selected Category
               </p>
             </div>
+
+            <SelectedCategoryIcon size={24} className="text-white/60 mb-4" />
+
+            <p className="font-orbitron text-xl font-black uppercase mb-3">
+              {selectedCategory.title}
+            </p>
+
+            <p className="font-mono text-xs text-white/45 leading-relaxed mb-5">
+              {selectedCategory.text}
+            </p>
+
+            <MiniStatus label="Status" value={selectedCategory.status} />
           </div>
         </div>
-      )}
 
-      {activeTab === "news" && (
-        <div className="grid grid-cols-12 gap-4">
-          <div className="col-span-12 xl:col-span-8 border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center justify-between gap-4 mb-6">
+        <div className="col-span-12 xl:col-span-5 space-y-4">
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center justify-between mb-6">
               <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
-                  Live Intelligence Feed
+                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
+                  Intel Feed
                 </p>
 
                 <h3 className="font-orbitron text-xl font-black uppercase">
-                  XRPL News Stream
+                  Active Signals
                 </h3>
               </div>
 
-              {isLoading && (
-                <Loader2 className="animate-spin text-white/50" size={22} />
-              )}
-            </div>
-
-            <div className="relative mb-5">
-              <Search
-                className="absolute left-3 top-3 text-white/30"
-                size={16}
-              />
-
-              <input
-                className="w-full bg-black border border-white/10 py-3 pl-10 pr-4 text-sm font-mono outline-none focus:border-white/30"
-                placeholder="Search intelligence feed..."
-              />
+              <FileSearch size={20} className="text-white/60" />
             </div>
 
             <div className="space-y-3">
-              {news.map((item, index) => (
-                <div
-                  key={`${item.title}-${index}`}
-                  className="border border-white/10 bg-black p-4 hover:bg-white/[0.03] transition-all"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <h4 className="font-orbitron text-sm font-bold uppercase mb-2 leading-relaxed">
-                        {item.title}
-                      </h4>
-
-                      <p className="font-mono text-xs text-white/40 leading-relaxed mb-3">
-                        {item.description ||
-                          "Geen omschrijving beschikbaar voor dit item."}
-                      </p>
-
-                      <p className="font-mono text-[10px] text-white/30 uppercase tracking-widest">
-                        {formatDate(item.pubDate)} •{" "}
-                        {item.author || item.source || "XRPL Source"}
-                      </p>
-                    </div>
-
-                    {item.link && (
-                      <a
-                        href={item.link}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="shrink-0 border border-white/10 p-2 text-white/40 hover:text-white hover:bg-white/10 transition-all"
-                      >
-                        <ExternalLink size={15} />
-                      </a>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeTab === "rails" && (
-        <div className="grid grid-cols-12 gap-4">
-          <div className="col-span-12 xl:col-span-8 border border-white/10 bg-white/[0.02] p-6">
-            <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-4">
-              Macro Payment Rails
-            </p>
-
-            <h3 className="font-orbitron text-2xl font-black uppercase mb-4">
-              mBridge / SWIFT / Fedwire Watch
-            </h3>
-
-            <p className="font-mono text-sm text-white/45 leading-relaxed mb-6">
-              Deze module volgt de grote betaalrails achter het wereldwijde
-              financiële systeem. Dit is belangrijk voor stablecoins, CBDC,
-              tokenized deposits, ISO 20022 en toekomstige settlement-routes.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {railsWatchItems.map((item) => (
-                <WatchCard key={item.name} item={item} />
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeTab === "unl_voting" && (
-        <div className="grid grid-cols-12 gap-4">
-          <div className="col-span-12 xl:col-span-8 border border-white/10 bg-white/[0.02] p-6">
-            <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-4">
-              Validator Governance & Network Health
-            </p>
-
-            <h3 className="font-orbitron text-2xl font-black uppercase mb-4">
-              UNL Voting Watch
-            </h3>
-
-            <p className="font-mono text-sm text-white/45 leading-relaxed mb-6">
-              Deze module volgt validators, UNL membership, amendment voting,
-              consensus health en netwerk decentralisatie. Later koppelen we dit
-              aan live XRPL validator data.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {unlWatchItems.map((item) => (
-                <WatchCard key={item.name} item={item} />
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeTab === "stable" && (
-        <div className="grid grid-cols-12 gap-4">
-          <div className="col-span-12 xl:col-span-8 border border-white/10 bg-white/[0.02] p-6">
-            <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-4">
-              Fiat-Backed Stablecoin Matrix
-            </p>
-
-            <h3 className="font-orbitron text-2xl font-black uppercase mb-4">
-              Stable Tokens Watch
-            </h3>
-
-            <p className="font-mono text-sm text-white/45 leading-relaxed mb-6">
-              Deze module volgt fiat-backed stablecoins, RLUSD, euro-stablecoins
-              en gereguleerde betaalrails. Later voegen we live data, issuers,
-              reserves, ledgers en risk scores toe.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {stableWatchItems.map((item) => (
-                <StableWatchCard key={item.ticker} item={item} />
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeTab === "rewards" && (
-        <div className="grid grid-cols-12 gap-4">
-          <div className="col-span-12 xl:col-span-8 border border-white/10 bg-white/[0.02] p-6">
-            <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-4">
-              Learn & Earn Reward Engine
-            </p>
-
-            <h3 className="font-orbitron text-2xl font-black uppercase mb-4">
-              OTT XP Rewards
-            </h3>
-
-            <p className="font-mono text-sm text-white/45 leading-relaxed mb-6">
-              Deze module bouwt de dagelijkse motivatie-laag: XP verdienen door
-              lezen, leren, quizzen, terugkomen en later source-tagged XRPL
-              acties uitvoeren.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-              <div className="border border-white/10 bg-black p-4">
-                <p className="font-mono text-[10px] text-white/35 uppercase mb-2">
-                  Current Mode
-                </p>
-                <p className="font-orbitron text-lg font-black">OTT XP</p>
-              </div>
-
-              <div className="border border-white/10 bg-black p-4">
-                <p className="font-mono text-[10px] text-white/35 uppercase mb-2">
-                  Token Mode
-                </p>
-                <p className="font-orbitron text-lg font-black">Later</p>
-              </div>
-
-              <div className="border border-white/10 bg-black p-4">
-                <p className="font-mono text-[10px] text-white/35 uppercase mb-2">
-                  Safety
-                </p>
-                <p className="font-orbitron text-lg font-black">Off-Chain</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {rewardsWatchItems.map((item) => (
-                <WatchCard key={item.name} item={item} />
+              {visibleIntel.map((item) => (
+                <IntelRow
+                  key={`${item.title}-${item.category}`}
+                  item={item}
+                  active={selectedIntel.title === item.title}
+                  onClick={() => setSelectedIntel(item)}
+                />
               ))}
             </div>
           </div>
 
-          <div className="col-span-12 xl:col-span-4 space-y-4">
-            <div className="border border-white/10 bg-white/[0.02] p-6">
-              <div className="flex items-center gap-2 mb-5">
-                <ShieldCheck size={17} className="text-white/60" />
-                <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Safe Reward Path
-                </p>
-              </div>
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Bell size={18} className="text-white/60" />
 
-              <p className="font-mono text-xs text-white/45 leading-relaxed">
-                Eerst XP. Daarna pas badges. Daarna pas claims. Daarna pas
-                tokenomics. Zo bouwen we zonder onnodig risico.
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Selected Signal
               </p>
             </div>
 
-            <div className="border border-white/10 bg-white/[0.02] p-6">
-              <div className="flex items-center gap-2 mb-5">
-                <Zap size={17} className="text-white/60" />
-                <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Make Waves Link
-                </p>
-              </div>
+            <p className="font-orbitron text-2xl font-black uppercase mb-2">
+              {selectedIntel.title}
+            </p>
 
+            <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-4">
+              {selectedIntel.category} • {selectedIntel.priority} • {selectedIntel.status}
+            </p>
+
+            <p className="font-mono text-sm text-white/45 leading-relaxed mb-5">
+              {selectedIntel.text}
+            </p>
+
+            <div className="grid grid-cols-2 gap-3">
+              <MiniStatus label="Priority" value={selectedIntel.priority} />
+              <MiniStatus label="Status" value={selectedIntel.status} />
+            </div>
+          </div>
+
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <BookOpen size={18} className="text-white/60" />
+
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                AI Brief Preview
+              </p>
+            </div>
+
+            <div className="border border-white/10 bg-black p-5">
               <p className="font-mono text-xs text-white/45 leading-relaxed">
-                Later kan de Daily Check-In een echte Xaman mainnet actie worden
-                met source tag, zodat activiteit meetelt voor echte gebruikers.
+                Later vat AI deze signals samen in gewone taal. De gebruiker
+                krijgt dan: wat is gebeurd, waarom het belangrijk is, wat het
+                risico is en welke actie veilig is.
               </p>
             </div>
           </div>
         </div>
-      )}
 
-      {activeTab === "checkin" && (
-        <div className="grid grid-cols-12 gap-4">
-          <div className="col-span-12 xl:col-span-8 border border-white/10 bg-white/[0.02] p-6">
-            <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-4">
-              Source-Tagged Mainnet Habit
-            </p>
+        <div className="col-span-12 xl:col-span-3 space-y-4">
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <ShieldCheck size={18} className="text-white/60" />
 
-            <h3 className="font-orbitron text-2xl font-black uppercase mb-4">
-              Daily Check-In
-            </h3>
-
-            <p className="font-mono text-sm text-white/45 leading-relaxed mb-6">
-              Deze module wordt de dagelijkse Xaman actie. Eerst als veilige
-              debug-flow, daarna als echte source-tagged XRPL mainnet transactie
-              voor Make Waves activiteit en gebruikersretentie.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-              <div className="border border-white/10 bg-black p-4">
-                <p className="font-mono text-[10px] text-white/35 uppercase mb-2">
-                  Current Mode
-                </p>
-                <p className="font-orbitron text-lg font-black">Debug</p>
-              </div>
-
-              <div className="border border-white/10 bg-black p-4">
-                <p className="font-mono text-[10px] text-white/35 uppercase mb-2">
-                  Mainnet
-                </p>
-                <p className="font-orbitron text-lg font-black">Later</p>
-              </div>
-
-              <div className="border border-white/10 bg-black p-4">
-                <p className="font-mono text-[10px] text-white/35 uppercase mb-2">
-                  Reward
-                </p>
-                <p className="font-orbitron text-lg font-black">+15 XP</p>
-              </div>
-            </div>
-
-            <button className="w-full border border-white/20 bg-white text-black py-4 font-orbitron text-xs font-black uppercase tracking-widest hover:bg-white/80 transition-all mb-6">
-              Simulate Daily Check-In
-            </button>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {checkInItems.map((item) => (
-                <WatchCard key={item.name} item={item} />
-              ))}
-            </div>
-          </div>
-
-          <div className="col-span-12 xl:col-span-4 space-y-4">
-            <div className="border border-white/10 bg-white/[0.02] p-6">
-              <div className="flex items-center gap-2 mb-5">
-                <ShieldCheck size={17} className="text-white/60" />
-                <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Safety First
-                </p>
-              </div>
-
-              <p className="font-mono text-xs text-white/45 leading-relaxed">
-                De knop is nu nog simulatie. Zo breken we niks. Daarna koppelen
-                we pas Xaman, payload, source tag en transaction receipt.
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Intel Rules
               </p>
             </div>
 
-            <div className="border border-white/10 bg-white/[0.02] p-6">
-              <div className="flex items-center gap-2 mb-5">
-                <Award size={17} className="text-white/60" />
-                <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Reward Route
-                </p>
-              </div>
+            <div className="space-y-3">
+              {riskNotes.map((note) => (
+                <RiskNoteCard key={note.title} note={note} />
+              ))}
+            </div>
+          </div>
 
-              <p className="font-mono text-xs text-white/45 leading-relaxed">
-                Check-in geeft eerst XP. Later kan dat gekoppeld worden aan
-                streaks, badges, NFT proof, token claims en leaderboard logic.
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Zap size={18} className="text-white/60" />
+
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Roadmap
               </p>
             </div>
-          </div>
-        </div>
-      )}
 
-      {activeTab === "cbdc" && (
-        <div className="grid grid-cols-12 gap-4">
-          <div className="col-span-12 xl:col-span-8 border border-white/10 bg-white/[0.02] p-6">
-            <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-4">
-              Central Bank Digital Currency Radar
-            </p>
-
-            <h3 className="font-orbitron text-2xl font-black uppercase mb-4">
-              CBDC Tracker
-            </h3>
-
-            <p className="font-mono text-sm text-white/45 leading-relaxed mb-6">
-              Deze module volgt CBDC-pilots, wholesale CBDC, retail CBDC,
-              tokenized deposits, BIS-projecten en digitale valuta van centrale
-              banken.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {cbdcWatchItems.map((item) => (
-                <CbdcWatchCard key={item.name} item={item} />
+            <div className="space-y-3">
+              {roadmap.map((item) => (
+                <RoadmapLine key={item} label={item} />
               ))}
             </div>
           </div>
         </div>
-      )}
 
-      {activeTab === "iso" && (
-        <div className="grid grid-cols-12 gap-4">
-          <div className="col-span-12 xl:col-span-8 border border-white/10 bg-white/[0.02] p-6">
-            <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-4">
-              ISO 20022 Intelligence Map
-            </p>
-
-            <h3 className="font-orbitron text-2xl font-black uppercase mb-4">
-              ISO 20022 Monitor
-            </h3>
-
-            <p className="font-mono text-sm text-white/45 leading-relaxed mb-6">
-              ISO 20022 is geen crypto-token, maar een financiële
-              berichtstandaard. Deze module volgt banknetwerken,
-              softwarelagen, settlement rails en ledger research zonder
-              hype-taal.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {isoWatchItems.map((item) => (
-                <WatchCard key={item.name} item={item} />
-              ))}
-            </div>
-          </div>
+        <div className="col-span-12 grid grid-cols-1 md:grid-cols-4 gap-4">
+          <FeatureBox icon={Newspaper} title="News" text="Daily XRPL updates" />
+          <FeatureBox icon={TrendingUp} title="Signals" text="Market awareness" />
+          <FeatureBox icon={Activity} title="Metrics" text="2606 and users" />
+          <FeatureBox icon={Eye} title="Risk" text="Safety monitoring" />
         </div>
-      )}
+      </div>
+    </div>
+  );
+}
 
-      {activeTab === "xls" && (
-        <div className="grid grid-cols-12 gap-4">
-          <div className="col-span-12 xl:col-span-8 border border-white/10 bg-white/[0.02] p-6">
-            <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-4">
-              XRPL Standards & Protocol Roadmap
-            </p>
+function SignalBox({ signal }: { signal: WatchSignal }) {
+  const Icon = signal.icon;
 
-            <h3 className="font-orbitron text-2xl font-black uppercase mb-4">
-              XLS Roadmap
-            </h3>
+  return (
+    <div className="border border-white/10 bg-black/60 p-4">
+      <Icon size={18} className="text-white/60 mb-3" />
 
-            <p className="font-mono text-sm text-white/45 leading-relaxed mb-6">
-              Deze module volgt XRPL-standaarden en protocolrichtingen die
-              belangrijk zijn voor NFTs, AMM, identity, vaults, lending,
-              credentials, rewards en toekomstige terminal modules.
-            </p>
+      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+        {signal.title}
+      </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {xlsWatchItems.map((item) => (
-                <WatchCard key={item.name} item={item} />
-              ))}
-            </div>
-          </div>
+      <p className="font-orbitron text-sm font-black uppercase mb-1">
+        {signal.value}
+      </p>
+
+      <p className="font-mono text-[10px] text-white/30 uppercase">
+        {signal.status}
+      </p>
+    </div>
+  );
+}
+
+function CategoryButton({
+  category,
+  active,
+  onClick,
+}: {
+  category: IntelCategory;
+  active: boolean;
+  onClick: () => void;
+}) {
+  const Icon = category.icon;
+
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full border p-4 text-left transition-all ${
+        active
+          ? "border-white/30 bg-white/[0.08]"
+          : "border-white/10 bg-black hover:bg-white/[0.03]"
+      }`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Icon size={16} className="text-white/60" />
+
+          <p className="font-orbitron text-xs font-bold uppercase">
+            {category.title}
+          </p>
         </div>
-      )}
 
-      {activeTab === "hackathon" && (
-        <div className="grid grid-cols-12 gap-4">
-          <div className="col-span-12 xl:col-span-8 border border-white/10 bg-white/[0.02] p-6">
-            <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-4">
-              Make Waves Challenge Cockpit
-            </p>
+        <p className="font-mono text-[10px] text-white/35 uppercase">
+          {category.status}
+        </p>
+      </div>
+    </button>
+  );
+}
 
-            <h3 className="font-orbitron text-2xl font-black uppercase mb-4">
-              Mainnet User Activation
-            </h3>
+function IntelRow({
+  item,
+  active,
+  onClick,
+}: {
+  item: IntelItem;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full border p-4 text-left transition-all ${
+        active
+          ? "border-white/30 bg-white/[0.08]"
+          : "border-white/10 bg-black hover:bg-white/[0.03]"
+      }`}
+    >
+      <div className="flex items-center justify-between gap-4 mb-2">
+        <p className="font-orbitron text-sm font-bold uppercase">
+          {item.title}
+        </p>
 
-            <p className="font-mono text-sm text-white/45 leading-relaxed mb-6">
-              Deze module bewaakt de challenge-flow: live mainnet project,
-              source tag, echte gebruikers, daily check-in, demo video en pitch
-              voorbereiding.
-            </p>
+        <p className="font-mono text-[10px] text-white/45 uppercase">
+          {item.priority}
+        </p>
+      </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-              <div className="border border-white/10 bg-black p-4">
-                <p className="font-mono text-[10px] text-white/35 uppercase mb-2">
-                  Source Tag
-                </p>
-                <p className="font-orbitron text-lg font-black">Pending</p>
-              </div>
+      <p className="font-mono text-[10px] text-white/35 uppercase">
+        {item.category} • {item.status}
+      </p>
+    </button>
+  );
+}
 
-              <div className="border border-white/10 bg-black p-4">
-                <p className="font-mono text-[10px] text-white/35 uppercase mb-2">
-                  Mainnet Action
-                </p>
-                <p className="font-orbitron text-lg font-black">Soon</p>
-              </div>
+function MiniStatus({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-white/10 bg-black p-4">
+      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+        {label}
+      </p>
 
-              <div className="border border-white/10 bg-black p-4">
-                <p className="font-mono text-[10px] text-white/35 uppercase mb-2">
-                  Demo Flow
-                </p>
-                <p className="font-orbitron text-lg font-black">Building</p>
-              </div>
-            </div>
+      <p className="font-orbitron text-sm font-black uppercase">{value}</p>
+    </div>
+  );
+}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {makeWavesItems.map((item) => (
-                <WatchCard key={item.name} item={item} />
-              ))}
-            </div>
-          </div>
+function RiskNoteCard({ note }: { note: RiskNote }) {
+  const Icon = note.icon;
 
-          <div className="col-span-12 xl:col-span-4 border border-white/10 bg-white/[0.02] p-8">
-            <Clock className="w-10 h-10 mb-6 text-white/50" />
+  return (
+    <div className="border border-white/10 bg-black p-4">
+      <div className="flex items-start justify-between mb-3">
+        <Icon size={17} className="text-white/60" />
 
-            <h4 className="font-orbitron text-lg font-black uppercase mb-4">
-              Next Steps
-            </h4>
+        <p className="font-mono text-[10px] text-white/30 uppercase">
+          {note.status}
+        </p>
+      </div>
 
-            <div className="space-y-4">
-              <div className="border-l border-white/20 pl-4">
-                <p className="font-mono text-xs text-white/70">
-                  1. Xaman login herstellen
-                </p>
-              </div>
+      <p className="font-orbitron text-xs font-bold uppercase mb-2">
+        {note.title}
+      </p>
 
-              <div className="border-l border-white/10 pl-4">
-                <p className="font-mono text-xs text-white/50">
-                  2. Source tag vastleggen
-                </p>
-              </div>
+      <p className="font-mono text-[10px] text-white/40 leading-relaxed">
+        {note.text}
+      </p>
+    </div>
+  );
+}
 
-              <div className="border-l border-white/10 pl-4">
-                <p className="font-mono text-xs text-white/50">
-                  3. Daily Check-In bouwen
-                </p>
-              </div>
+function RoadmapLine({ label }: { label: string }) {
+  return (
+    <div className="border border-white/10 bg-black p-3 flex items-center gap-2">
+      <CheckCircle2 size={14} className="text-white/60" />
 
-              <div className="border-l border-white/10 pl-4">
-                <p className="font-mono text-xs text-white/50">
-                  4. Pitch demo opnemen
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <p className="font-mono text-xs text-white/50">{label}</p>
+    </div>
+  );
+}
+
+function FeatureBox({
+  icon: Icon,
+  title,
+  text,
+}: {
+  icon: ElementType;
+  title: string;
+  text: string;
+}) {
+  return (
+    <div className="border border-white/10 bg-white/[0.02] p-5">
+      <Icon size={19} className="text-white/60 mb-4" />
+
+      <p className="font-orbitron text-sm font-bold uppercase mb-2">{title}</p>
+
+      <p className="font-mono text-xs text-white/40">{text}</p>
     </div>
   );
 }
