@@ -1,12 +1,19 @@
 import type { ElementType } from "react";
 import {
+  Activity,
   ArrowUpRight,
   BarChart3,
   Coins,
   Eye,
+  Gem,
+  Layers,
+  LineChart,
   PieChart,
+  RefreshCw,
   ShieldCheck,
   Sparkles,
+  Target,
+  TrendingDown,
   TrendingUp,
   Wallet,
 } from "lucide-react";
@@ -21,6 +28,19 @@ type Asset = {
   balance: string;
   value: string;
   status: string;
+};
+
+type Allocation = {
+  label: string;
+  percentage: number;
+  value: string;
+};
+
+type Signal = {
+  title: string;
+  value: string;
+  status: string;
+  icon: ElementType;
 };
 
 const assets: Asset[] = [
@@ -52,6 +72,67 @@ const assets: Asset[] = [
     value: "Utility",
     status: "Live",
   },
+];
+
+const allocations: Allocation[] = [
+  {
+    label: "XRP",
+    percentage: 72,
+    value: "$1,178.00",
+  },
+  {
+    label: "Stablecoins",
+    percentage: 21,
+    value: "$350.00",
+  },
+  {
+    label: "NFT Badges",
+    percentage: 4,
+    value: "Future",
+  },
+  {
+    label: "OTT XP",
+    percentage: 3,
+    value: "Utility",
+  },
+];
+
+const signals: Signal[] = [
+  {
+    title: "Wallet Health",
+    value: "Good",
+    status: "Mock",
+    icon: ShieldCheck,
+  },
+  {
+    title: "Risk Exposure",
+    value: "Low",
+    status: "Mock",
+    icon: Eye,
+  },
+  {
+    title: "Learning Score",
+    value: "130 XP",
+    status: "Live",
+    icon: Sparkles,
+  },
+  {
+    title: "Make Waves",
+    value: "Ready",
+    status: "Soon",
+    icon: Activity,
+  },
+];
+
+const futureModules = [
+  "Live XRPL balances",
+  "Token trustline values",
+  "NFT badge portfolio",
+  "AMM liquidity positions",
+  "LP rewards and impermanent loss",
+  "Stablecoin exposure",
+  "Wallet reputation score",
+  "AI portfolio explanation",
 ];
 
 function shortAddress(address: string) {
@@ -97,6 +178,12 @@ export function PortfolioTab({ walletAddress }: PortfolioTabProps) {
 
       <div className="grid grid-cols-12 gap-4">
         <div className="col-span-12 xl:col-span-8 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {signals.map((signal) => (
+              <SignalBox key={signal.title} signal={signal} />
+            ))}
+          </div>
+
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
@@ -120,6 +207,63 @@ export function PortfolioTab({ walletAddress }: PortfolioTabProps) {
           </div>
 
           <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
+                  Performance
+                </p>
+
+                <h3 className="font-orbitron text-xl font-black uppercase">
+                  Mock Portfolio Chart
+                </h3>
+              </div>
+
+              <LineChart size={20} className="text-white/60" />
+            </div>
+
+            <div className="border border-white/10 bg-black p-5">
+              <div className="h-52 flex items-end gap-2">
+                {[35, 42, 38, 55, 51, 64, 72, 68, 78, 83, 76, 89].map(
+                  (height, index) => (
+                    <div
+                      key={index}
+                      className="flex-1 bg-white/20 hover:bg-white/40 transition-all"
+                      style={{ height: `${height}%` }}
+                    />
+                  )
+                )}
+              </div>
+
+              <div className="flex items-center justify-between mt-4">
+                <p className="font-mono text-[10px] text-white/30 uppercase">
+                  12 Month Mock View
+                </p>
+
+                <p className="font-mono text-[10px] text-white/45 uppercase">
+                  Demo Data
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-span-12 xl:col-span-4 space-y-4">
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Target size={18} className="text-white/60" />
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Allocation
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {allocations.map((item) => (
+                <AllocationRow key={item.label} item={item} />
+              ))}
+            </div>
+          </div>
+
+          <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
               <Sparkles size={18} className="text-white/60" />
               <p className="font-orbitron text-xs uppercase tracking-widest">
@@ -127,18 +271,41 @@ export function PortfolioTab({ walletAddress }: PortfolioTabProps) {
               </p>
             </div>
 
-            <p className="font-mono text-xs text-white/45 leading-relaxed">
+            <p className="font-mono text-xs text-white/45 leading-relaxed mb-5">
               Later kan AI jouw portfolio uitleggen in gewone taal. Niet als
               financieel advies, maar als educatieve analyse van balans,
-              stablecoin exposure, trustlines en risico.
+              concentratie, stablecoin exposure, trustlines en risico.
             </p>
+
+            <div className="space-y-3">
+              <NoteLine label="Explain my portfolio" />
+              <NoteLine label="Show concentration risk" />
+              <NoteLine label="Compare stablecoin exposure" />
+              <NoteLine label="Summarize wallet activity" />
+            </div>
+          </div>
+
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <RefreshCw size={18} className="text-white/60" />
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Future Modules
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {futureModules.map((item) => (
+                <FutureLine key={item} label={item} />
+              ))}
+            </div>
           </div>
         </div>
 
-        <div className="col-span-12 xl:col-span-4 space-y-4">
-          <SideBox icon={Eye} title="Wallet Health" text="Risk scanner later" />
-          <SideBox icon={ShieldCheck} title="Trustline Safety" text="Warnings before action" />
-          <SideBox icon={ArrowUpRight} title="Explorer Links" text="Bithomp / XRPL.org later" />
+        <div className="col-span-12 grid grid-cols-1 md:grid-cols-4 gap-4">
+          <FeatureBox icon={Gem} title="NFT Badges" text="Portfolio identity" />
+          <FeatureBox icon={Layers} title="AMM Positions" text="LP data later" />
+          <FeatureBox icon={TrendingDown} title="Risk Alerts" text="Warnings" />
+          <FeatureBox icon={ArrowUpRight} title="Explorer Links" text="External data" />
         </div>
       </div>
     </div>
@@ -163,6 +330,30 @@ function StatBox({
       </p>
 
       <p className="font-orbitron text-lg font-black uppercase">{value}</p>
+    </div>
+  );
+}
+
+function SignalBox({ signal }: { signal: Signal }) {
+  const Icon = signal.icon;
+
+  return (
+    <div className="border border-white/10 bg-white/[0.02] p-5">
+      <div className="flex items-start justify-between mb-4">
+        <Icon size={18} className="text-white/60" />
+
+        <p className="font-mono text-[10px] uppercase text-white/35">
+          {signal.status}
+        </p>
+      </div>
+
+      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+        {signal.title}
+      </p>
+
+      <p className="font-orbitron text-lg font-black uppercase">
+        {signal.value}
+      </p>
     </div>
   );
 }
@@ -195,7 +386,49 @@ function AssetRow({ asset }: { asset: Asset }) {
   );
 }
 
-function SideBox({
+function AllocationRow({ item }: { item: Allocation }) {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <p className="font-mono text-xs text-white/55 uppercase">{item.label}</p>
+        <p className="font-mono text-[10px] text-white/35">{item.value}</p>
+      </div>
+
+      <div className="h-2 bg-white/10 overflow-hidden">
+        <div
+          className="h-full bg-white transition-all"
+          style={{ width: `${Math.max(0, Math.min(item.percentage, 100))}%` }}
+        />
+      </div>
+
+      <p className="font-mono text-[10px] text-white/25 mt-2">
+        {item.percentage}%
+      </p>
+    </div>
+  );
+}
+
+function NoteLine({ label }: { label: string }) {
+  return (
+    <div className="border border-white/10 bg-black p-3 flex items-center gap-2">
+      <Sparkles size={14} className="text-white/60" />
+
+      <p className="font-mono text-xs text-white/50">{label}</p>
+    </div>
+  );
+}
+
+function FutureLine({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-2 border-b border-white/10 pb-3 last:border-b-0 last:pb-0">
+      <Activity size={14} className="text-white/40" />
+
+      <p className="font-mono text-xs text-white/45">{label}</p>
+    </div>
+  );
+}
+
+function FeatureBox({
   icon: Icon,
   title,
   text,
@@ -205,7 +438,7 @@ function SideBox({
   text: string;
 }) {
   return (
-    <div className="border border-white/10 bg-white/[0.02] p-6">
+    <div className="border border-white/10 bg-white/[0.02] p-5">
       <Icon size={19} className="text-white/60 mb-4" />
 
       <p className="font-orbitron text-sm font-bold uppercase mb-2">{title}</p>
