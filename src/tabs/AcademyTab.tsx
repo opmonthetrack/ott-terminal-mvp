@@ -1,154 +1,196 @@
+import { useState } from "react";
 import type { ElementType } from "react";
 import {
-  Award,
+  BadgeCheck,
   BookOpen,
-  Bot,
-  BrainCircuit,
+  Brain,
   CheckCircle2,
   Coins,
-  FileText,
+  Flame,
   GraduationCap,
   Layers,
   Lock,
+  Medal,
   PlayCircle,
+  Puzzle,
+  Rocket,
   ShieldCheck,
   Sparkles,
   Star,
+  Target,
   Trophy,
   Wallet,
+  Waves,
   Zap,
 } from "lucide-react";
 
-type Track = {
+type AcademyTrack = {
+  id: string;
   title: string;
   level: string;
-  lessons: number;
-  xp: number;
-  status: string;
+  lessons: string;
+  reward: string;
+  text: string;
   icon: ElementType;
 };
 
 type Lesson = {
   title: string;
-  track: string;
-  duration: string;
-  xp: number;
   status: string;
+  xp: number;
+  text: string;
 };
 
-const tracks: Track[] = [
+type Badge = {
+  title: string;
+  status: string;
+  text: string;
+  icon: ElementType;
+};
+
+const tracks: AcademyTrack[] = [
   {
-    title: "Blockchain Basics",
+    id: "xrpl-basics",
+    title: "XRPL Basics",
     level: "Beginner",
-    lessons: 8,
-    xp: 200,
-    status: "Open",
+    lessons: "6 Lessons",
+    reward: "+60 XP",
+    text: "Leer wat XRPL is, hoe ledgers werken, wat XRP doet en waarom snelheid belangrijk is.",
     icon: BookOpen,
   },
   {
-    title: "Crypto Fundamentals",
-    level: "Beginner",
-    lessons: 10,
-    xp: 250,
-    status: "Open",
-    icon: Coins,
-  },
-  {
-    title: "XRP Ledger Essentials",
-    level: "Intermediate",
-    lessons: 14,
-    xp: 500,
-    status: "Open",
-    icon: Layers,
-  },
-  {
-    title: "Xaman Wallet Mastery",
-    level: "Intermediate",
-    lessons: 9,
-    xp: 350,
-    status: "Soon",
-    icon: Wallet,
-  },
-  {
-    title: "RLUSD & Stablecoins",
-    level: "Intermediate",
-    lessons: 12,
-    xp: 450,
-    status: "Soon",
+    id: "wallet-safety",
+    title: "Wallet Safety",
+    level: "Essential",
+    lessons: "5 Lessons",
+    reward: "+75 XP",
+    text: "Seed phrase veiligheid, Xaman confirmation, trustlines, scams en signing hygiene.",
     icon: ShieldCheck,
   },
   {
-    title: "CBDC / ISO 20022 / Rails",
-    level: "Advanced",
-    lessons: 16,
-    xp: 650,
-    status: "Locked",
-    icon: FileText,
+    id: "defi",
+    title: "DeFi On XRPL",
+    level: "Intermediate",
+    lessons: "7 Lessons",
+    reward: "+100 XP",
+    text: "DEX, AMM, liquidity, stablecoins, slippage, LP risk en DeFi education.",
+    icon: Coins,
   },
   {
-    title: "AI on XRPL",
-    level: "Advanced",
-    lessons: 12,
-    xp: 700,
-    status: "Locked",
-    icon: Bot,
+    id: "builders",
+    title: "Builder Path",
+    level: "Developer",
+    lessons: "8 Lessons",
+    reward: "+150 XP",
+    text: "XRPL API, Xaman payloads, source tag 2606, frontend modules en safe backend flows.",
+    icon: Rocket,
   },
   {
-    title: "Developer Bootcamp",
-    level: "Expert",
-    lessons: 24,
-    xp: 1500,
-    status: "Locked",
-    icon: BrainCircuit,
+    id: "ai",
+    title: "AI + XRPL",
+    level: "Future",
+    lessons: "5 Lessons",
+    reward: "+90 XP",
+    text: "AI assistants, wallet explainers, risk scanners, prompts en research workflows.",
+    icon: Brain,
+  },
+  {
+    id: "make-waves",
+    title: "Make Waves",
+    level: "Challenge",
+    lessons: "4 Lessons",
+    reward: "+260 XP",
+    text: "Daily Check-In, source tag 2606, active users, mainnet proof en demo readiness.",
+    icon: Waves,
   },
 ];
 
 const lessons: Lesson[] = [
   {
-    title: "What is blockchain?",
-    track: "Blockchain Basics",
-    duration: "8 min",
+    title: "What Is The XRP Ledger?",
+    status: "Open",
+    xp: 10,
+    text: "Introductie tot ledger finality, accounts, transactions en native XRP.",
+  },
+  {
+    title: "How Xaman Signing Works",
+    status: "Open",
+    xp: 15,
+    text: "Gebruiker moet altijd zelf bevestigen. Geen hidden signing of private keys.",
+  },
+  {
+    title: "Trustline Safety",
+    status: "Open",
+    xp: 20,
+    text: "Waarom issuers, limits en onbekende tokens belangrijk zijn voor wallet safety.",
+  },
+  {
+    title: "Source Tag 2606",
+    status: "Challenge",
     xp: 25,
-    status: "Start",
-  },
-  {
-    title: "What makes XRPL different?",
-    track: "XRP Ledger Essentials",
-    duration: "12 min",
-    xp: 40,
-    status: "Start",
-  },
-  {
-    title: "How wallets and keys work",
-    track: "Crypto Fundamentals",
-    duration: "10 min",
-    xp: 35,
-    status: "Start",
-  },
-  {
-    title: "Understanding trustlines",
-    track: "XRP Ledger Essentials",
-    duration: "14 min",
-    xp: 50,
-    status: "Soon",
-  },
-  {
-    title: "RLUSD and fiat-backed stablecoins",
-    track: "Stablecoins",
-    duration: "15 min",
-    xp: 60,
-    status: "Soon",
-  },
-  {
-    title: "AI payments and X402",
-    track: "AI on XRPL",
-    duration: "18 min",
-    xp: 80,
-    status: "Locked",
+    text: "Waarom OTT Make Waves transacties later source tag 2606 gebruiken.",
   },
 ];
 
+const badges: Badge[] = [
+  {
+    title: "XRPL Starter",
+    status: "Unlocked",
+    text: "Eerste Academy flow gestart.",
+    icon: BadgeCheck,
+  },
+  {
+    title: "Wallet Guardian",
+    status: "Locked",
+    text: "Voltooi Wallet Safety track.",
+    icon: Lock,
+  },
+  {
+    title: "DeFi Explorer",
+    status: "Locked",
+    text: "Voltooi DeFi On XRPL track.",
+    icon: Medal,
+  },
+  {
+    title: "Make Waves Builder",
+    status: "Locked",
+    text: "Voltooi source tag 2606 challenge.",
+    icon: Trophy,
+  },
+];
+
+const roadmap = [
+  "Lesson pages bouwen",
+  "Quiz engine toevoegen",
+  "XP opslaan per wallet",
+  "Badge progress koppelen",
+  "Daily Check-In reward verbinden",
+  "Academy leaderboard maken",
+  "AI tutor toevoegen",
+  "NFT certificates later",
+];
+
 export function AcademyTab() {
+  const [selectedTrack, setSelectedTrack] = useState<AcademyTrack>(tracks[0]);
+  const [completedLessons, setCompletedLessons] = useState<string[]>([]);
+
+  const SelectedTrackIcon = selectedTrack.icon;
+
+  const earnedXp = completedLessons.reduce((total, lessonTitle) => {
+    const lesson = lessons.find((item) => item.title === lessonTitle);
+    return total + (lesson?.xp || 0);
+  }, 0);
+
+  function toggleLesson(title: string) {
+    setCompletedLessons((current) => {
+      if (current.includes(title)) {
+        return current.filter((item) => item !== title);
+      }
+
+      return [...current, title];
+    });
+  }
+
   return (
     <div className="p-6 bg-black min-h-screen text-white">
       <div className="relative overflow-hidden border border-white/10 bg-white/[0.02] p-6 mb-6">
@@ -158,52 +200,80 @@ export function AcademyTab() {
           <div className="col-span-12 xl:col-span-8">
             <div className="flex items-center gap-2 mb-4 text-white/45">
               <GraduationCap size={17} />
+
               <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
                 OTT Academy
               </p>
             </div>
 
             <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
-              Learn. Earn. Build.
+              Learn XRPL. Earn XP. Build Confidence.
             </h2>
 
             <p className="font-mono text-sm text-white/45 max-w-3xl leading-relaxed">
-              De educatiehub van de OTT Terminal. Gebruikers leren XRPL,
-              wallets, stablecoins, CBDC, ISO 20022, AI en developer skills
-              terwijl ze XP, badges, certificaten en later tokens verdienen.
+              De Academy-laag van OTT Terminal. Hier leren gebruikers XRPL,
+              wallet safety, DeFi, AI, tokenization, source tag 2606 en builder
+              skills via lessons, quizzes, badges en XP.
             </p>
           </div>
 
           <div className="col-span-12 xl:col-span-4 grid grid-cols-2 gap-3">
-            <StatBox icon={BookOpen} label="Courses" value="8" />
-            <StatBox icon={PlayCircle} label="Lessons" value="105+" />
-            <StatBox icon={Star} label="XP Pool" value="4,605" />
-            <StatBox icon={Award} label="Badges" value="Soon" />
+            <StatBox icon={Zap} label="Earned XP" value={`${earnedXp} XP`} />
+            <StatBox icon={CheckCircle2} label="Lessons" value={`${completedLessons.length}/4`} />
+            <StatBox icon={Flame} label="Streak" value="3 Days" />
+            <StatBox icon={Trophy} label="Badges" value="1/4" />
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-12 xl:col-span-8 space-y-4">
+        <div className="col-span-12 xl:col-span-4 space-y-4">
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Layers size={18} className="text-white/60" />
+
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Learning Tracks
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {tracks.map((track) => (
+                <TrackButton
+                  key={track.id}
+                  track={track}
+                  active={selectedTrack.id === track.id}
+                  onClick={() => setSelectedTrack(track)}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="col-span-12 xl:col-span-5 space-y-4">
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
-                  Course Tracks
+                  Selected Track
                 </p>
 
                 <h3 className="font-orbitron text-xl font-black uppercase">
-                  Learning Paths
+                  {selectedTrack.title}
                 </h3>
               </div>
 
-              <Sparkles size={20} className="text-white/60" />
+              <SelectedTrackIcon size={22} className="text-white/60" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {tracks.map((track) => (
-                <TrackCard key={track.title} track={track} />
-              ))}
+            <p className="font-mono text-sm text-white/45 leading-relaxed mb-5">
+              {selectedTrack.text}
+            </p>
+
+            <div className="grid grid-cols-3 gap-3">
+              <MiniStatus label="Level" value={selectedTrack.level} />
+              <MiniStatus label="Lessons" value={selectedTrack.lessons} />
+              <MiniStatus label="Reward" value={selectedTrack.reward} />
             </div>
           </div>
 
@@ -211,11 +281,11 @@ export function AcademyTab() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
-                  Today&apos;s Lessons
+                  Lessons
                 </p>
 
                 <h3 className="font-orbitron text-xl font-black uppercase">
-                  Start Learning
+                  Daily Learn & Earn
                 </h3>
               </div>
 
@@ -224,68 +294,56 @@ export function AcademyTab() {
 
             <div className="space-y-3">
               {lessons.map((lesson) => (
-                <LessonRow key={lesson.title} lesson={lesson} />
+                <LessonRow
+                  key={lesson.title}
+                  lesson={lesson}
+                  completed={completedLessons.includes(lesson.title)}
+                  onClick={() => toggleLesson(lesson.title)}
+                />
               ))}
             </div>
           </div>
         </div>
 
-        <div className="col-span-12 xl:col-span-4 space-y-4">
+        <div className="col-span-12 xl:col-span-3 space-y-4">
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Trophy size={18} className="text-white/60" />
+              <Star size={18} className="text-white/60" />
+
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                Learn & Earn Progress
+                Badges
               </p>
             </div>
 
-            <div className="space-y-4">
-              <ProgressItem label="Academy Progress" value={12} />
-              <ProgressItem label="XRPL Knowledge" value={18} />
-              <ProgressItem label="Wallet Skills" value={8} />
-              <ProgressItem label="Developer Path" value={0} />
+            <div className="space-y-3">
+              {badges.map((badge) => (
+                <BadgeRow key={badge.title} badge={badge} />
+              ))}
             </div>
           </div>
 
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Bot size={18} className="text-white/60" />
+              <Target size={18} className="text-white/60" />
+
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                AI Tutor
+                Roadmap
               </p>
             </div>
 
-            <p className="font-mono text-xs text-white/45 leading-relaxed mb-5">
-              Later krijgt iedere les een AI Tutor. Gebruikers kunnen vragen
-              stellen, voorbeelden krijgen, quizvragen oefenen en moeilijke
-              onderwerpen eenvoudig laten uitleggen.
-            </p>
-
-            <button className="w-full border border-white/15 py-3 font-orbitron text-xs uppercase tracking-widest text-white/40 cursor-not-allowed">
-              AI Tutor Coming Soon
-            </button>
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <ShieldCheck size={18} className="text-white/60" />
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Certificates
-              </p>
+            <div className="space-y-3">
+              {roadmap.map((item) => (
+                <RoadmapLine key={item} label={item} />
+              ))}
             </div>
-
-            <p className="font-mono text-xs text-white/45 leading-relaxed">
-              Certificaten en NFT badges komen later als bewijs van afgeronde
-              tracks. Eerst bouwen we XP, quizzen en voortgang veilig in de app.
-            </p>
           </div>
         </div>
 
         <div className="col-span-12 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <FeatureBox icon={CheckCircle2} title="Quizzes" text="Knowledge checks" />
-          <FeatureBox icon={Award} title="NFT Badges" text="Proof of learning" />
-          <FeatureBox icon={Coins} title="OTT Rewards" text="Token utility later" />
-          <FeatureBox icon={Zap} title="Daily Missions" text="Retention engine" />
+          <FeatureBox icon={BookOpen} title="Lessons" text="XRPL education" />
+          <FeatureBox icon={Puzzle} title="Quizzes" text="Test knowledge" />
+          <FeatureBox icon={Wallet} title="Wallet XP" text="Progress by wallet" />
+          <FeatureBox icon={Sparkles} title="AI Tutor" text="Personal guidance" />
         </div>
       </div>
     </div>
@@ -309,103 +367,132 @@ function StatBox({
         {label}
       </p>
 
-      <p className="font-orbitron text-lg font-black uppercase">{value}</p>
+      <p className="font-orbitron text-sm font-black uppercase">{value}</p>
     </div>
   );
 }
 
-function TrackCard({ track }: { track: Track }) {
+function TrackButton({
+  track,
+  active,
+  onClick,
+}: {
+  track: AcademyTrack;
+  active: boolean;
+  onClick: () => void;
+}) {
   const Icon = track.icon;
-  const isLocked = track.status === "Locked";
 
   return (
-    <div className="border border-white/10 bg-black hover:bg-white/[0.03] transition-all p-5 cursor-pointer">
-      <div className="flex items-start justify-between mb-4">
-        <Icon size={20} className="text-white/70" />
+    <button
+      onClick={onClick}
+      className={`w-full border p-4 text-left transition-all ${
+        active
+          ? "border-white/30 bg-white/[0.08]"
+          : "border-white/10 bg-black hover:bg-white/[0.03]"
+      }`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Icon size={16} className="text-white/60" />
 
-        <span className="font-mono text-[10px] uppercase text-white/45">
-          {track.status}
-        </span>
+          <p className="font-orbitron text-xs font-bold uppercase">
+            {track.title}
+          </p>
+        </div>
+
+        <p className="font-mono text-[10px] text-white/35 uppercase">
+          {track.level}
+        </p>
       </div>
+    </button>
+  );
+}
 
-      <h4 className="font-orbitron text-sm font-bold uppercase mb-2">
-        {track.title}
-      </h4>
-
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-4">
-        {track.level}
+function MiniStatus({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-white/10 bg-black p-4">
+      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+        {label}
       </p>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="border border-white/10 p-3">
-          <p className="font-mono text-[10px] text-white/35 uppercase mb-1">
-            Lessons
-          </p>
-          <p className="font-orbitron text-sm font-black">{track.lessons}</p>
-        </div>
-
-        <div className="border border-white/10 p-3">
-          <p className="font-mono text-[10px] text-white/35 uppercase mb-1">
-            XP
-          </p>
-          <p className="font-orbitron text-sm font-black">{track.xp}</p>
-        </div>
-      </div>
-
-      {isLocked && (
-        <div className="flex items-center gap-2 mt-4 text-white/30">
-          <Lock size={13} />
-          <p className="font-mono text-[10px] uppercase">Unlock later</p>
-        </div>
-      )}
+      <p className="font-orbitron text-xs font-black uppercase">{value}</p>
     </div>
   );
 }
 
-function LessonRow({ lesson }: { lesson: Lesson }) {
-  const isLocked = lesson.status === "Locked";
-
+function LessonRow({
+  lesson,
+  completed,
+  onClick,
+}: {
+  lesson: Lesson;
+  completed: boolean;
+  onClick: () => void;
+}) {
   return (
-    <div className="border border-white/10 bg-black p-4 flex items-center justify-between hover:bg-white/[0.03] transition-all cursor-pointer">
-      <div className="flex items-center gap-3">
-        {isLocked ? (
-          <Lock size={17} className="text-white/35" />
-        ) : (
-          <PlayCircle size={17} className="text-white/60" />
-        )}
+    <button
+      onClick={onClick}
+      className={`w-full border p-4 text-left transition-all ${
+        completed
+          ? "border-white/30 bg-white/[0.08]"
+          : "border-white/10 bg-black hover:bg-white/[0.03]"
+      }`}
+    >
+      <div className="flex items-center justify-between gap-4 mb-3">
+        <div className="flex items-center gap-3">
+          <CheckCircle2
+            size={16}
+            className={completed ? "text-white" : "text-white/30"}
+          />
 
-        <div>
-          <p className="font-orbitron text-sm font-bold uppercase mb-1">
+          <p className="font-orbitron text-sm font-bold uppercase">
             {lesson.title}
           </p>
-
-          <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest">
-            {lesson.track} • {lesson.duration} • {lesson.xp} XP
-          </p>
         </div>
+
+        <p className="font-mono text-[10px] text-white/35 uppercase">
+          {completed ? "Done" : `+${lesson.xp} XP`}
+        </p>
       </div>
 
-      <p className="font-mono text-[10px] text-white/45 uppercase">
-        {lesson.status}
+      <p className="font-mono text-xs text-white/40 leading-relaxed">
+        {lesson.text}
+      </p>
+    </button>
+  );
+}
+
+function BadgeRow({ badge }: { badge: Badge }) {
+  const Icon = badge.icon;
+
+  return (
+    <div className="border border-white/10 bg-black p-4">
+      <div className="flex items-start justify-between mb-3">
+        <Icon size={17} className="text-white/60" />
+
+        <p className="font-mono text-[10px] text-white/30 uppercase">
+          {badge.status}
+        </p>
+      </div>
+
+      <p className="font-orbitron text-xs font-bold uppercase mb-2">
+        {badge.title}
+      </p>
+
+      <p className="font-mono text-[10px] text-white/40 leading-relaxed">
+        {badge.text}
       </p>
     </div>
   );
 }
 
-function ProgressItem({ label, value }: { label: string; value: number }) {
+function RoadmapLine({ label }: { label: string }) {
   return (
-    <div>
-      <div className="flex items-center justify-between mb-2">
-        <p className="font-mono text-xs text-white/55 uppercase">{label}</p>
-        <p className="font-mono text-[10px] text-white/35">{value}%</p>
-      </div>
+    <div className="border border-white/10 bg-black p-3 flex items-center gap-2">
+      <CheckCircle2 size={14} className="text-white/60" />
 
-      <div className="h-2 bg-white/10 overflow-hidden">
-        <div
-          className="h-full bg-white transition-all"
-          style={{ width: `${Math.max(0, Math.min(value, 100))}%` }}
-        />
-      </div>
+      <p className="font-mono text-xs text-white/50">{label}</p>
     </div>
   );
 }
