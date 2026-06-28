@@ -1,185 +1,211 @@
+import { useState } from "react";
 import type { ElementType } from "react";
 import {
-  ArrowUpRight,
-  BookOpen,
+  Activity,
+  BadgeCheck,
   Bot,
+  Boxes,
   Building2,
-  CalendarDays,
-  Code2,
   Coins,
   Compass,
+  Database,
+  ExternalLink,
+  Flame,
   Gem,
   Globe2,
   GraduationCap,
-  Handshake,
+  Landmark,
   Layers,
   Map,
   Network,
-  Newspaper,
+  Radio,
   Rocket,
   Search,
   ShieldCheck,
+  ShoppingBag,
   Sparkles,
-  Store,
   Users,
   Wallet,
-  Zap,
+  Waves,
 } from "lucide-react";
 
-type EcosystemProject = {
+type EcosystemCategory = {
+  id: string;
   title: string;
-  category: string;
+  count: string;
   status: string;
   description: string;
   icon: ElementType;
 };
 
-type EcosystemCategory = {
-  label: string;
-  count: string;
+type EcosystemProject = {
+  name: string;
+  category: string;
+  status: string;
+  description: string;
+};
+
+type Signal = {
+  title: string;
+  value: string;
+  status: string;
   icon: ElementType;
 };
 
-type Opportunity = {
-  title: string;
-  type: string;
-  status: string;
-};
-
-const projects: EcosystemProject[] = [
+const categories: EcosystemCategory[] = [
   {
+    id: "wallets",
     title: "Wallets",
-    category: "User Access",
+    count: "8+",
     status: "Core",
     description:
-      "Xaman, Crossmark en andere wallet-lagen die gebruikers toegang geven tot XRPL.",
+      "Wallets, signing apps, custody tools en onboarding tools voor XRPL gebruikers.",
     icon: Wallet,
   },
   {
-    title: "Stablecoins",
-    category: "Payments",
-    status: "Priority",
+    id: "defi",
+    title: "DeFi",
+    count: "12+",
+    status: "MVP",
     description:
-      "RLUSD, USDC en andere stablecoin rails voor betalingen, handel en business use cases.",
+      "AMM, DEX, swaps, liquidity, lending, yield tracking en risk education.",
     icon: Coins,
   },
   {
-    title: "DeFi & AMM",
-    category: "Liquidity",
-    status: "Build",
-    description:
-      "AMM pools, liquidity providers, swaps, LP rewards en DeFi-dashboarding binnen XRPL.",
-    icon: Layers,
-  },
-  {
-    title: "NFTs & Badges",
-    category: "Identity",
-    status: "Soon",
-    description:
-      "NFT badges, membership passes, certificates en proof-of-learning voor gebruikers.",
-    icon: Gem,
-  },
-  {
-    title: "AI Tools",
-    category: "Intelligence",
+    id: "stablecoins",
+    title: "Stablecoins",
+    count: "6+",
     status: "Watch",
     description:
-      "AI assistants, risk scanners, prompt libraries, developer helpers en agentic payments.",
-    icon: Bot,
+      "RLUSD, USDC, EUR stablecoins, ramps en payment rails op de XRPL.",
+    icon: Landmark,
   },
   {
+    id: "builders",
     title: "Builders",
-    category: "Developer Ecosystem",
-    status: "Open",
+    count: "20+",
+    status: "Build",
     description:
-      "Developers, founders, hackathon teams en product studios die bouwen op XRPL.",
-    icon: Code2,
-  },
-];
-
-const categories: EcosystemCategory[] = [
-  {
-    label: "Wallets",
-    count: "Access",
-    icon: Wallet,
+      "Developer tools, SDKs, APIs, xApps, hackathon teams en startup projecten.",
+    icon: Rocket,
   },
   {
-    label: "Payments",
-    count: "Rails",
-    icon: Zap,
-  },
-  {
-    label: "DeFi",
-    count: "AMM",
-    icon: Layers,
-  },
-  {
-    label: "NFTs",
-    count: "Badges",
-    icon: Gem,
-  },
-  {
-    label: "AI",
-    count: "Tools",
+    id: "ai",
+    title: "AI Tools",
+    count: "5+",
+    status: "AI",
+    description:
+      "AI assistants, research bots, wallet explainers, prompt tools en safety scanners.",
     icon: Bot,
   },
   {
-    label: "Education",
-    count: "Academy",
+    id: "academy",
+    title: "Academy",
+    count: "10+",
+    status: "Learn",
+    description:
+      "Learning tracks, quizzes, rewards, badges en onboarding voor nieuwe gebruikers.",
     icon: GraduationCap,
   },
   {
-    label: "Retail",
-    count: "Adoption",
-    icon: Store,
+    id: "nfts",
+    title: "NFT / Badges",
+    count: "9+",
+    status: "Identity",
+    description:
+      "Certificates, membership badges, achievements, tickets en community proof.",
+    icon: Gem,
   },
   {
-    label: "Enterprise",
-    count: "B2B",
-    icon: Building2,
+    id: "events",
+    title: "Events",
+    count: "4+",
+    status: "Community",
+    description:
+      "Meetups, hackathons, XRPL Commons, demos, livestreams en partner activaties.",
+    icon: Users,
   },
 ];
 
-const opportunities: Opportunity[] = [
+const projects: EcosystemProject[] = [
   {
-    title: "XRPL Commons Make Waves",
-    type: "Challenge",
-    status: "Active",
+    name: "Xaman",
+    category: "Wallets",
+    status: "Core Wallet",
+    description: "Signing, xApp flows, wallet onboarding en user confirmation.",
   },
   {
-    title: "Founder / Developer Collaboration",
-    type: "Team",
-    status: "Open",
+    name: "XRPL Commons",
+    category: "Events",
+    status: "Challenge",
+    description: "Make Waves challenge, builder support, demos en community.",
   },
   {
-    title: "Retailer Education Pilots",
-    type: "Adoption",
-    status: "Planned",
+    name: "RLUSD",
+    category: "Stablecoins",
+    status: "Payment Rail",
+    description: "Stablecoin education, rails monitoring en risk explanation.",
   },
   {
-    title: "AI + XRPL Research",
-    type: "Research",
-    status: "Build",
+    name: "AMM / DEX",
+    category: "DeFi",
+    status: "Protocol",
+    description: "Liquidity pools, swaps, fees, risks en user education.",
   },
   {
-    title: "Academy Content Partners",
-    type: "Education",
-    status: "Soon",
+    name: "OTT Academy",
+    category: "Academy",
+    status: "Internal",
+    description: "Learn & Earn tracks voor XRPL, wallets, DeFi, AI en safety.",
+  },
+  {
+    name: "OTT Marketplace",
+    category: "NFT / Badges",
+    status: "Internal",
+    description: "Merch, badges, event tickets, rewards en future utility.",
   },
 ];
 
-const ecosystemRoadmap = [
-  "Maak een XRPL project directory",
-  "Voeg wallet, DeFi, NFT, AI en stablecoin categorieën toe",
-  "Voeg projectprofielen en uitlegpagina's toe",
-  "Voeg ratings, risk labels en education links toe",
-  "Voeg builders, grants, events en jobs toe",
-  "Voeg AI-samenvattingen per project toe",
-  "Voeg partner onboarding toe",
-  "Maak OTT de startpagina voor XRPL discovery",
+const signals: Signal[] = [
+  {
+    title: "Categories",
+    value: "8",
+    status: "Mapped",
+    icon: Layers,
+  },
+  {
+    title: "Projects",
+    value: "74+",
+    status: "Mock",
+    icon: Boxes,
+  },
+  {
+    title: "Discovery",
+    value: "Active",
+    status: "Live UI",
+    icon: Compass,
+  },
+  {
+    title: "Partner Layer",
+    value: "Ready",
+    status: "Pitch",
+    icon: BadgeCheck,
+  },
 ];
 
 export function EcosystemTab() {
+  const [selectedCategory, setSelectedCategory] = useState<EcosystemCategory>(
+    categories[0]
+  );
+  const SelectedIcon = selectedCategory.icon;
+
+  const visibleProjects = projects.filter(
+    (project) => project.category === selectedCategory.title
+  );
+
+  const projectsToShow =
+    visibleProjects.length > 0 ? visibleProjects : projects.slice(0, 3);
+
   return (
     <div className="p-6 bg-black min-h-screen text-white">
       <div className="relative overflow-hidden border border-white/10 bg-white/[0.02] p-6 mb-6">
@@ -188,29 +214,26 @@ export function EcosystemTab() {
         <div className="relative z-10 grid grid-cols-12 gap-6 items-center">
           <div className="col-span-12 xl:col-span-8">
             <div className="flex items-center gap-2 mb-4 text-white/45">
-              <Compass size={17} />
+              <Globe2 size={17} />
               <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
                 XRPL Ecosystem Map
               </p>
             </div>
 
             <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
-              Discover The XRPL Universe
+              Discover The XRP Ledger
             </h2>
 
             <p className="font-mono text-sm text-white/45 max-w-3xl leading-relaxed">
-              De discovery-laag van de OTT Terminal. Hier vinden gebruikers
-              wallets, DeFi, stablecoins, NFT badges, AI-tools, builders,
-              projecten, events, grants, jobs en educatie binnen het XRP Ledger
-              ecosysteem.
+              De discovery-laag van OTT Terminal. Hier maken we XRPL zichtbaar
+              voor beginners, builders, partners, investeerders en communities.
             </p>
           </div>
 
           <div className="col-span-12 xl:col-span-4 grid grid-cols-2 gap-3">
-            <StatBox icon={Globe2} label="Universe" value="XRPL" />
-            <StatBox icon={Search} label="Discovery" value="Open" />
-            <StatBox icon={Users} label="Builders" value="Coming" />
-            <StatBox icon={Rocket} label="Adoption" value="Focus" />
+            {signals.map((signal) => (
+              <SignalBox key={signal.title} signal={signal} />
+            ))}
           </div>
         </div>
       </div>
@@ -221,42 +244,25 @@ export function EcosystemTab() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
-                  Ecosystem Categories
+                  Categories
                 </p>
 
                 <h3 className="font-orbitron text-xl font-black uppercase">
-                  Explore By Category
+                  Ecosystem Directory
                 </h3>
               </div>
 
-              <Map size={20} className="text-white/60" />
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {categories.map((category) => (
-                <CategoryCard key={category.label} category={category} />
-              ))}
-            </div>
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
-                  Featured Map
-                </p>
-
-                <h3 className="font-orbitron text-xl font-black uppercase">
-                  XRPL Project Layers
-                </h3>
-              </div>
-
-              <Network size={20} className="text-white/60" />
+              <Search size={20} className="text-white/60" />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {projects.map((project) => (
-                <ProjectCard key={project.title} project={project} />
+              {categories.map((category) => (
+                <CategoryCard
+                  key={category.id}
+                  category={category}
+                  active={selectedCategory.id === category.id}
+                  onClick={() => setSelectedCategory(category)}
+                />
               ))}
             </div>
           </div>
@@ -265,20 +271,45 @@ export function EcosystemTab() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
-                  Opportunities
+                  Selected Category
                 </p>
 
                 <h3 className="font-orbitron text-xl font-black uppercase">
-                  Builders, Partners & Pilots
+                  {selectedCategory.title}
                 </h3>
               </div>
 
-              <Handshake size={20} className="text-white/60" />
+              <SelectedIcon size={22} className="text-white/60" />
+            </div>
+
+            <p className="font-mono text-sm text-white/45 leading-relaxed mb-5">
+              {selectedCategory.description}
+            </p>
+
+            <div className="grid grid-cols-2 gap-3">
+              <MiniStatus label="Count" value={selectedCategory.count} />
+              <MiniStatus label="Status" value={selectedCategory.status} />
+            </div>
+          </div>
+
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
+                  Project Feed
+                </p>
+
+                <h3 className="font-orbitron text-xl font-black uppercase">
+                  Highlighted Projects
+                </h3>
+              </div>
+
+              <ExternalLink size={20} className="text-white/60" />
             </div>
 
             <div className="space-y-3">
-              {opportunities.map((item) => (
-                <OpportunityRow key={item.title} item={item} />
+              {projectsToShow.map((project) => (
+                <ProjectRow key={`${project.name}-${project.category}`} project={project} />
               ))}
             </div>
           </div>
@@ -287,126 +318,156 @@ export function EcosystemTab() {
         <div className="col-span-12 xl:col-span-4 space-y-4">
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Sparkles size={18} className="text-white/60" />
+              <Map size={18} className="text-white/60" />
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                OTT Discovery Vision
+                Ecosystem Purpose
               </p>
             </div>
 
             <p className="font-mono text-xs text-white/45 leading-relaxed mb-5">
-              Gebruikers moeten niet verdwalen in losse websites, Discords,
-              Telegrams en X-posts. OTT moet de plek worden waar ze projecten
-              ontdekken, begrijpen en veilig kunnen onderzoeken.
+              Dit scherm wordt de startpagina waar mensen XRPL projecten,
+              tools, wallets, events, DeFi, AI en educational content kunnen
+              vinden.
             </p>
 
             <div className="space-y-3">
-              <VisionLine label="One place to discover XRPL" />
-              <VisionLine label="Simple project explanations" />
-              <VisionLine label="AI summaries for beginners" />
-              <VisionLine label="Risk labels before interaction" />
+              <PurposeLine label="Make XRPL easier to understand" />
+              <PurposeLine label="Give builders visibility" />
+              <PurposeLine label="Guide beginners safely" />
+              <PurposeLine label="Create partner discovery layer" />
             </div>
           </div>
 
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
-              <ShieldCheck size={18} className="text-white/60" />
+              <Network size={18} className="text-white/60" />
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                Safety Layer
+                Network Layers
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <LayerLine icon={Wallet} label="Users" value="Wallet onboarding" />
+              <LayerLine icon={Building2} label="Projects" value="Visibility" />
+              <LayerLine icon={Database} label="Data" value="Signals later" />
+              <LayerLine icon={Waves} label="Community" value="Make Waves" />
+            </div>
+          </div>
+
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Sparkles size={18} className="text-white/60" />
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                AI Discovery Later
               </p>
             </div>
 
             <p className="font-mono text-xs text-white/45 leading-relaxed">
-              Elk project kan later labels krijgen voor issuer info, wallet
-              risico, trustline waarschuwingen, documentatie, social links en
-              educatieve uitleg.
+              Later kan AI vragen beantwoorden zoals: welke wallet moet ik
+              gebruiken, welke projecten zijn actief, wat is veilig, en waar kan
+              ik leren of bouwen.
             </p>
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Rocket size={18} className="text-white/60" />
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Roadmap
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {ecosystemRoadmap.map((item) => (
-                <RoadmapLine key={item} label={item} />
-              ))}
-            </div>
           </div>
         </div>
 
         <div className="col-span-12 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <FeatureBox icon={Newspaper} title="News" text="Project updates" />
-          <FeatureBox icon={BookOpen} title="Docs" text="Education links" />
-          <FeatureBox icon={CalendarDays} title="Events" text="Community calls" />
-          <FeatureBox icon={ArrowUpRight} title="Links" text="Official sources" />
+          <FeatureBox icon={Wallet} title="Wallets" text="User entry point" />
+          <FeatureBox icon={Coins} title="DeFi" text="AMM and DEX" />
+          <FeatureBox icon={Flame} title="Builders" text="Hackathon layer" />
+          <FeatureBox icon={Radio} title="Signals" text="Live data later" />
         </div>
       </div>
     </div>
   );
 }
 
-function StatBox({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: ElementType;
-  label: string;
-  value: string;
-}) {
+function SignalBox({ signal }: { signal: Signal }) {
+  const Icon = signal.icon;
+
   return (
     <div className="border border-white/10 bg-black/60 p-4">
       <Icon size={18} className="text-white/60 mb-3" />
 
       <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
-        {label}
+        {signal.title}
       </p>
 
-      <p className="font-orbitron text-lg font-black uppercase">{value}</p>
+      <p className="font-orbitron text-sm font-black uppercase mb-1">
+        {signal.value}
+      </p>
+
+      <p className="font-mono text-[10px] text-white/30 uppercase">
+        {signal.status}
+      </p>
     </div>
   );
 }
 
-function CategoryCard({ category }: { category: EcosystemCategory }) {
+function CategoryCard({
+  category,
+  active,
+  onClick,
+}: {
+  category: EcosystemCategory;
+  active: boolean;
+  onClick: () => void;
+}) {
   const Icon = category.icon;
 
   return (
-    <div className="border border-white/10 bg-black p-4 hover:bg-white/[0.03] transition-all cursor-pointer">
-      <Icon size={18} className="text-white/60 mb-4" />
+    <button
+      onClick={onClick}
+      className={`border p-5 text-left transition-all ${
+        active
+          ? "border-white/30 bg-white/[0.08]"
+          : "border-white/10 bg-black hover:bg-white/[0.03]"
+      }`}
+    >
+      <div className="flex items-start justify-between mb-4">
+        <Icon size={20} className="text-white/60" />
 
-      <p className="font-orbitron text-xs font-bold uppercase mb-2">
-        {category.label}
+        <p className="font-mono text-[10px] uppercase text-white/35">
+          {category.status}
+        </p>
+      </div>
+
+      <p className="font-orbitron text-sm font-bold uppercase mb-2">
+        {category.title}
       </p>
 
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest">
-        {category.count}
+      <p className="font-mono text-[10px] text-white/35 uppercase">
+        {category.count} items
       </p>
+    </button>
+  );
+}
+
+function MiniStatus({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-white/10 bg-black p-4">
+      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+        {label}
+      </p>
+
+      <p className="font-orbitron text-sm font-black uppercase">{value}</p>
     </div>
   );
 }
 
-function ProjectCard({ project }: { project: EcosystemProject }) {
-  const Icon = project.icon;
-
+function ProjectRow({ project }: { project: EcosystemProject }) {
   return (
-    <div className="border border-white/10 bg-black hover:bg-white/[0.03] transition-all p-5 cursor-pointer">
-      <div className="flex items-start justify-between mb-4">
-        <Icon size={20} className="text-white/70" />
+    <div className="border border-white/10 bg-black p-4 hover:bg-white/[0.03] transition-all">
+      <div className="flex items-center justify-between gap-4 mb-2">
+        <p className="font-orbitron text-sm font-bold uppercase">
+          {project.name}
+        </p>
 
-        <span className="font-mono text-[10px] uppercase text-white/45">
+        <p className="font-mono text-[10px] text-white/35 uppercase">
           {project.status}
-        </span>
+        </p>
       </div>
 
-      <h4 className="font-orbitron text-sm font-bold uppercase mb-2">
-        {project.title}
-      </h4>
-
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-4">
+      <p className="font-mono text-[10px] text-white/35 uppercase mb-3">
         {project.category}
       </p>
 
@@ -417,42 +478,34 @@ function ProjectCard({ project }: { project: EcosystemProject }) {
   );
 }
 
-function OpportunityRow({ item }: { item: Opportunity }) {
-  return (
-    <div className="border border-white/10 bg-black p-4 hover:bg-white/[0.03] transition-all">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="font-orbitron text-sm font-bold uppercase mb-1">
-            {item.title}
-          </p>
-
-          <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest">
-            {item.type}
-          </p>
-        </div>
-
-        <p className="font-mono text-[10px] text-white/45 uppercase">
-          {item.status}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function VisionLine({ label }: { label: string }) {
+function PurposeLine({ label }: { label: string }) {
   return (
     <div className="border border-white/10 bg-black p-3 flex items-center gap-2">
-      <Sparkles size={14} className="text-white/60" />
+      <Activity size={14} className="text-white/60" />
 
       <p className="font-mono text-xs text-white/50">{label}</p>
     </div>
   );
 }
 
-function RoadmapLine({ label }: { label: string }) {
+function LayerLine({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: ElementType;
+  label: string;
+  value: string;
+}) {
   return (
-    <div className="border-b border-white/10 pb-3 last:border-b-0 last:pb-0">
-      <p className="font-mono text-xs text-white/45 leading-relaxed">{label}</p>
+    <div className="border border-white/10 bg-black p-4 flex items-center justify-between gap-3">
+      <div className="flex items-center gap-3">
+        <Icon size={16} className="text-white/60" />
+
+        <p className="font-orbitron text-xs font-bold uppercase">{label}</p>
+      </div>
+
+      <p className="font-mono text-[10px] text-white/35 uppercase">{value}</p>
     </div>
   );
 }
