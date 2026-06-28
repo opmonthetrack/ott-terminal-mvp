@@ -5,6 +5,7 @@ import { DeFiTab } from "./tabs/DeFiTab";
 import { LedgerIntelTab } from "./tabs/LedgerIntelTab";
 import { ProfileTab } from "./tabs/ProfileTab";
 import { OTTTokenCenterTab } from "./tabs/OTTTokenCenterTab";
+import { AcademyTab } from "./tabs/AcademyTab";
 import { LanguageProvider, useLanguage } from "./LanguageContext";
 
 type ActiveTab =
@@ -49,7 +50,7 @@ function MainApp() {
     {
       id: "academy",
       label: t("menu_academy"),
-      status: "Soon",
+      status: "Learn",
     },
     {
       id: "intel",
@@ -198,26 +199,9 @@ function MainApp() {
 
         {activeTab === "defi" && <DeFiTab />}
 
+        {activeTab === "academy" && <AcademyTab />}
+
         {activeTab === "intel" && <LedgerIntelTab />}
-
-        {activeTab === "academy" && (
-          <div className="p-8">
-            <div className="border border-white/10 bg-white/[0.02] p-8 text-center">
-              <p className="font-mono text-xs text-white/35 uppercase tracking-[0.35em] mb-4">
-                Coming Soon
-              </p>
-
-              <h2 className="font-orbitron text-2xl font-black uppercase mb-4">
-                OTT Academy Module
-              </h2>
-
-              <p className="font-mono text-sm text-white/45 max-w-xl mx-auto leading-relaxed">
-                Hier komt straks de leeromgeving voor XRPL, Xaman, wallets,
-                security, DeFi, AMM, NFT's en onboarding voor nieuwe gebruikers.
-              </p>
-            </div>
-          </div>
-        )}
       </main>
     </div>
   );
