@@ -1,167 +1,167 @@
+import { useState } from "react";
 import type { ElementType } from "react";
 import {
-  Activity,
-  ArrowUpRight,
-  BarChart3,
+  AlertTriangle,
+  BadgeCheck,
   Building2,
   CheckCircle2,
   Coins,
-  Database,
-  Factory,
   FileText,
+  Fingerprint,
   Gem,
   Globe2,
-  GraduationCap,
-  Home,
   Landmark,
   Layers,
   Lock,
-  Network,
   Scale,
+  ScanLine,
   ShieldCheck,
   Sparkles,
-  Users,
+  Target,
+  Ticket,
+  Vault,
   Wallet,
-  Zap,
 } from "lucide-react";
 
-type TokenizationSector = {
+type AssetType = {
+  id: string;
   title: string;
-  category: string;
   status: string;
-  description: string;
+  text: string;
   icon: ElementType;
 };
 
-type AssetClass = {
+type TokenStep = {
   title: string;
-  value: string;
   status: string;
+  text: string;
   icon: ElementType;
 };
 
-type ComplianceItem = {
-  label: string;
+type ComplianceRule = {
+  title: string;
   status: string;
+  text: string;
+  icon: ElementType;
 };
 
-const sectors: TokenizationSector[] = [
+const assetTypes: AssetType[] = [
   {
+    id: "real-estate",
     title: "Real Estate",
-    category: "RWA",
-    status: "Research",
-    description:
-      "Tokenized vastgoed, huurinkomsten, eigendomsbewijzen en fractionele toegang tot assets.",
-    icon: Home,
-  },
-  {
-    title: "Bonds & Treasuries",
-    category: "Finance",
-    status: "Watch",
-    description:
-      "Tokenized staatsobligaties, money market funds en institutionele settlement rails.",
-    icon: Landmark,
-  },
-  {
-    title: "Commodities",
-    category: "Assets",
-    status: "Planned",
-    description:
-      "Goud, zilver, energie, grondstoffen en asset-backed tokens met duidelijke reserve-informatie.",
-    icon: Gem,
-  },
-  {
-    title: "Invoices",
-    category: "Business",
-    status: "Future",
-    description:
-      "Factoring, handelsfinanciering en tokenized zakelijke vorderingen voor bedrijven.",
-    icon: FileText,
-  },
-  {
-    title: "Retail Loyalty",
-    category: "Adoption",
-    status: "OTT Fit",
-    description:
-      "Retailers kunnen later loyalty points, coupons, memberships en rewards tokenizen.",
-    icon: Wallet,
-  },
-  {
-    title: "Supply Chain",
-    category: "Enterprise",
-    status: "Future",
-    description:
-      "Tracking van goederen, certificaten, herkomstdata en digitale bewijzen op ledger rails.",
-    icon: Factory,
-  },
-];
-
-const assetClasses: AssetClass[] = [
-  {
-    title: "Real World Assets",
-    value: "RWA",
-    status: "Core Theme",
+    status: "RWA",
+    text: "Tokenized property certificates, ownership proof, rental rights en investor dashboards.",
     icon: Building2,
   },
   {
-    title: "Stablecoins",
-    value: "RLUSD",
-    status: "Priority",
+    id: "gold",
+    title: "Gold & Metals",
+    status: "Vault",
+    text: "Tokenized gold, silver, storage proof, audit trail en redemption logic.",
+    icon: Gem,
+  },
+  {
+    id: "tickets",
+    title: "Tickets",
+    status: "Events",
+    text: "Event tickets, access passes, QR proof, resale rules en NFT badges.",
+    icon: Ticket,
+  },
+  {
+    id: "certificates",
+    title: "Certificates",
+    status: "Proof",
+    text: "Education certificates, membership proof, achievements en wallet identity.",
+    icon: BadgeCheck,
+  },
+  {
+    id: "funds",
+    title: "Funds",
+    status: "Research",
+    text: "Investment baskets, treasury assets, pension proof en regulated participation.",
+    icon: Landmark,
+  },
+  {
+    id: "invoices",
+    title: "Invoices",
+    status: "Business",
+    text: "Invoice tokens, payment tracking, settlement proof en business accounting.",
+    icon: FileText,
+  },
+];
+
+const tokenSteps: TokenStep[] = [
+  {
+    title: "Asset Intake",
+    status: "Step 1",
+    text: "Leg vast wat het asset is, wie eigenaar is, welke rechten bestaan en welke documenten horen bij het asset.",
+    icon: FileText,
+  },
+  {
+    title: "Compliance Check",
+    status: "Step 2",
+    text: "Controleer regels, KYC, issuer rights, jurisdiction, redemption en risico voordat er iets wordt uitgegeven.",
+    icon: Scale,
+  },
+  {
+    title: "Token Design",
+    status: "Step 3",
+    text: "Bepaal supply, issuer, metadata, transfer rules, holder rights, badges en utility.",
+    icon: Layers,
+  },
+  {
+    title: "XRPL Issue",
+    status: "Step 4",
+    text: "Later kan de token via veilige backend en wallet confirmation op XRPL worden uitgegeven.",
     icon: Coins,
   },
+];
+
+const complianceRules: ComplianceRule[] = [
   {
-    title: "Institutional Rails",
-    value: "ISO",
-    status: "Research",
-    icon: Network,
-  },
-  {
-    title: "Compliance",
-    value: "KYC",
-    status: "Later",
+    title: "No Fake Ownership",
+    status: "Rule",
+    text: "Een token mag nooit meer rechten beloven dan juridisch en praktisch gedekt zijn.",
     icon: ShieldCheck,
   },
-];
-
-const complianceItems: ComplianceItem[] = [
   {
-    label: "Issuer transparency",
+    title: "Issuer Transparency",
+    status: "Rule",
+    text: "Gebruikers moeten weten wie de issuer is, wat het asset is en welke risico's bestaan.",
+    icon: ScanLine,
+  },
+  {
+    title: "Wallet Confirmation",
+    status: "Safety",
+    text: "Elke echte XRPL actie moet door de gebruiker worden bevestigd via wallet signing.",
+    icon: Wallet,
+  },
+  {
+    title: "Legal Layer",
     status: "Required",
-  },
-  {
-    label: "Reserve information",
-    status: "Required",
-  },
-  {
-    label: "Legal structure",
-    status: "Required",
-  },
-  {
-    label: "User risk warnings",
-    status: "Required",
-  },
-  {
-    label: "Jurisdiction labels",
-    status: "Planned",
-  },
-  {
-    label: "AI document summaries",
-    status: "Future",
+    text: "RWA tokenization heeft altijd juridische, fiscale en compliance controle nodig.",
+    icon: Lock,
   },
 ];
 
-const tokenizationRoadmap = [
-  "Maak een RWA education layer",
-  "Voeg tokenized asset categories toe",
-  "Voeg stablecoin en institutional rails uitleg toe",
-  "Voeg issuer transparency labels toe",
-  "Voeg compliance en risk warnings toe",
-  "Voeg AI asset summaries toe",
-  "Voeg retailer tokenization pilots toe",
-  "Bouw later partner onboarding voor RWA projecten",
+const futureFeatures = [
+  "RWA asset intake form",
+  "Issuer profile page",
+  "Document upload checklist",
+  "Token supply planner",
+  "Trustline setup helper",
+  "NFT certificate preview",
+  "Compliance warning engine",
+  "Investor dashboard later",
 ];
 
 export function TokenizationTab() {
+  const [selectedAsset, setSelectedAsset] = useState<AssetType>(assetTypes[0]);
+  const [selectedStep, setSelectedStep] = useState<TokenStep>(tokenSteps[0]);
+
+  const SelectedAssetIcon = selectedAsset.icon;
+  const SelectedStepIcon = selectedStep.icon;
+
   return (
     <div className="p-6 bg-black min-h-screen text-white">
       <div className="relative overflow-hidden border border-white/10 bg-white/[0.02] p-6 mb-6">
@@ -170,304 +170,312 @@ export function TokenizationTab() {
         <div className="relative z-10 grid grid-cols-12 gap-6 items-center">
           <div className="col-span-12 xl:col-span-8">
             <div className="flex items-center gap-2 mb-4 text-white/45">
-              <Building2 size={17} />
+              <Vault size={17} />
+
               <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
-                RWA Tokenization Hub
+                XRPL Tokenization Center
               </p>
             </div>
 
             <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
-              Real Assets. Digital Rails.
+              Real World Assets On XRPL
             </h2>
 
             <p className="font-mono text-sm text-white/45 max-w-3xl leading-relaxed">
-              De tokenization-laag van de OTT Terminal. Hier leren gebruikers
-              hoe vastgoed, obligaties, commodities, stablecoins, loyalty,
-              invoices en enterprise assets via digitale rails toegankelijker
-              kunnen worden.
+              De tokenization-laag van OTT Terminal. Hier ontwerpen we RWA
+              flows, issuer pages, certificate tokens, document proof,
+              compliance checks en veilige XRPL uitgifte.
             </p>
           </div>
 
           <div className="col-span-12 xl:col-span-4 grid grid-cols-2 gap-3">
-            {assetClasses.map((asset) => (
-              <AssetClassBox key={asset.title} asset={asset} />
-            ))}
+            <StatBox icon={Vault} label="Asset Layer" value="RWA" />
+            <StatBox icon={Coins} label="Token Type" value="XRPL" />
+            <StatBox icon={ShieldCheck} label="Safety" value="Required" />
+            <StatBox icon={Fingerprint} label="Proof" value="Metadata" />
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-12 xl:col-span-8 space-y-4">
+        <div className="col-span-12 xl:col-span-4 space-y-4">
           <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
-                  Tokenization Sectors
-                </p>
+            <div className="flex items-center gap-2 mb-5">
+              <Target size={18} className="text-white/60" />
 
-                <h3 className="font-orbitron text-xl font-black uppercase">
-                  Asset Categories
-                </h3>
-              </div>
-
-              <Layers size={20} className="text-white/60" />
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Asset Types
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {sectors.map((sector) => (
-                <SectorCard key={sector.title} sector={sector} />
+            <div className="space-y-3">
+              {assetTypes.map((asset) => (
+                <AssetButton
+                  key={asset.id}
+                  asset={asset}
+                  active={selectedAsset.id === asset.id}
+                  onClick={() => setSelectedAsset(asset)}
+                />
               ))}
-            </div>
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
-                  RWA Intelligence
-                </p>
-
-                <h3 className="font-orbitron text-xl font-black uppercase">
-                  Market Structure
-                </h3>
-              </div>
-
-              <BarChart3 size={20} className="text-white/60" />
-            </div>
-
-            <div className="border border-white/10 bg-black p-5">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <InsightBox
-                  icon={Globe2}
-                  title="Global Market"
-                  text="Tokenization kan traditionele assets toegankelijker maken via digitale settlement rails."
-                />
-
-                <InsightBox
-                  icon={Landmark}
-                  title="Institutions"
-                  text="Banken, funds en payment rails onderzoeken digitale assets, stablecoins en tokenized securities."
-                />
-
-                <InsightBox
-                  icon={Users}
-                  title="Retail Access"
-                  text="OTT kan dit uitleggen aan normale gebruikers, ondernemers en retailers zonder technische taal."
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
-                  Education Layer
-                </p>
-
-                <h3 className="font-orbitron text-xl font-black uppercase">
-                  Learn RWA Safely
-                </h3>
-              </div>
-
-              <GraduationCap size={20} className="text-white/60" />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <EducationBox icon={FileText} title="Docs" text="Asset papers" />
-              <EducationBox icon={Scale} title="Legal" text="Structure basics" />
-              <EducationBox icon={Database} title="Data" text="Reserves info" />
-              <EducationBox icon={ShieldCheck} title="Risk" text="Warnings first" />
             </div>
           </div>
         </div>
 
-        <div className="col-span-12 xl:col-span-4 space-y-4">
+        <div className="col-span-12 xl:col-span-5 space-y-4">
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
+                  Selected Asset
+                </p>
+
+                <h3 className="font-orbitron text-xl font-black uppercase">
+                  {selectedAsset.title}
+                </h3>
+              </div>
+
+              <SelectedAssetIcon size={22} className="text-white/60" />
+            </div>
+
+            <p className="font-mono text-sm text-white/45 leading-relaxed mb-5">
+              {selectedAsset.text}
+            </p>
+
+            <div className="grid grid-cols-2 gap-3">
+              <MiniStatus label="Category" value={selectedAsset.status} />
+              <MiniStatus label="Network" value="XRPL" />
+            </div>
+          </div>
+
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
+                  Token Flow
+                </p>
+
+                <h3 className="font-orbitron text-xl font-black uppercase">
+                  From Asset To Token
+                </h3>
+              </div>
+
+              <Sparkles size={20} className="text-white/60" />
+            </div>
+
+            <div className="space-y-3 mb-5">
+              {tokenSteps.map((step) => (
+                <StepButton
+                  key={step.title}
+                  step={step}
+                  active={selectedStep.title === step.title}
+                  onClick={() => setSelectedStep(step)}
+                />
+              ))}
+            </div>
+
+            <div className="border border-white/10 bg-black p-5">
+              <div className="flex items-center justify-between mb-4">
+                <p className="font-orbitron text-sm font-bold uppercase">
+                  {selectedStep.title}
+                </p>
+
+                <SelectedStepIcon size={18} className="text-white/60" />
+              </div>
+
+              <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-3">
+                {selectedStep.status}
+              </p>
+
+              <p className="font-mono text-xs text-white/45 leading-relaxed">
+                {selectedStep.text}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-span-12 xl:col-span-3 space-y-4">
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
-              <ShieldCheck size={18} className="text-white/60" />
+              <AlertTriangle size={18} className="text-white/60" />
+
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                Compliance Watch
+                Compliance Rules
               </p>
             </div>
 
-            <p className="font-mono text-xs text-white/45 leading-relaxed mb-5">
-              RWA en tokenization hebben duidelijke uitleg nodig. OTT moet niet
-              alleen kansen tonen, maar ook risico's, issuer informatie,
-              legal structuur en transparantie.
-            </p>
-
             <div className="space-y-3">
-              {complianceItems.map((item) => (
-                <ComplianceLine key={item.label} item={item} />
+              {complianceRules.map((rule) => (
+                <RuleCard key={rule.title} rule={rule} />
               ))}
             </div>
           </div>
 
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Sparkles size={18} className="text-white/60" />
+              <Globe2 size={18} className="text-white/60" />
+
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                AI Asset Explainer
-              </p>
-            </div>
-
-            <p className="font-mono text-xs text-white/45 leading-relaxed">
-              Later kan AI documenten samenvatten, risico's uitleggen, issuer
-              informatie vergelijken en beginners helpen begrijpen wat een
-              tokenized asset echt betekent.
-            </p>
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Lock size={18} className="text-white/60" />
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Locked Until Verified
-              </p>
-            </div>
-
-            <p className="font-mono text-xs text-white/45 leading-relaxed">
-              Echte RWA listings komen pas later. Eerst bouwen we educatie,
-              labels, waarschuwingen en research zodat gebruikers veilig leren.
-            </p>
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Activity size={18} className="text-white/60" />
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Roadmap
+                Future Features
               </p>
             </div>
 
             <div className="space-y-3">
-              {tokenizationRoadmap.map((item) => (
-                <RoadmapLine key={item} label={item} />
+              {futureFeatures.map((item) => (
+                <FutureLine key={item} label={item} />
               ))}
             </div>
           </div>
         </div>
 
         <div className="col-span-12 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <FeatureBox icon={Building2} title="RWA" text="Real-world assets" />
-          <FeatureBox icon={Coins} title="Stablecoins" text="Settlement rails" />
-          <FeatureBox icon={ShieldCheck} title="Compliance" text="Safety labels" />
-          <FeatureBox icon={ArrowUpRight} title="Partners" text="Listings later" />
+          <FeatureBox icon={FileText} title="Documents" text="Proof and terms" />
+          <FeatureBox icon={Coins} title="Issue Token" text="XRPL later" />
+          <FeatureBox icon={Scale} title="Compliance" text="Required checks" />
+          <FeatureBox icon={Wallet} title="Wallet Flow" text="User confirms" />
         </div>
       </div>
     </div>
   );
 }
 
-function AssetClassBox({ asset }: { asset: AssetClass }) {
-  const Icon = asset.icon;
-
+function StatBox({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: ElementType;
+  label: string;
+  value: string;
+}) {
   return (
     <div className="border border-white/10 bg-black/60 p-4">
       <Icon size={18} className="text-white/60 mb-3" />
 
       <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
-        {asset.title}
+        {label}
       </p>
 
-      <p className="font-orbitron text-sm font-black uppercase mb-1">
-        {asset.value}
-      </p>
-
-      <p className="font-mono text-[10px] text-white/30">{asset.status}</p>
+      <p className="font-orbitron text-sm font-black uppercase">{value}</p>
     </div>
   );
 }
 
-function SectorCard({ sector }: { sector: TokenizationSector }) {
-  const Icon = sector.icon;
+function AssetButton({
+  asset,
+  active,
+  onClick,
+}: {
+  asset: AssetType;
+  active: boolean;
+  onClick: () => void;
+}) {
+  const Icon = asset.icon;
 
   return (
-    <div className="border border-white/10 bg-black hover:bg-white/[0.03] transition-all p-5 cursor-pointer">
-      <div className="flex items-start justify-between mb-4">
-        <Icon size={20} className="text-white/70" />
+    <button
+      onClick={onClick}
+      className={`w-full border p-4 text-left transition-all ${
+        active
+          ? "border-white/30 bg-white/[0.08]"
+          : "border-white/10 bg-black hover:bg-white/[0.03]"
+      }`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Icon size={16} className="text-white/60" />
 
-        <span className="font-mono text-[10px] uppercase text-white/45">
-          {sector.status}
-        </span>
+          <p className="font-orbitron text-xs font-bold uppercase">
+            {asset.title}
+          </p>
+        </div>
+
+        <p className="font-mono text-[10px] text-white/35 uppercase">
+          {asset.status}
+        </p>
+      </div>
+    </button>
+  );
+}
+
+function StepButton({
+  step,
+  active,
+  onClick,
+}: {
+  step: TokenStep;
+  active: boolean;
+  onClick: () => void;
+}) {
+  const Icon = step.icon;
+
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full border p-4 text-left transition-all ${
+        active
+          ? "border-white/30 bg-white/[0.08]"
+          : "border-white/10 bg-black hover:bg-white/[0.03]"
+      }`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Icon size={16} className="text-white/60" />
+
+          <p className="font-orbitron text-xs font-bold uppercase">
+            {step.title}
+          </p>
+        </div>
+
+        <p className="font-mono text-[10px] text-white/35 uppercase">
+          {step.status}
+        </p>
+      </div>
+    </button>
+  );
+}
+
+function MiniStatus({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-white/10 bg-black p-4">
+      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+        {label}
+      </p>
+
+      <p className="font-orbitron text-sm font-black uppercase">{value}</p>
+    </div>
+  );
+}
+
+function RuleCard({ rule }: { rule: ComplianceRule }) {
+  const Icon = rule.icon;
+
+  return (
+    <div className="border border-white/10 bg-black p-4">
+      <div className="flex items-start justify-between mb-3">
+        <Icon size={17} className="text-white/60" />
+
+        <p className="font-mono text-[10px] text-white/30 uppercase">
+          {rule.status}
+        </p>
       </div>
 
-      <h4 className="font-orbitron text-sm font-bold uppercase mb-2">
-        {sector.title}
-      </h4>
-
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-4">
-        {sector.category}
+      <p className="font-orbitron text-xs font-bold uppercase mb-2">
+        {rule.title}
       </p>
 
-      <p className="font-mono text-xs text-white/45 leading-relaxed">
-        {sector.description}
+      <p className="font-mono text-[10px] text-white/40 leading-relaxed">
+        {rule.text}
       </p>
     </div>
   );
 }
 
-function InsightBox({
-  icon: Icon,
-  title,
-  text,
-}: {
-  icon: ElementType;
-  title: string;
-  text: string;
-}) {
+function FutureLine({ label }: { label: string }) {
   return (
-    <div className="border border-white/10 bg-white/[0.02] p-5">
-      <Icon size={19} className="text-white/60 mb-4" />
+    <div className="border border-white/10 bg-black p-3 flex items-center gap-2">
+      <CheckCircle2 size={14} className="text-white/60" />
 
-      <p className="font-orbitron text-sm font-bold uppercase mb-2">{title}</p>
-
-      <p className="font-mono text-xs text-white/40 leading-relaxed">{text}</p>
-    </div>
-  );
-}
-
-function EducationBox({
-  icon: Icon,
-  title,
-  text,
-}: {
-  icon: ElementType;
-  title: string;
-  text: string;
-}) {
-  return (
-    <div className="border border-white/10 bg-black p-5">
-      <Icon size={18} className="text-white/60 mb-4" />
-
-      <p className="font-orbitron text-xs font-bold uppercase mb-2">{title}</p>
-
-      <p className="font-mono text-xs text-white/40">{text}</p>
-    </div>
-  );
-}
-
-function ComplianceLine({ item }: { item: ComplianceItem }) {
-  return (
-    <div className="border border-white/10 bg-black p-3 flex items-center justify-between gap-3">
-      <div className="flex items-center gap-2">
-        <CheckCircle2 size={14} className="text-white/60" />
-
-        <p className="font-mono text-xs text-white/50">{item.label}</p>
-      </div>
-
-      <p className="font-mono text-[10px] text-white/35 uppercase">
-        {item.status}
-      </p>
-    </div>
-  );
-}
-
-function RoadmapLine({ label }: { label: string }) {
-  return (
-    <div className="border-b border-white/10 pb-3 last:border-b-0 last:pb-0">
-      <p className="font-mono text-xs text-white/45 leading-relaxed">{label}</p>
+      <p className="font-mono text-xs text-white/50">{label}</p>
     </div>
   );
 }
