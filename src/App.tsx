@@ -2,6 +2,7 @@ import { useState } from "react";
 import { LoginScreen } from "./components/LoginScreen";
 import { DashboardTab } from "./tabs/DashboardTab";
 import { WalletTab } from "./tabs/WalletTab";
+import { PortfolioTab } from "./tabs/PortfolioTab";
 import { DeFiTab } from "./tabs/DeFiTab";
 import { LedgerIntelTab } from "./tabs/LedgerIntelTab";
 import { ProfileTab } from "./tabs/ProfileTab";
@@ -14,6 +15,7 @@ import { LanguageProvider, useLanguage } from "./LanguageContext";
 type ActiveTab =
   | "dashboard"
   | "wallet"
+  | "portfolio"
   | "profile"
   | "token"
   | "ai"
@@ -42,6 +44,11 @@ function MainApp() {
       id: "wallet",
       label: "Wallet",
       status: "Safe",
+    },
+    {
+      id: "portfolio",
+      label: "Portfolio",
+      status: "Mock",
     },
     {
       id: "profile",
@@ -215,6 +222,10 @@ function MainApp() {
         )}
 
         {activeTab === "wallet" && <WalletTab walletAddress={walletAddress} />}
+
+        {activeTab === "portfolio" && (
+          <PortfolioTab walletAddress={walletAddress} />
+        )}
 
         {activeTab === "profile" && <ProfileTab />}
 
