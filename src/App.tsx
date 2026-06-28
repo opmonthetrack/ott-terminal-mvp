@@ -6,12 +6,14 @@ import { LedgerIntelTab } from "./tabs/LedgerIntelTab";
 import { ProfileTab } from "./tabs/ProfileTab";
 import { OTTTokenCenterTab } from "./tabs/OTTTokenCenterTab";
 import { AcademyTab } from "./tabs/AcademyTab";
+import { AIHubTab } from "./tabs/AIHubTab";
 import { LanguageProvider, useLanguage } from "./LanguageContext";
 
 type ActiveTab =
   | "dashboard"
   | "profile"
   | "token"
+  | "ai"
   | "defi"
   | "academy"
   | "intel";
@@ -41,6 +43,11 @@ function MainApp() {
       id: "token",
       label: "OTT Token",
       status: "XP",
+    },
+    {
+      id: "ai",
+      label: "AI Hub",
+      status: "AI",
     },
     {
       id: "defi",
@@ -196,6 +203,8 @@ function MainApp() {
         {activeTab === "profile" && <ProfileTab />}
 
         {activeTab === "token" && <OTTTokenCenterTab />}
+
+        {activeTab === "ai" && <AIHubTab />}
 
         {activeTab === "defi" && <DeFiTab />}
 
