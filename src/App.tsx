@@ -7,6 +7,7 @@ import { ProfileTab } from "./tabs/ProfileTab";
 import { OTTTokenCenterTab } from "./tabs/OTTTokenCenterTab";
 import { AcademyTab } from "./tabs/AcademyTab";
 import { AIHubTab } from "./tabs/AIHubTab";
+import { MarketplaceTab } from "./tabs/MarketplaceTab";
 import { LanguageProvider, useLanguage } from "./LanguageContext";
 
 type ActiveTab =
@@ -14,6 +15,7 @@ type ActiveTab =
   | "profile"
   | "token"
   | "ai"
+  | "marketplace"
   | "defi"
   | "academy"
   | "intel";
@@ -48,6 +50,11 @@ function MainApp() {
       id: "ai",
       label: "AI Hub",
       status: "AI",
+    },
+    {
+      id: "marketplace",
+      label: "Marketplace",
+      status: "Shop",
     },
     {
       id: "defi",
@@ -205,6 +212,8 @@ function MainApp() {
         {activeTab === "token" && <OTTTokenCenterTab />}
 
         {activeTab === "ai" && <AIHubTab />}
+
+        {activeTab === "marketplace" && <MarketplaceTab />}
 
         {activeTab === "defi" && <DeFiTab />}
 
