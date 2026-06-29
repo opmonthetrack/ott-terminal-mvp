@@ -1,167 +1,263 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ElementType } from "react";
 import {
   AlertTriangle,
   BadgeCheck,
-  Banknote,
-  BookOpen,
   CheckCircle2,
   Coins,
-  FileCheck,
+  Copy,
+  Database,
+  ExternalLink,
   Fingerprint,
   Gift,
-  Globe2,
+  History,
   Layers,
+  Loader2,
   Lock,
+  QrCode,
   Radio,
-  Scale,
+  Send,
   ShieldCheck,
-  Sparkles,
   TestTube2,
   Trophy,
   Wallet,
-  Waves,
-  Zap,
 } from "lucide-react";
 import {
-  MAKE_WAVES_ACTIONS,
   MAKE_WAVES_SOURCE_TAG,
+  type MakeWavesActionId,
 } from "../lib/makeWaves";
+import {
+  addTestnetTokenSimulation,
+  getAvailableRewardActions,
+  loadRewardState,
+  type RewardEvent,
+  type RewardState,
+} from "../lib/rewardStore";
+import {
+  createOttTokenPaymentPayload,
+  createOttTrustlinePayload,
+  getOttTokenPaymentPayloadQr,
+  getOttTokenPaymentPayloadUrl,
+  getOttTokenPaymentPayloadUuid,
+  getOttTokenPaymentStatusLabel,
+  getOttTrustlinePayloadQr,
+  getOttTrustlinePayloadUrl,
+  getOttTrustlinePayloadUuid,
+  getOttTrustlineStatusLabel,
+  openOttTokenPaymentPayload,
+  openOttTrustlinePayload,
+  type XamanTokenPaymentPayloadResponse,
+  type XamanTrustlinePayloadResponse,
+} from "../lib/ottTokenClient";
 
-type TokenMetric = {
+type OTTTestnetTokenTabProps = {
+  walletAddress: string;
+};
+
+type Metric = {
   label: string;
   value: string;
   text: string;
   icon: ElementType;
 };
 
-type TokenLayer = {
-  id: string;
+type Rule = {
   title: string;
   status: string;
   text: string;
   icon: ElementType;
 };
 
-type TokenRule = {
-  title: string;
-  status: string;
-  text: string;
-  icon: ElementType;
-};
-
-const tokenLayers: TokenLayer[] = [
+const testnetRules: Rule[] = [
   {
-    id: "xp",
-    title: "Terminal XP",
-    status: "Active",
-    text: "Off-chain punten voor gebruik, check-ins, academy en verified XRPL proof.",
-    icon: Zap,
+    title: "Trustline First",
+    status: "Step 1",
+    text: "Gebruiker moet eerst bewust een OTT trustline zetten.",
+    icon: QrCode,
   },
   {
-    id: "eligibility",
-    title: "OTT Eligibility",
-    status: "Tracked",
-    text: "Score die laat zien wie later mogelijk in aanmerking komt voor OTT rewards.",
-    icon: BadgeCheck,
-  },
-  {
-    id: "testnet",
-    title: "OTT Testnet Token",
-    status: "Next",
-    text: "Veilige testfase om token rewards te simuleren zonder mainnet waarde.",
-    icon: TestTube2,
-  },
-  {
-    id: "mainnet",
-    title: "OTT Mainnet Token",
-    status: "Locked",
-    text: "Mainnet distributie blijft uit tot legal review, token terms en policy klaar zijn.",
-    icon: Lock,
-  },
-  {
-    id: "utility",
-    title: "Utility Access",
-    status: "Design",
-    text: "Token/eligibility kan later toegang geven tot tools, academy, events en partner perks.",
-    icon: Gift,
-  },
-];
-
-const tokenRules: TokenRule[] = [
-  {
-    title: "No Investment Language",
-    status: "Rule",
-    text: "Niet communiceren als belegging, winstkans, rendement of prijsverwachting.",
-    icon: AlertTriangle,
-  },
-  {
-    title: "Utility First",
-    status: "Design",
-    text: "OTT moet draaien om toegang, community, proof, learning en terminal utility.",
-    icon: Sparkles,
-  },
-  {
-    title: "Legal Gate",
-    status: "Required",
-    text: "Mainnet token rewards pas na juridische check en duidelijke voorwaarden.",
-    icon: Scale,
+    title: "Payment After Trustline",
+    status: "Step 2",
+    text: "Daarna kan een testnet OTT token payment payload gemaakt worden.",
+    icon: Send,
   },
   {
     title: "SourceTag Proof",
     status: "2606170002",
-    text: `Reward eligibility wordt gekoppeld aan SourceTag ${MAKE_WAVES_SOURCE_TAG}.`,
+    text: `Trustline en payment payloads gebruiken SourceTag ${MAKE_WAVES_SOURCE_TAG}.`,
     icon: Fingerprint,
   },
   {
-    title: "User Consent",
-    status: "Safety",
-    text: "Geen automatische mainnet airdrops zonder duidelijke user consent flow.",
-    icon: ShieldCheck,
+    title: "Mainnet Locked",
+    status: "Legal",
+    text: "Mainnet OTT token distributie blijft uit tot legal review klaar is.",
+    icon: Lock,
+  },
+  {
+    title: "No Price Talk",
+    status: "Guard",
+    text: "Geen beloftes over waarde, rendement, winst of prijsverwachting.",
+    icon: AlertTriangle,
   },
 ];
 
-const tokenRoadmap = [
-  "XP zichtbaar houden in terminal",
-  "OTT eligibility score tonen",
-  "Testnet token reward flow bouwen",
-  "Issuer wallet en trustline scherm ontwerpen",
-  "Token terms en risk disclaimer schrijven",
-  "Legal/MiCAR review afronden",
-  "Partner utility model toevoegen",
-  "Mainnet pas openen na groen licht",
-];
+export function OTTTestnetTokenTab({ walletAddress }: OTTTestnetTokenTabProps) {
+  const actions = getAvailableRewardActions();
+  const [rewardState, setRewardState] = useState<RewardState>(() =>
+    loadRewardState(walletAddress)
+  );
+  const [selectedActionId, setSelectedActionId] = useState<MakeWavesActionId>(
+    "daily-checkin"
+  );
+  const [issuerWallet, setIssuerWallet] = useState("");
+  const [senderWallet, setSenderWallet] = useState("");
+  const [destinationWallet, setDestinationWallet] = useState(walletAddress);
+  const [currencyCode, setCurrencyCode] = useState("OTT");
+  const [limitAmount, setLimitAmount] = useState("1000000");
+  const [tokenAmount, setTokenAmount] = useState("10");
+  const [trustlinePayload, setTrustlinePayload] =
+    useState<XamanTrustlinePayloadResponse | null>(null);
+  const [paymentPayload, setPaymentPayload] =
+    useState<XamanTokenPaymentPayloadResponse | null>(null);
+  const [trustlineBusy, setTrustlineBusy] = useState(false);
+  const [paymentBusy, setPaymentBusy] = useState(false);
+  const [statusMessage, setStatusMessage] = useState(
+    "Paste a real XRPL testnet issuer wallet to start."
+  );
 
-export function OTTTokenCenterTab() {
-  const [selectedLayer, setSelectedLayer] = useState<TokenLayer>(tokenLayers[0]);
-  const SelectedIcon = selectedLayer.icon;
+  useEffect(() => {
+    setDestinationWallet(walletAddress);
+    setRewardState(loadRewardState(walletAddress));
+  }, [walletAddress]);
 
-  const metrics: TokenMetric[] = [
+  const trustlineUuid = getOttTrustlinePayloadUuid(trustlinePayload);
+  const trustlineUrl = getOttTrustlinePayloadUrl(trustlinePayload);
+  const trustlineQr = getOttTrustlinePayloadQr(trustlinePayload);
+
+  const paymentUuid = getOttTokenPaymentPayloadUuid(paymentPayload);
+  const paymentUrl = getOttTokenPaymentPayloadUrl(paymentPayload);
+  const paymentQr = getOttTokenPaymentPayloadQr(paymentPayload);
+
+  const lastEvent = rewardState.events.find(
+    (event) => event.type === "testnet-token-simulated"
+  );
+
+  const metrics: Metric[] = [
     {
       label: "SourceTag",
       value: String(MAKE_WAVES_SOURCE_TAG),
-      text: "Make Waves reward proof.",
+      text: "Make Waves proof.",
       icon: Fingerprint,
     },
     {
-      label: "XP Layer",
-      value: "Active",
-      text: "Safe MVP reward.",
-      icon: Trophy,
+      label: "Trustline",
+      value: trustlineUuid ? "Ready" : "Needed",
+      text: "Xaman TrustSet.",
+      icon: QrCode,
     },
     {
-      label: "OTT Token",
+      label: "Payment",
+      value: paymentUuid ? "Ready" : "Locked",
+      text: "OTT token payload.",
+      icon: Send,
+    },
+    {
+      label: "Mainnet",
       value: "Locked",
       text: "Legal gate first.",
-      icon: Coins,
-    },
-    {
-      label: "Testnet",
-      value: "Next",
-      text: "Token simulation.",
-      icon: TestTube2,
+      icon: Lock,
     },
   ];
+
+  async function createTrustlinePayload() {
+    setTrustlineBusy(true);
+    setStatusMessage("Creating OTT TrustSet payload...");
+
+    try {
+      const response = await createOttTrustlinePayload({
+        userWallet: walletAddress,
+        issuerWallet,
+        currencyCode,
+        limitAmount,
+      });
+
+      setTrustlinePayload(response);
+      setStatusMessage(getOttTrustlineStatusLabel(response));
+    } catch (error) {
+      setStatusMessage(getErrorMessage(error));
+    } finally {
+      setTrustlineBusy(false);
+    }
+  }
+
+  async function createTokenPaymentPayload() {
+    setPaymentBusy(true);
+    setStatusMessage("Creating OTT token payment payload...");
+
+    try {
+      const response = await createOttTokenPaymentPayload({
+        senderWallet: senderWallet.trim() || undefined,
+        destinationWallet,
+        issuerWallet,
+        currencyCode,
+        tokenAmount,
+      });
+
+      setPaymentPayload(response);
+      setStatusMessage(getOttTokenPaymentStatusLabel(response));
+    } catch (error) {
+      setStatusMessage(getErrorMessage(error));
+    } finally {
+      setPaymentBusy(false);
+    }
+  }
+
+  function openTrustline() {
+    const opened = openOttTrustlinePayload(trustlinePayload);
+
+    if (!opened) {
+      setStatusMessage("Geen OTT trustline payload link gevonden.");
+    }
+  }
+
+  function openPayment() {
+    const opened = openOttTokenPaymentPayload(paymentPayload);
+
+    if (!opened) {
+      setStatusMessage("Geen OTT token payment payload link gevonden.");
+    }
+  }
+
+  async function copyTrustlineUuid() {
+    if (!trustlineUuid) {
+      return;
+    }
+
+    await navigator.clipboard.writeText(trustlineUuid);
+    setStatusMessage("Trustline payload UUID copied.");
+  }
+
+  async function copyPaymentUuid() {
+    if (!paymentUuid) {
+      return;
+    }
+
+    await navigator.clipboard.writeText(paymentUuid);
+    setStatusMessage("Payment payload UUID copied.");
+  }
+
+  function simulateTestnetReward() {
+    const nextState = addTestnetTokenSimulation({
+      walletAddress,
+      actionId: selectedActionId,
+      note: `${tokenAmount} ${currencyCode} testnet reward simulated for ${selectedActionId}.`,
+    });
+
+    setRewardState(nextState);
+    setStatusMessage(
+      `${tokenAmount} ${currencyCode} testnet reward simulated. Mainnet remains locked.`
+    );
+  }
 
   return (
     <div className="p-6 bg-black min-h-screen text-white">
@@ -171,21 +267,20 @@ export function OTTTokenCenterTab() {
         <div className="relative z-10 grid grid-cols-12 gap-6 items-center">
           <div className="col-span-12 xl:col-span-8">
             <div className="flex items-center gap-2 mb-4 text-white/45">
-              <Coins size={17} />
+              <TestTube2 size={17} />
 
               <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
-                OTT Token Center
+                OTT Testnet Token
               </p>
             </div>
 
             <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
-              Token Utility Without Rushing Mainnet
+              Trustline + Token Payment Flow
             </h2>
 
             <p className="font-mono text-sm text-white/45 max-w-3xl leading-relaxed">
-              OTT Token Center houdt de tokenstrategie veilig: XP nu, eligibility
-              zichtbaar, testnet als volgende stap, en mainnet distributie pas
-              na legal gate.
+              Bouw de veilige OTT token reward flow eerst op testnet: trustline
+              zetten, daarna token payment payload maken. Mainnet blijft locked.
             </p>
           </div>
 
@@ -204,38 +299,47 @@ export function OTTTokenCenterTab() {
               <Layers size={18} className="text-white/60" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                Token Layers
+                Reward Action
               </p>
             </div>
 
             <div className="space-y-3">
-              {tokenLayers.map((layer) => (
-                <LayerButton
-                  key={layer.id}
-                  layer={layer}
-                  active={selectedLayer.id === layer.id}
-                  onClick={() => setSelectedLayer(layer)}
-                />
+              {actions.map((action) => (
+                <button
+                  key={action.id}
+                  onClick={() => setSelectedActionId(action.id)}
+                  className={`w-full border p-4 text-left transition-all ${
+                    selectedActionId === action.id
+                      ? "border-white/30 bg-white/[0.08]"
+                      : "border-white/10 bg-black hover:bg-white/[0.03]"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-orbitron text-xs font-bold uppercase">
+                      {action.title}
+                    </p>
+
+                    <p className="font-mono text-[10px] text-white/35 uppercase">
+                      +{action.xp} XP
+                    </p>
+                  </div>
+                </button>
               ))}
             </div>
           </div>
 
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Waves size={18} className="text-white/60" />
+              <ShieldCheck size={18} className="text-white/60" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                Reward Actions
+                Safety Rules
               </p>
             </div>
 
             <div className="space-y-3">
-              {MAKE_WAVES_ACTIONS.map((action) => (
-                <ActionLine
-                  key={action.id}
-                  label={action.title}
-                  xp={action.xp}
-                />
+              {testnetRules.map((rule) => (
+                <RuleCard key={rule.title} rule={rule} />
               ))}
             </div>
           </div>
@@ -243,58 +347,127 @@ export function OTTTokenCenterTab() {
 
         <div className="col-span-12 xl:col-span-5 space-y-4">
           <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
-                  Selected Layer
-                </p>
+            <div className="flex items-center gap-2 mb-5">
+              <Wallet size={18} className="text-white/60" />
 
-                <h3 className="font-orbitron text-xl font-black uppercase">
-                  {selectedLayer.title}
-                </h3>
-              </div>
-
-              <SelectedIcon size={22} className="text-white/60" />
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Token Setup
+              </p>
             </div>
 
-            <p className="font-mono text-sm text-white/45 leading-relaxed mb-5">
-              {selectedLayer.text}
-            </p>
+            <InputField
+              label="Receiver Wallet"
+              value={destinationWallet}
+              onChange={setDestinationWallet}
+            />
 
-            <MiniStatus label="Status" value={selectedLayer.status} />
+            <div className="h-4" />
+
+            <InputField
+              label="Issuer Wallet"
+              value={issuerWallet}
+              placeholder="Paste real testnet issuer wallet r..."
+              onChange={setIssuerWallet}
+            />
+
+            <div className="h-4" />
+
+            <InputField
+              label="Sender Wallet Optional"
+              value={senderWallet}
+              placeholder="Leave empty to let Xaman choose signer"
+              onChange={setSenderWallet}
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              <InputField
+                label="Currency"
+                value={currencyCode}
+                onChange={setCurrencyCode}
+              />
+
+              <InputField
+                label="Limit"
+                value={limitAmount}
+                onChange={setLimitAmount}
+              />
+
+              <InputField
+                label="Amount"
+                value={tokenAmount}
+                onChange={setTokenAmount}
+              />
+            </div>
           </div>
 
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Banknote size={18} className="text-white/60" />
+              <QrCode size={18} className="text-white/60" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                Token Design
+                Step 1: Trustline Payload
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <DesignBox
-                icon={Wallet}
-                title="Issuer Wallet"
-                text="Later aparte XRPL issuer wallet voor OTT token."
+            <button
+              onClick={createTrustlinePayload}
+              disabled={trustlineBusy}
+              className="w-full bg-white text-black py-4 font-orbitron text-xs font-black uppercase tracking-widest hover:bg-white/80 disabled:opacity-40 transition-all flex items-center justify-center gap-2 mb-4"
+            >
+              {trustlineBusy ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <QrCode size={16} />
+              )}
+              Create OTT Trustline Payload
+            </button>
+
+            {trustlinePayload ? (
+              <PayloadBox
+                qr={trustlineQr}
+                uuid={trustlineUuid}
+                url={trustlineUrl}
+                onOpen={openTrustline}
+                onCopy={copyTrustlineUuid}
               />
-              <DesignBox
-                icon={FileCheck}
-                title="Trustline"
-                text="Gebruiker moet bewust trustline zetten."
-              />
-              <DesignBox
-                icon={BookOpen}
-                title="Terms"
-                text="Voorwaarden en disclaimers zichtbaar in terminal."
-              />
-              <DesignBox
-                icon={Globe2}
-                title="Utility"
-                text="Access, academy, events en partner perks."
-              />
+            ) : (
+              <EmptyState text="Nog geen TrustSet payload gemaakt." />
+            )}
+          </div>
+
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Send size={18} className="text-white/60" />
+
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Step 2: Token Payment Payload
+              </p>
             </div>
+
+            <button
+              onClick={createTokenPaymentPayload}
+              disabled={paymentBusy}
+              className="w-full bg-white text-black py-4 font-orbitron text-xs font-black uppercase tracking-widest hover:bg-white/80 disabled:opacity-40 transition-all flex items-center justify-center gap-2 mb-4"
+            >
+              {paymentBusy ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Send size={16} />
+              )}
+              Create OTT Token Payment Payload
+            </button>
+
+            {paymentPayload ? (
+              <PayloadBox
+                qr={paymentQr}
+                uuid={paymentUuid}
+                url={paymentUrl}
+                onOpen={openPayment}
+                onCopy={copyPaymentUuid}
+              />
+            ) : (
+              <EmptyState text="Nog geen token payment payload gemaakt." />
+            )}
           </div>
 
           <div className="border border-white/10 bg-white/[0.02] p-6">
@@ -302,70 +475,120 @@ export function OTTTokenCenterTab() {
               <Radio size={18} className="text-white/60" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                Token Status
+                Status
               </p>
             </div>
 
-            <div className="border border-white/10 bg-black p-5">
-              <p className="font-orbitron text-2xl font-black uppercase mb-2">
-                Mainnet Locked
-              </p>
-
-              <p className="font-mono text-xs text-white/40 leading-relaxed">
-                XP en eligibility kunnen nu gebruikt worden. Echte OTT token
-                distributie blijft uit tot legal review en user consent klaar
-                zijn.
+            <div className="border border-white/10 bg-black p-5 mb-4">
+              <p className="font-mono text-xs text-white/50 leading-relaxed">
+                {statusMessage}
               </p>
             </div>
+
+            <button
+              onClick={simulateTestnetReward}
+              className="w-full border border-white/10 bg-black p-4 text-left hover:bg-white/[0.03] transition-all"
+            >
+              <div className="flex items-center gap-3">
+                <Gift size={18} className="text-white/60" />
+
+                <div>
+                  <p className="font-orbitron text-xs font-bold uppercase">
+                    Simulate Reward Ledger Entry
+                  </p>
+
+                  <p className="font-mono text-[10px] text-white/35 uppercase">
+                    Local testnet score only
+                  </p>
+                </div>
+              </div>
+            </button>
           </div>
         </div>
 
         <div className="col-span-12 xl:col-span-3 space-y-4">
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
-              <ShieldCheck size={18} className="text-white/60" />
+              <Database size={18} className="text-white/60" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                Token Rules
+                Reward Snapshot
               </p>
             </div>
 
             <div className="space-y-3">
-              {tokenRules.map((rule) => (
-                <RuleCard key={rule.title} rule={rule} />
-              ))}
+              <MiniStatus label="Total XP" value={String(rewardState.totalXp)} />
+              <MiniStatus
+                label="OTT Eligible"
+                value={String(rewardState.ottTokenEligibleXp)}
+              />
+              <MiniStatus
+                label="Testnet Sim"
+                value={String(rewardState.testnetTokenSimulated)}
+              />
+              <MiniStatus
+                label="Events"
+                value={String(rewardState.events.length)}
+              />
             </div>
           </div>
 
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
-              <CheckCircle2 size={18} className="text-white/60" />
+              <History size={18} className="text-white/60" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                Roadmap
+                Last Testnet Event
+              </p>
+            </div>
+
+            {lastEvent ? (
+              <EventCard event={lastEvent} />
+            ) : (
+              <EmptyState text="Nog geen testnet token simulatie." />
+            )}
+          </div>
+
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <BadgeCheck size={18} className="text-white/60" />
+
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Next Build Steps
               </p>
             </div>
 
             <div className="space-y-3">
-              {tokenRoadmap.map((item) => (
-                <RoadmapLine key={item} label={item} />
-              ))}
+              <ChecklistLine text="Use real testnet issuer" />
+              <ChecklistLine text="Sign TrustSet in Xaman" />
+              <ChecklistLine text="Sign token payment" />
+              <ChecklistLine text="Verify payment tx hash" />
+              <ChecklistLine text="Keep mainnet locked" />
             </div>
           </div>
-        </div>
-
-        <div className="col-span-12 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <FeatureBox icon={Zap} title="XP" text="Use now" />
-          <FeatureBox icon={BadgeCheck} title="Eligibility" text="Track now" />
-          <FeatureBox icon={TestTube2} title="Testnet" text="Build next" />
-          <FeatureBox icon={Lock} title="Mainnet" text="Legal gate" />
         </div>
       </div>
     </div>
   );
 }
 
-function MetricBox({ metric }: { metric: TokenMetric }) {
+function getErrorMessage(error: unknown) {
+  if (typeof error === "string") {
+    return error;
+  }
+
+  if (error && typeof error === "object" && "error" in error) {
+    const apiError = error as { error?: unknown };
+
+    if (typeof apiError.error === "string") {
+      return apiError.error;
+    }
+  }
+
+  return "Unknown OTT testnet token error.";
+}
+
+function MetricBox({ metric }: { metric: Metric }) {
   const Icon = metric.icon;
 
   return (
@@ -387,50 +610,98 @@ function MetricBox({ metric }: { metric: TokenMetric }) {
   );
 }
 
-function LayerButton({
-  layer,
-  active,
-  onClick,
+function InputField({
+  label,
+  value,
+  placeholder,
+  onChange,
 }: {
-  layer: TokenLayer;
-  active: boolean;
-  onClick: () => void;
+  label: string;
+  value: string;
+  placeholder?: string;
+  onChange: (value: string) => void;
 }) {
-  const Icon = layer.icon;
-
   return (
-    <button
-      onClick={onClick}
-      className={`w-full border p-4 text-left transition-all ${
-        active
-          ? "border-white/30 bg-white/[0.08]"
-          : "border-white/10 bg-black hover:bg-white/[0.03]"
-      }`}
-    >
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Icon size={16} className="text-white/60" />
+    <label className="block">
+      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+        {label}
+      </p>
 
-          <p className="font-orbitron text-xs font-bold uppercase">
-            {layer.title}
-          </p>
-        </div>
-
-        <p className="font-mono text-[10px] text-white/35 uppercase">
-          {layer.status}
-        </p>
-      </div>
-    </button>
+      <input
+        value={value}
+        placeholder={placeholder}
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full bg-black border border-white/10 px-4 py-4 font-mono text-xs text-white/70 outline-none focus:border-white/30 placeholder:text-white/20"
+      />
+    </label>
   );
 }
 
-function ActionLine({ label, xp }: { label: string; xp: number }) {
+function PayloadBox({
+  qr,
+  uuid,
+  url,
+  onOpen,
+  onCopy,
+}: {
+  qr: string | null;
+  uuid: string | null;
+  url: string | null;
+  onOpen: () => void;
+  onCopy: () => void;
+}) {
   return (
-    <div className="border border-white/10 bg-black p-3 flex items-center justify-between gap-3">
-      <p className="font-mono text-xs text-white/50">{label}</p>
+    <div className="space-y-4">
+      {qr && (
+        <div className="border border-white/10 bg-white p-4 inline-block">
+          <img src={qr} alt="OTT Xaman QR" className="w-40 h-40" />
+        </div>
+      )}
 
-      <p className="font-mono text-[10px] text-white/35 uppercase">+{xp} XP</p>
+      <MiniStatus label="Payload UUID" value={uuid ?? "None"} />
+      <MiniStatus label="Payload URL" value={url ?? "None"} />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <ActionButton
+          icon={ExternalLink}
+          title="Open Xaman"
+          text={url ? "Launch payload" : "No link"}
+          onClick={onOpen}
+        />
+
+        <ActionButton
+          icon={Copy}
+          title="Copy UUID"
+          text="For verification"
+          onClick={onCopy}
+        />
+      </div>
     </div>
+  );
+}
+
+function ActionButton({
+  icon: Icon,
+  title,
+  text,
+  onClick,
+}: {
+  icon: ElementType;
+  title: string;
+  text: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="border border-white/10 bg-black p-4 text-left hover:bg-white/[0.03] transition-all"
+    >
+      <Icon size={18} className="text-white/60 mb-3" />
+
+      <p className="font-orbitron text-xs font-bold uppercase mb-2">{title}</p>
+
+      <p className="font-mono text-[10px] text-white/35 uppercase">{text}</p>
+    </button>
   );
 }
 
@@ -448,29 +719,7 @@ function MiniStatus({ label, value }: { label: string; value: string }) {
   );
 }
 
-function DesignBox({
-  icon: Icon,
-  title,
-  text,
-}: {
-  icon: ElementType;
-  title: string;
-  text: string;
-}) {
-  return (
-    <div className="border border-white/10 bg-black p-4">
-      <Icon size={18} className="text-white/60 mb-3" />
-
-      <p className="font-orbitron text-xs font-bold uppercase mb-2">{title}</p>
-
-      <p className="font-mono text-[10px] text-white/40 leading-relaxed">
-        {text}
-      </p>
-    </div>
-  );
-}
-
-function RuleCard({ rule }: { rule: TokenRule }) {
+function RuleCard({ rule }: { rule: Rule }) {
   const Icon = rule.icon;
 
   return (
@@ -494,32 +743,42 @@ function RuleCard({ rule }: { rule: TokenRule }) {
   );
 }
 
-function RoadmapLine({ label }: { label: string }) {
+function EventCard({ event }: { event: RewardEvent }) {
   return (
-    <div className="border border-white/10 bg-black p-3 flex items-center gap-2">
-      <CheckCircle2 size={14} className="text-white/60" />
+    <div className="border border-white/10 bg-black p-4">
+      <p className="font-orbitron text-xs font-bold uppercase mb-2">
+        {event.type}
+      </p>
 
-      <p className="font-mono text-xs text-white/50">{label}</p>
+      <p className="font-mono text-[10px] text-white/35 uppercase mb-3">
+        {event.actionId} • +{event.xp}
+      </p>
+
+      <p className="font-mono text-xs text-white/45 leading-relaxed mb-3">
+        {event.note}
+      </p>
+
+      <p className="font-mono text-[10px] text-white/30 uppercase">
+        {event.createdAt}
+      </p>
     </div>
   );
 }
 
-function FeatureBox({
-  icon: Icon,
-  title,
-  text,
-}: {
-  icon: ElementType;
-  title: string;
-  text: string;
-}) {
+function ChecklistLine({ text }: { text: string }) {
   return (
-    <div className="border border-white/10 bg-white/[0.02] p-5">
-      <Icon size={19} className="text-white/60 mb-4" />
+    <div className="border border-white/10 bg-black p-3 flex items-center gap-2">
+      <CheckCircle2 size={14} className="text-white/60" />
 
-      <p className="font-orbitron text-sm font-bold uppercase mb-2">{title}</p>
+      <p className="font-mono text-xs text-white/50">{text}</p>
+    </div>
+  );
+}
 
-      <p className="font-mono text-xs text-white/40 break-all">{text}</p>
+function EmptyState({ text }: { text: string }) {
+  return (
+    <div className="border border-white/10 bg-black p-4">
+      <p className="font-mono text-xs text-white/35 leading-relaxed">{text}</p>
     </div>
   );
 }
