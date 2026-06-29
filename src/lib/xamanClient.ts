@@ -1,53 +1,35 @@
 import {
-  MAKE_WAVES_DAILY_CHECKIN_MEMO,
   MAKE_WAVES_SOURCE_TAG,
-  getMakeWavesMemo,
-  type MakeWavesActionId,
+  isMakeWavesSourceTag,
 } from "./makeWaves";
 
-export { MAKE_WAVES_SOURCE_TAG } from "./makeWaves";
-
-export type CreateXamanPayloadInput = {
-  userWallet?: string;
-  destinationWallet: string;
-  amountDrops?: string;
-  memoText?: string;
-  actionId?: MakeWavesActionId;
+export type VerifyXrplTransactionInput = {
+  txHash: string;
+  expectedAccount?: string;
+  expectedDestination?: string;
 };
 
-export type XamanCreatePayloadResponse = {
-  ok: boolean;
-  sourceTag?: number;
-  payload?: {
-    uuid?: string;
-    refs?: {
-      qr_png?: string;
-      qr_matrix?: string;
-      websocket_status?: string;
-    };
-    next?: {
-      always?: string;
-      no_push_msg_received?: string;
-    };
-  };
-  error?: string;
-  details?: unknown;
+export type XrplTransactionVerification = {
+  makeWavesVerified: boolean;
+  validated: boolean;
+  success: boolean;
+  transactionResult: string;
+  sourceTag: number | null;
+  sourceTagMatches: boolean;
+  account: string | null;
+  destination: string | null;
+  accountMatches: boolean;
+  destinationMatches: boolean;
+  transactionType: string | null;
+  ledgerIndex: number | null;
 };
 
-export type XamanVerifyPayloadResponse = {
+export type VerifyXrplTransactionResponse = {
   ok: boolean;
   makeWavesSourceTag?: number;
-  verified?: {
-    signed: boolean;
-    resolved: boolean;
-    txHash: string | null;
-    account: string | null;
-    sourceTag: number | null;
-    sourceTagMatches: boolean;
-    rewardAllowed: boolean;
-    xp?: number;
-  };
-  payload?: unknown;
+  txHash?: string;
+  verified?: XrplTransactionVerification;
+  xrpl?: unknown;
   error?: string;
   details?: unknown;
 };
@@ -73,117 +55,66 @@ async function postJson<TResponse, TBody>(
   return data;
 }
 
-export async function createMakeWavesPayload(
-  input: CreateXamanPayloadInput
-): Promise<XamanCreatePayloadResponse> {
-  const actionId = input.actionId ?? "daily-checkin";
-
-  return postJson<XamanCreatePayloadResponse, CreateXamanPayloadInput>(
-    "/api/xaman/create-payload",
-    {
-      amountDrops: "1000000",
-      memoText: input.memoText ?? getMakeWavesMemo(actionId),
-      ...input,
-      actionId,
-    }
+export async function verifyXrplTransaction(
+  input: VerifyXrplTransactionInput
+): Promise<VerifyXrplTransactionResponse> {
+  return postJson<VerifyXrplTransactionResponse, VerifyXrplTransactionInput>(
+    "/api/xrpl/verify-transaction",
+    input
   );
 }
 
-export async function createDailyCheckInPayload(input: {
-  userWallet?: string;
-  destinationWallet: string;
-  amountDrops?: string;
-}): Promise<XamanCreatePayloadResponse> {
-  return createMakeWavesPayload({
-    ...input,
-    actionId: "daily-checkin",
-    memoText: MAKE_WAVES_DAILY_CHECKIN_MEMO,
-  });
-}
-
-export async function createSourceTagProofPayload(input: {
-  userWallet?: string;
-  destinationWallet: string;
-  amountDrops?: string;
-}): Promise<XamanCreatePayloadResponse> {
-  return createMakeWavesPayload({
-    ...input,
-    actionId: "source-tag-proof",
-    memoText: getMakeWavesMemo("source-tag-proof"),
-  });
-}
-
-export async function verifyMakeWavesPayload(
-  uuid: string
-): Promise<XamanVerifyPayloadResponse> {
-  return postJson<XamanVerifyPayloadResponse, { uuid: string }>(
-    "/api/xaman/verify-payload",
-    {
-      uuid,
-    }
-  );
-}
-
-export function getXamanPayloadUuid(
-  response: XamanCreatePayloadResponse | null
-): string | null {
-  return response?.payload?.uuid ?? null;
-}
-
-export function getXamanPayloadUrl(
-  response: XamanCreatePayloadResponse | null
-): string | null {
-  return (
-    response?.payload?.next?.always ??
-    response?.payload?.next?.no_push_msg_received ??
-    null
-  );
-}
-
-export function getXamanPayloadQr(
-  response: XamanCreatePayloadResponse | null
-): string | null {
-  return response?.payload?.refs?.qr_png ?? null;
-}
-
-export function openXamanPayload(response: XamanCreatePayloadResponse | null) {
-  const url = getXamanPayloadUrl(response);
-
-  if (!url) {
-    return false;
-  }
-
-  window.open(url, "_blank", "noopener,noreferrer");
-  return true;
-}
-
-export function isMakeWavesRewardAllowed(
-  response: XamanVerifyPayloadResponse | null
+export function isMakeWavesTransactionVerified(
+  response: VerifyXrplTransactionResponse | null
 ): boolean {
   return Boolean(
-    response?.verified?.rewardAllowed &&
-      response?.verified?.sourceTag === MAKE_WAVES_SOURCE_TAG
+    response?.verified?.makeWavesVerified &&
+      response.verified.sourceTag === MAKE_WAVES_SOURCE_TAG
   );
 }
 
-export function getMakeWavesVerificationLabel(
-  response: XamanVerifyPayloadResponse | null
+export function getXrplVerificationLabel(
+  response: VerifyXrplTransactionResponse | null
 ) {
   if (!response?.verified) {
-    return "Not verified yet";
+    return "No transaction verified yet";
   }
 
-  if (isMakeWavesRewardAllowed(response)) {
-    return `Verified with SourceTag ${MAKE_WAVES_SOURCE_TAG}`;
+  if (isMakeWavesTransactionVerified(response)) {
+    return `XRPL verified with SourceTag ${MAKE_WAVES_SOURCE_TAG}`;
   }
 
-  if (!response.verified.signed) {
-    return "Payload not signed";
+  if (!response.verified.validated) {
+    return "Transaction is not validated yet";
   }
 
-  if (!response.verified.sourceTagMatches) {
+  if (!response.verified.success) {
+    return `Transaction failed: ${response.verified.transactionResult}`;
+  }
+
+  if (!isMakeWavesSourceTag(response.verified.sourceTag)) {
     return `Wrong SourceTag. Expected ${MAKE_WAVES_SOURCE_TAG}`;
   }
 
-  return "Verification incomplete";
+  if (!response.verified.accountMatches) {
+    return "Account does not match expected wallet";
+  }
+
+  if (!response.verified.destinationMatches) {
+    return "Destination does not match expected wallet";
+  }
+
+  return "XRPL verification incomplete";
+}
+
+export function shortTxHash(txHash: string | null | undefined) {
+  if (!txHash) {
+    return "No tx hash";
+  }
+
+  if (txHash.length <= 16) {
+    return txHash;
+  }
+
+  return `${txHash.slice(0, 8)}...${txHash.slice(-8)}`;
 }
