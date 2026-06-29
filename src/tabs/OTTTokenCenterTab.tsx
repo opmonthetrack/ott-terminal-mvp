@@ -1,44 +1,46 @@
 import { useState } from "react";
 import type { ElementType } from "react";
 import {
+  AlertTriangle,
   BadgeCheck,
-  BarChart3,
+  Banknote,
+  BookOpen,
   CheckCircle2,
   Coins,
-  Crown,
-  Flame,
+  FileCheck,
+  Fingerprint,
   Gift,
-  GraduationCap,
+  Globe2,
   Layers,
   Lock,
-  Medal,
   Radio,
+  Scale,
   ShieldCheck,
   Sparkles,
-  Star,
-  Target,
-  Ticket,
+  TestTube2,
   Trophy,
-  UserCheck,
-  Vault,
   Wallet,
   Waves,
   Zap,
 } from "lucide-react";
+import {
+  MAKE_WAVES_ACTIONS,
+  MAKE_WAVES_SOURCE_TAG,
+} from "../lib/makeWaves";
 
-type TokenUtility = {
+type TokenMetric = {
+  label: string;
+  value: string;
+  text: string;
+  icon: ElementType;
+};
+
+type TokenLayer = {
   id: string;
   title: string;
   status: string;
   text: string;
   icon: ElementType;
-};
-
-type RewardTier = {
-  title: string;
-  level: string;
-  requirement: string;
-  reward: string;
 };
 
 type TokenRule = {
@@ -48,123 +50,118 @@ type TokenRule = {
   icon: ElementType;
 };
 
-const utilities: TokenUtility[] = [
+const tokenLayers: TokenLayer[] = [
   {
     id: "xp",
-    title: "OTT XP",
-    status: "Live Mock",
-    text: "Off-chain reputation points voor Academy, Check-In, safety reviews en Make Waves activity.",
+    title: "Terminal XP",
+    status: "Active",
+    text: "Off-chain punten voor gebruik, check-ins, academy en verified XRPL proof.",
     icon: Zap,
   },
   {
-    id: "badges",
-    title: "Badge Utility",
-    status: "Identity",
-    text: "Badges worden gebruikt voor proof, access, achievements, ranks en community status.",
+    id: "eligibility",
+    title: "OTT Eligibility",
+    status: "Tracked",
+    text: "Score die laat zien wie later mogelijk in aanmerking komt voor OTT rewards.",
     icon: BadgeCheck,
   },
   {
-    id: "access",
-    title: "Access Passes",
-    status: "Future",
-    text: "Gebruik XP, badges of token proof later voor events, courses, tools en partner access.",
-    icon: Ticket,
+    id: "testnet",
+    title: "OTT Testnet Token",
+    status: "Next",
+    text: "Veilige testfase om token rewards te simuleren zonder mainnet waarde.",
+    icon: TestTube2,
   },
   {
-    id: "marketplace",
-    title: "Marketplace Rewards",
-    status: "Shop",
-    text: "XP en badges kunnen later unlocks geven in merch, tickets, courses en partner perks.",
+    id: "mainnet",
+    title: "OTT Mainnet Token",
+    status: "Locked",
+    text: "Mainnet distributie blijft uit tot legal review, token terms en policy klaar zijn.",
+    icon: Lock,
+  },
+  {
+    id: "utility",
+    title: "Utility Access",
+    status: "Design",
+    text: "Token/eligibility kan later toegang geven tot tools, academy, events en partner perks.",
     icon: Gift,
-  },
-  {
-    id: "governance",
-    title: "Community Voice",
-    status: "Later",
-    text: "Community voting, feedback, feature requests en builder support kunnen later gekoppeld worden.",
-    icon: UserCheck,
-  },
-  {
-    id: "founder",
-    title: "Founder Layer",
-    status: "Proof",
-    text: "Early users, testers, builders en partners kunnen later founder proof of status krijgen.",
-    icon: Crown,
-  },
-];
-
-const rewardTiers: RewardTier[] = [
-  {
-    title: "Starter",
-    level: "Level 1",
-    requirement: "100 XP",
-    reward: "XRPL Starter Badge",
-  },
-  {
-    title: "Guardian",
-    level: "Level 2",
-    requirement: "250 XP",
-    reward: "Wallet Safety Badge",
-  },
-  {
-    title: "Builder",
-    level: "Level 3",
-    requirement: "589 XP",
-    reward: "Make Waves Badge",
-  },
-  {
-    title: "Founder",
-    level: "Level 4",
-    requirement: "2606 XP",
-    reward: "Founder Access",
   },
 ];
 
 const tokenRules: TokenRule[] = [
   {
-    title: "No Token Promise",
+    title: "No Investment Language",
     status: "Rule",
-    text: "OTT XP is nu mock/off-chain. Geen winstbelofte, geen investment promise.",
-    icon: ShieldCheck,
+    text: "Niet communiceren als belegging, winstkans, rendement of prijsverwachting.",
+    icon: AlertTriangle,
   },
   {
     title: "Utility First",
     status: "Design",
-    text: "Eerst echte utility bouwen: learning, safety, access, rewards en community proof.",
+    text: "OTT moet draaien om toegang, community, proof, learning en terminal utility.",
     icon: Sparkles,
   },
   {
-    title: "Wallet Proof Later",
-    status: "Future",
-    text: "Echte on-chain badges of tokens komen later pas met veilige wallet confirmation.",
-    icon: Wallet,
+    title: "Legal Gate",
+    status: "Required",
+    text: "Mainnet token rewards pas na juridische check en duidelijke voorwaarden.",
+    icon: Scale,
   },
   {
-    title: "Transparent Rules",
-    status: "Required",
-    text: "Gebruikers moeten altijd weten hoe XP, badges, tiers en rewards werken.",
-    icon: Lock,
+    title: "SourceTag Proof",
+    status: "2606170002",
+    text: `Reward eligibility wordt gekoppeld aan SourceTag ${MAKE_WAVES_SOURCE_TAG}.`,
+    icon: Fingerprint,
+  },
+  {
+    title: "User Consent",
+    status: "Safety",
+    text: "Geen automatische mainnet airdrops zonder duidelijke user consent flow.",
+    icon: ShieldCheck,
   },
 ];
 
-const roadmap = [
-  "XP systeem lokaal zichtbaar maken",
-  "Academy XP koppelen",
-  "Daily Check-In XP koppelen",
-  "Badge vault uitbreiden",
-  "Reward tiers opslaan per wallet",
-  "Marketplace unlocks koppelen",
-  "NFT badge minting later bouwen",
-  "OTT utility paper schrijven",
+const tokenRoadmap = [
+  "XP zichtbaar houden in terminal",
+  "OTT eligibility score tonen",
+  "Testnet token reward flow bouwen",
+  "Issuer wallet en trustline scherm ontwerpen",
+  "Token terms en risk disclaimer schrijven",
+  "Legal/MiCAR review afronden",
+  "Partner utility model toevoegen",
+  "Mainnet pas openen na groen licht",
 ];
 
 export function OTTTokenCenterTab() {
-  const [selectedUtility, setSelectedUtility] = useState<TokenUtility>(
-    utilities[0]
-  );
-  const [selectedTier, setSelectedTier] = useState<RewardTier>(rewardTiers[0]);
+  const [selectedLayer, setSelectedLayer] = useState<TokenLayer>(tokenLayers[0]);
+  const SelectedIcon = selectedLayer.icon;
 
-  const SelectedUtilityIcon = selectedUtility.icon;
+  const metrics: TokenMetric[] = [
+    {
+      label: "SourceTag",
+      value: String(MAKE_WAVES_SOURCE_TAG),
+      text: "Make Waves reward proof.",
+      icon: Fingerprint,
+    },
+    {
+      label: "XP Layer",
+      value: "Active",
+      text: "Safe MVP reward.",
+      icon: Trophy,
+    },
+    {
+      label: "OTT Token",
+      value: "Locked",
+      text: "Legal gate first.",
+      icon: Coins,
+    },
+    {
+      label: "Testnet",
+      value: "Next",
+      text: "Token simulation.",
+      icon: TestTube2,
+    },
+  ];
 
   return (
     <div className="p-6 bg-black min-h-screen text-white">
@@ -182,21 +179,20 @@ export function OTTTokenCenterTab() {
             </div>
 
             <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
-              XP. Badges. Rewards. Utility.
+              Token Utility Without Rushing Mainnet
             </h2>
 
             <p className="font-mono text-sm text-white/45 max-w-3xl leading-relaxed">
-              De OTT utility-laag van de terminal. Hier komen XP, badges,
-              reward tiers, marketplace unlocks, founder proof, Make Waves
-              activiteit en toekomstige on-chain utility samen.
+              OTT Token Center houdt de tokenstrategie veilig: XP nu, eligibility
+              zichtbaar, testnet als volgende stap, en mainnet distributie pas
+              na legal gate.
             </p>
           </div>
 
           <div className="col-span-12 xl:col-span-4 grid grid-cols-2 gap-3">
-            <StatBox icon={Zap} label="OTT XP" value="130" />
-            <StatBox icon={BadgeCheck} label="Badges" value="4" />
-            <StatBox icon={Flame} label="Streak" value="3 Days" />
-            <StatBox icon={Waves} label="Source Tag" value="2606" />
+            {metrics.map((metric) => (
+              <MetricBox key={metric.label} metric={metric} />
+            ))}
           </div>
         </div>
       </div>
@@ -208,17 +204,37 @@ export function OTTTokenCenterTab() {
               <Layers size={18} className="text-white/60" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                Utility Modules
+                Token Layers
               </p>
             </div>
 
             <div className="space-y-3">
-              {utilities.map((utility) => (
-                <UtilityButton
-                  key={utility.id}
-                  utility={utility}
-                  active={selectedUtility.id === utility.id}
-                  onClick={() => setSelectedUtility(utility)}
+              {tokenLayers.map((layer) => (
+                <LayerButton
+                  key={layer.id}
+                  layer={layer}
+                  active={selectedLayer.id === layer.id}
+                  onClick={() => setSelectedLayer(layer)}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Waves size={18} className="text-white/60" />
+
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Reward Actions
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {MAKE_WAVES_ACTIONS.map((action) => (
+                <ActionLine
+                  key={action.id}
+                  label={action.title}
+                  xp={action.xp}
                 />
               ))}
             </div>
@@ -230,78 +246,84 @@ export function OTTTokenCenterTab() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
-                  Selected Utility
+                  Selected Layer
                 </p>
 
                 <h3 className="font-orbitron text-xl font-black uppercase">
-                  {selectedUtility.title}
+                  {selectedLayer.title}
                 </h3>
               </div>
 
-              <SelectedUtilityIcon size={22} className="text-white/60" />
+              <SelectedIcon size={22} className="text-white/60" />
             </div>
 
             <p className="font-mono text-sm text-white/45 leading-relaxed mb-5">
-              {selectedUtility.text}
+              {selectedLayer.text}
             </p>
 
-            <MiniStatus label="Status" value={selectedUtility.status} />
+            <MiniStatus label="Status" value={selectedLayer.status} />
           </div>
 
           <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
-                  Reward Tiers
-                </p>
+            <div className="flex items-center gap-2 mb-5">
+              <Banknote size={18} className="text-white/60" />
 
-                <h3 className="font-orbitron text-xl font-black uppercase">
-                  Progression System
-                </h3>
-              </div>
-
-              <Trophy size={20} className="text-white/60" />
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Token Design
+              </p>
             </div>
 
-            <div className="space-y-3">
-              {rewardTiers.map((tier) => (
-                <TierRow
-                  key={tier.title}
-                  tier={tier}
-                  active={selectedTier.title === tier.title}
-                  onClick={() => setSelectedTier(tier)}
-                />
-              ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <DesignBox
+                icon={Wallet}
+                title="Issuer Wallet"
+                text="Later aparte XRPL issuer wallet voor OTT token."
+              />
+              <DesignBox
+                icon={FileCheck}
+                title="Trustline"
+                text="Gebruiker moet bewust trustline zetten."
+              />
+              <DesignBox
+                icon={BookOpen}
+                title="Terms"
+                text="Voorwaarden en disclaimers zichtbaar in terminal."
+              />
+              <DesignBox
+                icon={Globe2}
+                title="Utility"
+                text="Access, academy, events en partner perks."
+              />
             </div>
           </div>
 
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Medal size={18} className="text-white/60" />
+              <Radio size={18} className="text-white/60" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                Selected Tier
+                Token Status
               </p>
             </div>
 
-            <p className="font-orbitron text-2xl font-black uppercase mb-2">
-              {selectedTier.title}
-            </p>
+            <div className="border border-white/10 bg-black p-5">
+              <p className="font-orbitron text-2xl font-black uppercase mb-2">
+                Mainnet Locked
+              </p>
 
-            <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-4">
-              {selectedTier.level} • {selectedTier.requirement}
-            </p>
-
-            <p className="font-mono text-sm text-white/45 leading-relaxed">
-              Reward: {selectedTier.reward}
-            </p>
+              <p className="font-mono text-xs text-white/40 leading-relaxed">
+                XP en eligibility kunnen nu gebruikt worden. Echte OTT token
+                distributie blijft uit tot legal review en user consent klaar
+                zijn.
+              </p>
+            </div>
           </div>
         </div>
 
         <div className="col-span-12 xl:col-span-3 space-y-4">
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Target size={18} className="text-white/60" />
+              <ShieldCheck size={18} className="text-white/60" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
                 Token Rules
@@ -317,24 +339,7 @@ export function OTTTokenCenterTab() {
 
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
-              <BarChart3 size={18} className="text-white/60" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                XP Sources
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <SourceLine icon={GraduationCap} label="Academy lessons" value="+10" />
-              <SourceLine icon={Zap} label="Daily Check-In" value="+10" />
-              <SourceLine icon={ShieldCheck} label="Safety review" value="+15" />
-              <SourceLine icon={Waves} label="Make Waves" value="+26" />
-            </div>
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Sparkles size={18} className="text-white/60" />
+              <CheckCircle2 size={18} className="text-white/60" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
                 Roadmap
@@ -342,7 +347,7 @@ export function OTTTokenCenterTab() {
             </div>
 
             <div className="space-y-3">
-              {roadmap.map((item) => (
+              {tokenRoadmap.map((item) => (
                 <RoadmapLine key={item} label={item} />
               ))}
             </div>
@@ -350,48 +355,48 @@ export function OTTTokenCenterTab() {
         </div>
 
         <div className="col-span-12 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <FeatureBox icon={Vault} title="Utility" text="Access and rewards" />
-          <FeatureBox icon={Star} title="Badges" text="Identity proof" />
-          <FeatureBox icon={Gift} title="Rewards" text="Marketplace unlocks" />
-          <FeatureBox icon={Radio} title="On-chain Later" text="Safe launch path" />
+          <FeatureBox icon={Zap} title="XP" text="Use now" />
+          <FeatureBox icon={BadgeCheck} title="Eligibility" text="Track now" />
+          <FeatureBox icon={TestTube2} title="Testnet" text="Build next" />
+          <FeatureBox icon={Lock} title="Mainnet" text="Legal gate" />
         </div>
       </div>
     </div>
   );
 }
 
-function StatBox({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: ElementType;
-  label: string;
-  value: string;
-}) {
+function MetricBox({ metric }: { metric: TokenMetric }) {
+  const Icon = metric.icon;
+
   return (
     <div className="border border-white/10 bg-black/60 p-4">
       <Icon size={18} className="text-white/60 mb-3" />
 
       <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
-        {label}
+        {metric.label}
       </p>
 
-      <p className="font-orbitron text-sm font-black uppercase">{value}</p>
+      <p className="font-orbitron text-sm font-black uppercase mb-1 break-all">
+        {metric.value}
+      </p>
+
+      <p className="font-mono text-[10px] text-white/30 uppercase">
+        {metric.text}
+      </p>
     </div>
   );
 }
 
-function UtilityButton({
-  utility,
+function LayerButton({
+  layer,
   active,
   onClick,
 }: {
-  utility: TokenUtility;
+  layer: TokenLayer;
   active: boolean;
   onClick: () => void;
 }) {
-  const Icon = utility.icon;
+  const Icon = layer.icon;
 
   return (
     <button
@@ -407,50 +412,25 @@ function UtilityButton({
           <Icon size={16} className="text-white/60" />
 
           <p className="font-orbitron text-xs font-bold uppercase">
-            {utility.title}
+            {layer.title}
           </p>
         </div>
 
         <p className="font-mono text-[10px] text-white/35 uppercase">
-          {utility.status}
+          {layer.status}
         </p>
       </div>
     </button>
   );
 }
 
-function TierRow({
-  tier,
-  active,
-  onClick,
-}: {
-  tier: RewardTier;
-  active: boolean;
-  onClick: () => void;
-}) {
+function ActionLine({ label, xp }: { label: string; xp: number }) {
   return (
-    <button
-      onClick={onClick}
-      className={`w-full border p-4 text-left transition-all ${
-        active
-          ? "border-white/30 bg-white/[0.08]"
-          : "border-white/10 bg-black hover:bg-white/[0.03]"
-      }`}
-    >
-      <div className="flex items-center justify-between gap-4 mb-2">
-        <p className="font-orbitron text-sm font-bold uppercase">
-          {tier.title}
-        </p>
+    <div className="border border-white/10 bg-black p-3 flex items-center justify-between gap-3">
+      <p className="font-mono text-xs text-white/50">{label}</p>
 
-        <p className="font-mono text-[10px] text-white/45 uppercase">
-          {tier.requirement}
-        </p>
-      </div>
-
-      <p className="font-mono text-[10px] text-white/35 uppercase">
-        {tier.level} • {tier.reward}
-      </p>
-    </button>
+      <p className="font-mono text-[10px] text-white/35 uppercase">+{xp} XP</p>
+    </div>
   );
 }
 
@@ -461,7 +441,31 @@ function MiniStatus({ label, value }: { label: string; value: string }) {
         {label}
       </p>
 
-      <p className="font-orbitron text-sm font-black uppercase">{value}</p>
+      <p className="font-orbitron text-sm font-black uppercase break-all">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function DesignBox({
+  icon: Icon,
+  title,
+  text,
+}: {
+  icon: ElementType;
+  title: string;
+  text: string;
+}) {
+  return (
+    <div className="border border-white/10 bg-black p-4">
+      <Icon size={18} className="text-white/60 mb-3" />
+
+      <p className="font-orbitron text-xs font-bold uppercase mb-2">{title}</p>
+
+      <p className="font-mono text-[10px] text-white/40 leading-relaxed">
+        {text}
+      </p>
     </div>
   );
 }
@@ -486,28 +490,6 @@ function RuleCard({ rule }: { rule: TokenRule }) {
       <p className="font-mono text-[10px] text-white/40 leading-relaxed">
         {rule.text}
       </p>
-    </div>
-  );
-}
-
-function SourceLine({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: ElementType;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="border border-white/10 bg-black p-3 flex items-center justify-between gap-3">
-      <div className="flex items-center gap-2">
-        <Icon size={14} className="text-white/60" />
-
-        <p className="font-mono text-xs text-white/50">{label}</p>
-      </div>
-
-      <p className="font-mono text-[10px] text-white/35 uppercase">{value}</p>
     </div>
   );
 }
@@ -537,7 +519,7 @@ function FeatureBox({
 
       <p className="font-orbitron text-sm font-bold uppercase mb-2">{title}</p>
 
-      <p className="font-mono text-xs text-white/40">{text}</p>
+      <p className="font-mono text-xs text-white/40 break-all">{text}</p>
     </div>
   );
 }
