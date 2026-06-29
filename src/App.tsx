@@ -13,6 +13,7 @@ import { TokenizationTab } from "./tabs/TokenizationTab";
 import { TokenFactory } from "./tabs/TokenFactory";
 import { ProfileTab } from "./tabs/ProfileTab";
 import { OTTTokenCenterTab } from "./tabs/OTTTokenCenterTab";
+import { OTTIntelligence } from "./tabs/OTTIntelligence";
 import { AIHubTab } from "./tabs/AIHubTab";
 import { MarketplaceTab } from "./tabs/MarketplaceTab";
 import { NewsTab } from "./tabs/NewsTab";
@@ -35,6 +36,7 @@ type ActiveTab =
   | "factory"
   | "profile"
   | "token"
+  | "ottintelligence"
   | "ai"
   | "marketplace"
   | "news"
@@ -119,9 +121,14 @@ function MainApp() {
       status: "XP",
     },
     {
+      id: "ottintelligence",
+      label: "OTT Intelligence",
+      status: "AI",
+    },
+    {
       id: "ai",
       label: "AI Hub",
-      status: "AI",
+      status: "Tools",
     },
     {
       id: "marketplace",
@@ -317,6 +324,8 @@ function MainApp() {
         {activeTab === "profile" && <ProfileTab />}
 
         {activeTab === "token" && <OTTTokenCenterTab />}
+
+        {activeTab === "ottintelligence" && <OTTIntelligence />}
 
         {activeTab === "ai" && <AIHubTab />}
 
