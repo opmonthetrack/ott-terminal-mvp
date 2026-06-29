@@ -3,6 +3,7 @@ import { LoginScreen } from "./components/LoginScreen";
 import { DashboardTab } from "./tabs/DashboardTab";
 import { DailyCheckInTab } from "./tabs/DailyCheckInTab";
 import { SourceTagMonitorTab } from "./tabs/SourceTagMonitorTab";
+import { XamanCenterTab } from "./tabs/XamanCenterTab";
 import { NetworkState } from "./tabs/NetworkState";
 import { WalletTab } from "./tabs/WalletTab";
 import { PortfolioTab } from "./tabs/PortfolioTab";
@@ -27,6 +28,7 @@ type ActiveTab =
   | "dashboard"
   | "checkin"
   | "source"
+  | "xaman"
   | "network"
   | "wallet"
   | "portfolio"
@@ -58,8 +60,9 @@ function MainApp() {
 
   const menuItems: { id: ActiveTab; label: string; status?: string }[] = [
     { id: "dashboard", label: t("menu_dashboard"), status: "Live" },
-    { id: "checkin", label: "Check-In", status: "2606" },
-    { id: "source", label: "Source Tag", status: "Track" },
+    { id: "checkin", label: "Check-In", status: "XP" },
+    { id: "source", label: "Source Tag", status: "2606170002" },
+    { id: "xaman", label: "Xaman Center", status: "Sign" },
     { id: "network", label: "Network State", status: "Live" },
     { id: "wallet", label: "Wallet", status: "Safe" },
     { id: "portfolio", label: "Portfolio", status: "Mock" },
@@ -115,6 +118,10 @@ function MainApp() {
 
             <p className="font-mono text-[10px] text-white/35 leading-relaxed break-all">
               Wallet: {walletAddress}
+            </p>
+
+            <p className="font-mono text-[10px] text-white/35 leading-relaxed mt-2">
+              Make Waves SourceTag: 2606170002
             </p>
           </div>
 
@@ -205,11 +212,11 @@ function MainApp() {
 
           <div className="text-right">
             <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest">
-              Build Phase
+              Make Waves SourceTag
             </p>
 
             <p className="font-orbitron text-xs text-white/70 uppercase">
-              Platform Modules
+              2606170002
             </p>
           </div>
         </div>
@@ -225,6 +232,8 @@ function MainApp() {
         {activeTab === "source" && (
           <SourceTagMonitorTab walletAddress={walletAddress} />
         )}
+
+        {activeTab === "xaman" && <XamanCenterTab />}
 
         {activeTab === "network" && <NetworkState />}
 
@@ -275,4 +284,3 @@ export default function App() {
     </LanguageProvider>
   );
 }
-
