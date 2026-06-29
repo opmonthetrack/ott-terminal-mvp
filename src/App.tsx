@@ -3,6 +3,7 @@ import { LoginScreen } from "./components/LoginScreen";
 import { DashboardTab } from "./tabs/DashboardTab";
 import { DailyCheckInTab } from "./tabs/DailyCheckInTab";
 import { SourceTagMonitorTab } from "./tabs/SourceTagMonitorTab";
+import { NetworkState } from "./tabs/NetworkState";
 import { WalletTab } from "./tabs/WalletTab";
 import { PortfolioTab } from "./tabs/PortfolioTab";
 import { EcosystemTab } from "./tabs/EcosystemTab";
@@ -24,6 +25,7 @@ type ActiveTab =
   | "dashboard"
   | "checkin"
   | "source"
+  | "network"
   | "wallet"
   | "portfolio"
   | "ecosystem"
@@ -65,6 +67,11 @@ function MainApp() {
       id: "source",
       label: "Source Tag",
       status: "Track",
+    },
+    {
+      id: "network",
+      label: "Network State",
+      status: "Live",
     },
     {
       id: "wallet",
@@ -288,6 +295,8 @@ function MainApp() {
         {activeTab === "source" && (
           <SourceTagMonitorTab walletAddress={walletAddress} />
         )}
+
+        {activeTab === "network" && <NetworkState />}
 
         {activeTab === "wallet" && <WalletTab walletAddress={walletAddress} />}
 
