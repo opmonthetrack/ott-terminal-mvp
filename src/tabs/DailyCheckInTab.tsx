@@ -5,17 +5,14 @@ import {
   AlertTriangle,
   BadgeCheck,
   CheckCircle2,
-  Clock,
   Coins,
   Copy,
   ExternalLink,
   Fingerprint,
-  Gift,
   History,
   Loader2,
   Lock,
   QrCode,
-  RefreshCcw,
   ShieldCheck,
   Sparkles,
   Trophy,
@@ -195,7 +192,7 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
       setStatusMessage(getMakeWavesVerificationLabel(response));
 
       if (isMakeWavesRewardAllowed(response) && rewardedUuid !== payloadUuid) {
-        const nextRewardState = addXpRewardEvent({
+        addXpRewardEvent({
           walletAddress,
           actionId: "daily-checkin",
           txHash: response.verified?.txHash,
@@ -209,14 +206,11 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
           note: "OTT mainnet token reward locked until legal review is complete.",
         });
 
-        setRewardState({
-          ...lockedState,
-          totalXp: nextRewardState.totalXp,
-          ottTokenEligibleXp: nextRewardState.ottTokenEligibleXp,
-          events: lockedState.events,
-        });
+        setRewardState(lockedState);
         setRewardedUuid(payloadUuid);
-        setStatusMessage("Daily Check-In verified. XP credited. OTT mainnet reward locked.");
+        setStatusMessage(
+          "Daily Check-In verified. XP credited. OTT mainnet reward locked."
+        );
       }
     } catch (error) {
       setStatusMessage(getErrorMessage(error));
@@ -336,7 +330,10 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
                 label="OTT Eligible XP"
                 value={String(rewardState.ottTokenEligibleXp)}
               />
-              <MiniStatus label="Events" value={String(rewardState.events.length)} />
+              <MiniStatus
+                label="Events"
+                value={String(rewardState.events.length)}
+              />
             </div>
           </div>
         </div>
@@ -372,7 +369,11 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
               disabled={busy}
               className="w-full bg-white text-black py-4 mt-5 font-orbitron text-xs font-black uppercase tracking-widest hover:bg-white/80 disabled:opacity-40 transition-all flex items-center justify-center gap-2"
             >
-              {busy ? <Loader2 size={16} className="animate-spin" /> : <QrCode size={16} />}
+              {busy ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <QrCode size={16} />
+              )}
               Create Xaman Check-In
             </button>
           </div>
@@ -437,7 +438,11 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
               disabled={verifyBusy || !payloadUuid}
               className="w-full bg-white text-black py-4 font-orbitron text-xs font-black uppercase tracking-widest hover:bg-white/80 disabled:opacity-40 transition-all flex items-center justify-center gap-2"
             >
-              {verifyBusy ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+              {verifyBusy ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <CheckCircle2 size={16} />
+              )}
               Verify Payload + Add XP
             </button>
           </div>
@@ -455,10 +460,22 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
 
             {verifyResponse?.verified ? (
               <div className="space-y-3">
-                <MiniStatus label="Signed" value={String(verifyResponse.verified.signed)} />
-                <MiniStatus label="Resolved" value={String(verifyResponse.verified.resolved)} />
-                <MiniStatus label="SourceTag" value={String(verifyResponse.verified.sourceTag)} />
-                <MiniStatus label="Reward" value={rewardAllowed ? "Allowed" : "Locked"} />
+                <MiniStatus
+                  label="Signed"
+                  value={String(verifyResponse.verified.signed)}
+                />
+                <MiniStatus
+                  label="Resolved"
+                  value={String(verifyResponse.verified.resolved)}
+                />
+                <MiniStatus
+                  label="SourceTag"
+                  value={String(verifyResponse.verified.sourceTag)}
+                />
+                <MiniStatus
+                  label="Reward"
+                  value={rewardAllowed ? "Allowed" : "Locked"}
+                />
               </div>
             ) : (
               <EmptyState text="Nog geen verified payload." />
@@ -480,8 +497,8 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
               </p>
 
               <p className="font-mono text-xs text-white/40 leading-relaxed">
-                Mainnet OTT token airdrops blijven uit tot legal review klaar is.
-                XP en eligibility mogen wel lokaal getoond worden.
+                Mainnet OTT token airdrops blijven uit tot legal review klaar
+                is. XP en eligibility mogen wel lokaal getoond worden.
               </p>
             </div>
           </div>
@@ -490,7 +507,11 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
         <div className="col-span-12 grid grid-cols-1 md:grid-cols-4 gap-4">
           <FeatureBox icon={Zap} title="XP" text="Credited after verify" />
           <FeatureBox icon={Coins} title="OTT" text="Eligibility only" />
-          <FeatureBox icon={Fingerprint} title="Tag" text={`${MAKE_WAVES_SOURCE_TAG}`} />
+          <FeatureBox
+            icon={Fingerprint}
+            title="Tag"
+            text={`${MAKE_WAVES_SOURCE_TAG}`}
+          />
           <FeatureBox icon={AlertTriangle} title="Mainnet" text="Legal gate" />
         </div>
       </div>
