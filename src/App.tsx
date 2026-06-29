@@ -14,6 +14,7 @@ import { TokenFactory } from "./tabs/TokenFactory";
 import { ProfileTab } from "./tabs/ProfileTab";
 import { OTTTokenCenterTab } from "./tabs/OTTTokenCenterTab";
 import { OTTIntelligence } from "./tabs/OTTIntelligence";
+import { LaunchControlTab } from "./tabs/LaunchControlTab";
 import { AIHubTab } from "./tabs/AIHubTab";
 import { MarketplaceTab } from "./tabs/MarketplaceTab";
 import { NewsTab } from "./tabs/NewsTab";
@@ -37,6 +38,7 @@ type ActiveTab =
   | "profile"
   | "token"
   | "ottintelligence"
+  | "launch"
   | "ai"
   | "marketplace"
   | "news"
@@ -55,106 +57,27 @@ function MainApp() {
   }
 
   const menuItems: { id: ActiveTab; label: string; status?: string }[] = [
-    {
-      id: "dashboard",
-      label: t("menu_dashboard"),
-      status: "Live",
-    },
-    {
-      id: "checkin",
-      label: "Check-In",
-      status: "2606",
-    },
-    {
-      id: "source",
-      label: "Source Tag",
-      status: "Track",
-    },
-    {
-      id: "network",
-      label: "Network State",
-      status: "Live",
-    },
-    {
-      id: "wallet",
-      label: "Wallet",
-      status: "Safe",
-    },
-    {
-      id: "portfolio",
-      label: "Portfolio",
-      status: "Mock",
-    },
-    {
-      id: "ecosystem",
-      label: "Ecosystem",
-      status: "Map",
-    },
-    {
-      id: "validator",
-      label: "Validators",
-      status: "UNL",
-    },
-    {
-      id: "developer",
-      label: "Developer",
-      status: "Build",
-    },
-    {
-      id: "tokenization",
-      label: "Tokenization",
-      status: "RWA",
-    },
-    {
-      id: "factory",
-      label: "Token Factory",
-      status: "Create",
-    },
-    {
-      id: "profile",
-      label: "Profile",
-      status: "New",
-    },
-    {
-      id: "token",
-      label: "OTT Token",
-      status: "XP",
-    },
-    {
-      id: "ottintelligence",
-      label: "OTT Intelligence",
-      status: "AI",
-    },
-    {
-      id: "ai",
-      label: "AI Hub",
-      status: "Tools",
-    },
-    {
-      id: "marketplace",
-      label: "Marketplace",
-      status: "Shop",
-    },
-    {
-      id: "news",
-      label: "Newsroom",
-      status: "News",
-    },
-    {
-      id: "defi",
-      label: t("menu_defi"),
-      status: "MVP",
-    },
-    {
-      id: "academy",
-      label: t("menu_academy"),
-      status: "Learn",
-    },
-    {
-      id: "intel",
-      label: t("menu_intel"),
-      status: "Beta",
-    },
+    { id: "dashboard", label: t("menu_dashboard"), status: "Live" },
+    { id: "checkin", label: "Check-In", status: "2606" },
+    { id: "source", label: "Source Tag", status: "Track" },
+    { id: "network", label: "Network State", status: "Live" },
+    { id: "wallet", label: "Wallet", status: "Safe" },
+    { id: "portfolio", label: "Portfolio", status: "Mock" },
+    { id: "ecosystem", label: "Ecosystem", status: "Map" },
+    { id: "validator", label: "Validators", status: "UNL" },
+    { id: "developer", label: "Developer", status: "Build" },
+    { id: "tokenization", label: "Tokenization", status: "RWA" },
+    { id: "factory", label: "Token Factory", status: "Create" },
+    { id: "profile", label: "Profile", status: "New" },
+    { id: "token", label: "OTT Token", status: "XP" },
+    { id: "ottintelligence", label: "OTT Intelligence", status: "AI" },
+    { id: "launch", label: "Launch Control", status: "Demo" },
+    { id: "ai", label: "AI Hub", status: "Tools" },
+    { id: "marketplace", label: "Marketplace", status: "Shop" },
+    { id: "news", label: "Newsroom", status: "News" },
+    { id: "defi", label: t("menu_defi"), status: "MVP" },
+    { id: "academy", label: t("menu_academy"), status: "Learn" },
+    { id: "intel", label: t("menu_intel"), status: "Beta" },
   ];
 
   return (
@@ -327,6 +250,8 @@ function MainApp() {
 
         {activeTab === "ottintelligence" && <OTTIntelligence />}
 
+        {activeTab === "launch" && <LaunchControlTab />}
+
         {activeTab === "ai" && <AIHubTab />}
 
         {activeTab === "marketplace" && <MarketplaceTab />}
@@ -350,3 +275,4 @@ export default function App() {
     </LanguageProvider>
   );
 }
+
