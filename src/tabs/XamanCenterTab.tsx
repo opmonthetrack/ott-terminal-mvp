@@ -1,39 +1,42 @@
 import { useState } from "react";
 import type { ElementType } from "react";
 import {
-  Activity,
   AlertTriangle,
   BadgeCheck,
-  Bell,
   CheckCircle2,
   Code2,
   Database,
-  Eye,
+  ExternalLink,
   Fingerprint,
   KeyRound,
-  Layers,
+  Link2,
+  Loader2,
   Lock,
+  QrCode,
   Radio,
   ScanLine,
   Send,
   ShieldCheck,
-  Sparkles,
   Target,
   Terminal,
   Wallet,
   Waves,
   Zap,
 } from "lucide-react";
+import {
+  MAKE_WAVES_SOURCE_TAG,
+  createMakeWavesPayload,
+  getXamanPayloadQr,
+  getXamanPayloadUrl,
+  isMakeWavesRewardAllowed,
+  openXamanPayload,
+  verifyMakeWavesPayload,
+  type XamanCreatePayloadResponse,
+  type XamanVerifyPayloadResponse,
+} from "../lib/xamanClient";
 
 type XamanModule = {
   id: string;
-  title: string;
-  status: string;
-  text: string;
-  icon: ElementType;
-};
-
-type PayloadStep = {
   title: string;
   status: string;
   text: string;
@@ -47,77 +50,34 @@ type SecurityRule = {
   icon: ElementType;
 };
 
-const MAKE_WAVES_SOURCE_TAG = 2606170002;
-
 const modules: XamanModule[] = [
   {
-    id: "login",
-    title: "Xaman Login",
-    status: "Next",
-    text: "Vervang debug mode later door echte Xaman wallet connectie met veilige sessie.",
-    icon: Wallet,
-  },
-  {
-    id: "payload",
-    title: "Payload Signing",
-    status: "Core",
-    text: "Maak sign requests via backend zodat gebruikers acties bevestigen in Xaman.",
+    id: "create",
+    title: "Create Payload",
+    status: "API",
+    text: "Maak een Xaman sign request via /api/xaman/create-payload met SourceTag 2606170002.",
     icon: Send,
   },
   {
-    id: "source-tag",
-    title: "Make Waves Source Tag",
-    status: "2606170002",
-    text: "Elke Make Waves actie krijgt source tag 2606170002 voor tracking en proof.",
-    icon: Fingerprint,
+    id: "open",
+    title: "Open Xaman",
+    status: "User",
+    text: "Open de payload link of QR zodat de gebruiker bewust kan signen in Xaman.",
+    icon: QrCode,
   },
   {
-    id: "webhook",
-    title: "Webhook Result",
-    status: "Verify",
-    text: "Payload status en transaction hash worden later opgehaald en gecontroleerd.",
-    icon: Bell,
-  },
-  {
-    id: "backend",
-    title: "Backend API",
-    status: "Secure",
-    text: "Xaman API keys, webhooks, payloads en secrets blijven altijd server-side.",
-    icon: Database,
-  },
-  {
-    id: "audit",
-    title: "Transaction Verify",
-    status: "Safety",
-    text: "Controleer later op-ledger of de juiste wallet, tag, amount en result kloppen.",
+    id: "verify",
+    title: "Verify Payload",
+    status: "Proof",
+    text: "Controleer payload result, tx hash en SourceTag voordat XP of reward telt.",
     icon: ScanLine,
   },
-];
-
-const payloadSteps: PayloadStep[] = [
   {
-    title: "User Starts Action",
-    status: "Step 1",
-    text: "Gebruiker klikt Daily Check-In, badge claim, trustline helper of Make Waves action.",
-    icon: Activity,
-  },
-  {
-    title: "Backend Builds Payload",
-    status: "Step 2",
-    text: "Server maakt de XRPL transaction template met source tag 2606170002.",
-    icon: Code2,
-  },
-  {
-    title: "Xaman Shows Request",
-    status: "Step 3",
-    text: "Xaman toont de transactie zodat de gebruiker bewust kan accepteren of weigeren.",
-    icon: Eye,
-  },
-  {
-    title: "Verify On Ledger",
-    status: "Step 4",
-    text: "Na signing controleren we hash, wallet, result en source tag voordat XP telt.",
-    icon: ShieldCheck,
+    id: "reward",
+    title: "Reward Gate",
+    status: "XP",
+    text: "Alleen bij signed, resolved, txHash en juiste SourceTag mag rewardAllowed true worden.",
+    icon: BadgeCheck,
   },
 ];
 
@@ -131,46 +91,114 @@ const securityRules: SecurityRule[] = [
   {
     title: "Backend Secrets",
     status: "Required",
-    text: "Xaman API key, secret en webhook logic horen niet in frontend code.",
+    text: "XAMAN_API_KEY en XAMAN_API_SECRET blijven in Vercel Environment Variables.",
     icon: KeyRound,
   },
   {
     title: "User Confirmation",
     status: "Safety",
-    text: "Elke echte XRPL actie moet zichtbaar en bewust bevestigd worden in Xaman.",
+    text: "Elke echte XRPL actie moet zichtbaar bevestigd worden in Xaman.",
     icon: Wallet,
   },
   {
-    title: "Verify Before Reward",
+    title: "Verify Before XP",
     status: "Proof",
-    text: "XP, badges of streaks worden pas toegekend na correcte ledger verification.",
-    icon: BadgeCheck,
-  },
-  {
-    title: "No Auto Mainnet",
-    status: "Guard",
-    text: "AI of automation mag nooit automatisch mainnet transacties starten zonder user action.",
-    icon: AlertTriangle,
+    text: "XP telt pas na correcte verification met SourceTag 2606170002.",
+    icon: ShieldCheck,
   },
 ];
 
-const roadmap = [
-  "Xaman API keys naar backend zetten",
-  "POST /api/xaman/payload maken",
-  "Webhook endpoint maken",
-  "Payload result ophalen",
-  "Source tag 2606170002 valideren",
-  "Daily Check-In transaction koppelen",
-  "XP pas na ledger proof toekennen",
-  "Debug login vervangen door Xaman login",
-];
+function getErrorMessage(error: unknown) {
+  if (typeof error === "string") {
+    return error;
+  }
+
+  if (error && typeof error === "object" && "error" in error) {
+    const apiError = error as { error?: unknown };
+
+    if (typeof apiError.error === "string") {
+      return apiError.error;
+    }
+  }
+
+  return "Unknown Xaman error.";
+}
 
 export function XamanCenterTab() {
   const [selectedModule, setSelectedModule] = useState<XamanModule>(modules[0]);
-  const [selectedStep, setSelectedStep] = useState<PayloadStep>(payloadSteps[0]);
+  const [userWallet, setUserWallet] = useState("");
+  const [destinationWallet, setDestinationWallet] = useState("");
+  const [amountDrops, setAmountDrops] = useState("1000000");
+  const [memoText, setMemoText] = useState("OTT_DAILY_CHECKIN");
+  const [payloadUuid, setPayloadUuid] = useState("");
+  const [createResponse, setCreateResponse] =
+    useState<XamanCreatePayloadResponse | null>(null);
+  const [verifyResponse, setVerifyResponse] =
+    useState<XamanVerifyPayloadResponse | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("Ready to create payload.");
 
   const SelectedModuleIcon = selectedModule.icon;
-  const SelectedStepIcon = selectedStep.icon;
+  const qrUrl = getXamanPayloadQr(createResponse);
+  const payloadUrl = getXamanPayloadUrl(createResponse);
+  const rewardAllowed = isMakeWavesRewardAllowed(verifyResponse);
+
+  async function handleCreatePayload() {
+    if (!destinationWallet.trim()) {
+      setStatusMessage("Vul eerst destination wallet in.");
+      return;
+    }
+
+    setBusy(true);
+    setStatusMessage("Creating Xaman payload...");
+    setVerifyResponse(null);
+
+    try {
+      const response = await createMakeWavesPayload({
+        userWallet: userWallet.trim() || undefined,
+        destinationWallet: destinationWallet.trim(),
+        amountDrops: amountDrops.trim() || "1000000",
+        memoText: memoText.trim() || "OTT_DAILY_CHECKIN",
+      });
+
+      setCreateResponse(response);
+
+      const uuid = response.payload?.uuid ?? "";
+      setPayloadUuid(uuid);
+      setStatusMessage(`Payload created. SourceTag ${MAKE_WAVES_SOURCE_TAG} locked.`);
+    } catch (error) {
+      setStatusMessage(getErrorMessage(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleVerifyPayload() {
+    const cleanUuid = payloadUuid.trim();
+
+    if (!cleanUuid) {
+      setStatusMessage("Geen payload UUID om te verifyen.");
+      return;
+    }
+
+    setBusy(true);
+    setStatusMessage("Verifying payload result...");
+
+    try {
+      const response = await verifyMakeWavesPayload(cleanUuid);
+      setVerifyResponse(response);
+
+      if (isMakeWavesRewardAllowed(response)) {
+        setStatusMessage("Verified. SourceTag klopt. Reward/XP allowed.");
+      } else {
+        setStatusMessage("Payload checked, maar reward is nog niet allowed.");
+      }
+    } catch (error) {
+      setStatusMessage(getErrorMessage(error));
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <div className="p-6 bg-black min-h-screen text-white">
@@ -188,21 +216,21 @@ export function XamanCenterTab() {
             </div>
 
             <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
-              Real Wallet Actions Start Here
+              Create. Sign. Verify. Reward.
             </h2>
 
             <p className="font-mono text-sm text-white/45 max-w-3xl leading-relaxed">
-              De Xaman-laag van OTT Terminal. Hier plannen we wallet login,
-              payload signing, webhook results, ledger verification en Make Waves
-              source tag {MAKE_WAVES_SOURCE_TAG}.
+              Eerste echte Xaman control center voor OTT Terminal. Payloads
+              gaan via backend, gebruiker tekent in Xaman, daarna controleren
+              we SourceTag {MAKE_WAVES_SOURCE_TAG} voordat XP telt.
             </p>
           </div>
 
           <div className="col-span-12 xl:col-span-4 grid grid-cols-2 gap-3">
             <StatBox icon={Wallet} label="Wallet" value="Xaman" />
-            <StatBox icon={Fingerprint} label="Source Tag" value={`${MAKE_WAVES_SOURCE_TAG}`} />
-            <StatBox icon={ShieldCheck} label="Mode" value="Safe" />
-            <StatBox icon={Radio} label="Status" value="Build" />
+            <StatBox icon={Fingerprint} label="SourceTag" value={`${MAKE_WAVES_SOURCE_TAG}`} />
+            <StatBox icon={ShieldCheck} label="Reward Gate" value={rewardAllowed ? "Open" : "Locked"} />
+            <StatBox icon={Radio} label="Status" value={busy ? "Busy" : "Ready"} />
           </div>
         </div>
       </div>
@@ -211,10 +239,10 @@ export function XamanCenterTab() {
         <div className="col-span-12 xl:col-span-4 space-y-4">
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Layers size={18} className="text-white/60" />
+              <Database size={18} className="text-white/60" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                Xaman Modules
+                Xaman Flow
               </p>
             </div>
 
@@ -231,136 +259,204 @@ export function XamanCenterTab() {
           </div>
 
           <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Waves size={18} className="text-white/60" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Make Waves Tag
-              </p>
-            </div>
-
-            <div className="border border-white/10 bg-black p-5">
-              <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
-                SourceTag
-              </p>
-
-              <p className="font-orbitron text-2xl font-black uppercase mb-3">
-                {MAKE_WAVES_SOURCE_TAG}
-              </p>
-
-              <p className="font-mono text-xs text-white/45 leading-relaxed">
-                Dit is de vaste source tag voor jouw Make Waves flow in de OTT
-                Terminal.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="col-span-12 xl:col-span-5 space-y-4">
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
-                  Selected Module
-                </p>
-
-                <h3 className="font-orbitron text-xl font-black uppercase">
-                  {selectedModule.title}
-                </h3>
-              </div>
-
-              <SelectedModuleIcon size={22} className="text-white/60" />
-            </div>
-
-            <p className="font-mono text-sm text-white/45 leading-relaxed mb-5">
-              {selectedModule.text}
-            </p>
-
-            <MiniStatus label="Status" value={selectedModule.status} />
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
-                  Payload Flow
-                </p>
-
-                <h3 className="font-orbitron text-xl font-black uppercase">
-                  Sign Request Roadmap
-                </h3>
-              </div>
-
-              <Zap size={20} className="text-white/60" />
-            </div>
-
-            <div className="space-y-3">
-              {payloadSteps.map((step) => (
-                <StepButton
-                  key={step.title}
-                  step={step}
-                  active={selectedStep.title === step.title}
-                  onClick={() => setSelectedStep(step)}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center justify-between mb-5">
               <p className="font-orbitron text-xs uppercase tracking-widest">
                 Selected Step
               </p>
 
-              <SelectedStepIcon size={18} className="text-white/60" />
+              <SelectedModuleIcon size={18} className="text-white/60" />
             </div>
 
-            <p className="font-orbitron text-2xl font-black uppercase mb-2">
-              {selectedStep.title}
+            <p className="font-orbitron text-xl font-black uppercase mb-2">
+              {selectedModule.title}
             </p>
 
             <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-4">
-              {selectedStep.status}
+              {selectedModule.status}
             </p>
 
-            <p className="font-mono text-sm text-white/45 leading-relaxed">
-              {selectedStep.text}
+            <p className="font-mono text-xs text-white/45 leading-relaxed">
+              {selectedModule.text}
             </p>
           </div>
 
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Code2 size={18} className="text-white/60" />
+              <Waves size={18} className="text-white/60" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                Payload Template Preview
+                Fixed Make Waves Tag
               </p>
             </div>
 
-            <pre className="border border-white/10 bg-black p-5 overflow-x-auto text-[10px] text-white/50 leading-relaxed">
-{`{
-  "TransactionType": "Payment",
-  "Account": "{{userWallet}}",
-  "Destination": "{{ottWallet}}",
-  "Amount": "1000000",
-  "SourceTag": ${MAKE_WAVES_SOURCE_TAG},
-  "Memos": [
-    {
-      "Memo": {
-        "MemoType": "4d616b655761766573",
-        "MemoData": "4f54545f4441494c595f434845434b494e"
-      }
-    }
-  ]
-}`}
-            </pre>
+            <p className="font-orbitron text-2xl font-black uppercase break-all">
+              {MAKE_WAVES_SOURCE_TAG}
+            </p>
+          </div>
+        </div>
+
+        <div className="col-span-12 xl:col-span-5 space-y-4">
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Send size={18} className="text-white/60" />
+
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Create Payload
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <InputField
+                label="User Wallet Optional"
+                value={userWallet}
+                placeholder="r..."
+                onChange={setUserWallet}
+              />
+
+              <InputField
+                label="Destination Wallet Required"
+                value={destinationWallet}
+                placeholder="r..."
+                onChange={setDestinationWallet}
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <InputField
+                  label="Amount Drops"
+                  value={amountDrops}
+                  placeholder="1000000"
+                  onChange={setAmountDrops}
+                />
+
+                <InputField
+                  label="Memo Text"
+                  value={memoText}
+                  placeholder="OTT_DAILY_CHECKIN"
+                  onChange={setMemoText}
+                />
+              </div>
+
+              <button
+                onClick={handleCreatePayload}
+                disabled={busy}
+                className="w-full bg-white text-black py-4 font-orbitron text-xs font-black uppercase tracking-widest hover:bg-white/80 disabled:opacity-40 transition-all flex items-center justify-center gap-2"
+              >
+                {busy ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
+                Create Make Waves Payload
+              </button>
+            </div>
+          </div>
+
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <QrCode size={18} className="text-white/60" />
+
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Payload Access
+              </p>
+            </div>
+
+            {qrUrl ? (
+              <div className="grid grid-cols-1 md:grid-cols-[140px_1fr] gap-4 items-center">
+                <img
+                  src={qrUrl}
+                  alt="Xaman payload QR"
+                  className="w-32 h-32 bg-white p-2"
+                />
+
+                <div>
+                  <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+                    Payload URL
+                  </p>
+
+                  <p className="font-mono text-xs text-white/45 break-all mb-4">
+                    {payloadUrl}
+                  </p>
+
+                  <button
+                    onClick={() => openXamanPayload(createResponse)}
+                    className="border border-white/15 px-4 py-3 font-orbitron text-xs font-black uppercase tracking-widest text-white/70 hover:bg-white/[0.03] transition-all flex items-center gap-2"
+                  >
+                    <ExternalLink size={15} />
+                    Open Xaman
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <EmptyState text="Create eerst een payload. Daarna verschijnt QR/link hier." />
+            )}
+          </div>
+
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <ScanLine size={18} className="text-white/60" />
+
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Verify Payload
+              </p>
+            </div>
+
+            <InputField
+              label="Payload UUID"
+              value={payloadUuid}
+              placeholder="uuid from Xaman payload"
+              onChange={setPayloadUuid}
+            />
+
+            <button
+              onClick={handleVerifyPayload}
+              disabled={busy}
+              className="w-full border border-white/15 py-4 mt-4 font-orbitron text-xs font-black uppercase tracking-widest text-white/70 hover:bg-white/[0.03] disabled:opacity-40 transition-all flex items-center justify-center gap-2"
+            >
+              {busy ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+              Verify SourceTag {MAKE_WAVES_SOURCE_TAG}
+            </button>
           </div>
         </div>
 
         <div className="col-span-12 xl:col-span-3 space-y-4">
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
+              <Target size={18} className="text-white/60" />
+
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Current Status
+              </p>
+            </div>
+
+            <div className="border border-white/10 bg-black p-4 mb-3">
+              <p className="font-mono text-xs text-white/50 leading-relaxed">
+                {statusMessage}
+              </p>
+            </div>
+
+            <MiniStatus label="Reward Allowed" value={rewardAllowed ? "Yes" : "No"} />
+          </div>
+
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
               <ShieldCheck size={18} className="text-white/60" />
+
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Verification Result
+              </p>
+            </div>
+
+            {verifyResponse?.verified ? (
+              <div className="space-y-3">
+                <ResultLine label="Signed" value={String(verifyResponse.verified.signed)} />
+                <ResultLine label="Resolved" value={String(verifyResponse.verified.resolved)} />
+                <ResultLine label="Tag Match" value={String(verifyResponse.verified.sourceTagMatches)} />
+                <ResultLine label="Tx Hash" value={verifyResponse.verified.txHash ?? "None"} />
+              </div>
+            ) : (
+              <EmptyState text="Nog geen verification result." />
+            )}
+          </div>
+
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Lock size={18} className="text-white/60" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
                 Security Rules
@@ -373,29 +469,13 @@ export function XamanCenterTab() {
               ))}
             </div>
           </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Target size={18} className="text-white/60" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Roadmap
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {roadmap.map((item) => (
-                <RoadmapLine key={item} label={item} />
-              ))}
-            </div>
-          </div>
         </div>
 
         <div className="col-span-12 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <FeatureBox icon={Wallet} title="Login" text="Xaman session later" />
-          <FeatureBox icon={Send} title="Payloads" text="Backend generated" />
-          <FeatureBox icon={Fingerprint} title="Source Tag" text={`${MAKE_WAVES_SOURCE_TAG}`} />
-          <FeatureBox icon={CheckCircle2} title="Verify" text="Proof before XP" />
+          <FeatureBox icon={Link2} title="API" text="/api/xaman/create-payload" />
+          <FeatureBox icon={Code2} title="Verify" text="/api/xaman/verify-payload" />
+          <FeatureBox icon={Fingerprint} title="SourceTag" text={`${MAKE_WAVES_SOURCE_TAG}`} />
+          <FeatureBox icon={AlertTriangle} title="Secrets" text="Backend only" />
         </div>
       </div>
     </div>
@@ -463,40 +543,30 @@ function ModuleButton({
   );
 }
 
-function StepButton({
-  step,
-  active,
-  onClick,
+function InputField({
+  label,
+  value,
+  placeholder,
+  onChange,
 }: {
-  step: PayloadStep;
-  active: boolean;
-  onClick: () => void;
+  label: string;
+  value: string;
+  placeholder: string;
+  onChange: (value: string) => void;
 }) {
-  const Icon = step.icon;
-
   return (
-    <button
-      onClick={onClick}
-      className={`w-full border p-4 text-left transition-all ${
-        active
-          ? "border-white/30 bg-white/[0.08]"
-          : "border-white/10 bg-black hover:bg-white/[0.03]"
-      }`}
-    >
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Icon size={16} className="text-white/60" />
+    <label className="block">
+      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+        {label}
+      </p>
 
-          <p className="font-orbitron text-xs font-bold uppercase">
-            {step.title}
-          </p>
-        </div>
-
-        <p className="font-mono text-[10px] text-white/35 uppercase">
-          {step.status}
-        </p>
-      </div>
-    </button>
+      <input
+        value={value}
+        placeholder={placeholder}
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full bg-black border border-white/10 px-4 py-4 font-mono text-xs text-white/70 outline-none focus:border-white/30 placeholder:text-white/20"
+      />
+    </label>
   );
 }
 
@@ -508,6 +578,26 @@ function MiniStatus({ label, value }: { label: string; value: string }) {
       </p>
 
       <p className="font-orbitron text-sm font-black uppercase">{value}</p>
+    </div>
+  );
+}
+
+function ResultLine({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-white/10 bg-black p-3">
+      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-1">
+        {label}
+      </p>
+
+      <p className="font-mono text-[10px] text-white/55 break-all">{value}</p>
+    </div>
+  );
+}
+
+function EmptyState({ text }: { text: string }) {
+  return (
+    <div className="border border-white/10 bg-black p-4">
+      <p className="font-mono text-xs text-white/35 leading-relaxed">{text}</p>
     </div>
   );
 }
@@ -532,16 +622,6 @@ function RuleCard({ rule }: { rule: SecurityRule }) {
       <p className="font-mono text-[10px] text-white/40 leading-relaxed">
         {rule.text}
       </p>
-    </div>
-  );
-}
-
-function RoadmapLine({ label }: { label: string }) {
-  return (
-    <div className="border border-white/10 bg-black p-3 flex items-center gap-2">
-      <CheckCircle2 size={14} className="text-white/60" />
-
-      <p className="font-mono text-xs text-white/50">{label}</p>
     </div>
   );
 }
