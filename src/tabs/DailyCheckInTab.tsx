@@ -1,20 +1,23 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ElementType } from "react";
 import {
   Activity,
+  AlertTriangle,
   BadgeCheck,
-  CalendarCheck,
   CheckCircle2,
   Clock,
+  Coins,
+  Copy,
   ExternalLink,
   Fingerprint,
-  Flame,
+  Gift,
+  History,
   Loader2,
   Lock,
   QrCode,
+  RefreshCcw,
   ShieldCheck,
   Sparkles,
-  Target,
   Trophy,
   Wallet,
   Waves,
@@ -23,22 +26,35 @@ import {
 import {
   MAKE_WAVES_SOURCE_TAG,
   buildMakeWavesStatusLine,
-  getMakeWavesSourceTagLabel,
 } from "../lib/makeWaves";
 import {
   createDailyCheckInPayload,
   getMakeWavesVerificationLabel,
   getXamanPayloadQr,
   getXamanPayloadUrl,
+  getXamanPayloadUuid,
   isMakeWavesRewardAllowed,
   openXamanPayload,
   verifyMakeWavesPayload,
   type XamanCreatePayloadResponse,
   type XamanVerifyPayloadResponse,
 } from "../lib/xamanClient";
+import {
+  addMainnetLockedEvent,
+  addXpRewardEvent,
+  loadRewardState,
+  type RewardState,
+} from "../lib/rewardStore";
 
 type DailyCheckInTabProps = {
   walletAddress: string;
+};
+
+type Metric = {
+  label: string;
+  value: string;
+  text: string;
+  icon: ElementType;
 };
 
 type CheckInStep = {
@@ -48,121 +64,115 @@ type CheckInStep = {
   icon: ElementType;
 };
 
-type RewardItem = {
-  title: string;
-  value: string;
-  text: string;
-  icon: ElementType;
-};
-
 const checkInSteps: CheckInStep[] = [
   {
-    title: "Start Check-In",
-    status: "Step 1",
-    text: "Gebruiker start de dagelijkse Make Waves check-in vanuit de terminal.",
-    icon: CalendarCheck,
-  },
-  {
     title: "Create Xaman Payload",
-    status: "Step 2",
-    text: "Backend maakt een payload met SourceTag 2606170002.",
+    status: "Step 1",
+    text: "Maak een payment payload met Make Waves SourceTag.",
     icon: QrCode,
   },
   {
-    title: "User Signs In Xaman",
-    status: "Step 3",
-    text: "Gebruiker bevestigt bewust in Xaman. Geen seed phrase, geen private key.",
+    title: "Sign In Xaman",
+    status: "Step 2",
+    text: "Open Xaman, scan/sign en kom terug naar de terminal.",
     icon: Wallet,
   },
   {
-    title: "Verify And Reward",
-    status: "Step 4",
-    text: "Pas na signed + resolved + juiste SourceTag telt XP.",
-    icon: BadgeCheck,
-  },
-];
-
-const rewards: RewardItem[] = [
-  {
-    title: "Daily XP",
-    value: "+10",
-    text: "Wordt pas actief na correcte Xaman verification.",
-    icon: Zap,
-  },
-  {
-    title: "Streak",
-    value: "Live",
-    text: "Streak groeit door dagelijkse terugkeer.",
-    icon: Flame,
-  },
-  {
-    title: "SourceTag",
-    value: getMakeWavesSourceTagLabel(),
-    text: "Vaste Make Waves tracking tag.",
-    icon: Fingerprint,
-  },
-  {
-    title: "Proof",
-    value: "Ledger",
-    text: "Proof wordt later gekoppeld aan tx hash.",
+    title: "Verify Payload",
+    status: "Step 3",
+    text: "Controleer signed/resolved en SourceTag match.",
     icon: ShieldCheck,
   },
+  {
+    title: "Credit XP",
+    status: "Step 4",
+    text: "Bij geldige proof wordt XP lokaal toegevoegd.",
+    icon: Trophy,
+  },
+  {
+    title: "Lock Mainnet OTT",
+    status: "Policy",
+    text: "OTT mainnet token blijft locked achter legal gate.",
+    icon: Lock,
+  },
 ];
 
-function getErrorMessage(error: unknown) {
-  if (typeof error === "string") {
-    return error;
-  }
-
-  if (error && typeof error === "object" && "error" in error) {
-    const apiError = error as { error?: unknown };
-
-    if (typeof apiError.error === "string") {
-      return apiError.error;
-    }
-  }
-
-  return "Unknown check-in error.";
-}
-
 export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
-  const [selectedStep, setSelectedStep] = useState<CheckInStep>(checkInSteps[0]);
-  const [destinationWallet, setDestinationWallet] = useState("");
-  const [payloadUuid, setPayloadUuid] = useState("");
-  const [createResponse, setCreateResponse] =
+  const [destinationWallet, setDestinationWallet] = useState(walletAddress);
+  const [payloadResponse, setPayloadResponse] =
     useState<XamanCreatePayloadResponse | null>(null);
   const [verifyResponse, setVerifyResponse] =
     useState<XamanVerifyPayloadResponse | null>(null);
+  const [rewardState, setRewardState] = useState<RewardState>(() =>
+    loadRewardState(walletAddress)
+  );
+  const [selectedStep, setSelectedStep] = useState<CheckInStep>(
+    checkInSteps[0]
+  );
   const [busy, setBusy] = useState(false);
+  const [verifyBusy, setVerifyBusy] = useState(false);
+  const [rewardedUuid, setRewardedUuid] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState(
     buildMakeWavesStatusLine("daily-checkin")
   );
 
-  const SelectedStepIcon = selectedStep.icon;
-  const qrUrl = getXamanPayloadQr(createResponse);
-  const payloadUrl = getXamanPayloadUrl(createResponse);
-  const rewardAllowed = isMakeWavesRewardAllowed(verifyResponse);
+  useEffect(() => {
+    setRewardState(loadRewardState(walletAddress));
+  }, [walletAddress]);
 
-  async function handleCreateCheckIn() {
-    if (!destinationWallet.trim()) {
-      setStatusMessage("Vul eerst je OTT destination wallet in.");
+  const payloadUuid = getXamanPayloadUuid(payloadResponse);
+  const payloadUrl = getXamanPayloadUrl(payloadResponse);
+  const payloadQr = getXamanPayloadQr(payloadResponse);
+  const rewardAllowed = isMakeWavesRewardAllowed(verifyResponse);
+  const SelectedStepIcon = selectedStep.icon;
+
+  const metrics: Metric[] = [
+    {
+      label: "SourceTag",
+      value: String(MAKE_WAVES_SOURCE_TAG),
+      text: "Make Waves tracking.",
+      icon: Fingerprint,
+    },
+    {
+      label: "Daily XP",
+      value: "+10",
+      text: "Off-chain terminal XP.",
+      icon: Zap,
+    },
+    {
+      label: "Total XP",
+      value: String(rewardState.totalXp),
+      text: "Local reward ledger.",
+      icon: Trophy,
+    },
+    {
+      label: "OTT Eligible",
+      value: String(rewardState.ottTokenEligibleXp),
+      text: "Legal-gated score.",
+      icon: Coins,
+    },
+  ];
+
+  async function handleCreatePayload() {
+    const cleanDestination = destinationWallet.trim();
+
+    if (!cleanDestination) {
+      setStatusMessage("Vul eerst een destination wallet in.");
       return;
     }
 
     setBusy(true);
-    setVerifyResponse(null);
-    setStatusMessage("Creating Daily Check-In payload...");
+    setStatusMessage("Creating Xaman Daily Check-In payload...");
 
     try {
       const response = await createDailyCheckInPayload({
-        userWallet: walletAddress.startsWith("r") ? walletAddress : undefined,
-        destinationWallet: destinationWallet.trim(),
-        amountDrops: "1000000",
+        userWallet: walletAddress,
+        destinationWallet: cleanDestination,
       });
 
-      setCreateResponse(response);
-      setPayloadUuid(response.payload?.uuid ?? "");
-      setStatusMessage(`Payload ready with SourceTag ${MAKE_WAVES_SOURCE_TAG}.`);
+      setPayloadResponse(response);
+      setVerifyResponse(null);
+      setStatusMessage("Daily Check-In payload created. Open Xaman to sign.");
     } catch (error) {
       setStatusMessage(getErrorMessage(error));
     } finally {
@@ -170,26 +180,66 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
     }
   }
 
-  async function handleVerifyCheckIn() {
-    const cleanUuid = payloadUuid.trim();
-
-    if (!cleanUuid) {
-      setStatusMessage("Geen payload UUID om te verifyen.");
+  async function handleVerifyPayload() {
+    if (!payloadUuid) {
+      setStatusMessage("Maak eerst een Xaman payload aan.");
       return;
     }
 
-    setBusy(true);
-    setStatusMessage("Verifying Daily Check-In...");
+    setVerifyBusy(true);
+    setStatusMessage("Verifying Xaman payload...");
 
     try {
-      const response = await verifyMakeWavesPayload(cleanUuid);
+      const response = await verifyMakeWavesPayload(payloadUuid);
       setVerifyResponse(response);
       setStatusMessage(getMakeWavesVerificationLabel(response));
+
+      if (isMakeWavesRewardAllowed(response) && rewardedUuid !== payloadUuid) {
+        const nextRewardState = addXpRewardEvent({
+          walletAddress,
+          actionId: "daily-checkin",
+          txHash: response.verified?.txHash,
+          note: `Daily Check-In verified with SourceTag ${MAKE_WAVES_SOURCE_TAG}.`,
+        });
+
+        const lockedState = addMainnetLockedEvent({
+          walletAddress,
+          actionId: "ott-token-eligibility",
+          txHash: response.verified?.txHash,
+          note: "OTT mainnet token reward locked until legal review is complete.",
+        });
+
+        setRewardState({
+          ...lockedState,
+          totalXp: nextRewardState.totalXp,
+          ottTokenEligibleXp: nextRewardState.ottTokenEligibleXp,
+          events: lockedState.events,
+        });
+        setRewardedUuid(payloadUuid);
+        setStatusMessage("Daily Check-In verified. XP credited. OTT mainnet reward locked.");
+      }
     } catch (error) {
       setStatusMessage(getErrorMessage(error));
     } finally {
-      setBusy(false);
+      setVerifyBusy(false);
     }
+  }
+
+  function handleOpenXaman() {
+    const opened = openXamanPayload(payloadResponse);
+
+    if (!opened) {
+      setStatusMessage("Geen Xaman payload link gevonden.");
+    }
+  }
+
+  async function copyUuid() {
+    if (!payloadUuid) {
+      return;
+    }
+
+    await navigator.clipboard.writeText(payloadUuid);
+    setStatusMessage("Payload UUID copied.");
   }
 
   return (
@@ -200,27 +250,27 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
         <div className="relative z-10 grid grid-cols-12 gap-6 items-center">
           <div className="col-span-12 xl:col-span-8">
             <div className="flex items-center gap-2 mb-4 text-white/45">
-              <Waves size={17} />
+              <Activity size={17} />
 
               <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
-                Make Waves Daily Check-In
+                Daily Check-In
               </p>
             </div>
 
             <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
-              Daily Activity With SourceTag Proof
+              Sign. Verify. Earn XP.
             </h2>
 
             <p className="font-mono text-sm text-white/45 max-w-3xl leading-relaxed">
-              Deze check-in flow maakt een Xaman payload met jouw vaste Make
-              Waves SourceTag {MAKE_WAVES_SOURCE_TAG}. XP telt pas na correcte
-              verification.
+              Daily activity proof via Xaman. Bij een geldige payload met
+              SourceTag {MAKE_WAVES_SOURCE_TAG} wordt XP lokaal opgeslagen en
+              OTT token eligibility klaargezet achter legal gate.
             </p>
           </div>
 
           <div className="col-span-12 xl:col-span-4 grid grid-cols-2 gap-3">
-            {rewards.map((reward) => (
-              <RewardBox key={reward.title} reward={reward} />
+            {metrics.map((metric) => (
+              <MetricBox key={metric.label} metric={metric} />
             ))}
           </div>
         </div>
@@ -230,7 +280,7 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
         <div className="col-span-12 xl:col-span-4 space-y-4">
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Target size={18} className="text-white/60" />
+              <Waves size={18} className="text-white/60" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
                 Check-In Steps
@@ -273,17 +323,21 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
 
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Lock size={18} className="text-white/60" />
+              <History size={18} className="text-white/60" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                Safety Rule
+                Reward Snapshot
               </p>
             </div>
 
-            <p className="font-mono text-xs text-white/45 leading-relaxed">
-              No seed phrase. No private keys. User confirmation in Xaman first.
-              Reward only after SourceTag {MAKE_WAVES_SOURCE_TAG} verification.
-            </p>
+            <div className="space-y-3">
+              <MiniStatus label="Total XP" value={String(rewardState.totalXp)} />
+              <MiniStatus
+                label="OTT Eligible XP"
+                value={String(rewardState.ottTokenEligibleXp)}
+              />
+              <MiniStatus label="Events" value={String(rewardState.events.length)} />
+            </div>
           </div>
         </div>
 
@@ -293,34 +347,33 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
               <Wallet size={18} className="text-white/60" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                Create Daily Payload
+                Create Payload
               </p>
             </div>
 
             <InputField
-              label="Connected Wallet"
+              label="User Wallet"
               value={walletAddress}
-              placeholder="debug or r..."
-              disabled
+              readOnly
               onChange={() => undefined}
             />
 
-            <div className="mt-4">
-              <InputField
-                label="OTT Destination Wallet Required"
-                value={destinationWallet}
-                placeholder="r..."
-                onChange={setDestinationWallet}
-              />
-            </div>
+            <div className="h-4" />
+
+            <InputField
+              label="Destination Wallet"
+              value={destinationWallet}
+              placeholder="r..."
+              onChange={setDestinationWallet}
+            />
 
             <button
-              onClick={handleCreateCheckIn}
+              onClick={handleCreatePayload}
               disabled={busy}
               className="w-full bg-white text-black py-4 mt-5 font-orbitron text-xs font-black uppercase tracking-widest hover:bg-white/80 disabled:opacity-40 transition-all flex items-center justify-center gap-2"
             >
-              {busy ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
-              Create Check-In Payload
+              {busy ? <Loader2 size={16} className="animate-spin" /> : <QrCode size={16} />}
+              Create Xaman Check-In
             </button>
           </div>
 
@@ -329,64 +382,63 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
               <QrCode size={18} className="text-white/60" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                Xaman QR / Link
+                Xaman Payload
               </p>
             </div>
 
-            {qrUrl ? (
-              <div className="grid grid-cols-1 md:grid-cols-[140px_1fr] gap-4 items-center">
-                <img
-                  src={qrUrl}
-                  alt="Daily Check-In Xaman QR"
-                  className="w-32 h-32 bg-white p-2"
-                />
+            {payloadResponse ? (
+              <div className="space-y-4">
+                {payloadQr && (
+                  <div className="border border-white/10 bg-white p-4 inline-block">
+                    <img src={payloadQr} alt="Xaman QR" className="w-40 h-40" />
+                  </div>
+                )}
 
-                <div>
-                  <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
-                    Payload URL
-                  </p>
+                <MiniStatus label="Payload UUID" value={payloadUuid ?? "None"} />
 
-                  <p className="font-mono text-xs text-white/45 break-all mb-4">
-                    {payloadUrl}
-                  </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <ActionButton
+                    icon={ExternalLink}
+                    title="Open Xaman"
+                    text={payloadUrl ? "Launch payload" : "No link"}
+                    onClick={handleOpenXaman}
+                  />
 
-                  <button
-                    onClick={() => openXamanPayload(createResponse)}
-                    className="border border-white/15 px-4 py-3 font-orbitron text-xs font-black uppercase tracking-widest text-white/70 hover:bg-white/[0.03] transition-all flex items-center gap-2"
-                  >
-                    <ExternalLink size={15} />
-                    Open Xaman
-                  </button>
+                  <ActionButton
+                    icon={Copy}
+                    title="Copy UUID"
+                    text="For verification"
+                    onClick={copyUuid}
+                  />
                 </div>
               </div>
             ) : (
-              <EmptyState text="Maak eerst een Daily Check-In payload." />
+              <EmptyState text="Maak eerst een Xaman Daily Check-In payload." />
             )}
           </div>
 
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
-              <CheckCircle2 size={18} className="text-white/60" />
+              <ShieldCheck size={18} className="text-white/60" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                Verify Check-In
+                Verify + Credit XP
               </p>
             </div>
 
-            <InputField
-              label="Payload UUID"
-              value={payloadUuid}
-              placeholder="uuid from Xaman"
-              onChange={setPayloadUuid}
-            />
+            <div className="border border-white/10 bg-black p-5 mb-4">
+              <p className="font-mono text-xs text-white/50 leading-relaxed">
+                {statusMessage}
+              </p>
+            </div>
 
             <button
-              onClick={handleVerifyCheckIn}
-              disabled={busy}
-              className="w-full border border-white/15 py-4 mt-4 font-orbitron text-xs font-black uppercase tracking-widest text-white/70 hover:bg-white/[0.03] disabled:opacity-40 transition-all flex items-center justify-center gap-2"
+              onClick={handleVerifyPayload}
+              disabled={verifyBusy || !payloadUuid}
+              className="w-full bg-white text-black py-4 font-orbitron text-xs font-black uppercase tracking-widest hover:bg-white/80 disabled:opacity-40 transition-all flex items-center justify-center gap-2"
             >
-              {busy ? <Loader2 size={16} className="animate-spin" /> : <BadgeCheck size={16} />}
-              Verify And Unlock XP
+              {verifyBusy ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+              Verify Payload + Add XP
             </button>
           </div>
         </div>
@@ -394,91 +446,91 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
         <div className="col-span-12 xl:col-span-3 space-y-4">
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Sparkles size={18} className="text-white/60" />
+              <BadgeCheck size={18} className="text-white/60" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                Status
-              </p>
-            </div>
-
-            <div className="border border-white/10 bg-black p-4 mb-3">
-              <p className="font-mono text-xs text-white/50 leading-relaxed">
-                {statusMessage}
-              </p>
-            </div>
-
-            <MiniStatus label="Reward Allowed" value={rewardAllowed ? "Yes" : "No"} />
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Trophy size={18} className="text-white/60" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Verification
+                Verification Result
               </p>
             </div>
 
             {verifyResponse?.verified ? (
               <div className="space-y-3">
-                <ResultLine label="Signed" value={String(verifyResponse.verified.signed)} />
-                <ResultLine label="Resolved" value={String(verifyResponse.verified.resolved)} />
-                <ResultLine label="SourceTag" value={String(verifyResponse.verified.sourceTag)} />
-                <ResultLine label="XP" value={String(verifyResponse.verified.xp ?? 0)} />
+                <MiniStatus label="Signed" value={String(verifyResponse.verified.signed)} />
+                <MiniStatus label="Resolved" value={String(verifyResponse.verified.resolved)} />
+                <MiniStatus label="SourceTag" value={String(verifyResponse.verified.sourceTag)} />
+                <MiniStatus label="Reward" value={rewardAllowed ? "Allowed" : "Locked"} />
               </div>
             ) : (
-              <EmptyState text="Nog geen verified check-in." />
+              <EmptyState text="Nog geen verified payload." />
             )}
           </div>
 
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Clock size={18} className="text-white/60" />
+              <Lock size={18} className="text-white/60" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                Daily Rules
+                OTT Token Guard
               </p>
             </div>
 
-            <div className="space-y-3">
-              <RuleLine label="One check-in per day later" />
-              <RuleLine label="XP only after verification" />
-              <RuleLine label="SourceTag must match" />
-              <RuleLine label="Ledger proof before badge" />
+            <div className="border border-white/10 bg-black p-5">
+              <p className="font-orbitron text-2xl font-black uppercase mb-2">
+                Locked
+              </p>
+
+              <p className="font-mono text-xs text-white/40 leading-relaxed">
+                Mainnet OTT token airdrops blijven uit tot legal review klaar is.
+                XP en eligibility mogen wel lokaal getoond worden.
+              </p>
             </div>
           </div>
         </div>
 
         <div className="col-span-12 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <FeatureBox icon={Activity} title="Daily Loop" text="Return every day" />
-          <FeatureBox icon={FingerPrintIcon} title="SourceTag" text={`${MAKE_WAVES_SOURCE_TAG}`} />
-          <FeatureBox icon={Flame} title="Streak" text="Retention layer" />
-          <FeatureBox icon={ShieldCheck} title="Safety" text="Verify first" />
+          <FeatureBox icon={Zap} title="XP" text="Credited after verify" />
+          <FeatureBox icon={Coins} title="OTT" text="Eligibility only" />
+          <FeatureBox icon={Fingerprint} title="Tag" text={`${MAKE_WAVES_SOURCE_TAG}`} />
+          <FeatureBox icon={AlertTriangle} title="Mainnet" text="Legal gate" />
         </div>
       </div>
     </div>
   );
 }
 
-const FingerPrintIcon = Fingerprint;
+function getErrorMessage(error: unknown) {
+  if (typeof error === "string") {
+    return error;
+  }
 
-function RewardBox({ reward }: { reward: RewardItem }) {
-  const Icon = reward.icon;
+  if (error && typeof error === "object" && "error" in error) {
+    const apiError = error as { error?: unknown };
+
+    if (typeof apiError.error === "string") {
+      return apiError.error;
+    }
+  }
+
+  return "Unknown Daily Check-In error.";
+}
+
+function MetricBox({ metric }: { metric: Metric }) {
+  const Icon = metric.icon;
 
   return (
     <div className="border border-white/10 bg-black/60 p-4">
       <Icon size={18} className="text-white/60 mb-3" />
 
       <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
-        {reward.title}
+        {metric.label}
       </p>
 
       <p className="font-orbitron text-sm font-black uppercase mb-1 break-all">
-        {reward.value}
+        {metric.value}
       </p>
 
       <p className="font-mono text-[10px] text-white/30 uppercase">
-        {reward.text}
+        {metric.text}
       </p>
     </div>
   );
@@ -525,13 +577,13 @@ function InputField({
   label,
   value,
   placeholder,
-  disabled,
+  readOnly,
   onChange,
 }: {
   label: string;
   value: string;
-  placeholder: string;
-  disabled?: boolean;
+  placeholder?: string;
+  readOnly?: boolean;
   onChange: (value: string) => void;
 }) {
   return (
@@ -543,9 +595,9 @@ function InputField({
       <input
         value={value}
         placeholder={placeholder}
-        disabled={disabled}
+        readOnly={readOnly}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full bg-black border border-white/10 px-4 py-4 font-mono text-xs text-white/70 outline-none focus:border-white/30 placeholder:text-white/20 disabled:text-white/30"
+        className="w-full bg-black border border-white/10 px-4 py-4 font-mono text-xs text-white/70 outline-none focus:border-white/30 placeholder:text-white/20"
       />
     </label>
   );
@@ -558,30 +610,35 @@ function MiniStatus({ label, value }: { label: string; value: string }) {
         {label}
       </p>
 
-      <p className="font-orbitron text-sm font-black uppercase">{value}</p>
-    </div>
-  );
-}
-
-function ResultLine({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="border border-white/10 bg-black p-3">
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-1">
-        {label}
+      <p className="font-orbitron text-sm font-black uppercase break-all">
+        {value}
       </p>
-
-      <p className="font-mono text-[10px] text-white/55 break-all">{value}</p>
     </div>
   );
 }
 
-function RuleLine({ label }: { label: string }) {
+function ActionButton({
+  icon: Icon,
+  title,
+  text,
+  onClick,
+}: {
+  icon: ElementType;
+  title: string;
+  text: string;
+  onClick: () => void;
+}) {
   return (
-    <div className="border border-white/10 bg-black p-3 flex items-center gap-2">
-      <CheckCircle2 size={14} className="text-white/60" />
+    <button
+      onClick={onClick}
+      className="border border-white/10 bg-black p-4 text-left hover:bg-white/[0.03] transition-all"
+    >
+      <Icon size={18} className="text-white/60 mb-3" />
 
-      <p className="font-mono text-xs text-white/50">{label}</p>
-    </div>
+      <p className="font-orbitron text-xs font-bold uppercase mb-2">{title}</p>
+
+      <p className="font-mono text-[10px] text-white/35 uppercase">{text}</p>
+    </button>
   );
 }
 
