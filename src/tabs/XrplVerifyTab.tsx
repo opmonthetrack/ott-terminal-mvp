@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ElementType } from "react";
 import {
   Activity,
   AlertTriangle,
   BadgeCheck,
   CheckCircle2,
+  Coins,
   Database,
   Eye,
   Fingerprint,
@@ -31,6 +32,16 @@ import {
   verifyXrplTransaction,
   type VerifyXrplTransactionResponse,
 } from "../lib/xrplClient";
+import {
+  addMainnetLockedEvent,
+  addXpRewardEvent,
+  loadRewardState,
+  type RewardState,
+} from "../lib/rewardStore";
+
+type XrplVerifyTabProps = {
+  walletAddress?: string;
+};
 
 type XrplVerifyMetric = {
   label: string;
@@ -53,33 +64,6 @@ type VerifyStep = {
   icon: ElementType;
 };
 
-const metrics: XrplVerifyMetric[] = [
-  {
-    label: "SourceTag",
-    value: `${MAKE_WAVES_SOURCE_TAG}`,
-    text: "Vaste Make Waves tag.",
-    icon: Fingerprint,
-  },
-  {
-    label: "XRPL Check",
-    value: "Live",
-    text: "Controle via backend RPC.",
-    icon: Database,
-  },
-  {
-    label: "Reward Gate",
-    value: "Verify",
-    text: "Pas na ledger proof.",
-    icon: ShieldCheck,
-  },
-  {
-    label: "Status",
-    value: "Ready",
-    text: "Tx hash checker.",
-    icon: Radio,
-  },
-];
-
 const verifySteps: VerifyStep[] = [
   {
     title: "Paste Tx Hash",
@@ -100,10 +84,10 @@ const verifySteps: VerifyStep[] = [
     icon: Fingerprint,
   },
   {
-    title: "Unlock Reward",
+    title: "Credit Reward Ledger",
     status: "Step 4",
-    text: "Reward/XP/eligibility mag pas door als validated, success en tag matchen.",
-    icon: BadgeCheck,
+    text: "Na live ledger proof kun je XRPL Verify XP lokaal bijschrijven.",
+    icon: Trophy,
   },
 ];
 
@@ -123,38 +107,80 @@ const rules: VerifyRule[] = [
   {
     title: "Exact SourceTag",
     status: "2606170002",
-    text: `Foute of ontbrekende SourceTag wordt afgewezen.`,
+    text: "Foute of ontbrekende SourceTag wordt afgewezen.",
     icon: Fingerprint,
   },
   {
-    title: "No Manual Rewards",
+    title: "No Manual Mainnet",
     status: "Safety",
-    text: "Geen XP, badge of token eligibility zonder echte verification.",
+    text: "OTT mainnet token blijft locked achter legal gate.",
     icon: Lock,
   },
   {
-    title: "Legal Gate Later",
-    status: "OTT",
-    text: "OTT token airdrops pas na policy/legal check. Nu proof en eligibility.",
-    icon: AlertTriangle,
+    title: "Reward Wallet Needed",
+    status: "Store",
+    text: "Voor XP opslag moet er een wallet bekend zijn in de terminal.",
+    icon: Wallet,
   },
 ];
 
-export function XrplVerifyTab() {
+export function XrplVerifyTab({ walletAddress }: XrplVerifyTabProps) {
   const [txHash, setTxHash] = useState("");
-  const [expectedAccount, setExpectedAccount] = useState("");
+  const [rewardWallet, setRewardWallet] = useState(walletAddress ?? "");
+  const [expectedAccount, setExpectedAccount] = useState(walletAddress ?? "");
   const [expectedDestination, setExpectedDestination] = useState("");
   const [result, setResult] = useState<VerifyXrplTransactionResponse | null>(
     null
   );
+  const [rewardState, setRewardState] = useState<RewardState>(() =>
+    loadRewardState(walletAddress ?? "debug-wallet")
+  );
   const [selectedStep, setSelectedStep] = useState<VerifyStep>(verifySteps[0]);
   const [busy, setBusy] = useState(false);
+  const [rewardBusy, setRewardBusy] = useState(false);
+  const [creditedTxHash, setCreditedTxHash] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState(
-    buildMakeWavesStatusLine("source-tag-proof")
+    buildMakeWavesStatusLine("xrpl-verify")
   );
+
+  useEffect(() => {
+    const wallet = walletAddress ?? "";
+    setRewardWallet(wallet);
+    setExpectedAccount(wallet);
+    setRewardState(loadRewardState(wallet || "debug-wallet"));
+  }, [walletAddress]);
 
   const SelectedStepIcon = selectedStep.icon;
   const makeWavesVerified = isMakeWavesTransactionVerified(result);
+  const cleanRewardWallet = rewardWallet.trim();
+  const activeTxHash = result?.txHash ?? txHash.trim();
+
+  const metrics: XrplVerifyMetric[] = [
+    {
+      label: "SourceTag",
+      value: `${MAKE_WAVES_SOURCE_TAG}`,
+      text: "Vaste Make Waves tag.",
+      icon: Fingerprint,
+    },
+    {
+      label: "XRPL Check",
+      value: makeWavesVerified ? "Verified" : "Locked",
+      text: "Controle via backend RPC.",
+      icon: Database,
+    },
+    {
+      label: "Total XP",
+      value: String(rewardState.totalXp),
+      text: "Reward ledger.",
+      icon: Trophy,
+    },
+    {
+      label: "OTT Eligible",
+      value: String(rewardState.ottTokenEligibleXp),
+      text: "Legal-gated score.",
+      icon: Coins,
+    },
+  ];
 
   async function handleVerify() {
     const cleanHash = txHash.trim();
@@ -183,6 +209,44 @@ export function XrplVerifyTab() {
     }
   }
 
+  function handleCreditReward() {
+    if (!makeWavesVerified) {
+      setStatusMessage("Reward blijft locked tot XRPL proof verified is.");
+      return;
+    }
+
+    if (!cleanRewardWallet) {
+      setStatusMessage("Vul eerst een reward wallet in.");
+      return;
+    }
+
+    if (creditedTxHash === activeTxHash) {
+      setStatusMessage("Deze transaction hash is al bijgeschreven in deze sessie.");
+      return;
+    }
+
+    setRewardBusy(true);
+
+    addXpRewardEvent({
+      walletAddress: cleanRewardWallet,
+      actionId: "xrpl-verify",
+      txHash: activeTxHash,
+      note: `XRPL transaction verified with SourceTag ${MAKE_WAVES_SOURCE_TAG}.`,
+    });
+
+    const lockedState = addMainnetLockedEvent({
+      walletAddress: cleanRewardWallet,
+      actionId: "ott-token-eligibility",
+      txHash: activeTxHash,
+      note: "OTT mainnet token reward locked until legal review is complete.",
+    });
+
+    setRewardState(lockedState);
+    setCreditedTxHash(activeTxHash);
+    setRewardBusy(false);
+    setStatusMessage("XRPL proof verified. XP credited. OTT mainnet reward locked.");
+  }
+
   return (
     <div className="p-6 bg-black min-h-screen text-white">
       <div className="relative overflow-hidden border border-white/10 bg-white/[0.02] p-6 mb-6">
@@ -203,9 +267,9 @@ export function XrplVerifyTab() {
             </h2>
 
             <p className="font-mono text-sm text-white/45 max-w-3xl leading-relaxed">
-              Plak een XRPL transaction hash en controleer of de transactie
-              validated, successful en gekoppeld is aan Make Waves SourceTag{" "}
-              {MAKE_WAVES_SOURCE_TAG}.
+              Plak een XRPL transaction hash. Alleen validated, successful en
+              SourceTag {MAKE_WAVES_SOURCE_TAG} opent XP credit naar de Reward
+              Ledger.
             </p>
           </div>
 
@@ -317,7 +381,11 @@ export function XrplVerifyTab() {
               disabled={busy}
               className="w-full bg-white text-black py-4 mt-5 font-orbitron text-xs font-black uppercase tracking-widest hover:bg-white/80 disabled:opacity-40 transition-all flex items-center justify-center gap-2"
             >
-              {busy ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
+              {busy ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Zap size={16} />
+              )}
               Verify XRPL SourceTag {MAKE_WAVES_SOURCE_TAG}
             </button>
           </div>
@@ -345,9 +413,39 @@ export function XrplVerifyTab() {
 
               <MiniStatus
                 label="Tx Hash"
-                value={shortTxHash(result?.txHash ?? txHash)}
+                value={shortTxHash(activeTxHash)}
               />
             </div>
+          </div>
+
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <BadgeCheck size={18} className="text-white/60" />
+
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Credit Reward Ledger
+              </p>
+            </div>
+
+            <InputField
+              label="Reward Wallet"
+              value={rewardWallet}
+              placeholder="r..."
+              onChange={setRewardWallet}
+            />
+
+            <button
+              onClick={handleCreditReward}
+              disabled={rewardBusy || !makeWavesVerified}
+              className="w-full bg-white text-black py-4 mt-5 font-orbitron text-xs font-black uppercase tracking-widest hover:bg-white/80 disabled:opacity-40 transition-all flex items-center justify-center gap-2"
+            >
+              {rewardBusy ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Trophy size={16} />
+              )}
+              Credit XRPL Verify XP
+            </button>
           </div>
 
           <div className="border border-white/10 bg-white/[0.02] p-6">
@@ -361,14 +459,38 @@ export function XrplVerifyTab() {
 
             {result?.verified ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <ResultLine label="Validated" value={String(result.verified.validated)} />
-                <ResultLine label="Success" value={String(result.verified.success)} />
-                <ResultLine label="Result" value={result.verified.transactionResult} />
-                <ResultLine label="SourceTag" value={String(result.verified.sourceTag)} />
-                <ResultLine label="Tag Match" value={String(result.verified.sourceTagMatches)} />
-                <ResultLine label="Tx Type" value={result.verified.transactionType ?? "None"} />
-                <ResultLine label="Account" value={result.verified.account ?? "None"} />
-                <ResultLine label="Destination" value={result.verified.destination ?? "None"} />
+                <ResultLine
+                  label="Validated"
+                  value={String(result.verified.validated)}
+                />
+                <ResultLine
+                  label="Success"
+                  value={String(result.verified.success)}
+                />
+                <ResultLine
+                  label="Result"
+                  value={result.verified.transactionResult}
+                />
+                <ResultLine
+                  label="SourceTag"
+                  value={String(result.verified.sourceTag)}
+                />
+                <ResultLine
+                  label="Tag Match"
+                  value={String(result.verified.sourceTagMatches)}
+                />
+                <ResultLine
+                  label="Tx Type"
+                  value={result.verified.transactionType ?? "None"}
+                />
+                <ResultLine
+                  label="Account"
+                  value={result.verified.account ?? "None"}
+                />
+                <ResultLine
+                  label="Destination"
+                  value={result.verified.destination ?? "None"}
+                />
               </div>
             ) : (
               <EmptyState text="Nog geen XRPL transaction verified." />
@@ -382,25 +504,21 @@ export function XrplVerifyTab() {
               <Trophy size={18} className="text-white/60" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                Reward Gate
+                Reward Snapshot
               </p>
             </div>
 
-            <div className="border border-white/10 bg-black p-5 mb-4">
-              <p className="font-orbitron text-2xl font-black uppercase mb-2">
-                {makeWavesVerified ? "Open" : "Locked"}
-              </p>
-
-              <p className="font-mono text-xs text-white/40 leading-relaxed">
-                Open alleen bij validated, tesSUCCESS en SourceTag{" "}
-                {MAKE_WAVES_SOURCE_TAG}.
-              </p>
+            <div className="space-y-3">
+              <MiniStatus label="Total XP" value={String(rewardState.totalXp)} />
+              <MiniStatus
+                label="OTT Eligible"
+                value={String(rewardState.ottTokenEligibleXp)}
+              />
+              <MiniStatus
+                label="Mainnet"
+                value={rewardState.mainnetTokenLocked ? "Locked" : "Open"}
+              />
             </div>
-
-            <MiniStatus
-              label="Ledger Index"
-              value={String(result?.verified?.ledgerIndex ?? "None")}
-            />
           </div>
 
           <div className="border border-white/10 bg-white/[0.02] p-6">
@@ -432,9 +550,13 @@ export function XrplVerifyTab() {
 
         <div className="col-span-12 grid grid-cols-1 md:grid-cols-4 gap-4">
           <FeatureBox icon={Database} title="XRPL RPC" text="Backend check" />
-          <FeatureBox icon={Fingerprint} title="SourceTag" text={`${MAKE_WAVES_SOURCE_TAG}`} />
+          <FeatureBox
+            icon={Fingerprint}
+            title="SourceTag"
+            text={`${MAKE_WAVES_SOURCE_TAG}`}
+          />
           <FeatureBox icon={BadgeCheck} title="Reward" text="After proof" />
-          <FeatureBox icon={AlertTriangle} title="No Manual XP" text="Verify first" />
+          <FeatureBox icon={AlertTriangle} title="Mainnet" text="Legal gate" />
         </div>
       </div>
     </div>
