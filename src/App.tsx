@@ -9,6 +9,7 @@ import { EcosystemTab } from "./tabs/EcosystemTab";
 import { ValidatorTab } from "./tabs/ValidatorTab";
 import { DeveloperHubTab } from "./tabs/DeveloperHubTab";
 import { TokenizationTab } from "./tabs/TokenizationTab";
+import { TokenFactory } from "./tabs/TokenFactory";
 import { ProfileTab } from "./tabs/ProfileTab";
 import { OTTTokenCenterTab } from "./tabs/OTTTokenCenterTab";
 import { AIHubTab } from "./tabs/AIHubTab";
@@ -29,6 +30,7 @@ type ActiveTab =
   | "validator"
   | "developer"
   | "tokenization"
+  | "factory"
   | "profile"
   | "token"
   | "ai"
@@ -93,6 +95,11 @@ function MainApp() {
       id: "tokenization",
       label: "Tokenization",
       status: "RWA",
+    },
+    {
+      id: "factory",
+      label: "Token Factory",
+      status: "Create",
     },
     {
       id: "profile",
@@ -295,6 +302,8 @@ function MainApp() {
         {activeTab === "developer" && <DeveloperHubTab />}
 
         {activeTab === "tokenization" && <TokenizationTab />}
+
+        {activeTab === "factory" && <TokenFactory />}
 
         {activeTab === "profile" && <ProfileTab />}
 
