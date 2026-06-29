@@ -2,174 +2,129 @@ import { useEffect, useState } from "react";
 import type { ElementType } from "react";
 import {
   Activity,
-  ArrowDownLeft,
-  BarChart3,
-  Bot,
+  BadgeCheck,
+  BookOpen,
   CheckCircle2,
-  Eye,
-  GraduationCap,
-  Landmark,
-  Layers,
-  Loader2,
-  Newspaper,
+  Coins,
+  Database,
+  Fingerprint,
+  Gauge,
+  Globe2,
+  Lock,
   Radio,
-  Send,
+  Rocket,
   ShieldCheck,
-  ShoppingBag,
   Sparkles,
-  Target,
   Terminal,
   Trophy,
   Wallet,
+  Waves,
   Zap,
 } from "lucide-react";
+import {
+  MAKE_WAVES_ACTIONS,
+  MAKE_WAVES_SOURCE_TAG,
+} from "../lib/makeWaves";
+import {
+  loadRewardState,
+  type RewardEvent,
+  type RewardState,
+} from "../lib/rewardStore";
 
 type DashboardTabProps = {
   walletAddress: string;
 };
 
-type StatCardProps = {
+type DashboardMetric = {
   label: string;
   value: string;
-  subtitle: string;
+  text: string;
   icon: ElementType;
 };
 
-type Mission = {
-  id: string;
-  label: string;
-  reward: number;
-};
-
-type ModuleItem = {
+type ModuleCard = {
   title: string;
   status: string;
-  description: string;
+  text: string;
+  icon: ElementType;
 };
 
-const missions: Mission[] = [
+const modules: ModuleCard[] = [
   {
-    id: "read-intel",
-    label: "Read Intel Items",
-    reward: 10,
+    title: "Daily Check-In",
+    status: "XP",
+    text: "Maak Xaman proof en schrijf XP naar Reward Ledger.",
+    icon: Activity,
   },
   {
-    id: "finish-lesson",
-    label: "Finish Academy Lesson",
-    reward: 25,
+    title: "XRPL Verify",
+    status: "Proof",
+    text: "Controleer live tx hashes op SourceTag 2606170002.",
+    icon: Fingerprint,
   },
   {
-    id: "review-wallet",
-    label: "Review Wallet Safety",
-    reward: 15,
+    title: "Reward Ledger",
+    status: "Store",
+    text: "Bekijk XP, OTT eligibility en legal-gated rewards.",
+    icon: Database,
   },
   {
-    id: "quiz",
-    label: "Complete Quiz",
-    reward: 20,
-  },
-];
-
-const modules: ModuleItem[] = [
-  {
-    title: "Wallet Center",
-    status: "Safe",
-    description:
-      "Wallet identity, Xaman flows, trustline warnings en Daily Check-In komen hier samen.",
+    title: "Reward Policy",
+    status: "Legal",
+    text: "Houd mainnet OTT token rewards veilig achter legal gate.",
+    icon: ShieldCheck,
   },
   {
-    title: "Portfolio Center",
-    status: "Mock",
-    description:
-      "Portfolio overview, stablecoins, wallet health, risk notes en AI uitleg komen hier samen.",
+    title: "Xaman Center",
+    status: "Sign",
+    text: "Centrale plek voor payloads, signing en verification.",
+    icon: Wallet,
   },
   {
-    title: "XRPL Ecosystem Map",
-    status: "Map",
-    description:
-      "Discovery layer voor wallets, builders, DeFi, NFTs, AI tools, events en partners.",
-  },
-  {
-    title: "Validator Monitor",
-    status: "UNL",
-    description:
-      "Network health, validators, amendments, governance en consensus education.",
-  },
-  {
-    title: "Developer Hub",
-    status: "Build",
-    description:
-      "XRPL examples, Xaman payloads, source tag helper, API explorer en builder docs.",
-  },
-  {
-    title: "OTT Academy",
-    status: "Learn",
-    description:
-      "Learn & Earn tracks voor XRPL, wallets, stablecoins, AI, security en developer skills.",
-  },
-  {
-    title: "AI Hub",
-    status: "AI",
-    description:
-      "AI assistant, prompt library, wallet explainer, AI tutor, AI risk scanner en AI research.",
-  },
-  {
-    title: "Marketplace",
-    status: "Shop",
-    description:
-      "Merch, rewards, NFT badges, certificates, event tickets en toekomstige OTT utility.",
+    title: "Launch Control",
+    status: "Demo",
+    text: "Gebruik dit als Make Waves pitch/demo cockpit.",
+    icon: Rocket,
   },
 ];
-
-function shortAddress(address: string) {
-  if (!address) return "Unknown";
-  if (address.length <= 16) return address;
-  return `${address.slice(0, 8)}...${address.slice(-6)}`;
-}
 
 export function DashboardTab({ walletAddress }: DashboardTabProps) {
-  const [loading, setLoading] = useState(true);
-  const [checkInDone, setCheckInDone] = useState(false);
-  const [completedMissions, setCompletedMissions] = useState<string[]>([]);
-  const [selectedModule, setSelectedModule] = useState<ModuleItem>(modules[0]);
-
-  const isDebugWallet = walletAddress.includes("DEBUG");
-
-  const missionXp = completedMissions.reduce((total, missionId) => {
-    const mission = missions.find((item) => item.id === missionId);
-    return total + (mission?.reward || 0);
-  }, 0);
-
-  const totalXp = 130 + missionXp + (checkInDone ? 10 : 0);
-  const streak = checkInDone ? 4 : 3;
+  const [rewardState, setRewardState] = useState<RewardState>(() =>
+    loadRewardState(walletAddress)
+  );
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 400);
-    return () => clearTimeout(timer);
-  }, []);
+    setRewardState(loadRewardState(walletAddress));
+  }, [walletAddress]);
 
-  function toggleMission(missionId: string) {
-    setCompletedMissions((current) => {
-      if (current.includes(missionId)) {
-        return current.filter((id) => id !== missionId);
-      }
+  const lastEvent = rewardState.events[0] ?? null;
 
-      return [...current, missionId];
-    });
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="animate-spin mx-auto w-10 h-10 mb-4 text-white/70" />
-          <p className="font-orbitron text-xs uppercase tracking-[0.35em] text-white/40">
-            Loading XRPL OTT Terminal
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const metrics: DashboardMetric[] = [
+    {
+      label: "SourceTag",
+      value: String(MAKE_WAVES_SOURCE_TAG),
+      text: "Make Waves proof tag.",
+      icon: Fingerprint,
+    },
+    {
+      label: "Total XP",
+      value: String(rewardState.totalXp),
+      text: "Off-chain terminal score.",
+      icon: Trophy,
+    },
+    {
+      label: "OTT Eligible",
+      value: String(rewardState.ottTokenEligibleXp),
+      text: "Legal-gated reward score.",
+      icon: Coins,
+    },
+    {
+      label: "Mainnet OTT",
+      value: rewardState.mainnetTokenLocked ? "Locked" : "Open",
+      text: "No airdrop before legal gate.",
+      icon: Lock,
+    },
+  ];
 
   return (
     <div className="p-6 bg-black min-h-screen text-white">
@@ -177,311 +132,280 @@ export function DashboardTab({ walletAddress }: DashboardTabProps) {
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_white,_transparent_35%)]" />
 
         <div className="relative z-10 grid grid-cols-12 gap-6 items-center">
-          <div className="col-span-12 xl:col-span-7">
+          <div className="col-span-12 xl:col-span-8">
             <div className="flex items-center gap-2 mb-4 text-white/45">
-              <Terminal size={16} />
+              <Terminal size={17} />
 
               <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
-                XRPL OnTheTrack Terminal
+                Dashboard
               </p>
             </div>
 
-            <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase leading-tight mb-4">
-              Your XRPL Command Center
+            <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
+              XRPL OnTheTrack Command Center
             </h2>
 
             <p className="font-mono text-sm text-white/45 max-w-3xl leading-relaxed">
-              Wallet, intelligence, AI, Academy, rewards, marketplace,
-              stablecoins, CBDC, ISO 20022 en Make Waves activatie in één
-              terminal.
+              Overzicht van je Make Waves MVP: SourceTag proof, Xaman signing,
+              XP, OTT eligibility en legal-gated mainnet rewards.
             </p>
           </div>
 
-          <div className="col-span-12 xl:col-span-5 grid grid-cols-2 gap-3">
-            <StatCard
-              icon={Radio}
-              label="Network"
-              value="XRPL Mainnet"
-              subtitle="Live ledger focus"
-            />
-
-            <StatCard
-              icon={ShieldCheck}
-              label="Mode"
-              value={isDebugWallet ? "Debug" : "Live"}
-              subtitle="Safe build mode"
-            />
-
-            <StatCard
-              icon={Wallet}
-              label="Wallet"
-              value={shortAddress(walletAddress)}
-              subtitle="Connected identity"
-            />
-
-            <StatCard
-              icon={Trophy}
-              label="OTT XP"
-              value={`${totalXp} XP`}
-              subtitle={`${streak} day streak`}
-            />
+          <div className="col-span-12 xl:col-span-4 grid grid-cols-2 gap-3">
+            {metrics.map((metric) => (
+              <MetricBox key={metric.label} metric={metric} />
+            ))}
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-12 xl:col-span-3 space-y-4">
-          <PanelTitle
-            icon={Wallet}
-            title="Wallet Overview"
-            subtitle="Core account layer"
-          />
-
+        <div className="col-span-12 xl:col-span-4 space-y-4">
           <div className="border border-white/10 bg-white/[0.02] p-6">
-            <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
-              Mock Balance
-            </p>
-
-            <h3 className="font-orbitron text-3xl font-black mb-1">589.0000</h3>
-
-            <p className="font-mono text-xs text-white/40 mb-6">XRP</p>
-
-            <div className="grid grid-cols-2 gap-2">
-              <button className="flex items-center justify-center gap-2 bg-white text-black py-3 font-orbitron text-xs font-black uppercase">
-                <ArrowDownLeft size={15} />
-                Receive
-              </button>
-
-              <button className="flex items-center justify-center gap-2 border border-white/15 py-3 font-orbitron text-xs font-black uppercase text-white/70 hover:bg-white/[0.03] transition-all">
-                <Send size={15} />
-                Send
-              </button>
-            </div>
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <Zap size={16} className="text-white/60" />
+            <div className="flex items-center gap-2 mb-5">
+              <Wallet size={18} className="text-white/60" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                Make Waves Check-In
+                Wallet State
               </p>
             </div>
 
-            <p className="font-mono text-xs text-white/45 leading-relaxed mb-5">
-              {checkInDone
-                ? "Mock check-in voltooid. Later wordt dit een echte Xaman mainnet actie met source tag 2606."
-                : "Klik om een mock Daily Check-In te voltooien. Later koppelen we dit aan Xaman."}
-            </p>
-
-            <button
-              onClick={() => setCheckInDone(true)}
-              disabled={checkInDone}
-              className={`w-full py-3 font-orbitron text-xs uppercase tracking-widest transition-all ${
-                checkInDone
-                  ? "bg-white/10 text-white/35 cursor-not-allowed"
-                  : "bg-white text-black hover:bg-white/80"
-              }`}
-            >
-              {checkInDone ? "Check-In Done +10 XP" : "Complete Check-In"}
-            </button>
-          </div>
-        </div>
-
-        <div className="col-span-12 xl:col-span-6 space-y-4">
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center justify-between gap-4 mb-6">
-              <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
-                  Daily AI Briefing
-                </p>
-
-                <h3 className="font-orbitron text-xl font-black uppercase">
-                  Today on XRPL
-                </h3>
-              </div>
-
-              <Bot size={24} className="text-white/60" />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <MiniBrief
-                icon={Sparkles}
-                title="AI Hub"
-                text="XRPL AI, wallet uitleg, prompts en research komen samen."
-              />
-
-              <MiniBrief
-                icon={GraduationCap}
-                title="Academy"
-                text="Learn & Earn wordt de reden voor dagelijkse terugkeer."
-              />
-
-              <MiniBrief
-                icon={ShoppingBag}
-                title="Marketplace"
-                text="Merch, badges, courses en rewards komen later."
-              />
-            </div>
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
-                  Platform Modules
-                </p>
-
-                <h3 className="font-orbitron text-lg font-black uppercase">
-                  Click A Module
-                </h3>
-              </div>
-
-              <Layers size={18} className="text-white/35" />
-            </div>
-
-            <div className="space-y-3">
-              {modules.map((item) => (
-                <button
-                  key={item.title}
-                  onClick={() => setSelectedModule(item)}
-                  className={`w-full text-left border p-4 transition-all ${
-                    selectedModule.title === item.title
-                      ? "border-white/30 bg-white/[0.08]"
-                      : "border-white/10 bg-black hover:bg-white/[0.03]"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <p className="font-orbitron text-xs font-bold uppercase">
-                      {item.title}
-                    </p>
-
-                    <p className="font-mono text-[10px] text-white/35 uppercase">
-                      {item.status}
-                    </p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="col-span-12 xl:col-span-3 space-y-4">
-          <PanelTitle
-            icon={Target}
-            title="Mission Center"
-            subtitle="Daily retention loop"
-          />
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="space-y-3">
-              {missions.map((mission) => (
-                <MissionLine
-                  key={mission.id}
-                  mission={mission}
-                  completed={completedMissions.includes(mission.id)}
-                  onClick={() => toggleMission(mission.id)}
-                />
-              ))}
-            </div>
+            <MiniStatus label="Wallet" value={walletAddress} />
+            <div className="h-3" />
+            <MiniStatus label="Reward Events" value={String(rewardState.events.length)} />
+            <div className="h-3" />
+            <MiniStatus label="Updated" value={rewardState.updatedAt} />
           </div>
 
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Newspaper size={16} className="text-white/60" />
+              <Waves size={18} className="text-white/60" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                Selected Module
+                Make Waves Actions
               </p>
             </div>
 
-            <p className="font-orbitron text-lg font-black uppercase mb-3">
-              {selectedModule.title}
-            </p>
+            <div className="space-y-3">
+              {MAKE_WAVES_ACTIONS.map((action) => (
+                <ActionLine
+                  key={action.id}
+                  label={action.title}
+                  xp={action.xp}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
 
-            <p className="font-mono text-xs text-white/45 leading-relaxed mb-4">
-              {selectedModule.description}
-            </p>
+        <div className="col-span-12 xl:col-span-5 space-y-4">
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Gauge size={18} className="text-white/60" />
 
-            <p className="font-mono text-[10px] text-white/30 uppercase tracking-widest">
-              Status: {selectedModule.status}
-            </p>
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Build Progress
+              </p>
+            </div>
+
+            <ProgressRow label="Frontend MVP" value="90%" />
+            <ProgressRow label="Xaman Flow" value="65%" />
+            <ProgressRow label="SourceTag Proof" value="70%" />
+            <ProgressRow label="Reward Ledger" value="45%" />
+            <ProgressRow label="AIKit Layer" value="0%" />
+          </div>
+
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Sparkles size={18} className="text-white/60" />
+
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Core Modules
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {modules.map((module) => (
+                <ModuleBox key={module.title} module={module} />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="col-span-12 xl:col-span-3 space-y-4">
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Radio size={18} className="text-white/60" />
+
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Last Reward Event
+              </p>
+            </div>
+
+            {lastEvent ? (
+              <EventPreview event={lastEvent} />
+            ) : (
+              <EmptyState text="Nog geen reward event voor deze wallet." />
+            )}
+          </div>
+
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <BadgeCheck size={18} className="text-white/60" />
+
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Next Best Steps
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <ChecklistLine text="Set XAMAN_API_KEY in Vercel" />
+              <ChecklistLine text="Set XAMAN_API_SECRET in Vercel" />
+              <ChecklistLine text="Test Daily Check-In payload" />
+              <ChecklistLine text="Verify real XRPL tx hash" />
+              <ChecklistLine text="Keep OTT mainnet locked" />
+            </div>
           </div>
         </div>
 
         <div className="col-span-12 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <DashboardModule
-            icon={Activity}
-            title="Network Health"
-            value="Validator data later"
-          />
-
-          <DashboardModule
-            icon={BarChart3}
-            title="Portfolio Analytics"
-            value="Coming soon"
-          />
-
-          <DashboardModule
-            icon={Eye}
-            title="Risk Scanner"
-            value="Trustline alerts"
-          />
-
-          <DashboardModule
-            icon={Landmark}
-            title="Rails"
-            value="ISO / CBDC / RLUSD"
-          />
+          <FeatureBox icon={Zap} title="XP" text="Visible in terminal" />
+          <FeatureBox icon={Coins} title="OTT" text="Eligibility only" />
+          <FeatureBox icon={Globe2} title="XRPL" text="More tx proof" />
+          <FeatureBox icon={BookOpen} title="Demo" text="Ready for pitch" />
         </div>
       </div>
     </div>
   );
 }
 
-function StatCard({ label, value, subtitle, icon: Icon }: StatCardProps) {
+function MetricBox({ metric }: { metric: DashboardMetric }) {
+  const Icon = metric.icon;
+
   return (
     <div className="border border-white/10 bg-black/60 p-4">
-      <div className="flex items-center gap-2 mb-2 text-white/50">
-        <Icon size={15} />
+      <Icon size={18} className="text-white/60 mb-3" />
 
-        <p className="font-mono text-[10px] uppercase tracking-widest">
-          {label}
-        </p>
-      </div>
+      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+        {metric.label}
+      </p>
 
-      <p className="font-orbitron text-sm font-black uppercase">{value}</p>
+      <p className="font-orbitron text-sm font-black uppercase mb-1 break-all">
+        {metric.value}
+      </p>
 
-      <p className="font-mono text-[10px] text-white/30 mt-1">{subtitle}</p>
+      <p className="font-mono text-[10px] text-white/30 uppercase">
+        {metric.text}
+      </p>
     </div>
   );
 }
 
-function PanelTitle({
-  icon: Icon,
-  title,
-  subtitle,
-}: {
-  icon: ElementType;
-  title: string;
-  subtitle: string;
-}) {
+function MiniStatus({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border border-white/10 bg-white/[0.02] p-5">
-      <div className="flex items-center gap-2 mb-2">
-        <Icon size={16} className="text-white/60" />
+    <div className="border border-white/10 bg-black p-4">
+      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+        {label}
+      </p>
 
-        <p className="font-orbitron text-xs uppercase tracking-widest">
-          {title}
-        </p>
-      </div>
-
-      <p className="font-mono text-xs text-white/35">{subtitle}</p>
+      <p className="font-orbitron text-sm font-black uppercase break-all">
+        {value}
+      </p>
     </div>
   );
 }
 
-function MiniBrief({
+function ActionLine({ label, xp }: { label: string; xp: number }) {
+  return (
+    <div className="border border-white/10 bg-black p-3 flex items-center justify-between gap-3">
+      <p className="font-mono text-xs text-white/50">{label}</p>
+
+      <p className="font-mono text-[10px] text-white/35 uppercase">+{xp} XP</p>
+    </div>
+  );
+}
+
+function ProgressRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-white/10 bg-black p-4 mb-3">
+      <div className="flex items-center justify-between gap-4 mb-3">
+        <p className="font-orbitron text-xs font-bold uppercase">{label}</p>
+
+        <p className="font-mono text-[10px] text-white/40 uppercase">{value}</p>
+      </div>
+
+      <div className="h-1 bg-white/10 overflow-hidden">
+        <div className="h-full bg-white" style={{ width: value }} />
+      </div>
+    </div>
+  );
+}
+
+function ModuleBox({ module }: { module: ModuleCard }) {
+  const Icon = module.icon;
+
+  return (
+    <div className="border border-white/10 bg-black p-4">
+      <div className="flex items-start justify-between mb-3">
+        <Icon size={18} className="text-white/60" />
+
+        <p className="font-mono text-[10px] text-white/30 uppercase">
+          {module.status}
+        </p>
+      </div>
+
+      <p className="font-orbitron text-xs font-bold uppercase mb-2">
+        {module.title}
+      </p>
+
+      <p className="font-mono text-[10px] text-white/40 leading-relaxed">
+        {module.text}
+      </p>
+    </div>
+  );
+}
+
+function EventPreview({ event }: { event: RewardEvent }) {
+  return (
+    <div className="border border-white/10 bg-black p-4">
+      <p className="font-orbitron text-xs font-bold uppercase mb-2">
+        {event.type}
+      </p>
+
+      <p className="font-mono text-[10px] text-white/35 uppercase mb-3">
+        {event.actionId} • +{event.xp} XP
+      </p>
+
+      <p className="font-mono text-xs text-white/45 leading-relaxed mb-3">
+        {event.note}
+      </p>
+
+      <p className="font-mono text-[10px] text-white/30 uppercase">
+        {event.createdAt}
+      </p>
+    </div>
+  );
+}
+
+function ChecklistLine({ text }: { text: string }) {
+  return (
+    <div className="border border-white/10 bg-black p-3 flex items-center gap-2">
+      <CheckCircle2 size={14} className="text-white/60" />
+
+      <p className="font-mono text-xs text-white/50">{text}</p>
+    </div>
+  );
+}
+
+function EmptyState({ text }: { text: string }) {
+  return (
+    <div className="border border-white/10 bg-black p-4">
+      <p className="font-mono text-xs text-white/35 leading-relaxed">{text}</p>
+    </div>
+  );
+}
+
+function FeatureBox({
   icon: Icon,
   title,
   text,
@@ -491,68 +415,12 @@ function MiniBrief({
   text: string;
 }) {
   return (
-    <div className="border border-white/10 bg-black p-4">
-      <Icon size={18} className="text-white/60 mb-3" />
-
-      <p className="font-orbitron text-xs uppercase mb-2">{title}</p>
-
-      <p className="font-mono text-xs text-white/40 leading-relaxed">{text}</p>
-    </div>
-  );
-}
-
-function DashboardModule({
-  icon: Icon,
-  title,
-  value,
-}: {
-  icon: ElementType;
-  title: string;
-  value: string;
-}) {
-  return (
     <div className="border border-white/10 bg-white/[0.02] p-5">
       <Icon size={19} className="text-white/60 mb-4" />
 
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
-        {title}
-      </p>
+      <p className="font-orbitron text-sm font-bold uppercase mb-2">{title}</p>
 
-      <p className="font-orbitron text-sm font-black uppercase">{value}</p>
+      <p className="font-mono text-xs text-white/40 break-all">{text}</p>
     </div>
-  );
-}
-
-function MissionLine({
-  mission,
-  completed,
-  onClick,
-}: {
-  mission: Mission;
-  completed: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full flex items-center justify-between border p-3 text-left transition-all ${
-        completed
-          ? "border-white/20 bg-white/[0.08]"
-          : "border-white/10 bg-black hover:bg-white/[0.03]"
-      }`}
-    >
-      <div className="flex items-center gap-2">
-        <CheckCircle2
-          size={15}
-          className={completed ? "text-white" : "text-white/30"}
-        />
-
-        <p className="font-mono text-xs text-white/55">{mission.label}</p>
-      </div>
-
-      <p className="font-mono text-[10px] text-white/35 uppercase">
-        {completed ? "Done" : `+${mission.reward} XP`}
-      </p>
-    </button>
   );
 }
