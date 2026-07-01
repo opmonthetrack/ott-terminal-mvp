@@ -4,6 +4,8 @@ import {
   type MakeWavesActionId,
 } from "./makeWaves";
 
+export { MAKE_WAVES_SOURCE_TAG };
+
 export type XamanPayloadShape = {
   uuid?: string;
   refs?: {
