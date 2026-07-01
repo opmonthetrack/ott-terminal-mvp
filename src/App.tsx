@@ -19,6 +19,7 @@ import { OTTRewardPolicyTab } from "./tabs/OTTRewardPolicyTab";
 import { RewardLedgerTab } from "./tabs/RewardLedgerTab";
 import { OTTTestnetTokenTab } from "./tabs/OTTTestnetTokenTab";
 import { PartnerHubTab } from "./tabs/PartnerHubTab";
+import { TruthDeskTab } from "./tabs/TruthDeskTab";
 import { OTTIntelligence } from "./tabs/OTTIntelligence";
 import { LaunchControlTab } from "./tabs/LaunchControlTab";
 import { AIHubTab } from "./tabs/AIHubTab";
@@ -49,6 +50,7 @@ type ActiveTab =
   | "rewardledger"
   | "otttestnet"
   | "partners"
+  | "truthdesk"
   | "ottintelligence"
   | "launch"
   | "ai"
@@ -88,6 +90,7 @@ function MainApp() {
     { id: "rewardledger", label: "Reward Ledger", status: "Store" },
     { id: "otttestnet", label: "OTT Testnet", status: "Sim" },
     { id: "partners", label: "Partner Hub", status: "Learn" },
+    { id: "truthdesk", label: "Truth Desk", status: "Ask" },
     { id: "ottintelligence", label: "OTT Intelligence", status: "AI" },
     { id: "launch", label: "Launch Control", status: "Demo" },
     { id: "ai", label: "AI Hub", status: "Tools" },
@@ -288,6 +291,10 @@ function MainApp() {
 
         {activeTab === "partners" && (
           <PartnerHubTab walletAddress={walletAddress} />
+        )}
+
+        {activeTab === "truthdesk" && (
+          <TruthDeskTab walletAddress={walletAddress} />
         )}
 
         {activeTab === "ottintelligence" && <OTTIntelligence />}
