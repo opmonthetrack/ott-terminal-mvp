@@ -45,16 +45,19 @@ export type VerifyOttTokenPaymentResponse = {
   details?: unknown;
 };
 
-async function postJson<TResponse, TBody>(
-  url: string,
+async function postOtt<TResponse, TBody extends Record<string, unknown>>(
+  action: string,
   body: TBody
 ): Promise<TResponse> {
-  const response = await fetch(url, {
+  const response = await fetch("/api/ott", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({
+      action,
+      ...body,
+    }),
   });
 
   const data = (await response.json()) as TResponse;
@@ -69,8 +72,8 @@ async function postJson<TResponse, TBody>(
 export async function verifyOttTokenPayment(
   input: VerifyOttTokenPaymentInput
 ): Promise<VerifyOttTokenPaymentResponse> {
-  return postJson<VerifyOttTokenPaymentResponse, VerifyOttTokenPaymentInput>(
-    "/api/xrpl/verify-token-payment",
+  return postOtt<VerifyOttTokenPaymentResponse, VerifyOttTokenPaymentInput>(
+    "xrpl.verifyTokenPayment",
     input
   );
 }

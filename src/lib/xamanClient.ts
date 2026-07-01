@@ -1,71 +1,78 @@
 import {
-  MAKE_WAVES_DAILY_CHECKIN_MEMO,
   MAKE_WAVES_SOURCE_TAG,
-  getMakeWavesMemo,
+  getMakeWavesAction,
   type MakeWavesActionId,
 } from "./makeWaves";
 
-export { MAKE_WAVES_SOURCE_TAG } from "./makeWaves";
-
-export type CreateXamanPayloadInput = {
-  userWallet?: string;
-  destinationWallet: string;
-  amountDrops?: string;
-  memoText?: string;
-  actionId?: MakeWavesActionId;
+export type XamanPayloadShape = {
+  uuid?: string;
+  refs?: {
+    qr_png?: string;
+    qr_matrix?: string;
+    websocket_status?: string;
+  };
+  next?: {
+    always?: string;
+    no_push_msg_received?: string;
+  };
 };
 
-export type XamanCreatePayloadResponse = {
+export type CreateMakeWavesPayloadInput = {
+  actionId: MakeWavesActionId;
+  walletAddress?: string;
+  destinationWallet?: string;
+  amountDrops?: string;
+};
+
+export type XamanPayloadResponse = {
   ok: boolean;
-  actionId?: MakeWavesActionId;
+  mode?: string;
   sourceTag?: number;
-  transactionMeta?: unknown;
-  payload?: {
-    uuid?: string;
-    refs?: {
-      qr_png?: string;
-      qr_matrix?: string;
-      websocket_status?: string;
-    };
-    next?: {
-      always?: string;
-      no_push_msg_received?: string;
-    };
+  action?: {
+    id: MakeWavesActionId;
+    title: string;
+    xp: number;
+  };
+  payload?: XamanPayloadShape;
+  transactionMeta?: {
+    transactionType: string;
+    sourceTag: number;
+    memoText: string;
   };
   error?: string;
   details?: unknown;
 };
 
-export type XamanVerifyPayloadResponse = {
+export type XamanPayloadVerificationResponse = {
   ok: boolean;
-  actionId?: MakeWavesActionId;
-  makeWavesSourceTag?: number;
-  statusLine?: string;
+  sourceTag?: number;
   verified?: {
     signed: boolean;
     resolved: boolean;
-    txHash: string | null;
     account: string | null;
-    sourceTag: number | null;
-    sourceTagMatches: boolean;
-    rewardAllowed: boolean;
-    xp?: number;
+    txid: string | null;
+    sourceTag: number;
+    actionId: MakeWavesActionId;
+    xp: number;
   };
   payload?: unknown;
   error?: string;
   details?: unknown;
 };
 
-async function postJson<TResponse, TBody>(
-  url: string,
+async function postOtt<TResponse, TBody extends Record<string, unknown>>(
+  action: string,
   body: TBody
 ): Promise<TResponse> {
-  const response = await fetch(url, {
+  const response = await fetch("/api/ott", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({
+      action,
+      ...body,
+    }),
   });
 
   const data = (await response.json()) as TResponse;
@@ -78,62 +85,53 @@ async function postJson<TResponse, TBody>(
 }
 
 export async function createMakeWavesPayload(
-  input: CreateXamanPayloadInput
-): Promise<XamanCreatePayloadResponse> {
-  const actionId = input.actionId ?? "daily-checkin";
-
-  return postJson<XamanCreatePayloadResponse, CreateXamanPayloadInput>(
-    "/api/xaman/create-payload",
-    {
-      amountDrops: "1000000",
-      memoText: input.memoText ?? getMakeWavesMemo(actionId),
-      ...input,
-      actionId,
-    }
+  input: CreateMakeWavesPayloadInput
+): Promise<XamanPayloadResponse> {
+  return postOtt<XamanPayloadResponse, CreateMakeWavesPayloadInput>(
+    "xaman.createMakeWavesPayload",
+    input
   );
 }
 
-export async function createDailyCheckInPayload(input: {
-  userWallet?: string;
-  destinationWallet: string;
-  amountDrops?: string;
-}): Promise<XamanCreatePayloadResponse> {
+export async function createDailyCheckInPayload(
+  walletAddress?: string
+): Promise<XamanPayloadResponse> {
   return createMakeWavesPayload({
-    ...input,
     actionId: "daily-checkin",
-    memoText: MAKE_WAVES_DAILY_CHECKIN_MEMO,
+    walletAddress,
   });
 }
 
-export async function createSourceTagProofPayload(input: {
-  userWallet?: string;
-  destinationWallet: string;
-  amountDrops?: string;
-}): Promise<XamanCreatePayloadResponse> {
+export async function createSourceTagProofPayload(
+  walletAddress?: string
+): Promise<XamanPayloadResponse> {
   return createMakeWavesPayload({
-    ...input,
     actionId: "source-tag-proof",
-    memoText: getMakeWavesMemo("source-tag-proof"),
+    walletAddress,
   });
 }
 
 export async function verifyMakeWavesPayload(
-  uuid: string
-): Promise<XamanVerifyPayloadResponse> {
-  return postJson<XamanVerifyPayloadResponse, { uuid: string }>(
-    "/api/xaman/verify-payload",
-    { uuid }
-  );
+  uuid: string,
+  actionId: MakeWavesActionId = "daily-checkin"
+): Promise<XamanPayloadVerificationResponse> {
+  return postOtt<
+    XamanPayloadVerificationResponse,
+    { uuid: string; actionId: MakeWavesActionId }
+  >("xaman.verifyMakeWavesPayload", {
+    uuid,
+    actionId,
+  });
 }
 
 export function getXamanPayloadUuid(
-  response: XamanCreatePayloadResponse | null
+  response: XamanPayloadResponse | null
 ): string | null {
   return response?.payload?.uuid ?? null;
 }
 
 export function getXamanPayloadUrl(
-  response: XamanCreatePayloadResponse | null
+  response: XamanPayloadResponse | null
 ): string | null {
   return (
     response?.payload?.next?.always ??
@@ -143,12 +141,12 @@ export function getXamanPayloadUrl(
 }
 
 export function getXamanPayloadQr(
-  response: XamanCreatePayloadResponse | null
+  response: XamanPayloadResponse | null
 ): string | null {
   return response?.payload?.refs?.qr_png ?? null;
 }
 
-export function openXamanPayload(response: XamanCreatePayloadResponse | null) {
+export function openXamanPayload(response: XamanPayloadResponse | null) {
   const url = getXamanPayloadUrl(response);
 
   if (!url) {
@@ -160,32 +158,28 @@ export function openXamanPayload(response: XamanCreatePayloadResponse | null) {
 }
 
 export function isMakeWavesRewardAllowed(
-  response: XamanVerifyPayloadResponse | null
-): boolean {
+  response: XamanPayloadVerificationResponse | null,
+  actionId: MakeWavesActionId
+) {
+  const action = getMakeWavesAction(actionId);
+
   return Boolean(
-    response?.verified?.rewardAllowed &&
-      response.verified.sourceTag === MAKE_WAVES_SOURCE_TAG
+    response?.verified?.signed &&
+      response.verified.sourceTag === MAKE_WAVES_SOURCE_TAG &&
+      response.verified.xp === action.xp
   );
 }
 
 export function getMakeWavesVerificationLabel(
-  response: XamanVerifyPayloadResponse | null
+  response: XamanPayloadVerificationResponse | null
 ) {
   if (!response?.verified) {
-    return "Not verified yet";
+    return "No Xaman payload verified yet";
   }
 
-  if (isMakeWavesRewardAllowed(response)) {
-    return `Verified with SourceTag ${MAKE_WAVES_SOURCE_TAG}`;
+  if (response.verified.signed) {
+    return `Xaman payload signed with SourceTag ${MAKE_WAVES_SOURCE_TAG}`;
   }
 
-  if (!response.verified.signed) {
-    return "Payload not signed";
-  }
-
-  if (!response.verified.sourceTagMatches) {
-    return `Wrong SourceTag. Expected ${MAKE_WAVES_SOURCE_TAG}`;
-  }
-
-  return "Verification incomplete";
+  return "Xaman payload not signed yet";
 }

@@ -71,16 +71,19 @@ export type OttTokenPayloadResponse =
   | XamanTrustlinePayloadResponse
   | XamanTokenPaymentPayloadResponse;
 
-async function postJson<TResponse, TBody>(
-  url: string,
+async function postOtt<TResponse, TBody extends Record<string, unknown>>(
+  action: string,
   body: TBody
 ): Promise<TResponse> {
-  const response = await fetch(url, {
+  const response = await fetch("/api/ott", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({
+      action,
+      ...body,
+    }),
   });
 
   const data = (await response.json()) as TResponse;
@@ -95,8 +98,8 @@ async function postJson<TResponse, TBody>(
 export async function createOttTrustlinePayload(
   input: CreateTrustlinePayloadInput
 ): Promise<XamanTrustlinePayloadResponse> {
-  return postJson<XamanTrustlinePayloadResponse, CreateTrustlinePayloadInput>(
-    "/api/xaman/create-trustline-payload",
+  return postOtt<XamanTrustlinePayloadResponse, CreateTrustlinePayloadInput>(
+    "xaman.createTrustlinePayload",
     {
       currencyCode: "OTT",
       limitAmount: "1000000",
@@ -108,10 +111,10 @@ export async function createOttTrustlinePayload(
 export async function createOttTokenPaymentPayload(
   input: CreateTokenPaymentPayloadInput
 ): Promise<XamanTokenPaymentPayloadResponse> {
-  return postJson<
+  return postOtt<
     XamanTokenPaymentPayloadResponse,
     CreateTokenPaymentPayloadInput
-  >("/api/xaman/create-token-payment-payload", {
+  >("xaman.createTokenPaymentPayload", {
     currencyCode: "OTT",
     tokenAmount: "1",
     ...input,
