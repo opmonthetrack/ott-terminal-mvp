@@ -1,537 +1,794 @@
-import { useState } from "react";
-import type { ElementType } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Activity,
-  AlertTriangle,
-  BarChart3,
-  CheckCircle2,
-  Clock,
-  Cpu,
+  ArrowRight,
+  BadgeCheck,
+  Clock3,
   Database,
   Fingerprint,
   Gauge,
-  Globe2,
-  Layers,
-  Lock,
+  Link2,
+  Loader2,
   Network,
-  Radio,
-  ScanLine,
+  Search,
   Server,
   ShieldCheck,
-  Signal,
-  Sparkles,
-  Target,
-  Timer,
-  TrendingUp,
-  Vote,
-  Waves,
+  Wallet,
   Zap,
 } from "lucide-react";
+import { MAKE_WAVES_SOURCE_TAG } from "../lib/makeWaves";
 
-type NetworkMetric = {
-  label: string;
+type ConnectionStatus = "connecting" | "connected" | "offline";
+
+type ExplorerStats = {
+  ledgerIndex: number | null;
+  ledgerHash: string;
+  loadFactor: string;
+  networkId: string;
+  serverState: string;
+  endpoint: string;
+};
+
+type LatestTransaction = {
+  hash: string;
+  type: string;
+  account: string;
+  destination: string;
+  amount: string;
+  fee: string;
+};
+
+type SearchKind = "account" | "transaction" | "sourcetag" | "asset" | "unknown";
+
+type SearchResult = {
+  kind: SearchKind;
   value: string;
-  subtitle: string;
-  icon: ElementType;
-};
-
-type NetworkLayer = {
-  id: string;
   title: string;
-  status: string;
-  text: string;
-  icon: ElementType;
+  description: string;
 };
 
-type LedgerEvent = {
-  title: string;
-  status: string;
-  time: string;
-  text: string;
+type XrplMessage = {
+  type?: string;
+  ledger_index?: number;
+  ledger_hash?: string;
+  ledger_time?: number;
+  result?: {
+    ledger_current_index?: number;
+    ledger?: {
+      ledger_index?: string | number;
+      ledger_hash?: string;
+      transactions?: XrplTransaction[];
+    };
+    info?: {
+      complete_ledgers?: string;
+      load_factor?: number | string;
+      network_id?: number | string;
+      server_state?: string;
+      validated_ledger?: {
+        seq?: number;
+        hash?: string;
+      };
+    };
+  };
 };
 
-type HealthRule = {
-  title: string;
-  status: string;
-  text: string;
-  icon: ElementType;
+type XrplTransaction = {
+  hash?: string;
+  TransactionType?: string;
+  Account?: string;
+  Destination?: string;
+  Amount?: string | { currency?: string; value?: string; issuer?: string };
+  Fee?: string;
 };
 
-const metrics: NetworkMetric[] = [
-  {
-    label: "Ledger",
-    value: "Live",
-    subtitle: "Mock monitor",
-    icon: Database,
-  },
-  {
-    label: "Consensus",
-    value: "Active",
-    subtitle: "XRPL health",
-    icon: Network,
-  },
-  {
-    label: "Close Time",
-    value: "~4 sec",
-    subtitle: "Education view",
-    icon: Timer,
-  },
-  {
-    label: "Source Tag",
-    value: "2606",
-    subtitle: "Make Waves",
-    icon: Fingerprint,
-  },
-];
+const XRPL_WEBSOCKET_ENDPOINT = "wss://xrplcluster.com/";
 
-const layers: NetworkLayer[] = [
-  {
-    id: "ledger",
-    title: "Ledger State",
-    status: "Core",
-    text: "Laat later live ledger index, close time, validated ledgers en network availability zien.",
-    icon: Database,
-  },
-  {
-    id: "consensus",
-    title: "Consensus Layer",
-    status: "Active",
-    text: "Maakt duidelijk hoe XRPL validators consensus bereiken zonder mining of proof-of-work.",
-    icon: Signal,
-  },
-  {
-    id: "transactions",
-    title: "Transaction Flow",
-    status: "Track",
-    text: "Volgt later payments, trustlines, AMM actions, NFT badges en source-tagged activiteit.",
-    icon: Activity,
-  },
-  {
-    id: "amendments",
-    title: "Amendments",
-    status: "Governance",
-    text: "Toont later protocol changes, voting status, activatie en impact op gebruikers.",
-    icon: Vote,
-  },
-  {
-    id: "performance",
-    title: "Performance",
-    status: "Metrics",
-    text: "Meet later ledger close time, throughput, failed transactions en latency trends.",
-    icon: Gauge,
-  },
-  {
-    id: "alerts",
-    title: "Network Alerts",
-    status: "Safety",
-    text: "Geeft waarschuwingen bij network issues, issuer risk, wallet risk of abnormal activity.",
-    icon: AlertTriangle,
-  },
-];
-
-const ledgerEvents: LedgerEvent[] = [
-  {
-    title: "Validated Ledger",
-    status: "Mock",
-    time: "Now",
-    text: "Latest validated ledger information will appear here after live XRPL API connection.",
-  },
-  {
-    title: "Consensus Round",
-    status: "Healthy",
-    time: "Recent",
-    text: "Consensus education layer shows how validators agree on the next ledger state.",
-  },
-  {
-    title: "Source Tag Activity",
-    status: "2606",
-    time: "Today",
-    text: "Make Waves transactions with source tag 2606 will later be tracked here.",
-  },
-  {
-    title: "Amendment Watch",
-    status: "Monitor",
-    time: "This week",
-    text: "Protocol amendment changes can later be surfaced as clear user-friendly notes.",
-  },
-];
-
-const healthRules: HealthRule[] = [
-  {
-    title: "Validated Data Only",
-    status: "Rule",
-    text: "Network state should use validated ledger data when we connect the real XRPL API.",
-    icon: ShieldCheck,
-  },
-  {
-    title: "No Panic Alerts",
-    status: "Safety",
-    text: "Alerts must explain what happened without hype or fear language.",
-    icon: AlertTriangle,
-  },
-  {
-    title: "Explain Before Action",
-    status: "UX",
-    text: "Users should understand network status before taking wallet or DeFi actions.",
-    icon: Sparkles,
-  },
-  {
-    title: "Backend For Keys",
-    status: "Security",
-    text: "API keys and private service config stay backend only, never in frontend.",
-    icon: Lock,
-  },
-];
-
-const roadmap = [
-  "Live XRPL websocket koppelen",
-  "Ledger index tonen",
-  "Validated close time tonen",
-  "Network health score maken",
-  "Transaction feed toevoegen",
-  "Source tag 2606 monitor koppelen",
-  "Amendment watch live maken",
-  "AI network explainer toevoegen",
-];
+const initialStats: ExplorerStats = {
+  ledgerIndex: null,
+  ledgerHash: "waiting for ledger stream",
+  loadFactor: "—",
+  networkId: "mainnet",
+  serverState: "connecting",
+  endpoint: XRPL_WEBSOCKET_ENDPOINT,
+};
 
 export function NetworkState() {
-  const [selectedLayer, setSelectedLayer] = useState<NetworkLayer>(layers[0]);
-  const [selectedEvent, setSelectedEvent] = useState<LedgerEvent>(ledgerEvents[0]);
+  const [status, setStatus] = useState<ConnectionStatus>("connecting");
+  const [stats, setStats] = useState<ExplorerStats>(initialStats);
+  const [transactions, setTransactions] = useState<LatestTransaction[]>([]);
+  const [searchValue, setSearchValue] = useState("");
+  const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<string>("waiting");
 
-  const SelectedLayerIcon = selectedLayer.icon;
+  const visibleTransactions = useMemo(
+    () => transactions.slice(0, 8),
+    [transactions],
+  );
+
+  useEffect(() => {
+    let isClosed = false;
+    let requestId = 1;
+    let refreshTimer: number | undefined;
+
+    const socket = new WebSocket(XRPL_WEBSOCKET_ENDPOINT);
+
+    function send(command: string, payload: Record<string, unknown> = {}) {
+      if (socket.readyState !== WebSocket.OPEN) {
+        return;
+      }
+
+      socket.send(
+        JSON.stringify({
+          id: requestId,
+          command,
+          ...payload,
+        }),
+      );
+
+      requestId += 1;
+    }
+
+    socket.onopen = () => {
+      if (isClosed) {
+        return;
+      }
+
+      setStatus("connected");
+      setLastUpdated(new Date().toLocaleTimeString());
+
+      send("server_info");
+      send("ledger_current");
+      send("subscribe", { streams: ["ledger"] });
+
+      refreshTimer = window.setInterval(() => {
+        send("server_info");
+      }, 15000);
+    };
+
+    socket.onmessage = (event) => {
+      const message = safeParse(event.data);
+
+      if (!message) {
+        return;
+      }
+
+      if (message.type === "ledgerClosed") {
+        const nextLedgerIndex = message.ledger_index ?? null;
+
+        setStats((current) => ({
+          ...current,
+          ledgerIndex: nextLedgerIndex ?? current.ledgerIndex,
+          ledgerHash: message.ledger_hash ?? current.ledgerHash,
+          serverState: "connected",
+        }));
+
+        setLastUpdated(new Date().toLocaleTimeString());
+
+        if (nextLedgerIndex) {
+          send("ledger", {
+            ledger_index: nextLedgerIndex,
+            transactions: true,
+            expand: true,
+          });
+        }
+      }
+
+      if (message.result?.ledger_current_index) {
+        setStats((current) => ({
+          ...current,
+          ledgerIndex: message.result?.ledger_current_index ?? current.ledgerIndex,
+        }));
+      }
+
+      if (message.result?.info) {
+        const info = message.result.info;
+
+        setStats((current) => ({
+          ...current,
+          loadFactor: info.load_factor ? String(info.load_factor) : current.loadFactor,
+          networkId: info.network_id ? String(info.network_id) : current.networkId,
+          serverState: info.server_state ?? current.serverState,
+          ledgerIndex: info.validated_ledger?.seq ?? current.ledgerIndex,
+          ledgerHash: info.validated_ledger?.hash ?? current.ledgerHash,
+        }));
+
+        setLastUpdated(new Date().toLocaleTimeString());
+      }
+
+      if (message.result?.ledger?.transactions) {
+        const latest = message.result.ledger.transactions
+          .map(normalizeTransaction)
+          .filter((item): item is LatestTransaction => Boolean(item));
+
+        if (latest.length > 0) {
+          setTransactions(latest);
+          setLastUpdated(new Date().toLocaleTimeString());
+        }
+
+        setStats((current) => ({
+          ...current,
+          ledgerIndex:
+            Number(message.result?.ledger?.ledger_index) || current.ledgerIndex,
+          ledgerHash: message.result?.ledger?.ledger_hash ?? current.ledgerHash,
+        }));
+      }
+    };
+
+    socket.onerror = () => {
+      setStatus("offline");
+      setStats((current) => ({
+        ...current,
+        serverState: "offline",
+      }));
+    };
+
+    socket.onclose = () => {
+      if (!isClosed) {
+        setStatus("offline");
+        setStats((current) => ({
+          ...current,
+          serverState: "offline",
+        }));
+      }
+    };
+
+    return () => {
+      isClosed = true;
+
+      if (refreshTimer) {
+        window.clearInterval(refreshTimer);
+      }
+
+      socket.close();
+    };
+  }, []);
+
+  function handleSearch() {
+    const value = searchValue.trim();
+
+    if (!value) {
+      setSearchResult(null);
+      return;
+    }
+
+    setSearchResult(buildSearchResult(value));
+  }
 
   return (
-    <div className="p-6 bg-black min-h-screen text-white">
-      <div className="relative overflow-hidden border border-white/10 bg-white/[0.02] p-6 mb-6">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_white,_transparent_35%)]" />
+    <div className="min-h-screen bg-black text-white">
+      <section className="relative overflow-hidden border-b border-white/10">
+        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_20%_20%,_white,_transparent_26%),radial-gradient(circle_at_90%_10%,_white,_transparent_22%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,_transparent,_black_88%)]" />
 
-        <div className="relative z-10 grid grid-cols-12 gap-6 items-center">
-          <div className="col-span-12 xl:col-span-8">
-            <div className="flex items-center gap-2 mb-4 text-white/45">
-              <Radio size={17} />
+        <div className="relative z-10 p-6 xl:p-10">
+          <div className="grid grid-cols-12 gap-6 items-end">
+            <div className="col-span-12 xl:col-span-8">
+              <div className="inline-flex items-center gap-2 border border-white/10 bg-white/[0.03] px-4 py-2 mb-6">
+                {status === "connected" ? (
+                  <Zap size={15} className="text-white/70" />
+                ) : (
+                  <Loader2 size={15} className="text-white/50 animate-spin" />
+                )}
 
-              <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
-                XRPL Network State
-              </p>
-            </div>
-
-            <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
-              Ledger Health In Plain Language
-            </h2>
-
-            <p className="font-mono text-sm text-white/45 max-w-3xl leading-relaxed">
-              De network-state laag van OTT Terminal. Hier komen ledger health,
-              consensus, validated data, transaction flow, amendments, alerts en
-              source tag 2606 activiteit samen.
-            </p>
-          </div>
-
-          <div className="col-span-12 xl:col-span-4 grid grid-cols-2 gap-3">
-            {metrics.map((metric) => (
-              <MetricBox key={metric.label} metric={metric} />
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-12 xl:col-span-4 space-y-4">
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Layers size={18} className="text-white/60" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Network Layers
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {layers.map((layer) => (
-                <LayerButton
-                  key={layer.id}
-                  layer={layer}
-                  active={selectedLayer.id === layer.id}
-                  onClick={() => setSelectedLayer(layer)}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="col-span-12 xl:col-span-5 space-y-4">
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
-                  Selected Layer
+                <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-white/50">
+                  Live XRPL Explorer Layer
                 </p>
-
-                <h3 className="font-orbitron text-xl font-black uppercase">
-                  {selectedLayer.title}
-                </h3>
               </div>
 
-              <SelectedLayerIcon size={22} className="text-white/60" />
+              <h1 className="font-orbitron text-4xl xl:text-6xl font-black uppercase leading-none tracking-tight mb-6">
+                Search XRPL.
+                <br />
+                Track Ledgers.
+                <br />
+                Verify Proof.
+              </h1>
+
+              <p className="font-mono text-sm xl:text-base text-white/50 leading-relaxed max-w-3xl mb-8">
+                De nieuwe publieke voorkant van OTT Terminal. Eerst echte XRPL
+                data, daarna Xaman dashboard en daarna OTT Proof / Education
+                rond SourceTag {MAKE_WAVES_SOURCE_TAG}.
+              </p>
+
+              <div className="border border-white/10 bg-black/80 backdrop-blur p-3 max-w-4xl">
+                <div className="flex flex-col md:flex-row gap-3">
+                  <div className="flex-1 flex items-center gap-3 border border-white/10 bg-white/[0.03] px-4">
+                    <Search size={18} className="text-white/35 shrink-0" />
+
+                    <input
+                      value={searchValue}
+                      onChange={(event) => setSearchValue(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          handleSearch();
+                        }
+                      }}
+                      placeholder="Search account / tx hash / asset / SourceTag"
+                      className="w-full bg-transparent py-4 outline-none font-mono text-xs text-white placeholder:text-white/25"
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleSearch}
+                    className="bg-white text-black px-6 py-4 font-orbitron text-xs font-black uppercase tracking-widest hover:bg-white/80 transition-all"
+                  >
+                    Search
+                  </button>
+                </div>
+
+                {searchResult && (
+                  <div className="border border-white/10 bg-white/[0.02] p-4 mt-3">
+                    <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-white/35 mb-3">
+                      {searchResult.kind} result
+                    </p>
+
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                      <div>
+                        <p className="font-orbitron text-sm font-black uppercase mb-2 break-all">
+                          {searchResult.title}
+                        </p>
+
+                        <p className="font-mono text-xs text-white/45 leading-relaxed">
+                          {searchResult.description}
+                        </p>
+                      </div>
+
+                      <div className="font-mono text-[10px] text-white/35 uppercase break-all md:text-right">
+                        {searchResult.value}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <p className="font-mono text-sm text-white/45 leading-relaxed mb-5">
-              {selectedLayer.text}
-            </p>
+            <div className="col-span-12 xl:col-span-4">
+              <div className="border border-white/10 bg-black/70 backdrop-blur p-5">
+                <div className="flex items-center justify-between gap-3 mb-5">
+                  <p className="font-orbitron text-xs uppercase tracking-widest">
+                    Network Status
+                  </p>
 
-            <MiniStatus label="Status" value={selectedLayer.status} />
+                  <StatusPill status={status} />
+                </div>
+
+                <div className="space-y-3">
+                  <ExplorerRow label="Endpoint" value={stats.endpoint} />
+                  <ExplorerRow label="Server State" value={stats.serverState} />
+                  <ExplorerRow label="Network ID" value={stats.networkId} />
+                  <ExplorerRow label="Last Update" value={lastUpdated} />
+                </div>
+
+                <div className="border border-white/10 bg-white/[0.02] p-4 mt-5">
+                  <div className="flex items-start gap-3">
+                    <ShieldCheck size={18} className="text-white/55 shrink-0 mt-0.5" />
+
+                    <p className="font-mono text-xs text-white/45 leading-relaxed">
+                      Explorer mode is read-only. No custody, no broker, no
+                      yield, no trade execution.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center justify-between mb-6">
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mt-8">
+            <StatCard
+              label="Current Ledger"
+              value={stats.ledgerIndex ? formatNumber(stats.ledgerIndex) : "Loading"}
+              text="Live XRPL stream"
+              icon={Database}
+            />
+            <StatCard
+              label="Load Factor"
+              value={stats.loadFactor}
+              text="Server info"
+              icon={Gauge}
+            />
+            <StatCard
+              label="SourceTag"
+              value={String(MAKE_WAVES_SOURCE_TAG)}
+              text="OTT proof identity"
+              icon={Fingerprint}
+            />
+            <StatCard
+              label="Latest Txs"
+              value={String(visibleTransactions.length)}
+              text="From latest ledger"
+              icon={Activity}
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="p-6 xl:p-10">
+        <div className="grid grid-cols-12 gap-4">
+          <div className="col-span-12 xl:col-span-8 border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
               <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
-                  Ledger Events
+                <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-white/35 mb-3">
+                  Live Stream
                 </p>
 
-                <h3 className="font-orbitron text-xl font-black uppercase">
-                  Network Feed
-                </h3>
+                <h2 className="font-orbitron text-2xl font-black uppercase">
+                  Latest Transactions
+                </h2>
               </div>
 
-              <ScanLine size={20} className="text-white/60" />
+              <p className="font-mono text-xs text-white/35 max-w-md leading-relaxed">
+                Real-time concept view. Voor productie kunnen we later een
+                eigen XRPL indexer/cache toevoegen voor snellere search pages.
+              </p>
             </div>
 
-            <div className="space-y-3">
-              {ledgerEvents.map((event) => (
-                <EventRow
-                  key={`${event.title}-${event.time}`}
-                  event={event}
-                  active={selectedEvent.title === event.title}
-                  onClick={() => setSelectedEvent(event)}
+            {visibleTransactions.length === 0 ? (
+              <div className="border border-white/10 bg-black p-8 text-center">
+                <Loader2 size={22} className="animate-spin mx-auto mb-4 text-white/45" />
+
+                <p className="font-orbitron text-xs font-black uppercase mb-2">
+                  Waiting for next validated ledger
+                </p>
+
+                <p className="font-mono text-xs text-white/35">
+                  De live XRPL stream laadt de nieuwste ledger transacties.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {visibleTransactions.map((tx) => (
+                  <TransactionRow key={tx.hash} tx={tx} />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="col-span-12 xl:col-span-4 space-y-4">
+            <div className="border border-white/10 bg-white/[0.02] p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <Fingerprint size={18} className="text-white/60" />
+
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  SourceTag Search
+                </p>
+              </div>
+
+              <p className="font-mono text-xs text-white/45 leading-relaxed mb-5">
+                OTT proof identity blijft gekoppeld aan SourceTag{" "}
+                {MAKE_WAVES_SOURCE_TAG}. Later krijgt dit een eigen publieke
+                proof explorer.
+              </p>
+
+              <button
+                onClick={() => {
+                  setSearchValue(String(MAKE_WAVES_SOURCE_TAG));
+                  setSearchResult(buildSearchResult(String(MAKE_WAVES_SOURCE_TAG)));
+                }}
+                className="w-full border border-white/10 bg-black p-4 text-left hover:bg-white hover:text-black transition-all group"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="font-orbitron text-xs font-black uppercase mb-2">
+                      Search OTT SourceTag
+                    </p>
+                    <p className="font-mono text-[10px] uppercase text-white/35 group-hover:text-black/55">
+                      {MAKE_WAVES_SOURCE_TAG}
+                    </p>
+                  </div>
+
+                  <ArrowRight size={17} className="text-white/40 group-hover:text-black/70" />
+                </div>
+              </button>
+            </div>
+
+            <div className="border border-white/10 bg-white/[0.02] p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <Wallet size={18} className="text-white/60" />
+
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  Next Layer
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <MiniRoute
+                  icon={Wallet}
+                  title="Xaman Dashboard"
+                  text="Connect wallet and view XRPL profile."
                 />
-              ))}
+                <MiniRoute
+                  icon={BadgeCheck}
+                  title="Proof / Verify"
+                  text="Check tx hash, SourceTag and route proof."
+                />
+                <MiniRoute
+                  icon={Link2}
+                  title="OTT Education"
+                  text="Partner routes, risk notes and Proof Stamps."
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Target size={18} className="text-white/60" />
+            <div className="border border-white/10 bg-white/[0.02] p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <Server size={18} className="text-white/60" />
 
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Selected Event
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  Ledger Hash
+                </p>
+              </div>
+
+              <p className="font-mono text-xs text-white/45 leading-relaxed break-all">
+                {stats.ledgerHash}
               </p>
-            </div>
-
-            <p className="font-orbitron text-2xl font-black uppercase mb-2">
-              {selectedEvent.title}
-            </p>
-
-            <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-4">
-              {selectedEvent.status} • {selectedEvent.time}
-            </p>
-
-            <p className="font-mono text-sm text-white/45 leading-relaxed">
-              {selectedEvent.text}
-            </p>
-          </div>
-        </div>
-
-        <div className="col-span-12 xl:col-span-3 space-y-4">
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <ShieldCheck size={18} className="text-white/60" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Health Rules
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {healthRules.map((rule) => (
-                <RuleCard key={rule.title} rule={rule} />
-              ))}
-            </div>
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Clock size={18} className="text-white/60" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Roadmap
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {roadmap.map((item) => (
-                <RoadmapLine key={item} label={item} />
-              ))}
             </div>
           </div>
         </div>
+      </section>
+    </div>
+  );
+}
 
-        <div className="col-span-12 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <FeatureBox icon={Globe2} title="Mainnet" text="XRPL network focus" />
-          <FeatureBox icon={Server} title="Nodes" text="Validator layer" />
-          <FeatureBox icon={TrendingUp} title="Health" text="Score later" />
-          <FeatureBox icon={Waves} title="2606" text="Make Waves tracking" />
-        </div>
+function safeParse(input: string): XrplMessage | null {
+  try {
+    return JSON.parse(input) as XrplMessage;
+  } catch {
+    return null;
+  }
+}
+
+function normalizeTransaction(tx: XrplTransaction): LatestTransaction | null {
+  if (!tx.hash) {
+    return null;
+  }
+
+  return {
+    hash: tx.hash,
+    type: tx.TransactionType ?? "Unknown",
+    account: tx.Account ?? "unknown",
+    destination: tx.Destination ?? "—",
+    amount: formatAmount(tx.Amount),
+    fee: tx.Fee ? `${dropsToXrp(tx.Fee)} XRP` : "—",
+  };
+}
+
+function formatAmount(amount: XrplTransaction["Amount"]): string {
+  if (!amount) {
+    return "—";
+  }
+
+  if (typeof amount === "string") {
+    return `${dropsToXrp(amount)} XRP`;
+  }
+
+  const value = amount.value ?? "0";
+  const currency = amount.currency ?? "Issued";
+
+  return `${value} ${currency}`;
+}
+
+function dropsToXrp(value: string): string {
+  const numericValue = Number(value);
+
+  if (!Number.isFinite(numericValue)) {
+    return value;
+  }
+
+  return (numericValue / 1_000_000).toLocaleString(undefined, {
+    maximumFractionDigits: 6,
+  });
+}
+
+function buildSearchResult(value: string): SearchResult {
+  const trimmedValue = value.trim();
+  const upperValue = trimmedValue.toUpperCase();
+
+  if (trimmedValue === String(MAKE_WAVES_SOURCE_TAG)) {
+    return {
+      kind: "sourcetag",
+      value: trimmedValue,
+      title: "OTT SourceTag Proof",
+      description:
+        "Dit is de officiële OTT proof identity. Later koppelen we hier een publieke SourceTag proof explorer aan.",
+    };
+  }
+
+  if (/^[A-Fa-f0-9]{64}$/.test(trimmedValue)) {
+    return {
+      kind: "transaction",
+      value: trimmedValue,
+      title: "Transaction Hash",
+      description:
+        "Deze waarde lijkt op een XRPL transaction hash. Volgende stap is detail lookup met tx verification.",
+    };
+  }
+
+  if (/^r[1-9A-HJ-NP-Za-km-z]{24,34}$/.test(trimmedValue)) {
+    return {
+      kind: "account",
+      value: trimmedValue,
+      title: "XRPL Account",
+      description:
+        "Deze waarde lijkt op een XRPL account. Volgende stap is account lookup met balances, trustlines en history.",
+    };
+  }
+
+  if (/^[A-Z0-9]{3,40}$/.test(upperValue)) {
+    return {
+      kind: "asset",
+      value: upperValue,
+      title: "Asset / Currency Search",
+      description:
+        "Deze waarde lijkt op een asset of issued currency code. Volgende stap is asset lookup en issuer filtering.",
+    };
+  }
+
+  return {
+    kind: "unknown",
+    value: trimmedValue,
+    title: "Search Prepared",
+    description:
+      "De zoekstructuur staat klaar. Volgende stap is volledige XRPL lookup routing toevoegen.",
+  };
+}
+
+function formatNumber(value: number): string {
+  return value.toLocaleString();
+}
+
+function StatusPill({ status }: { status: ConnectionStatus }) {
+  const label =
+    status === "connected"
+      ? "Live"
+      : status === "connecting"
+        ? "Connecting"
+        : "Offline";
+
+  return (
+    <div className="border border-white/10 bg-white/[0.03] px-3 py-2">
+      <div className="flex items-center gap-2">
+        <span
+          className={`w-2 h-2 rounded-full ${
+            status === "connected" ? "bg-white" : "bg-white/25"
+          }`}
+        />
+
+        <p className="font-mono text-[9px] uppercase tracking-widest text-white/55">
+          {label}
+        </p>
       </div>
     </div>
   );
 }
 
-function MetricBox({ metric }: { metric: NetworkMetric }) {
-  const Icon = metric.icon;
+function ExplorerRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-white/10 bg-white/[0.02] p-3">
+      <p className="font-mono text-[10px] text-white/30 uppercase tracking-widest mb-2">
+        {label}
+      </p>
 
+      <p className="font-orbitron text-xs font-black uppercase break-all">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  text,
+  icon: Icon,
+}: {
+  label: string;
+  value: string;
+  text: string;
+  icon: typeof Activity;
+}) {
   return (
     <div className="border border-white/10 bg-black/60 p-4">
       <Icon size={18} className="text-white/60 mb-3" />
 
       <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
-        {metric.label}
-      </p>
-
-      <p className="font-orbitron text-sm font-black uppercase mb-1">
-        {metric.value}
-      </p>
-
-      <p className="font-mono text-[10px] text-white/30 uppercase">
-        {metric.subtitle}
-      </p>
-    </div>
-  );
-}
-
-function LayerButton({
-  layer,
-  active,
-  onClick,
-}: {
-  layer: NetworkLayer;
-  active: boolean;
-  onClick: () => void;
-}) {
-  const Icon = layer.icon;
-
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full border p-4 text-left transition-all ${
-        active
-          ? "border-white/30 bg-white/[0.08]"
-          : "border-white/10 bg-black hover:bg-white/[0.03]"
-      }`}
-    >
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Icon size={16} className="text-white/60" />
-
-          <p className="font-orbitron text-xs font-bold uppercase">
-            {layer.title}
-          </p>
-        </div>
-
-        <p className="font-mono text-[10px] text-white/35 uppercase">
-          {layer.status}
-        </p>
-      </div>
-    </button>
-  );
-}
-
-function EventRow({
-  event,
-  active,
-  onClick,
-}: {
-  event: LedgerEvent;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full border p-4 text-left transition-all ${
-        active
-          ? "border-white/30 bg-white/[0.08]"
-          : "border-white/10 bg-black hover:bg-white/[0.03]"
-      }`}
-    >
-      <div className="flex items-center justify-between gap-4 mb-2">
-        <p className="font-orbitron text-sm font-bold uppercase">
-          {event.title}
-        </p>
-
-        <p className="font-mono text-[10px] text-white/45 uppercase">
-          {event.status}
-        </p>
-      </div>
-
-      <p className="font-mono text-[10px] text-white/35 uppercase">
-        {event.time}
-      </p>
-    </button>
-  );
-}
-
-function MiniStatus({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="border border-white/10 bg-black p-4">
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
         {label}
       </p>
 
-      <p className="font-orbitron text-sm font-black uppercase">{value}</p>
+      <p className="font-orbitron text-sm font-black uppercase mb-1 break-all">
+        {value}
+      </p>
+
+      <p className="font-mono text-[10px] text-white/30 uppercase">{text}</p>
     </div>
   );
 }
 
-function RuleCard({ rule }: { rule: HealthRule }) {
-  const Icon = rule.icon;
-
+function TransactionRow({ tx }: { tx: LatestTransaction }) {
   return (
-    <div className="border border-white/10 bg-black p-4">
-      <div className="flex items-start justify-between mb-3">
-        <Icon size={17} className="text-white/60" />
+    <div className="border border-white/10 bg-black p-4 hover:bg-white/[0.03] transition-all">
+      <div className="grid grid-cols-12 gap-4 items-center">
+        <div className="col-span-12 md:col-span-3">
+          <p className="font-mono text-[10px] text-white/30 uppercase tracking-widest mb-2">
+            Type
+          </p>
 
-        <p className="font-mono text-[10px] text-white/30 uppercase">
-          {rule.status}
-        </p>
+          <p className="font-orbitron text-xs font-black uppercase">{tx.type}</p>
+        </div>
+
+        <div className="col-span-12 md:col-span-4">
+          <p className="font-mono text-[10px] text-white/30 uppercase tracking-widest mb-2">
+            Hash
+          </p>
+
+          <p className="font-mono text-xs text-white/55 break-all">
+            {shortHash(tx.hash)}
+          </p>
+        </div>
+
+        <div className="col-span-12 md:col-span-3">
+          <p className="font-mono text-[10px] text-white/30 uppercase tracking-widest mb-2">
+            Amount
+          </p>
+
+          <p className="font-mono text-xs text-white/55">{tx.amount}</p>
+        </div>
+
+        <div className="col-span-12 md:col-span-2 md:text-right">
+          <p className="font-mono text-[10px] text-white/30 uppercase tracking-widest mb-2">
+            Fee
+          </p>
+
+          <p className="font-mono text-xs text-white/55">{tx.fee}</p>
+        </div>
       </div>
 
-      <p className="font-orbitron text-xs font-bold uppercase mb-2">
-        {rule.title}
-      </p>
+      <div className="grid grid-cols-12 gap-4 mt-4 pt-4 border-t border-white/10">
+        <div className="col-span-12 md:col-span-6">
+          <p className="font-mono text-[10px] text-white/30 uppercase tracking-widest mb-2">
+            Account
+          </p>
 
-      <p className="font-mono text-[10px] text-white/40 leading-relaxed">
-        {rule.text}
-      </p>
+          <p className="font-mono text-xs text-white/45 break-all">{tx.account}</p>
+        </div>
+
+        <div className="col-span-12 md:col-span-6">
+          <p className="font-mono text-[10px] text-white/30 uppercase tracking-widest mb-2">
+            Destination
+          </p>
+
+          <p className="font-mono text-xs text-white/45 break-all">
+            {tx.destination}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
 
-function RoadmapLine({ label }: { label: string }) {
-  return (
-    <div className="border border-white/10 bg-black p-3 flex items-center gap-2">
-      <CheckCircle2 size={14} className="text-white/60" />
-
-      <p className="font-mono text-xs text-white/50">{label}</p>
-    </div>
-  );
-}
-
-function FeatureBox({
+function MiniRoute({
   icon: Icon,
   title,
   text,
 }: {
-  icon: ElementType;
+  icon: typeof Activity;
   title: string;
   text: string;
 }) {
   return (
-    <div className="border border-white/10 bg-white/[0.02] p-5">
-      <Icon size={19} className="text-white/60 mb-4" />
+    <div className="flex items-start gap-3 border border-white/10 bg-black p-4">
+      <Icon size={16} className="text-white/40 mt-0.5 shrink-0" />
 
-      <p className="font-orbitron text-sm font-bold uppercase mb-2">{title}</p>
-
-      <p className="font-mono text-xs text-white/40">{text}</p>
+      <div>
+        <p className="font-orbitron text-xs font-black uppercase mb-2">{title}</p>
+        <p className="font-mono text-xs text-white/35 leading-relaxed">{text}</p>
+      </div>
     </div>
   );
+}
+
+function shortHash(hash: string): string {
+  if (hash.length <= 18) {
+    return hash;
+  }
+
+  return `${hash.slice(0, 10)}...${hash.slice(-8)}`;
 }
