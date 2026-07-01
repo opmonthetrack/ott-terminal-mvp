@@ -52,6 +52,7 @@ import {
   verifyProofStamp,
   type VerifyProofStampResponse,
 } from "../lib/proofStampVerifyClient";
+import { addPartnerProofStampReward } from "../lib/rewardStore";
 
 type PartnerHubTabProps = {
   walletAddress?: string;
@@ -251,7 +252,24 @@ export function PartnerHubTab({ walletAddress = "guest" }: PartnerHubTabProps) {
       });
 
       setProofVerification(response);
-      setStatusMessage(getProofStampVerificationLabel(response));
+
+      const label = getProofStampVerificationLabel(response);
+
+      if (isProofStampVerified(response)) {
+        addPartnerProofStampReward({
+          walletAddress,
+          partnerId: partner.id,
+          routeName: partner.name,
+          xp: partner.proofStampXp,
+          txHash: cleanHash,
+          note: `${partner.name} Proof Stamp verified with SourceTag ${PARTNER_SOURCE_TAG}.`,
+        });
+
+        setStatusMessage(`${label}. Reward Ledger credited +${partner.proofStampXp} XP.`);
+        return;
+      }
+
+      setStatusMessage(label);
     } catch (error) {
       setStatusMessage(getProofStampVerifyErrorMessage(error));
     } finally {
