@@ -19,6 +19,7 @@ import {
   MessageCircle,
   QrCode,
   Route,
+  SearchCheck,
   ShieldAlert,
   Sparkles,
   Trophy,
@@ -35,7 +36,7 @@ import {
 } from "../lib/partnerCatalog";
 import {
   createProofStampPayload,
-  getProofStampErrorMessage,
+  getProofStampErrorMessage as getProofStampPayloadErrorMessage,
   getProofStampPayloadQr,
   getProofStampPayloadUrl,
   getProofStampPayloadUuid,
@@ -43,6 +44,14 @@ import {
   openProofStampPayload,
   type ProofStampPayloadResponse,
 } from "../lib/proofStampClient";
+import {
+  getProofStampErrorMessage as getProofStampVerifyErrorMessage,
+  getProofStampVerificationLabel,
+  isProofStampVerified,
+  shortProofStampHash,
+  verifyProofStamp,
+  type VerifyProofStampResponse,
+} from "../lib/proofStampVerifyClient";
 
 type PartnerHubTabProps = {
   walletAddress?: string;
@@ -110,9 +119,13 @@ export function PartnerHubTab({ walletAddress = "guest" }: PartnerHubTabProps) {
     loadProgress(walletAddress)
   );
   const [proofDestinationWallet, setProofDestinationWallet] = useState("");
+  const [proofTxHash, setProofTxHash] = useState("");
   const [proofPayload, setProofPayload] =
     useState<ProofStampPayloadResponse | null>(null);
+  const [proofVerification, setProofVerification] =
+    useState<VerifyProofStampResponse | null>(null);
   const [proofBusy, setProofBusy] = useState(false);
+  const [verifyBusy, setVerifyBusy] = useState(false);
   const [statusMessage, setStatusMessage] = useState(
     "Complete a partner route to unlock the Proof Stamp payload."
   );
@@ -134,6 +147,8 @@ export function PartnerHubTab({ walletAddress = "guest" }: PartnerHubTabProps) {
     return total + getPartnerCompletionXp(partner);
   }, 0);
 
+  const proofVerified = isProofStampVerified(proofVerification);
+
   const metrics: Metric[] = [
     {
       label: "SourceTag",
@@ -154,9 +169,9 @@ export function PartnerHubTab({ walletAddress = "guest" }: PartnerHubTabProps) {
       icon: CheckCircle2,
     },
     {
-      label: "XP Ready",
-      value: String(totalXpReady),
-      text: "After proof stamps.",
+      label: "Verified",
+      value: proofVerified ? "Yes" : "No",
+      text: "Proof stamp.",
       icon: Trophy,
     },
   ];
@@ -164,6 +179,8 @@ export function PartnerHubTab({ walletAddress = "guest" }: PartnerHubTabProps) {
   function selectPartner(partnerId: PartnerId) {
     setSelectedId(partnerId);
     setProofPayload(null);
+    setProofVerification(null);
+    setProofTxHash("");
     setStatusMessage("Complete this route to unlock the Proof Stamp payload.");
   }
 
@@ -192,6 +209,7 @@ export function PartnerHubTab({ walletAddress = "guest" }: PartnerHubTabProps) {
     }
 
     setProofBusy(true);
+    setProofVerification(null);
     setStatusMessage("Creating Partner Proof Stamp payload...");
 
     try {
@@ -206,9 +224,38 @@ export function PartnerHubTab({ walletAddress = "guest" }: PartnerHubTabProps) {
       setProofPayload(response);
       setStatusMessage(getProofStampStatusLabel(response));
     } catch (error) {
-      setStatusMessage(getProofStampErrorMessage(error));
+      setStatusMessage(getProofStampPayloadErrorMessage(error));
     } finally {
       setProofBusy(false);
+    }
+  }
+
+  async function verifyProofStampHash(partner: PartnerEducationCard) {
+    const cleanHash = proofTxHash.trim();
+
+    if (!cleanHash) {
+      setStatusMessage("Vul eerst een Proof Stamp tx hash in.");
+      return;
+    }
+
+    setVerifyBusy(true);
+    setStatusMessage("Verifying Partner Proof Stamp transaction...");
+
+    try {
+      const response = await verifyProofStamp({
+        txHash: cleanHash,
+        expectedWallet: walletAddress === "guest" ? undefined : walletAddress,
+        expectedDestination: proofDestinationWallet.trim() || undefined,
+        expectedAmountDrops: "1",
+        expectedMemoContains: partner.proofStampMemo,
+      });
+
+      setProofVerification(response);
+      setStatusMessage(getProofStampVerificationLabel(response));
+    } catch (error) {
+      setStatusMessage(getProofStampVerifyErrorMessage(error));
+    } finally {
+      setVerifyBusy(false);
     }
   }
 
@@ -307,11 +354,16 @@ export function PartnerHubTab({ walletAddress = "guest" }: PartnerHubTabProps) {
             partner={selectedPartner}
             progress={progress[selectedPartner.id]}
             destinationWallet={proofDestinationWallet}
+            txHash={proofTxHash}
             payload={proofPayload}
+            verification={proofVerification}
             busy={proofBusy}
+            verifyBusy={verifyBusy}
             statusMessage={statusMessage}
             onDestinationChange={setProofDestinationWallet}
+            onTxHashChange={setProofTxHash}
             onCreate={() => createProofStamp(selectedPartner)}
+            onVerify={() => verifyProofStampHash(selectedPartner)}
             onOpen={openProofStamp}
             onCopy={copyProofStampUuid}
           />
@@ -343,7 +395,6 @@ export function PartnerHubTab({ walletAddress = "guest" }: PartnerHubTabProps) {
             </div>
 
             <div className="space-y-3">
-              <InfoLine text="Verify Proof Stamp tx hash." />
               <InfoLine text="Credit Reward Ledger after verification." />
               <InfoLine text="Add Truth Desk service payments." />
               <InfoLine text="Polish XRPL Foundation pitch flow." />
@@ -514,22 +565,32 @@ function ProofStatusCard({
   partner,
   progress,
   destinationWallet,
+  txHash,
   payload,
+  verification,
   busy,
+  verifyBusy,
   statusMessage,
   onDestinationChange,
+  onTxHashChange,
   onCreate,
+  onVerify,
   onOpen,
   onCopy,
 }: {
   partner: PartnerEducationCard;
   progress: PartnerProgress | undefined;
   destinationWallet: string;
+  txHash: string;
   payload: ProofStampPayloadResponse | null;
+  verification: VerifyProofStampResponse | null;
   busy: boolean;
+  verifyBusy: boolean;
   statusMessage: string;
   onDestinationChange: (value: string) => void;
+  onTxHashChange: (value: string) => void;
   onCreate: () => void;
+  onVerify: () => void;
   onOpen: () => void;
   onCopy: () => void;
 }) {
@@ -537,6 +598,7 @@ function ProofStatusCard({
   const uuid = getProofStampPayloadUuid(payload);
   const url = getProofStampPayloadUrl(payload);
   const qr = getProofStampPayloadQr(payload);
+  const verified = isProofStampVerified(verification);
 
   return (
     <div className="border border-white/10 bg-white/[0.02] p-5">
@@ -551,7 +613,7 @@ function ProofStatusCard({
       <div className="space-y-3 mb-5">
         <MiniStatus label="Route" value={partner.name} />
         <MiniStatus label="Status" value={completed ? "Ready" : "Locked"} />
-        <MiniStatus label="Proof XP" value={`+${partner.proofStampXp}`} />
+        <MiniStatus label="Verified" value={verified ? "Yes" : "No"} />
         <MiniStatus label="SourceTag" value={String(PARTNER_SOURCE_TAG)} />
       </div>
 
@@ -582,7 +644,7 @@ function ProofStatusCard({
       </button>
 
       {uuid && (
-        <div className="space-y-4">
+        <div className="space-y-4 mb-5">
           {qr && (
             <div className="border border-white/10 bg-white p-4 inline-block">
               <img src={qr} alt="Proof Stamp QR" className="w-36 h-36" />
@@ -606,6 +668,54 @@ function ProofStatusCard({
               onClick={onCopy}
             />
           </div>
+        </div>
+      )}
+
+      <InputField
+        label="Proof Stamp Tx Hash"
+        value={txHash}
+        placeholder="Paste signed XRPL tx hash"
+        onChange={onTxHashChange}
+      />
+
+      <button
+        onClick={onVerify}
+        disabled={verifyBusy}
+        className="w-full border border-white/10 bg-black p-4 mt-4 text-left hover:bg-white/[0.03] disabled:opacity-40 transition-all"
+      >
+        <div className="flex items-center gap-3">
+          {verifyBusy ? (
+            <Loader2 size={17} className="text-white/60 animate-spin" />
+          ) : (
+            <SearchCheck size={17} className="text-white/60" />
+          )}
+
+          <div>
+            <p className="font-orbitron text-xs font-bold uppercase">
+              Verify Proof Stamp
+            </p>
+
+            <p className="font-mono text-[10px] text-white/35 uppercase">
+              SourceTag + memo + payment proof
+            </p>
+          </div>
+        </div>
+      </button>
+
+      {verification?.verified && (
+        <div className="space-y-3 mt-4">
+          <MiniStatus
+            label="Tx"
+            value={shortProofStampHash(verification.txHash)}
+          />
+          <MiniStatus
+            label="Result"
+            value={verification.verified.transactionResult}
+          />
+          <MiniStatus
+            label="Amount Drops"
+            value={verification.verified.amountDrops ?? "None"}
+          />
         </div>
       )}
 
