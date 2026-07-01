@@ -7,14 +7,17 @@ import {
   CheckCircle2,
   Circle,
   Compass,
+  Copy,
   ExternalLink,
   Fingerprint,
   Flame,
   GraduationCap,
   Layers,
   Link2,
+  Loader2,
   Lock,
   MessageCircle,
+  QrCode,
   Route,
   ShieldAlert,
   Sparkles,
@@ -30,6 +33,16 @@ import {
   type PartnerEducationCard,
   type PartnerId,
 } from "../lib/partnerCatalog";
+import {
+  createProofStampPayload,
+  getProofStampErrorMessage,
+  getProofStampPayloadQr,
+  getProofStampPayloadUrl,
+  getProofStampPayloadUuid,
+  getProofStampStatusLabel,
+  openProofStampPayload,
+  type ProofStampPayloadResponse,
+} from "../lib/proofStampClient";
 
 type PartnerHubTabProps = {
   walletAddress?: string;
@@ -96,6 +109,13 @@ export function PartnerHubTab({ walletAddress = "guest" }: PartnerHubTabProps) {
   const [progress, setProgress] = useState<ProgressStore>(() =>
     loadProgress(walletAddress)
   );
+  const [proofDestinationWallet, setProofDestinationWallet] = useState("");
+  const [proofPayload, setProofPayload] =
+    useState<ProofStampPayloadResponse | null>(null);
+  const [proofBusy, setProofBusy] = useState(false);
+  const [statusMessage, setStatusMessage] = useState(
+    "Complete a partner route to unlock the Proof Stamp payload."
+  );
 
   const selectedPartner = useMemo(
     () => partnerCatalog.find((partner) => partner.id === selectedId) ?? partnerCatalog[0],
@@ -141,6 +161,12 @@ export function PartnerHubTab({ walletAddress = "guest" }: PartnerHubTabProps) {
     },
   ];
 
+  function selectPartner(partnerId: PartnerId) {
+    setSelectedId(partnerId);
+    setProofPayload(null);
+    setStatusMessage("Complete this route to unlock the Proof Stamp payload.");
+  }
+
   function updateStep(partnerId: PartnerId, step: StepKey, value: boolean) {
     const nextProgress: ProgressStore = {
       ...progress,
@@ -157,6 +183,53 @@ export function PartnerHubTab({ walletAddress = "guest" }: PartnerHubTabProps) {
   function openOfficialLink(partner: PartnerEducationCard) {
     updateStep(partner.id, "opened", true);
     window.open(partner.officialUrl, "_blank", "noopener,noreferrer");
+  }
+
+  async function createProofStamp(partner: PartnerEducationCard) {
+    if (!isComplete(progress[partner.id])) {
+      setStatusMessage("Proof Stamp blijft locked tot lezen, risico-check en officiële link klaar zijn.");
+      return;
+    }
+
+    setProofBusy(true);
+    setStatusMessage("Creating Partner Proof Stamp payload...");
+
+    try {
+      const response = await createProofStampPayload({
+        walletAddress: walletAddress === "guest" ? undefined : walletAddress,
+        destinationWallet: proofDestinationWallet.trim() || undefined,
+        partnerId: partner.id,
+        routeName: partner.name,
+        amountDrops: "1",
+      });
+
+      setProofPayload(response);
+      setStatusMessage(getProofStampStatusLabel(response));
+    } catch (error) {
+      setStatusMessage(getProofStampErrorMessage(error));
+    } finally {
+      setProofBusy(false);
+    }
+  }
+
+  async function copyProofStampUuid() {
+    const uuid = getProofStampPayloadUuid(proofPayload);
+
+    if (!uuid) {
+      setStatusMessage("Geen Proof Stamp UUID gevonden.");
+      return;
+    }
+
+    await navigator.clipboard.writeText(uuid);
+    setStatusMessage("Proof Stamp UUID copied.");
+  }
+
+  function openProofStamp() {
+    const opened = openProofStampPayload(proofPayload);
+
+    if (!opened) {
+      setStatusMessage("Geen Proof Stamp payload link gevonden.");
+    }
   }
 
   return (
@@ -211,7 +284,7 @@ export function PartnerHubTab({ walletAddress = "guest" }: PartnerHubTabProps) {
                   partner={partner}
                   selected={selectedPartner.id === partner.id}
                   completed={isComplete(progress[partner.id])}
-                  onClick={() => setSelectedId(partner.id)}
+                  onClick={() => selectPartner(partner.id)}
                 />
               ))}
             </div>
@@ -233,6 +306,14 @@ export function PartnerHubTab({ walletAddress = "guest" }: PartnerHubTabProps) {
           <ProofStatusCard
             partner={selectedPartner}
             progress={progress[selectedPartner.id]}
+            destinationWallet={proofDestinationWallet}
+            payload={proofPayload}
+            busy={proofBusy}
+            statusMessage={statusMessage}
+            onDestinationChange={setProofDestinationWallet}
+            onCreate={() => createProofStamp(selectedPartner)}
+            onOpen={openProofStamp}
+            onCopy={copyProofStampUuid}
           />
 
           <div className="border border-white/10 bg-white/[0.02] p-5">
@@ -262,10 +343,10 @@ export function PartnerHubTab({ walletAddress = "guest" }: PartnerHubTabProps) {
             </div>
 
             <div className="space-y-3">
-              <InfoLine text="Create Proof Stamp payload API." />
-              <InfoLine text="Connect route completion to Xaman." />
-              <InfoLine text="Verify tx hash with SourceTag 2606170002." />
+              <InfoLine text="Verify Proof Stamp tx hash." />
               <InfoLine text="Credit Reward Ledger after verification." />
+              <InfoLine text="Add Truth Desk service payments." />
+              <InfoLine text="Polish XRPL Foundation pitch flow." />
             </div>
           </div>
         </div>
@@ -432,11 +513,30 @@ function PartnerDetailCard({
 function ProofStatusCard({
   partner,
   progress,
+  destinationWallet,
+  payload,
+  busy,
+  statusMessage,
+  onDestinationChange,
+  onCreate,
+  onOpen,
+  onCopy,
 }: {
   partner: PartnerEducationCard;
   progress: PartnerProgress | undefined;
+  destinationWallet: string;
+  payload: ProofStampPayloadResponse | null;
+  busy: boolean;
+  statusMessage: string;
+  onDestinationChange: (value: string) => void;
+  onCreate: () => void;
+  onOpen: () => void;
+  onCopy: () => void;
 }) {
   const completed = isComplete(progress);
+  const uuid = getProofStampPayloadUuid(payload);
+  const url = getProofStampPayloadUrl(payload);
+  const qr = getProofStampPayloadQr(payload);
 
   return (
     <div className="border border-white/10 bg-white/[0.02] p-5">
@@ -455,7 +555,14 @@ function ProofStatusCard({
         <MiniStatus label="SourceTag" value={String(PARTNER_SOURCE_TAG)} />
       </div>
 
-      <div className="border border-white/10 bg-black p-4">
+      <InputField
+        label="Destination Wallet"
+        value={destinationWallet}
+        placeholder="Optional if Vercel env is set"
+        onChange={onDestinationChange}
+      />
+
+      <div className="border border-white/10 bg-black p-4 my-4">
         <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
           Memo
         </p>
@@ -466,23 +573,47 @@ function ProofStatusCard({
       </div>
 
       <button
-        disabled
-        className="w-full border border-white/10 bg-black p-4 mt-4 text-left opacity-45"
+        onClick={onCreate}
+        disabled={!completed || busy}
+        className="w-full bg-white text-black py-4 font-orbitron text-xs font-black uppercase tracking-widest hover:bg-white/80 disabled:opacity-40 transition-all flex items-center justify-center gap-2 mb-4"
       >
-        <div className="flex items-center gap-3">
-          <Lock size={17} className="text-white/60" />
+        {busy ? <Loader2 size={16} className="animate-spin" /> : <QrCode size={16} />}
+        Create Proof Stamp
+      </button>
 
-          <div>
-            <p className="font-orbitron text-xs font-bold uppercase">
-              Proof Stamp Build Next
-            </p>
+      {uuid && (
+        <div className="space-y-4">
+          {qr && (
+            <div className="border border-white/10 bg-white p-4 inline-block">
+              <img src={qr} alt="Proof Stamp QR" className="w-36 h-36" />
+            </div>
+          )}
 
-            <p className="font-mono text-[10px] text-white/35 uppercase">
-              Xaman payload komt in volgende stap
-            </p>
+          <MiniStatus label="Payload UUID" value={uuid} />
+
+          <div className="grid grid-cols-1 gap-3">
+            <ActionButton
+              icon={ExternalLink}
+              title="Open Xaman"
+              text={url ? "Launch proof payload" : "No link"}
+              onClick={onOpen}
+            />
+
+            <ActionButton
+              icon={Copy}
+              title="Copy UUID"
+              text="For payload tracking"
+              onClick={onCopy}
+            />
           </div>
         </div>
-      </button>
+      )}
+
+      <div className="border border-white/10 bg-black p-4 mt-4">
+        <p className="font-mono text-xs text-white/45 leading-relaxed">
+          {statusMessage}
+        </p>
+      </div>
     </div>
   );
 }
@@ -571,6 +702,58 @@ function InfoLine({ text }: { text: string }) {
 
       <p className="font-mono text-xs text-white/45 leading-relaxed">{text}</p>
     </div>
+  );
+}
+
+function ActionButton({
+  icon: Icon,
+  title,
+  text,
+  onClick,
+}: {
+  icon: ElementType;
+  title: string;
+  text: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="border border-white/10 bg-black p-4 text-left hover:bg-white/[0.03] transition-all"
+    >
+      <Icon size={18} className="text-white/60 mb-3" />
+
+      <p className="font-orbitron text-xs font-bold uppercase mb-2">{title}</p>
+
+      <p className="font-mono text-[10px] text-white/35 uppercase">{text}</p>
+    </button>
+  );
+}
+
+function InputField({
+  label,
+  value,
+  placeholder,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  placeholder?: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="block">
+      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+        {label}
+      </p>
+
+      <input
+        value={value}
+        placeholder={placeholder}
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full bg-black border border-white/10 px-4 py-4 font-mono text-xs text-white/70 outline-none focus:border-white/30 placeholder:text-white/20"
+      />
+    </label>
   );
 }
 
