@@ -1,495 +1,653 @@
-import { useState } from "react";
-import type { ElementType } from "react";
+import { useEffect, useMemo, useState, type ElementType } from "react";
 import {
-  AlertTriangle,
+  Activity,
+  ArrowRight,
   BadgeCheck,
   CheckCircle2,
-  Code2,
-  Database,
+  Copy,
   ExternalLink,
   Fingerprint,
   KeyRound,
-  Link2,
   Loader2,
-  Lock,
+  LockKeyhole,
   QrCode,
-  Radio,
-  ScanLine,
-  Send,
+  RefreshCcw,
   ShieldCheck,
-  Target,
-  Terminal,
+  Smartphone,
   Wallet,
-  Waves,
+  XCircle,
   Zap,
 } from "lucide-react";
 import {
   MAKE_WAVES_SOURCE_TAG,
-  createMakeWavesPayload,
+  createDailyCheckInPayload,
+  createSourceTagProofPayload,
+  getMakeWavesVerificationLabel,
   getXamanPayloadQr,
   getXamanPayloadUrl,
-  isMakeWavesRewardAllowed,
+  getXamanPayloadUuid,
   openXamanPayload,
   verifyMakeWavesPayload,
-  type XamanCreatePayloadResponse,
-  type XamanVerifyPayloadResponse,
+  type XamanPayloadResponse,
+  type XamanPayloadVerificationResponse,
 } from "../lib/xamanClient";
+import type { MakeWavesActionId } from "../lib/makeWaves";
 
-type XamanModule = {
-  id: string;
+type XamanCenterTabProps = {
+  walletAddress?: string;
+  onWalletConnected?: (walletAddress: string) => void;
+};
+
+type ConnectMode = "source-tag-proof" | "daily-checkin";
+
+type ConnectStep = {
+  number: string;
   title: string;
-  status: string;
   text: string;
   icon: ElementType;
 };
 
-type SecurityRule = {
+type RouteCard = {
+  id: ConnectMode;
   title: string;
-  status: string;
+  label: string;
   text: string;
+  xp: string;
   icon: ElementType;
 };
 
-const modules: XamanModule[] = [
+const connectRoutes: RouteCard[] = [
   {
-    id: "create",
-    title: "Create Payload",
-    status: "API",
-    text: "Maak een Xaman sign request via /api/xaman/create-payload met SourceTag 2606170002.",
-    icon: Send,
+    id: "source-tag-proof",
+    title: "SourceTag Proof Connect",
+    label: "Recommended",
+    text: "Gebruik deze route als wallet-connect proof voor OTT Terminal V2.",
+    xp: "+15 XP",
+    icon: Fingerprint,
   },
   {
-    id: "open",
-    title: "Open Xaman",
-    status: "User",
-    text: "Open de payload link of QR zodat de gebruiker bewust kan signen in Xaman.",
+    id: "daily-checkin",
+    title: "Daily Check-In",
+    label: "Activity",
+    text: "Gebruik deze route als simpele dagelijkse Xaman sign test.",
+    xp: "+10 XP",
+    icon: Activity,
+  },
+];
+
+const connectSteps: ConnectStep[] = [
+  {
+    number: "01",
+    title: "Create Payload",
+    text: "Terminal maakt een Xaman payload via api/ott.ts.",
     icon: QrCode,
   },
   {
-    id: "verify",
-    title: "Verify Payload",
-    status: "Proof",
-    text: "Controleer payload result, tx hash en SourceTag voordat XP of reward telt.",
-    icon: ScanLine,
+    number: "02",
+    title: "Open Xaman",
+    text: "Gebruiker scant QR of opent deeplink.",
+    icon: Smartphone,
   },
   {
-    id: "reward",
-    title: "Reward Gate",
-    status: "XP",
-    text: "Alleen bij signed, resolved, txHash en juiste SourceTag mag rewardAllowed true worden.",
+    number: "03",
+    title: "Sign",
+    text: "Gebruiker tekent zelf in Xaman. Geen custody.",
+    icon: KeyRound,
+  },
+  {
+    number: "04",
+    title: "Verify",
+    text: "Terminal leest signed account en SourceTag proof.",
     icon: BadgeCheck,
   },
 ];
 
-const securityRules: SecurityRule[] = [
-  {
-    title: "No Seed Phrase",
-    status: "Rule",
-    text: "De terminal vraagt nooit om seed phrase, private key of recovery words.",
-    icon: Lock,
-  },
-  {
-    title: "Backend Secrets",
-    status: "Required",
-    text: "XAMAN_API_KEY en XAMAN_API_SECRET blijven in Vercel Environment Variables.",
-    icon: KeyRound,
-  },
-  {
-    title: "User Confirmation",
-    status: "Safety",
-    text: "Elke echte XRPL actie moet zichtbaar bevestigd worden in Xaman.",
-    icon: Wallet,
-  },
-  {
-    title: "Verify Before XP",
-    status: "Proof",
-    text: "XP telt pas na correcte verification met SourceTag 2606170002.",
-    icon: ShieldCheck,
-  },
-];
+export function XamanCenterTab({
+  walletAddress = "guest",
+  onWalletConnected,
+}: XamanCenterTabProps) {
+  const [selectedRoute, setSelectedRoute] =
+    useState<ConnectMode>("source-tag-proof");
+  const [payloadResponse, setPayloadResponse] =
+    useState<XamanPayloadResponse | null>(null);
+  const [verificationResponse, setVerificationResponse] =
+    useState<XamanPayloadVerificationResponse | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [error, setError] = useState("");
+  const [lastVerifiedAt, setLastVerifiedAt] = useState("not verified");
 
-function getErrorMessage(error: unknown) {
-  if (typeof error === "string") {
-    return error;
-  }
+  const payloadUuid = getXamanPayloadUuid(payloadResponse);
+  const payloadUrl = getXamanPayloadUrl(payloadResponse);
+  const payloadQr = getXamanPayloadQr(payloadResponse);
+  const verifiedAccount = verificationResponse?.verified?.account ?? null;
+  const isSigned = Boolean(verificationResponse?.verified?.signed);
+  const selectedActionId = selectedRoute as MakeWavesActionId;
 
-  if (error && typeof error === "object" && "error" in error) {
-    const apiError = error as { error?: unknown };
+  const connectLabel = useMemo(
+    () => getMakeWavesVerificationLabel(verificationResponse),
+    [verificationResponse],
+  );
 
-    if (typeof apiError.error === "string") {
-      return apiError.error;
-    }
-  }
-
-  return "Unknown Xaman error.";
-}
-
-export function XamanCenterTab() {
-  const [selectedModule, setSelectedModule] = useState<XamanModule>(modules[0]);
-  const [userWallet, setUserWallet] = useState("");
-  const [destinationWallet, setDestinationWallet] = useState("");
-  const [amountDrops, setAmountDrops] = useState("1000000");
-  const [memoText, setMemoText] = useState("OTT_DAILY_CHECKIN");
-  const [payloadUuid, setPayloadUuid] = useState("");
-  const [createResponse, setCreateResponse] =
-    useState<XamanCreatePayloadResponse | null>(null);
-  const [verifyResponse, setVerifyResponse] =
-    useState<XamanVerifyPayloadResponse | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [statusMessage, setStatusMessage] = useState("Ready to create payload.");
-
-  const SelectedModuleIcon = selectedModule.icon;
-  const qrUrl = getXamanPayloadQr(createResponse);
-  const payloadUrl = getXamanPayloadUrl(createResponse);
-  const rewardAllowed = isMakeWavesRewardAllowed(verifyResponse);
-
-  async function handleCreatePayload() {
-    if (!destinationWallet.trim()) {
-      setStatusMessage("Vul eerst destination wallet in.");
+  useEffect(() => {
+    if (!payloadUuid || isSigned) {
       return;
     }
 
-    setBusy(true);
-    setStatusMessage("Creating Xaman payload...");
-    setVerifyResponse(null);
+    const interval = window.setInterval(() => {
+      void verifyPayload(false);
+    }, 5000);
+
+    return () => window.clearInterval(interval);
+  }, [payloadUuid, isSigned, selectedRoute]);
+
+  useEffect(() => {
+    if (verifiedAccount) {
+      onWalletConnected?.(verifiedAccount);
+    }
+  }, [verifiedAccount, onWalletConnected]);
+
+  async function createPayload() {
+    setIsCreating(true);
+    setError("");
+    setVerificationResponse(null);
 
     try {
-      const response = await createMakeWavesPayload({
-        userWallet: userWallet.trim() || undefined,
-        destinationWallet: destinationWallet.trim(),
-        amountDrops: amountDrops.trim() || "1000000",
-        memoText: memoText.trim() || "OTT_DAILY_CHECKIN",
-      });
+      const response =
+        selectedRoute === "source-tag-proof"
+          ? await createSourceTagProofPayload(
+              walletAddress === "guest" ? undefined : walletAddress,
+            )
+          : await createDailyCheckInPayload(
+              walletAddress === "guest" ? undefined : walletAddress,
+            );
 
-      setCreateResponse(response);
-
-      const uuid = response.payload?.uuid ?? "";
-      setPayloadUuid(uuid);
-      setStatusMessage(`Payload created. SourceTag ${MAKE_WAVES_SOURCE_TAG} locked.`);
-    } catch (error) {
-      setStatusMessage(getErrorMessage(error));
+      setPayloadResponse(response);
+    } catch (createError) {
+      setError(getErrorMessage(createError));
     } finally {
-      setBusy(false);
+      setIsCreating(false);
     }
   }
 
-  async function handleVerifyPayload() {
-    const cleanUuid = payloadUuid.trim();
-
-    if (!cleanUuid) {
-      setStatusMessage("Geen payload UUID om te verifyen.");
+  async function verifyPayload(showLoading = true) {
+    if (!payloadUuid) {
+      setError("Maak eerst een Xaman payload aan.");
       return;
     }
 
-    setBusy(true);
-    setStatusMessage("Verifying payload result...");
+    if (showLoading) {
+      setIsVerifying(true);
+    }
+
+    setError("");
 
     try {
-      const response = await verifyMakeWavesPayload(cleanUuid);
-      setVerifyResponse(response);
+      const response = await verifyMakeWavesPayload(payloadUuid, selectedActionId);
 
-      if (isMakeWavesRewardAllowed(response)) {
-        setStatusMessage("Verified. SourceTag klopt. Reward/XP allowed.");
-      } else {
-        setStatusMessage("Payload checked, maar reward is nog niet allowed.");
+      setVerificationResponse(response);
+      setLastVerifiedAt(new Date().toLocaleTimeString());
+
+      if (response.verified?.account) {
+        onWalletConnected?.(response.verified.account);
       }
-    } catch (error) {
-      setStatusMessage(getErrorMessage(error));
+    } catch (verifyError) {
+      setError(getErrorMessage(verifyError));
     } finally {
-      setBusy(false);
+      setIsVerifying(false);
     }
+  }
+
+  function resetFlow() {
+    setPayloadResponse(null);
+    setVerificationResponse(null);
+    setError("");
+    setLastVerifiedAt("not verified");
+  }
+
+  function openPayload() {
+    const opened = openXamanPayload(payloadResponse);
+
+    if (!opened) {
+      setError("Geen Xaman deeplink gevonden.");
+    }
+  }
+
+  function copyValue(value: string | null) {
+    if (!value) {
+      return;
+    }
+
+    void navigator.clipboard?.writeText(value);
   }
 
   return (
-    <div className="p-6 bg-black min-h-screen text-white">
-      <div className="relative overflow-hidden border border-white/10 bg-white/[0.02] p-6 mb-6">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_white,_transparent_35%)]" />
+    <div className="min-h-screen bg-black text-white">
+      <section className="relative overflow-hidden border-b border-white/10">
+        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_20%_20%,_white,_transparent_26%),radial-gradient(circle_at_90%_10%,_white,_transparent_22%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,_transparent,_black_88%)]" />
 
-        <div className="relative z-10 grid grid-cols-12 gap-6 items-center">
-          <div className="col-span-12 xl:col-span-8">
-            <div className="flex items-center gap-2 mb-4 text-white/45">
-              <Terminal size={17} />
+        <div className="relative z-10 p-6 xl:p-10">
+          <div className="grid grid-cols-12 gap-6 items-end">
+            <div className="col-span-12 xl:col-span-8">
+              <div className="inline-flex items-center gap-2 border border-white/10 bg-white/[0.03] px-4 py-2 mb-6">
+                <KeyRound size={15} className="text-white/60" />
 
-              <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
-                Xaman Center
-              </p>
-            </div>
-
-            <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
-              Create. Sign. Verify. Reward.
-            </h2>
-
-            <p className="font-mono text-sm text-white/45 max-w-3xl leading-relaxed">
-              Eerste echte Xaman control center voor OTT Terminal. Payloads
-              gaan via backend, gebruiker tekent in Xaman, daarna controleren
-              we SourceTag {MAKE_WAVES_SOURCE_TAG} voordat XP telt.
-            </p>
-          </div>
-
-          <div className="col-span-12 xl:col-span-4 grid grid-cols-2 gap-3">
-            <StatBox icon={Wallet} label="Wallet" value="Xaman" />
-            <StatBox icon={Fingerprint} label="SourceTag" value={`${MAKE_WAVES_SOURCE_TAG}`} />
-            <StatBox icon={ShieldCheck} label="Reward Gate" value={rewardAllowed ? "Open" : "Locked"} />
-            <StatBox icon={Radio} label="Status" value={busy ? "Busy" : "Ready"} />
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-12 xl:col-span-4 space-y-4">
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Database size={18} className="text-white/60" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Xaman Flow
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {modules.map((module) => (
-                <ModuleButton
-                  key={module.id}
-                  module={module}
-                  active={selectedModule.id === module.id}
-                  onClick={() => setSelectedModule(module)}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center justify-between mb-5">
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Selected Step
-              </p>
-
-              <SelectedModuleIcon size={18} className="text-white/60" />
-            </div>
-
-            <p className="font-orbitron text-xl font-black uppercase mb-2">
-              {selectedModule.title}
-            </p>
-
-            <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-4">
-              {selectedModule.status}
-            </p>
-
-            <p className="font-mono text-xs text-white/45 leading-relaxed">
-              {selectedModule.text}
-            </p>
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Waves size={18} className="text-white/60" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Fixed Make Waves Tag
-              </p>
-            </div>
-
-            <p className="font-orbitron text-2xl font-black uppercase break-all">
-              {MAKE_WAVES_SOURCE_TAG}
-            </p>
-          </div>
-        </div>
-
-        <div className="col-span-12 xl:col-span-5 space-y-4">
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Send size={18} className="text-white/60" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Create Payload
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <InputField
-                label="User Wallet Optional"
-                value={userWallet}
-                placeholder="r..."
-                onChange={setUserWallet}
-              />
-
-              <InputField
-                label="Destination Wallet Required"
-                value={destinationWallet}
-                placeholder="r..."
-                onChange={setDestinationWallet}
-              />
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <InputField
-                  label="Amount Drops"
-                  value={amountDrops}
-                  placeholder="1000000"
-                  onChange={setAmountDrops}
-                />
-
-                <InputField
-                  label="Memo Text"
-                  value={memoText}
-                  placeholder="OTT_DAILY_CHECKIN"
-                  onChange={setMemoText}
-                />
+                <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-white/50">
+                  Xaman Connect Layer
+                </p>
               </div>
 
-              <button
-                onClick={handleCreatePayload}
-                disabled={busy}
-                className="w-full bg-white text-black py-4 font-orbitron text-xs font-black uppercase tracking-widest hover:bg-white/80 disabled:opacity-40 transition-all flex items-center justify-center gap-2"
-              >
-                {busy ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
-                Create Make Waves Payload
-              </button>
-            </div>
-          </div>
+              <h1 className="font-orbitron text-4xl xl:text-6xl font-black uppercase leading-none tracking-tight mb-6">
+                Connect.
+                <br />
+                Sign.
+                <br />
+                Verify.
+              </h1>
 
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <QrCode size={18} className="text-white/60" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Payload Access
+              <p className="font-mono text-sm xl:text-base text-white/50 leading-relaxed max-w-3xl mb-8">
+                Dit is de eerste echte Xaman-connect laag voor OTT Terminal V2.
+                De gebruiker tekent zelf in Xaman, daarna lezen we het signed
+                wallet account terug en koppelen we die aan het dashboard.
               </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-4xl">
+                {connectRoutes.map((route) => (
+                  <RouteButton
+                    key={route.id}
+                    route={route}
+                    isActive={selectedRoute === route.id}
+                    onClick={() => {
+                      setSelectedRoute(route.id);
+                      resetFlow();
+                    }}
+                  />
+                ))}
+              </div>
             </div>
 
-            {qrUrl ? (
-              <div className="grid grid-cols-1 md:grid-cols-[140px_1fr] gap-4 items-center">
-                <img
-                  src={qrUrl}
-                  alt="Xaman payload QR"
-                  className="w-32 h-32 bg-white p-2"
-                />
-
-                <div>
-                  <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
-                    Payload URL
+            <div className="col-span-12 xl:col-span-4">
+              <div className="border border-white/10 bg-black/70 backdrop-blur p-5">
+                <div className="flex items-center justify-between gap-3 mb-5">
+                  <p className="font-orbitron text-xs uppercase tracking-widest">
+                    Connect Status
                   </p>
 
-                  <p className="font-mono text-xs text-white/45 break-all mb-4">
-                    {payloadUrl}
-                  </p>
+                  <StatusPill isSigned={isSigned} isCreating={isCreating} />
+                </div>
 
-                  <button
-                    onClick={() => openXamanPayload(createResponse)}
-                    className="border border-white/15 px-4 py-3 font-orbitron text-xs font-black uppercase tracking-widest text-white/70 hover:bg-white/[0.03] transition-all flex items-center gap-2"
-                  >
-                    <ExternalLink size={15} />
-                    Open Xaman
-                  </button>
+                <div className="space-y-3">
+                  <InfoRow
+                    label="Current Wallet"
+                    value={walletAddress === "guest" ? "Guest mode" : walletAddress}
+                  />
+                  <InfoRow
+                    label="Signed Account"
+                    value={verifiedAccount ?? "Not connected"}
+                  />
+                  <InfoRow
+                    label="SourceTag"
+                    value={String(MAKE_WAVES_SOURCE_TAG)}
+                  />
+                  <InfoRow label="Verified At" value={lastVerifiedAt} />
+                </div>
+
+                <div className="border border-white/10 bg-white/[0.02] p-4 mt-5">
+                  <div className="flex items-start gap-3">
+                    <LockKeyhole size={18} className="text-white/55 shrink-0 mt-0.5" />
+
+                    <p className="font-mono text-xs text-white/45 leading-relaxed">
+                      Xaman blijft self-custody. OTT Terminal vraagt nooit om
+                      private keys en bewaart geen seed phrase.
+                    </p>
+                  </div>
                 </div>
               </div>
-            ) : (
-              <EmptyState text="Create eerst een payload. Daarna verschijnt QR/link hier." />
-            )}
+            </div>
           </div>
 
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <ScanLine size={18} className="text-white/60" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Verify Payload
-              </p>
-            </div>
-
-            <InputField
-              label="Payload UUID"
-              value={payloadUuid}
-              placeholder="uuid from Xaman payload"
-              onChange={setPayloadUuid}
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mt-8">
+            <MetricCard
+              label="Payload"
+              value={payloadUuid ? "Created" : "None"}
+              text="api/ott.ts"
+              icon={QrCode}
             />
-
-            <button
-              onClick={handleVerifyPayload}
-              disabled={busy}
-              className="w-full border border-white/15 py-4 mt-4 font-orbitron text-xs font-black uppercase tracking-widest text-white/70 hover:bg-white/[0.03] disabled:opacity-40 transition-all flex items-center justify-center gap-2"
-            >
-              {busy ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
-              Verify SourceTag {MAKE_WAVES_SOURCE_TAG}
-            </button>
+            <MetricCard
+              label="Xaman"
+              value={isSigned ? "Signed" : "Waiting"}
+              text="Self-custody"
+              icon={Wallet}
+            />
+            <MetricCard
+              label="SourceTag"
+              value={String(MAKE_WAVES_SOURCE_TAG)}
+              text="OTT proof"
+              icon={Fingerprint}
+            />
+            <MetricCard
+              label="Dashboard"
+              value={verifiedAccount ? "Linked" : "Guest"}
+              text="Wallet layer"
+              icon={Zap}
+            />
           </div>
         </div>
+      </section>
 
-        <div className="col-span-12 xl:col-span-3 space-y-4">
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Target size={18} className="text-white/60" />
+      <section className="p-6 xl:p-10">
+        <div className="grid grid-cols-12 gap-4">
+          <div className="col-span-12 xl:col-span-7 border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-white/35 mb-3">
+                  Xaman Flow
+                </p>
 
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Current Status
-              </p>
-            </div>
-
-            <div className="border border-white/10 bg-black p-4 mb-3">
-              <p className="font-mono text-xs text-white/50 leading-relaxed">
-                {statusMessage}
-              </p>
-            </div>
-
-            <MiniStatus label="Reward Allowed" value={rewardAllowed ? "Yes" : "No"} />
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <ShieldCheck size={18} className="text-white/60" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Verification Result
-              </p>
-            </div>
-
-            {verifyResponse?.verified ? (
-              <div className="space-y-3">
-                <ResultLine label="Signed" value={String(verifyResponse.verified.signed)} />
-                <ResultLine label="Resolved" value={String(verifyResponse.verified.resolved)} />
-                <ResultLine label="Tag Match" value={String(verifyResponse.verified.sourceTagMatches)} />
-                <ResultLine label="Tx Hash" value={verifyResponse.verified.txHash ?? "None"} />
+                <h2 className="font-orbitron text-2xl font-black uppercase">
+                  Create Sign Payload
+                </h2>
               </div>
-            ) : (
-              <EmptyState text="Nog geen verification result." />
-            )}
-          </div>
 
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Lock size={18} className="text-white/60" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Security Rules
+              <p className="font-mono text-xs text-white/35 max-w-md leading-relaxed">
+                Dit is geen exchange-login. Dit is een wallet proof sign route
+                via Xaman en SourceTag {MAKE_WAVES_SOURCE_TAG}.
               </p>
             </div>
 
-            <div className="space-y-3">
-              {securityRules.map((rule) => (
-                <RuleCard key={rule.title} rule={rule} />
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
+              {connectSteps.map((step) => (
+                <StepCard key={step.number} step={step} />
               ))}
             </div>
+
+            <div className="border border-white/10 bg-black p-4 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <ActionButton
+                  title={isCreating ? "Creating..." : "Create Payload"}
+                  text="Generate Xaman QR"
+                  icon={isCreating ? Loader2 : QrCode}
+                  disabled={isCreating}
+                  onClick={createPayload}
+                />
+
+                <ActionButton
+                  title="Open Xaman"
+                  text="Open deeplink"
+                  icon={ExternalLink}
+                  disabled={!payloadUrl}
+                  onClick={openPayload}
+                />
+
+                <ActionButton
+                  title={isVerifying ? "Verifying..." : "Verify"}
+                  text="Check signed payload"
+                  icon={isVerifying ? Loader2 : RefreshCcw}
+                  disabled={!payloadUuid || isVerifying}
+                  onClick={() => void verifyPayload(true)}
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="border border-white/10 bg-white/[0.02] p-4 mb-4">
+                <div className="flex items-start gap-3">
+                  <XCircle size={18} className="text-white/50 shrink-0 mt-0.5" />
+
+                  <p className="font-mono text-xs text-white/55 leading-relaxed">
+                    {error}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {payloadResponse && (
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                <div className="border border-white/10 bg-black p-5">
+                  <div className="flex items-center justify-between gap-3 mb-4">
+                    <p className="font-orbitron text-xs font-black uppercase">
+                      Payload Details
+                    </p>
+
+                    <button
+                      onClick={() => copyValue(payloadUuid)}
+                      className="border border-white/10 p-2 hover:bg-white hover:text-black transition-all"
+                    >
+                      <Copy size={14} />
+                    </button>
+                  </div>
+
+                  <DetailRow label="UUID" value={payloadUuid ?? "—"} />
+                  <DetailRow label="Route" value={selectedRoute} />
+                  <DetailRow
+                    label="Transaction Type"
+                    value={payloadResponse.transactionMeta?.transactionType ?? "—"}
+                  />
+                  <DetailRow
+                    label="Memo"
+                    value={payloadResponse.transactionMeta?.memoText ?? "—"}
+                  />
+                  <DetailRow
+                    label="SourceTag"
+                    value={String(payloadResponse.sourceTag ?? MAKE_WAVES_SOURCE_TAG)}
+                  />
+                </div>
+
+                <div className="border border-white/10 bg-black p-5">
+                  <p className="font-orbitron text-xs font-black uppercase mb-4">
+                    Scan With Xaman
+                  </p>
+
+                  {payloadQr ? (
+                    <div className="bg-white p-4 inline-block">
+                      <img
+                        src={payloadQr}
+                        alt="Xaman payload QR"
+                        className="w-48 h-48 object-contain"
+                      />
+                    </div>
+                  ) : (
+                    <div className="border border-white/10 bg-white/[0.02] p-8 text-center">
+                      <QrCode size={28} className="mx-auto mb-4 text-white/35" />
+
+                      <p className="font-mono text-xs text-white/35">
+                        QR niet gevonden in payload response.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="col-span-12 xl:col-span-5 space-y-4">
+            <div className="border border-white/10 bg-white/[0.02] p-6">
+              <div className="flex items-center gap-2 mb-5">
+                {isSigned ? (
+                  <CheckCircle2 size={18} className="text-white/70" />
+                ) : (
+                  <BadgeCheck size={18} className="text-white/60" />
+                )}
+
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  Verification Result
+                </p>
+              </div>
+
+              <div className="border border-white/10 bg-black p-4 mb-4">
+                <p className="font-mono text-xs text-white/45 leading-relaxed">
+                  {connectLabel}
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <InfoRow
+                  label="Signed"
+                  value={isSigned ? "Yes" : "No / waiting"}
+                />
+                <InfoRow
+                  label="Resolved"
+                  value={
+                    verificationResponse?.verified?.resolved ? "Yes" : "No / waiting"
+                  }
+                />
+                <InfoRow
+                  label="Account"
+                  value={verifiedAccount ?? "—"}
+                />
+                <InfoRow
+                  label="TXID"
+                  value={verificationResponse?.verified?.txid ?? "—"}
+                />
+              </div>
+
+              {verifiedAccount && (
+                <button
+                  onClick={() => copyValue(verifiedAccount)}
+                  className="w-full border border-white/10 bg-white text-black p-4 text-left mt-5 hover:bg-white/80 transition-all"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="font-orbitron text-xs font-black uppercase mb-2">
+                        Copy Connected Wallet
+                      </p>
+                      <p className="font-mono text-[10px] uppercase text-black/55">
+                        Use in Wallet Dashboard
+                      </p>
+                    </div>
+
+                    <Copy size={16} />
+                  </div>
+                </button>
+              )}
+            </div>
+
+            <div className="border border-white/10 bg-white/[0.02] p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <ShieldCheck size={18} className="text-white/60" />
+
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  Safe Position
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <SafeLine text="No custody" />
+                <SafeLine text="No broker" />
+                <SafeLine text="No yield provider" />
+                <SafeLine text="No trade execution" />
+                <SafeLine text="User signs inside Xaman" />
+              </div>
+            </div>
           </div>
         </div>
+      </section>
+    </div>
+  );
+}
 
-        <div className="col-span-12 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <FeatureBox icon={Link2} title="API" text="/api/xaman/create-payload" />
-          <FeatureBox icon={Code2} title="Verify" text="/api/xaman/verify-payload" />
-          <FeatureBox icon={Fingerprint} title="SourceTag" text={`${MAKE_WAVES_SOURCE_TAG}`} />
-          <FeatureBox icon={AlertTriangle} title="Secrets" text="Backend only" />
-        </div>
+function RouteButton({
+  route,
+  isActive,
+  onClick,
+}: {
+  route: RouteCard;
+  isActive: boolean;
+  onClick: () => void;
+}) {
+  const Icon = route.icon;
+
+  return (
+    <button
+      onClick={onClick}
+      className={`border p-5 text-left transition-all ${
+        isActive
+          ? "border-white bg-white text-black"
+          : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06]"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-4 mb-5">
+        <Icon
+          size={24}
+          className={isActive ? "text-black/70" : "text-white/55"}
+        />
+
+        <span
+          className={`font-mono text-[9px] uppercase tracking-widest ${
+            isActive ? "text-black/55" : "text-white/35"
+          }`}
+        >
+          {route.label}
+        </span>
+      </div>
+
+      <p className="font-orbitron text-sm font-black uppercase mb-3">
+        {route.title}
+      </p>
+
+      <p
+        className={`font-mono text-xs leading-relaxed mb-4 ${
+          isActive ? "text-black/55" : "text-white/42"
+        }`}
+      >
+        {route.text}
+      </p>
+
+      <div className="flex items-center justify-between gap-3">
+        <p
+          className={`font-orbitron text-xs font-black uppercase ${
+            isActive ? "text-black" : "text-white"
+          }`}
+        >
+          {route.xp}
+        </p>
+
+        <ArrowRight
+          size={16}
+          className={isActive ? "text-black/70" : "text-white/35"}
+        />
+      </div>
+    </button>
+  );
+}
+
+function StatusPill({
+  isSigned,
+  isCreating,
+}: {
+  isSigned: boolean;
+  isCreating: boolean;
+}) {
+  const label = isSigned ? "Connected" : isCreating ? "Creating" : "Waiting";
+
+  return (
+    <div className="border border-white/10 bg-white/[0.03] px-3 py-2">
+      <div className="flex items-center gap-2">
+        <span
+          className={`w-2 h-2 rounded-full ${
+            isSigned ? "bg-white" : "bg-white/25"
+          }`}
+        />
+
+        <p className="font-mono text-[9px] uppercase tracking-widest text-white/55">
+          {label}
+        </p>
       </div>
     </div>
   );
 }
 
-function StatBox({
-  icon: Icon,
+function MetricCard({
   label,
   value,
+  text,
+  icon: Icon,
 }: {
-  icon: ElementType;
   label: string;
   value: string;
+  text: string;
+  icon: ElementType;
 }) {
   return (
     <div className="border border-white/10 bg-black/60 p-4">
@@ -499,149 +657,129 @@ function StatBox({
         {label}
       </p>
 
-      <p className="font-orbitron text-sm font-black uppercase break-all">
+      <p className="font-orbitron text-sm font-black uppercase mb-1 break-all">
+        {value}
+      </p>
+
+      <p className="font-mono text-[10px] text-white/30 uppercase">{text}</p>
+    </div>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-white/10 bg-white/[0.02] p-3">
+      <p className="font-mono text-[10px] text-white/30 uppercase tracking-widest mb-2">
+        {label}
+      </p>
+
+      <p className="font-orbitron text-xs font-black uppercase break-all">
         {value}
       </p>
     </div>
   );
 }
 
-function ModuleButton({
-  module,
-  active,
+function StepCard({ step }: { step: ConnectStep }) {
+  const Icon = step.icon;
+
+  return (
+    <div className="border border-white/10 bg-black p-4">
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <p className="font-orbitron text-xs font-black text-white/35">
+          {step.number}
+        </p>
+
+        <Icon size={15} className="text-white/35" />
+      </div>
+
+      <p className="font-orbitron text-xs font-black uppercase mb-2">
+        {step.title}
+      </p>
+
+      <p className="font-mono text-[10px] text-white/35 leading-relaxed">
+        {step.text}
+      </p>
+    </div>
+  );
+}
+
+function ActionButton({
+  title,
+  text,
+  icon: Icon,
+  disabled,
   onClick,
 }: {
-  module: XamanModule;
-  active: boolean;
+  title: string;
+  text: string;
+  icon: ElementType;
+  disabled: boolean;
   onClick: () => void;
 }) {
-  const Icon = module.icon;
-
   return (
     <button
       onClick={onClick}
-      className={`w-full border p-4 text-left transition-all ${
-        active
-          ? "border-white/30 bg-white/[0.08]"
-          : "border-white/10 bg-black hover:bg-white/[0.03]"
-      }`}
+      disabled={disabled}
+      className="border border-white/10 bg-white/[0.02] p-4 text-left hover:bg-white hover:text-black transition-all disabled:opacity-40 disabled:hover:bg-white/[0.02] disabled:hover:text-white group"
     >
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Icon size={16} className="text-white/60" />
+      <Icon
+        size={18}
+        className={`mb-4 ${
+          title.toLowerCase().includes("creating") ||
+          title.toLowerCase().includes("verifying")
+            ? "animate-spin"
+            : ""
+        }`}
+      />
 
-          <p className="font-orbitron text-xs font-bold uppercase">
-            {module.title}
-          </p>
-        </div>
+      <p className="font-orbitron text-xs font-black uppercase mb-2">
+        {title}
+      </p>
 
-        <p className="font-mono text-[10px] text-white/35 uppercase">
-          {module.status}
-        </p>
-      </div>
+      <p className="font-mono text-[10px] uppercase text-white/35 group-hover:text-black/55">
+        {text}
+      </p>
     </button>
   );
 }
 
-function InputField({
-  label,
-  value,
-  placeholder,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  placeholder: string;
-  onChange: (value: string) => void;
-}) {
+function DetailRow({ label, value }: { label: string; value: string }) {
   return (
-    <label className="block">
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+    <div className="border-t border-white/10 py-3">
+      <p className="font-mono text-[10px] text-white/30 uppercase tracking-widest mb-2">
         {label}
       </p>
 
-      <input
-        value={value}
-        placeholder={placeholder}
-        onChange={(event) => onChange(event.target.value)}
-        className="w-full bg-black border border-white/10 px-4 py-4 font-mono text-xs text-white/70 outline-none focus:border-white/30 placeholder:text-white/20"
-      />
-    </label>
-  );
-}
-
-function MiniStatus({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="border border-white/10 bg-black p-4">
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
-        {label}
-      </p>
-
-      <p className="font-orbitron text-sm font-black uppercase">{value}</p>
+      <p className="font-mono text-xs text-white/55 break-all">{value}</p>
     </div>
   );
 }
 
-function ResultLine({ label, value }: { label: string; value: string }) {
+function SafeLine({ text }: { text: string }) {
   return (
-    <div className="border border-white/10 bg-black p-3">
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-1">
-        {label}
-      </p>
+    <div className="flex items-center gap-3 border border-white/10 bg-black p-3">
+      <ShieldCheck size={14} className="text-white/40 shrink-0" />
 
-      <p className="font-mono text-[10px] text-white/55 break-all">{value}</p>
-    </div>
-  );
-}
-
-function EmptyState({ text }: { text: string }) {
-  return (
-    <div className="border border-white/10 bg-black p-4">
-      <p className="font-mono text-xs text-white/35 leading-relaxed">{text}</p>
-    </div>
-  );
-}
-
-function RuleCard({ rule }: { rule: SecurityRule }) {
-  const Icon = rule.icon;
-
-  return (
-    <div className="border border-white/10 bg-black p-4">
-      <div className="flex items-start justify-between mb-3">
-        <Icon size={17} className="text-white/60" />
-
-        <p className="font-mono text-[10px] text-white/30 uppercase">
-          {rule.status}
-        </p>
-      </div>
-
-      <p className="font-orbitron text-xs font-bold uppercase mb-2">
-        {rule.title}
-      </p>
-
-      <p className="font-mono text-[10px] text-white/40 leading-relaxed">
-        {rule.text}
+      <p className="font-mono text-xs text-white/45 uppercase tracking-widest">
+        {text}
       </p>
     </div>
   );
 }
 
-function FeatureBox({
-  icon: Icon,
-  title,
-  text,
-}: {
-  icon: ElementType;
-  title: string;
-  text: string;
-}) {
-  return (
-    <div className="border border-white/10 bg-white/[0.02] p-5">
-      <Icon size={19} className="text-white/60 mb-4" />
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
 
-      <p className="font-orbitron text-sm font-bold uppercase mb-2">{title}</p>
+  if (typeof error === "object" && error !== null && "error" in error) {
+    const value = (error as { error?: unknown }).error;
 
-      <p className="font-mono text-xs text-white/40 break-all">{text}</p>
-    </div>
-  );
+    if (typeof value === "string") {
+      return value;
+    }
+  }
+
+  return "Xaman actie is mislukt.";
 }
