@@ -12,6 +12,27 @@ const XRPL_RPC_URL =
   process.env.XRPL_RPC_URL || "https://s1.ripple.com:51234/";
 const ONE_XRP_DROPS = "1000000";
 
+const OTT_PUBLIC_APP_URL =
+  process.env.OTT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
+  process.env.VERCEL_PROJECT_PRODUCTION_URL?.replace(/\/$/, "") ||
+  "https://ott-terminal.vercel.app";
+
+const OTT_BRAND_NAME = "XRPL OnTheTrack Terminal";
+const OTT_LOGO_URL = `${OTT_PUBLIC_APP_URL}/logo.png`;
+
+const OTT_WALLET_IDENTITIES = {
+  proof:
+    process.env.OTT_PROOF_DESTINATION_WALLET?.trim() ||
+    "set-OTT_PROOF_DESTINATION_WALLET",
+  truthDesk:
+    process.env.OTT_TRUTH_DESK_WALLET?.trim() ||
+    "set-OTT_TRUTH_DESK_WALLET",
+  access:
+    process.env.OTT_ACCESS_WALLET?.trim() ||
+    "set-OTT_ACCESS_WALLET",
+};
+
+
 type RequestBody = Record<string, unknown> & {
   action?: string;
 };
@@ -194,11 +215,64 @@ function getXamanHeaders() {
   };
 }
 
+function getBrandingReturnUrl() {
+  const target = `${OTT_PUBLIC_APP_URL}/?xaman_return=1`;
+
+  return {
+    app: target,
+    web: target,
+  };
+}
+
+function readObject(value: unknown): Record<string, unknown> {
+  return typeof value === "object" && value !== null
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function addOttBrandingToPayload(body: Record<string, unknown>) {
+  const options = readObject(body.options);
+  const customMeta = readObject(body.custom_meta);
+  const blob = readObject(customMeta.blob);
+
+  const instruction =
+    typeof customMeta.instruction === "string" && customMeta.instruction
+      ? customMeta.instruction
+      : `${OTT_BRAND_NAME} signing request`;
+
+  return {
+    ...body,
+    options: {
+      ...options,
+      return_url: getBrandingReturnUrl(),
+    },
+    custom_meta: {
+      ...customMeta,
+      identifier:
+        typeof customMeta.identifier === "string" && customMeta.identifier
+          ? customMeta.identifier
+          : "ott-terminal",
+      instruction: instruction.includes("OnTheTrack")
+        ? instruction
+        : `OnTheTrack — ${instruction}`,
+      blob: {
+        ...blob,
+        brand: OTT_BRAND_NAME,
+        logoUrl: OTT_LOGO_URL,
+        sourceTag: MAKE_WAVES_SOURCE_TAG,
+        walletIdentities: OTT_WALLET_IDENTITIES,
+      },
+    },
+  };
+}
+
 async function createXamanPayload(body: Record<string, unknown>) {
+  const brandedBody = addOttBrandingToPayload(body);
+
   const response = await fetch(XAMAN_API_URL, {
     method: "POST",
     headers: getXamanHeaders(),
-    body: JSON.stringify(body),
+    body: JSON.stringify(brandedBody),
   });
 
   const payload = await response.json();
