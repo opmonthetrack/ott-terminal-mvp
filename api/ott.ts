@@ -712,6 +712,120 @@ async function handleCreateProofStampPayload(body: RequestBody) {
   };
 }
 
+
+async function handleCreateAccessPaymentPayload(body: RequestBody) {
+  const walletAddress = getString(body, "walletAddress");
+  const destinationWallet =
+    getString(body, "destinationWallet") ||
+    process.env.OTT_ACCESS_WALLET?.trim() ||
+    process.env.OTT_PROOF_DESTINATION_WALLET?.trim() ||
+    "";
+  const routeId = getString(body, "routeId") || "xrp-payment";
+  const routeTitle = (getString(body, "routeTitle") || "OTT Access").slice(0, 80);
+  const proofMemo = (getString(body, "proofMemo") || "OTT_ACCESS_PAYMENT").slice(0, 120);
+  const amountDrops = cleanAmountDrops(getString(body, "amountDrops"), ONE_XRP_DROPS);
+
+  if (walletAddress && !isValidXrplAddress(walletAddress)) {
+    return { status: 400, body: { ok: false, error: "Invalid walletAddress." } };
+  }
+
+  if (!destinationWallet || !isValidXrplAddress(destinationWallet)) {
+    return {
+      status: 400,
+      body: {
+        ok: false,
+        error:
+          "Missing or invalid destinationWallet. Add OTT_ACCESS_WALLET in Vercel or send destinationWallet.",
+      },
+    };
+  }
+
+  if (
+    routeId !== "xrp-payment" &&
+    routeId !== "ott-access-pass" &&
+    routeId !== "rlusd-payment"
+  ) {
+    return {
+      status: 400,
+      body: {
+        ok: false,
+        error: "Access payload only supports xrp-payment, rlusd-payment and ott-access-pass.",
+      },
+    };
+  }
+
+  if (routeId === "rlusd-payment") {
+    return {
+      status: 400,
+      body: {
+        ok: false,
+        error:
+          "RLUSD access route is prepared, but issued-currency access payment is not enabled in this demo router yet.",
+      },
+    };
+  }
+
+  const memoText = `${proofMemo} | ${routeTitle} | SourceTag ${MAKE_WAVES_SOURCE_TAG}`;
+  const txjson = makePaymentTx({
+    account: walletAddress || undefined,
+    destination: destinationWallet,
+    amountDrops,
+    memoType: "OTT_ACCESS",
+    memoData: memoText,
+  });
+
+  const result = await createXamanPayload({
+    txjson,
+    options: {
+      submit: true,
+      return_url: {
+        app: "https://xumm.app",
+        web: "https://xumm.app",
+      },
+    },
+    custom_meta: {
+      identifier: `ott-access-${routeId}`,
+      instruction: `${routeTitle} access payment with SourceTag ${MAKE_WAVES_SOURCE_TAG}`,
+      blob: {
+        sourceTag: MAKE_WAVES_SOURCE_TAG,
+        mode: "terminal-access-payment",
+        routeId,
+        routeTitle,
+        destinationWallet,
+        amountDrops,
+        memoText,
+      },
+    },
+  });
+
+  if (result.status !== 200) {
+    return result;
+  }
+
+  return {
+    status: 200,
+    body: {
+      ok: true,
+      mode: "terminal-access-payment",
+      sourceTag: MAKE_WAVES_SOURCE_TAG,
+      access: {
+        routeId,
+        routeTitle,
+      },
+      payment: {
+        destinationWallet,
+        amountDrops,
+      },
+      payload: result.body,
+      transactionMeta: {
+        transactionType: "Payment",
+        sourceTag: MAKE_WAVES_SOURCE_TAG,
+        memoText,
+      },
+    },
+  };
+}
+
 async function handleCreateTruthDeskPayload(body: RequestBody) {
   const walletAddress = getString(body, "walletAddress");
   const destinationWallet =
@@ -969,7 +1083,7 @@ async function handleVerifyTokenPayment(body: RequestBody) {
   };
 }
 
-async function handleVerifyMemoPayment(body: RequestBody, mode: "proof" | "truth") {
+async function handleVerifyMemoPayment(body: RequestBody, mode: "proof" | "truth" | "access") {
   const txHash = getString(body, "txHash");
   const expectedWallet = getString(body, "expectedWallet");
   const expectedDestination = getString(body, "expectedDestination");
@@ -1003,7 +1117,12 @@ async function handleVerifyMemoPayment(body: RequestBody, mode: "proof" | "truth
   const destinationMatches = matchesOptional(expectedDestination, txJson.Destination ?? null);
   const amountMatches = matchesOptional(expectedAmountDrops, amountDrops);
   const memoMatches = memoContainsExpected(expectedMemoContains, memoData);
-  const expectedTag = mode === "proof" ? "OTT_PROOF" : "OTT_TRUTH_DESK";
+  const expectedTag =
+    mode === "proof"
+      ? "OTT_PROOF"
+      : mode === "truth"
+        ? "OTT_TRUTH_DESK"
+        : "OTT_ACCESS";
   const hasExpectedMemo =
     memoData.some((memo) => memo.includes(expectedTag)) ||
     memoText.some((memo) => memo.type.includes(expectedTag));
@@ -1043,6 +1162,38 @@ async function handleVerifyMemoPayment(body: RequestBody, mode: "proof" | "truth
           amountMatches,
           memoMatches,
           hasProofMemo: hasExpectedMemo,
+          memoText,
+          ledgerIndex: txResult.ledger_index ?? null,
+        },
+        xrpl: data.result,
+      },
+    };
+  }
+
+  if (mode === "access") {
+    return {
+      status: 200,
+      body: {
+        ok: true,
+        makeWavesSourceTag: MAKE_WAVES_SOURCE_TAG,
+        txHash,
+        verified: {
+          accessPaymentVerified: verified,
+          validated,
+          success,
+          transactionResult,
+          sourceTag,
+          sourceTagMatches,
+          account: txJson.Account ?? null,
+          destination: txJson.Destination ?? null,
+          transactionType: txJson.TransactionType ?? null,
+          isPayment,
+          amountDrops,
+          walletMatches,
+          destinationMatches,
+          amountMatches,
+          memoMatches,
+          hasAccessMemo: hasExpectedMemo,
           memoText,
           ledgerIndex: txResult.ledger_index ?? null,
         },
@@ -1121,6 +1272,10 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
       result = await handleCreateProofStampPayload(body);
     }
 
+    if (action === "xaman.createAccessPaymentPayload") {
+      result = await handleCreateAccessPaymentPayload(body);
+    }
+
     if (action === "xaman.createTruthDeskPayload") {
       result = await handleCreateTruthDeskPayload(body);
     }
@@ -1135,6 +1290,10 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
 
     if (action === "xrpl.verifyProofStamp") {
       result = await handleVerifyMemoPayment(body, "proof");
+    }
+
+    if (action === "xrpl.verifyAccessPayment") {
+      result = await handleVerifyMemoPayment(body, "access");
     }
 
     if (action === "xrpl.verifyTruthDeskPayment") {
