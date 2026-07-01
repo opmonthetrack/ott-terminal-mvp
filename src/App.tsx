@@ -8,6 +8,7 @@ import {
   Wallet,
   X,
 } from "lucide-react";
+import { OTTLogo, OTTLogoMark, OTTProofBadge } from "./components/OTTLogo";
 import { TerminalHomeTab } from "./tabs/TerminalHomeTab";
 import { DashboardTab } from "./tabs/DashboardTab";
 import { DailyCheckInTab } from "./tabs/DailyCheckInTab";
@@ -393,9 +394,7 @@ function MobileHeader({
           </h1>
         </div>
 
-        <div className="w-11 h-11 bg-white text-black flex items-center justify-center font-orbitron text-xs font-black">
-          OTT
-        </div>
+        <OTTLogoMark size="md" />
       </div>
     </header>
   );
@@ -420,14 +419,7 @@ function MobileMenu({
     <div className="lg:hidden fixed inset-0 z-50 bg-black">
       <div className="h-full flex flex-col">
         <div className="border-b border-white/10 px-4 py-3 flex items-center justify-between gap-3">
-          <div>
-            <p className="font-orbitron text-sm font-black uppercase tracking-widest">
-              XRPL Terminal
-            </p>
-            <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/35">
-              Mobile Navigation
-            </p>
-          </div>
+          <OTTLogo size="md" />
 
           <button
             onClick={onClose}
@@ -458,21 +450,9 @@ function BrandButton({ goTo }: { goTo: (target: ActiveTab) => void }) {
   return (
     <button
       onClick={() => goTo("home")}
-      className="w-full flex items-center gap-3 mb-7 text-left"
+      className="w-full text-left mb-7"
     >
-      <div className="w-12 h-12 bg-white flex items-center justify-center font-black text-black font-orbitron rounded-sm">
-        OTT
-      </div>
-
-      <div>
-        <p className="font-orbitron font-black text-sm tracking-widest uppercase">
-          XRPL Terminal
-        </p>
-
-        <p className="font-mono text-[8px] text-white/35 uppercase tracking-widest">
-          Explorer + Dashboard + Proof
-        </p>
-      </div>
+      <OTTLogo size="md" />
     </button>
   );
 }
@@ -486,13 +466,12 @@ function IdentityPanel({
 }) {
   return (
     <div className="border border-white/10 bg-white/[0.02] p-4 mb-6">
-      <p className="font-orbitron text-[10px] uppercase tracking-widest text-white/60 mb-3">
-        Terminal Identity
-      </p>
+      <div className="mb-4">
+        <OTTProofBadge sourceTag={sourceTag} />
+      </div>
 
       <div className="space-y-2">
         <StatusRow label="Wallet" value={walletAddress} />
-        <StatusRow label="SourceTag" value={sourceTag} />
         <StatusRow label="Mode" value="Education-first" />
       </div>
 
@@ -621,15 +600,7 @@ function PageHeader({ activeItem }: { activeItem: MenuItem }) {
         </h1>
       </div>
 
-      <div className="text-right hidden md:block">
-        <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest">
-          Product Structure
-        </p>
-
-        <p className="font-orbitron text-xs text-white/70 uppercase">
-          Explorer + Xaman + OTT Proof
-        </p>
-      </div>
+      <OTTLogo size="sm" subtitle="Explorer + Xaman + Proof" />
     </>
   );
 }
