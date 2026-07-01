@@ -16,6 +16,7 @@ import {
   Lock,
   QrCode,
   Radio,
+  SearchCheck,
   Send,
   ShieldCheck,
   TestTube2,
@@ -49,6 +50,13 @@ import {
   type XamanTokenPaymentPayloadResponse,
   type XamanTrustlinePayloadResponse,
 } from "../lib/ottTokenClient";
+import {
+  getOttTokenPaymentVerificationLabel,
+  isOttTokenPaymentVerified,
+  shortTokenPaymentHash,
+  verifyOttTokenPayment,
+  type VerifyOttTokenPaymentResponse,
+} from "../lib/ottTokenVerifyClient";
 
 type OTTTestnetTokenTabProps = {
   walletAddress: string;
@@ -82,10 +90,10 @@ const testnetRules: Rule[] = [
     icon: Send,
   },
   {
-    title: "SourceTag Proof",
-    status: "2606170002",
-    text: `Trustline en payment payloads gebruiken SourceTag ${MAKE_WAVES_SOURCE_TAG}.`,
-    icon: Fingerprint,
+    title: "Verify Payment Hash",
+    status: "Step 3",
+    text: "Token payment tx hash wordt gecontroleerd op SourceTag, issuer, currency en amount.",
+    icon: SearchCheck,
   },
   {
     title: "Mainnet Locked",
@@ -115,12 +123,17 @@ export function OTTTestnetTokenTab({ walletAddress }: OTTTestnetTokenTabProps) {
   const [currencyCode, setCurrencyCode] = useState("OTT");
   const [limitAmount, setLimitAmount] = useState("1000000");
   const [tokenAmount, setTokenAmount] = useState("10");
+  const [tokenTxHash, setTokenTxHash] = useState("");
   const [trustlinePayload, setTrustlinePayload] =
     useState<XamanTrustlinePayloadResponse | null>(null);
   const [paymentPayload, setPaymentPayload] =
     useState<XamanTokenPaymentPayloadResponse | null>(null);
+  const [paymentVerification, setPaymentVerification] =
+    useState<VerifyOttTokenPaymentResponse | null>(null);
   const [trustlineBusy, setTrustlineBusy] = useState(false);
   const [paymentBusy, setPaymentBusy] = useState(false);
+  const [verifyBusy, setVerifyBusy] = useState(false);
+  const [creditedTxHash, setCreditedTxHash] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState(
     "Paste a real XRPL testnet issuer wallet to start."
   );
@@ -137,6 +150,7 @@ export function OTTTestnetTokenTab({ walletAddress }: OTTTestnetTokenTabProps) {
   const paymentUuid = getOttTokenPaymentPayloadUuid(paymentPayload);
   const paymentUrl = getOttTokenPaymentPayloadUrl(paymentPayload);
   const paymentQr = getOttTokenPaymentPayloadQr(paymentPayload);
+  const tokenPaymentVerified = isOttTokenPaymentVerified(paymentVerification);
 
   const lastEvent = rewardState.events.find(
     (event) => event.type === "testnet-token-simulated"
@@ -157,8 +171,8 @@ export function OTTTestnetTokenTab({ walletAddress }: OTTTestnetTokenTabProps) {
     },
     {
       label: "Payment",
-      value: paymentUuid ? "Ready" : "Locked",
-      text: "OTT token payload.",
+      value: tokenPaymentVerified ? "Verified" : paymentUuid ? "Ready" : "Locked",
+      text: "OTT token proof.",
       icon: Send,
     },
     {
@@ -204,12 +218,67 @@ export function OTTTestnetTokenTab({ walletAddress }: OTTTestnetTokenTabProps) {
       });
 
       setPaymentPayload(response);
+      setPaymentVerification(null);
       setStatusMessage(getOttTokenPaymentStatusLabel(response));
     } catch (error) {
       setStatusMessage(getErrorMessage(error));
     } finally {
       setPaymentBusy(false);
     }
+  }
+
+  async function verifyTokenPaymentHash() {
+    const cleanHash = tokenTxHash.trim();
+
+    if (!cleanHash) {
+      setStatusMessage("Vul eerst een OTT token payment tx hash in.");
+      return;
+    }
+
+    setVerifyBusy(true);
+    setStatusMessage("Verifying OTT token payment hash...");
+
+    try {
+      const response = await verifyOttTokenPayment({
+        txHash: cleanHash,
+        expectedDestination: destinationWallet,
+        expectedIssuer: issuerWallet,
+        expectedCurrency: currencyCode,
+        expectedAmount: tokenAmount,
+      });
+
+      setPaymentVerification(response);
+      setStatusMessage(getOttTokenPaymentVerificationLabel(response));
+    } catch (error) {
+      setStatusMessage(getErrorMessage(error));
+    } finally {
+      setVerifyBusy(false);
+    }
+  }
+
+  function creditVerifiedTokenReward() {
+    const cleanHash = tokenTxHash.trim();
+
+    if (!tokenPaymentVerified) {
+      setStatusMessage("Token reward blijft locked tot payment hash verified is.");
+      return;
+    }
+
+    if (creditedTxHash === cleanHash) {
+      setStatusMessage("Deze token payment hash is al bijgeschreven in deze sessie.");
+      return;
+    }
+
+    const nextState = addTestnetTokenSimulation({
+      walletAddress,
+      actionId: selectedActionId,
+      txHash: cleanHash,
+      note: `${tokenAmount} ${currencyCode} verified testnet token reward for ${selectedActionId}.`,
+    });
+
+    setRewardState(nextState);
+    setCreditedTxHash(cleanHash);
+    setStatusMessage("OTT token payment verified. Testnet reward ledger credited.");
   }
 
   function openTrustline() {
@@ -275,12 +344,12 @@ export function OTTTestnetTokenTab({ walletAddress }: OTTTestnetTokenTabProps) {
             </div>
 
             <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
-              Trustline + Token Payment Flow
+              Trustline + Payment + Verification
             </h2>
 
             <p className="font-mono text-sm text-white/45 max-w-3xl leading-relaxed">
-              Bouw de veilige OTT token reward flow eerst op testnet: trustline
-              zetten, daarna token payment payload maken. Mainnet blijft locked.
+              Test eerst de volledige OTT token flow: trustline, token payment
+              en live tx hash verification. Mainnet blijft locked.
             </p>
           </div>
 
@@ -400,74 +469,82 @@ export function OTTTestnetTokenTab({ walletAddress }: OTTTestnetTokenTabProps) {
             </div>
           </div>
 
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <QrCode size={18} className="text-white/60" />
+          <PayloadSection
+            title="Step 1: Trustline Payload"
+            buttonText="Create OTT Trustline Payload"
+            busy={trustlineBusy}
+            icon={QrCode}
+            qr={trustlineQr}
+            uuid={trustlineUuid}
+            url={trustlineUrl}
+            emptyText="Nog geen TrustSet payload gemaakt."
+            onCreate={createTrustlinePayload}
+            onOpen={openTrustline}
+            onCopy={copyTrustlineUuid}
+          />
 
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Step 1: Trustline Payload
-              </p>
-            </div>
-
-            <button
-              onClick={createTrustlinePayload}
-              disabled={trustlineBusy}
-              className="w-full bg-white text-black py-4 font-orbitron text-xs font-black uppercase tracking-widest hover:bg-white/80 disabled:opacity-40 transition-all flex items-center justify-center gap-2 mb-4"
-            >
-              {trustlineBusy ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <QrCode size={16} />
-              )}
-              Create OTT Trustline Payload
-            </button>
-
-            {trustlinePayload ? (
-              <PayloadBox
-                qr={trustlineQr}
-                uuid={trustlineUuid}
-                url={trustlineUrl}
-                onOpen={openTrustline}
-                onCopy={copyTrustlineUuid}
-              />
-            ) : (
-              <EmptyState text="Nog geen TrustSet payload gemaakt." />
-            )}
-          </div>
+          <PayloadSection
+            title="Step 2: Token Payment Payload"
+            buttonText="Create OTT Token Payment Payload"
+            busy={paymentBusy}
+            icon={Send}
+            qr={paymentQr}
+            uuid={paymentUuid}
+            url={paymentUrl}
+            emptyText="Nog geen token payment payload gemaakt."
+            onCreate={createTokenPaymentPayload}
+            onOpen={openPayment}
+            onCopy={copyPaymentUuid}
+          />
 
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Send size={18} className="text-white/60" />
+              <SearchCheck size={18} className="text-white/60" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                Step 2: Token Payment Payload
+                Step 3: Verify Token Payment
               </p>
             </div>
 
+            <InputField
+              label="OTT Token Payment Tx Hash"
+              value={tokenTxHash}
+              placeholder="64-character transaction hash"
+              onChange={setTokenTxHash}
+            />
+
             <button
-              onClick={createTokenPaymentPayload}
-              disabled={paymentBusy}
-              className="w-full bg-white text-black py-4 font-orbitron text-xs font-black uppercase tracking-widest hover:bg-white/80 disabled:opacity-40 transition-all flex items-center justify-center gap-2 mb-4"
+              onClick={verifyTokenPaymentHash}
+              disabled={verifyBusy}
+              className="w-full bg-white text-black py-4 mt-5 font-orbitron text-xs font-black uppercase tracking-widest hover:bg-white/80 disabled:opacity-40 transition-all flex items-center justify-center gap-2"
             >
-              {paymentBusy ? (
+              {verifyBusy ? (
                 <Loader2 size={16} className="animate-spin" />
               ) : (
-                <Send size={16} />
+                <SearchCheck size={16} />
               )}
-              Create OTT Token Payment Payload
+              Verify OTT Token Payment
             </button>
 
-            {paymentPayload ? (
-              <PayloadBox
-                qr={paymentQr}
-                uuid={paymentUuid}
-                url={paymentUrl}
-                onOpen={openPayment}
-                onCopy={copyPaymentUuid}
-              />
-            ) : (
-              <EmptyState text="Nog geen token payment payload gemaakt." />
-            )}
+            <button
+              onClick={creditVerifiedTokenReward}
+              disabled={!tokenPaymentVerified}
+              className="w-full border border-white/10 bg-black p-4 mt-4 text-left hover:bg-white/[0.03] disabled:opacity-40 transition-all"
+            >
+              <div className="flex items-center gap-3">
+                <Gift size={18} className="text-white/60" />
+
+                <div>
+                  <p className="font-orbitron text-xs font-bold uppercase">
+                    Credit Verified Testnet Reward
+                  </p>
+
+                  <p className="font-mono text-[10px] text-white/35 uppercase">
+                    Only after payment hash verification
+                  </p>
+                </div>
+              </div>
+            </button>
           </div>
 
           <div className="border border-white/10 bg-white/[0.02] p-6">
@@ -535,6 +612,43 @@ export function OTTTestnetTokenTab({ walletAddress }: OTTTestnetTokenTabProps) {
 
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center gap-2 mb-5">
+              <BadgeCheck size={18} className="text-white/60" />
+
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Payment Verification
+              </p>
+            </div>
+
+            {paymentVerification?.verified ? (
+              <div className="space-y-3">
+                <MiniStatus
+                  label="Verified"
+                  value={tokenPaymentVerified ? "Yes" : "No"}
+                />
+                <MiniStatus
+                  label="Tx Hash"
+                  value={shortTokenPaymentHash(paymentVerification.txHash)}
+                />
+                <MiniStatus
+                  label="SourceTag"
+                  value={String(paymentVerification.verified.sourceTag)}
+                />
+                <MiniStatus
+                  label="Token"
+                  value={paymentVerification.verified.token.currency ?? "None"}
+                />
+                <MiniStatus
+                  label="Amount"
+                  value={paymentVerification.verified.token.amount ?? "None"}
+                />
+              </div>
+            ) : (
+              <EmptyState text="Nog geen token payment hash verified." />
+            )}
+          </div>
+
+          <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="flex items-center gap-2 mb-5">
               <History size={18} className="text-white/60" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
@@ -547,24 +661,6 @@ export function OTTTestnetTokenTab({ walletAddress }: OTTTestnetTokenTabProps) {
             ) : (
               <EmptyState text="Nog geen testnet token simulatie." />
             )}
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <BadgeCheck size={18} className="text-white/60" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Next Build Steps
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <ChecklistLine text="Use real testnet issuer" />
-              <ChecklistLine text="Sign TrustSet in Xaman" />
-              <ChecklistLine text="Sign token payment" />
-              <ChecklistLine text="Verify payment tx hash" />
-              <ChecklistLine text="Keep mainnet locked" />
-            </div>
           </div>
         </div>
       </div>
@@ -634,6 +730,59 @@ function InputField({
         className="w-full bg-black border border-white/10 px-4 py-4 font-mono text-xs text-white/70 outline-none focus:border-white/30 placeholder:text-white/20"
       />
     </label>
+  );
+}
+
+function PayloadSection({
+  title,
+  buttonText,
+  busy,
+  icon: Icon,
+  qr,
+  uuid,
+  url,
+  emptyText,
+  onCreate,
+  onOpen,
+  onCopy,
+}: {
+  title: string;
+  buttonText: string;
+  busy: boolean;
+  icon: ElementType;
+  qr: string | null;
+  uuid: string | null;
+  url: string | null;
+  emptyText: string;
+  onCreate: () => void;
+  onOpen: () => void;
+  onCopy: () => void;
+}) {
+  return (
+    <div className="border border-white/10 bg-white/[0.02] p-6">
+      <div className="flex items-center gap-2 mb-5">
+        <Icon size={18} className="text-white/60" />
+
+        <p className="font-orbitron text-xs uppercase tracking-widest">
+          {title}
+        </p>
+      </div>
+
+      <button
+        onClick={onCreate}
+        disabled={busy}
+        className="w-full bg-white text-black py-4 font-orbitron text-xs font-black uppercase tracking-widest hover:bg-white/80 disabled:opacity-40 transition-all flex items-center justify-center gap-2 mb-4"
+      >
+        {busy ? <Loader2 size={16} className="animate-spin" /> : <Icon size={16} />}
+        {buttonText}
+      </button>
+
+      {uuid ? (
+        <PayloadBox qr={qr} uuid={uuid} url={url} onOpen={onOpen} onCopy={onCopy} />
+      ) : (
+        <EmptyState text={emptyText} />
+      )}
+    </div>
   );
 }
 
@@ -761,16 +910,6 @@ function EventCard({ event }: { event: RewardEvent }) {
       <p className="font-mono text-[10px] text-white/30 uppercase">
         {event.createdAt}
       </p>
-    </div>
-  );
-}
-
-function ChecklistLine({ text }: { text: string }) {
-  return (
-    <div className="border border-white/10 bg-black p-3 flex items-center gap-2">
-      <CheckCircle2 size={14} className="text-white/60" />
-
-      <p className="font-mono text-xs text-white/50">{text}</p>
     </div>
   );
 }
