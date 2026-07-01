@@ -21,6 +21,7 @@ import { OTTTestnetTokenTab } from "./tabs/OTTTestnetTokenTab";
 import { PartnerHubTab } from "./tabs/PartnerHubTab";
 import { TruthDeskTab } from "./tabs/TruthDeskTab";
 import { AccessGateTab } from "./tabs/AccessGateTab";
+import { PitchModeTab } from "./tabs/PitchModeTab";
 import { OTTIntelligence } from "./tabs/OTTIntelligence";
 import { LaunchControlTab } from "./tabs/LaunchControlTab";
 import { AIHubTab } from "./tabs/AIHubTab";
@@ -53,6 +54,7 @@ type ActiveTab =
   | "partners"
   | "truthdesk"
   | "accessgate"
+  | "pitchmode"
   | "ottintelligence"
   | "launch"
   | "ai"
@@ -94,6 +96,7 @@ function MainApp() {
     { id: "partners", label: "Partner Hub", status: "Learn" },
     { id: "truthdesk", label: "Truth Desk", status: "Ask" },
     { id: "accessgate", label: "Access Gate", status: "Pay" },
+    { id: "pitchmode", label: "Pitch Mode", status: "Demo" },
     { id: "ottintelligence", label: "OTT Intelligence", status: "AI" },
     { id: "launch", label: "Launch Control", status: "Demo" },
     { id: "ai", label: "AI Hub", status: "Tools" },
@@ -302,6 +305,10 @@ function MainApp() {
 
         {activeTab === "accessgate" && (
           <AccessGateTab walletAddress={walletAddress} />
+        )}
+
+        {activeTab === "pitchmode" && (
+          <PitchModeTab walletAddress={walletAddress} />
         )}
 
         {activeTab === "ottintelligence" && <OTTIntelligence />}
