@@ -6,11 +6,15 @@ import {
   Banknote,
   CheckCircle2,
   Circle,
+  Copy,
   CreditCard,
   ExternalLink,
   Fingerprint,
   KeyRound,
+  Loader2,
   Lock,
+  QrCode,
+  SearchCheck,
   ShieldCheck,
   Sparkles,
   Wallet,
@@ -30,6 +34,22 @@ import {
   type AccessRouteId,
   type AccessState,
 } from "../lib/accessStore";
+import {
+  buildAccessPaymentInput,
+  createAccessPaymentPayload,
+  getAccessClientErrorMessage,
+  getAccessPayloadQr,
+  getAccessPayloadStatusLabel,
+  getAccessPayloadUrl,
+  getAccessPayloadUuid,
+  getAccessVerificationLabel,
+  isAccessPaymentVerified,
+  openAccessPayload,
+  shortAccessTxHash,
+  verifyAccessPayment,
+  type AccessPaymentPayloadResponse,
+  type VerifyAccessPaymentResponse,
+} from "../lib/accessClient";
 
 type AccessGateTabProps = {
   walletAddress?: string;
@@ -53,6 +73,15 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
   const [accessState, setAccessState] = useState<AccessState>(() =>
     loadAccessState(walletAddress)
   );
+  const [destinationWallet, setDestinationWallet] = useState("");
+  const [txHash, setTxHash] = useState("");
+  const [payload, setPayload] = useState<AccessPaymentPayloadResponse | null>(
+    null
+  );
+  const [verification, setVerification] =
+    useState<VerifyAccessPaymentResponse | null>(null);
+  const [payloadBusy, setPayloadBusy] = useState(false);
+  const [verifyBusy, setVerifyBusy] = useState(false);
   const [statusMessage, setStatusMessage] = useState(
     "Choose an access route to unlock the terminal access flow."
   );
@@ -60,6 +89,11 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
   const summary = getAccessSummary(accessState);
   const selectedRoute = getAccessRoute(accessState.selectedRouteId);
   const verified = isAccessVerified(accessState);
+  const paymentVerified = isAccessPaymentVerified(verification);
+
+  const payloadUuid = getAccessPayloadUuid(payload);
+  const payloadUrl = getAccessPayloadUrl(payload);
+  const payloadQr = getAccessPayloadQr(payload);
 
   const metrics: Metric[] = [
     {
@@ -81,9 +115,9 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
       icon: Sparkles,
     },
     {
-      label: "Events",
-      value: String(summary.eventCount),
-      text: "Local access log.",
+      label: "Verified",
+      value: paymentVerified ? "Yes" : "No",
+      text: "Tx hash proof.",
       icon: BadgeCheck,
     },
   ];
@@ -93,6 +127,9 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
     const route = getAccessRoute(routeId);
 
     setAccessState(nextState);
+    setPayload(null);
+    setVerification(null);
+    setTxHash("");
     setStatusMessage(
       route
         ? `${route.title} selected. Next step: create or verify access payment.`
@@ -100,60 +137,127 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
     );
   }
 
-  function markPayload() {
+  async function createPayload() {
     if (!selectedRoute) {
       setStatusMessage("Selecteer eerst een access route.");
       return;
     }
 
-    const nextState = markAccessPayloadCreated(
-      walletAddress,
-      selectedRoute.id,
-      `${selectedRoute.title} payload prepared for SourceTag ${ACCESS_SOURCE_TAG}.`
-    );
+    if (selectedRoute.id === "banxa-fiat") {
+      window.open("https://banxa.com/", "_blank", "noopener,noreferrer");
+      setStatusMessage(
+        "Banxa is een externe fiat route. OTT Terminal verwerkt deze betaling niet intern."
+      );
+      return;
+    }
 
-    setAccessState(nextState);
-    setStatusMessage(
-      `${selectedRoute.title} marked as payload-created. Live Xaman payload komt in de volgende build stap.`
-    );
+    setPayloadBusy(true);
+    setVerification(null);
+    setStatusMessage("Creating Access Gate payment payload...");
+
+    try {
+      const response = await createAccessPaymentPayload(
+        buildAccessPaymentInput(
+          selectedRoute,
+          walletAddress === "guest" ? undefined : walletAddress,
+          destinationWallet.trim() || undefined
+        )
+      );
+
+      setPayload(response);
+
+      const nextState = markAccessPayloadCreated(
+        walletAddress,
+        selectedRoute.id,
+        `${selectedRoute.title} payload created with SourceTag ${ACCESS_SOURCE_TAG}.`
+      );
+
+      setAccessState(nextState);
+      setStatusMessage(getAccessPayloadStatusLabel(response));
+    } catch (error) {
+      setStatusMessage(getAccessClientErrorMessage(error));
+    } finally {
+      setPayloadBusy(false);
+    }
   }
 
-  function demoVerifyAccess() {
+  async function verifyPaymentHash() {
     if (!selectedRoute) {
       setStatusMessage("Selecteer eerst een access route.");
       return;
     }
 
-    const nextState = markAccessVerified({
-      walletAddress,
-      routeId: selectedRoute.id,
-      txHash: "DEMO_ACCESS_UNLOCK",
-      durationDays: 30,
-      note: `${selectedRoute.title} demo access verified with SourceTag ${ACCESS_SOURCE_TAG}.`,
-    });
+    const cleanHash = txHash.trim();
 
-    setAccessState(nextState);
-    setStatusMessage(
-      "Demo access unlocked for 30 days. Volgende stap is echte Xaman payment + tx hash verification."
-    );
+    if (!cleanHash) {
+      setStatusMessage("Vul eerst een access payment tx hash in.");
+      return;
+    }
+
+    setVerifyBusy(true);
+    setStatusMessage("Verifying Access Gate payment...");
+
+    try {
+      const response = await verifyAccessPayment({
+        txHash: cleanHash,
+        expectedWallet: walletAddress === "guest" ? undefined : walletAddress,
+        expectedDestination: destinationWallet.trim() || undefined,
+        expectedAmountDrops: selectedRoute.demoAmountDrops ?? "1000000",
+        expectedMemoContains: selectedRoute.proofMemo,
+      });
+
+      setVerification(response);
+
+      const label = getAccessVerificationLabel(response);
+
+      if (isAccessPaymentVerified(response)) {
+        const nextState = markAccessVerified({
+          walletAddress,
+          routeId: selectedRoute.id,
+          txHash: cleanHash,
+          durationDays: 30,
+          note: `${selectedRoute.title} verified with SourceTag ${ACCESS_SOURCE_TAG}.`,
+        });
+
+        setAccessState(nextState);
+        setStatusMessage(`${label}. Terminal access unlocked for 30 days.`);
+        return;
+      }
+
+      setStatusMessage(label);
+    } catch (error) {
+      setStatusMessage(getAccessClientErrorMessage(error));
+    } finally {
+      setVerifyBusy(false);
+    }
+  }
+
+  function openPayload() {
+    const opened = openAccessPayload(payload);
+
+    if (!opened) {
+      setStatusMessage("Geen Access Gate payload link gevonden.");
+    }
+  }
+
+  async function copyUuid() {
+    if (!payloadUuid) {
+      setStatusMessage("Geen Access Gate payload UUID gevonden.");
+      return;
+    }
+
+    await navigator.clipboard.writeText(payloadUuid);
+    setStatusMessage("Access Gate payload UUID copied.");
   }
 
   function resetAccess() {
     const nextState = clearAccessState(walletAddress);
 
     setAccessState(nextState);
+    setPayload(null);
+    setVerification(null);
+    setTxHash("");
     setStatusMessage("Access state reset.");
-  }
-
-  function openBanxa() {
-    const banxaRoute = getAccessRoute("banxa-fiat");
-
-    if (!banxaRoute) {
-      return;
-    }
-
-    window.open("https://banxa.com/", "_blank", "noopener,noreferrer");
-    chooseRoute("banxa-fiat");
   }
 
   return (
@@ -218,9 +322,20 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
           {selectedRoute ? (
             <RouteDetailCard
               route={selectedRoute}
-              onOpenBanxa={openBanxa}
-              onMarkPayload={markPayload}
-              onDemoVerify={demoVerifyAccess}
+              destinationWallet={destinationWallet}
+              txHash={txHash}
+              payloadUuid={payloadUuid}
+              payloadQr={payloadQr}
+              payloadUrl={payloadUrl}
+              payloadBusy={payloadBusy}
+              verifyBusy={verifyBusy}
+              verification={verification}
+              onDestinationChange={setDestinationWallet}
+              onTxHashChange={setTxHash}
+              onCreatePayload={createPayload}
+              onVerify={verifyPaymentHash}
+              onOpenPayload={openPayload}
+              onCopyUuid={copyUuid}
             />
           ) : (
             <div className="border border-white/10 bg-white/[0.02] p-6">
@@ -292,7 +407,7 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
               className="w-full border border-white/10 bg-black p-4 mt-4 text-left hover:bg-white/[0.03] transition-all"
             >
               <p className="font-orbitron text-xs font-bold uppercase mb-2">
-                Reset Demo Access
+                Reset Access
               </p>
 
               <p className="font-mono text-[10px] text-white/35 uppercase">
@@ -393,16 +508,40 @@ function RouteButton({
 
 function RouteDetailCard({
   route,
-  onOpenBanxa,
-  onMarkPayload,
-  onDemoVerify,
+  destinationWallet,
+  txHash,
+  payloadUuid,
+  payloadQr,
+  payloadUrl,
+  payloadBusy,
+  verifyBusy,
+  verification,
+  onDestinationChange,
+  onTxHashChange,
+  onCreatePayload,
+  onVerify,
+  onOpenPayload,
+  onCopyUuid,
 }: {
   route: AccessRoute;
-  onOpenBanxa: () => void;
-  onMarkPayload: () => void;
-  onDemoVerify: () => void;
+  destinationWallet: string;
+  txHash: string;
+  payloadUuid: string | null;
+  payloadQr: string | null;
+  payloadUrl: string | null;
+  payloadBusy: boolean;
+  verifyBusy: boolean;
+  verification: VerifyAccessPaymentResponse | null;
+  onDestinationChange: (value: string) => void;
+  onTxHashChange: (value: string) => void;
+  onCreatePayload: () => void;
+  onVerify: () => void;
+  onOpenPayload: () => void;
+  onCopyUuid: () => void;
 }) {
   const isBanxa = route.id === "banxa-fiat";
+  const amountDrops = route.demoAmountDrops ?? "1000000";
+  const amountXrp = Number(amountDrops) / 1000000;
 
   return (
     <div className="border border-white/10 bg-white/[0.02] p-6">
@@ -460,30 +599,122 @@ function RouteDetailCard({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {isBanxa ? (
-          <ActionButton
-            icon={ExternalLink}
-            title="Open Banxa"
-            text="Official external route"
-            onClick={onOpenBanxa}
+      {!isBanxa && (
+        <div className="space-y-4 mb-5">
+          <InputField
+            label="Destination Wallet"
+            value={destinationWallet}
+            placeholder="Optional if OTT_ACCESS_WALLET is set"
+            onChange={onDestinationChange}
           />
-        ) : (
-          <ActionButton
-            icon={Wallet}
-            title="Prepare Payload"
-            text={route.ctaLabel}
-            onClick={onMarkPayload}
-          />
-        )}
 
-        <ActionButton
-          icon={BadgeCheck}
-          title="Demo Verify"
-          text="Unlock local access"
-          onClick={onDemoVerify}
-        />
-      </div>
+          <div className="grid grid-cols-2 gap-3">
+            <MiniStatus label="Demo Amount" value={`${amountXrp} XRP`} />
+            <MiniStatus label="Drops" value={amountDrops} />
+          </div>
+        </div>
+      )}
+
+      <button
+        onClick={onCreatePayload}
+        disabled={payloadBusy}
+        className="w-full bg-white text-black py-4 font-orbitron text-xs font-black uppercase tracking-widest hover:bg-white/80 disabled:opacity-40 transition-all flex items-center justify-center gap-2 mb-5"
+      >
+        {payloadBusy ? (
+          <Loader2 size={16} className="animate-spin" />
+        ) : isBanxa ? (
+          <ExternalLink size={16} />
+        ) : (
+          <QrCode size={16} />
+        )}
+        {isBanxa ? "Open Banxa" : "Create Access Payload"}
+      </button>
+
+      {payloadUuid && (
+        <div className="space-y-4 mb-5">
+          {payloadQr && (
+            <div className="border border-white/10 bg-white p-4 inline-block">
+              <img src={payloadQr} alt="Access Gate QR" className="w-40 h-40" />
+            </div>
+          )}
+
+          <MiniStatus label="Payload UUID" value={payloadUuid} />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <ActionButton
+              icon={ExternalLink}
+              title="Open Xaman"
+              text={payloadUrl ? "Launch payload" : "No link"}
+              onClick={onOpenPayload}
+            />
+
+            <ActionButton
+              icon={Copy}
+              title="Copy UUID"
+              text="For tracking"
+              onClick={onCopyUuid}
+            />
+          </div>
+        </div>
+      )}
+
+      {!isBanxa && (
+        <div className="space-y-4">
+          <InputField
+            label="Access Payment Tx Hash"
+            value={txHash}
+            placeholder="Paste signed XRPL payment tx hash"
+            onChange={onTxHashChange}
+          />
+
+          <button
+            onClick={onVerify}
+            disabled={verifyBusy}
+            className="w-full border border-white/10 bg-black p-4 text-left hover:bg-white/[0.03] disabled:opacity-40 transition-all"
+          >
+            <div className="flex items-center gap-3">
+              {verifyBusy ? (
+                <Loader2 size={17} className="text-white/60 animate-spin" />
+              ) : (
+                <SearchCheck size={17} className="text-white/60" />
+              )}
+
+              <div>
+                <p className="font-orbitron text-xs font-bold uppercase">
+                  Verify Access Payment
+                </p>
+
+                <p className="font-mono text-[10px] text-white/35 uppercase">
+                  SourceTag + memo + amount proof
+                </p>
+              </div>
+            </div>
+          </button>
+
+          {verification?.verified && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <MiniStatus
+                label="Verified"
+                value={
+                  verification.verified.accessPaymentVerified ? "Yes" : "No"
+                }
+              />
+              <MiniStatus
+                label="Tx"
+                value={shortAccessTxHash(verification.txHash)}
+              />
+              <MiniStatus
+                label="Result"
+                value={verification.verified.transactionResult}
+              />
+              <MiniStatus
+                label="Amount"
+                value={verification.verified.amountDrops ?? "None"}
+              />
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -556,6 +787,33 @@ function ActionButton({
 
       <p className="font-mono text-[10px] text-white/35 uppercase">{text}</p>
     </button>
+  );
+}
+
+function InputField({
+  label,
+  value,
+  placeholder,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  placeholder?: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="block">
+      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+        {label}
+      </p>
+
+      <input
+        value={value}
+        placeholder={placeholder}
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full bg-black border border-white/10 px-4 py-4 font-mono text-xs text-white/70 outline-none focus:border-white/30 placeholder:text-white/20"
+      />
+    </label>
   );
 }
 
