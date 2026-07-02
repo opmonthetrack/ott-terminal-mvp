@@ -54,21 +54,7 @@ import {
   type VerifyAccessPaymentResponse,
 } from "../lib/accessClient";
 import {
-  createAccessNftMintPayload,
-  getAccessNftMintClientErrorMessage,
-  getAccessNftMintPayloadQr,
-  getAccessNftMintPayloadUrl,
-  getAccessNftMintPayloadUuid,
-  getAccessNftMintStatusLabel,
-  isAccessNftMintSigned,
-  openAccessNftMintPayload,
-  verifyAccessNftMintPayload,
-  type AccessNftMintPayloadResponse,
-  type AccessNftMintVerificationResponse,
-} from "../lib/accessMintClient";
-import {
   OTT_ACCESS_PASS_METADATA_CID,
-  OTT_ACCESS_PASS_ISSUER,
   OTT_ACCESS_PASS_METADATA_URI,
   OTT_ACCESS_PASS_TAXON,
   buildOttAccessPassLabel,
@@ -119,12 +105,6 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
   const [accessPassCheck, setAccessPassCheck] =
     useState<AccessPassOwnershipResult | null>(null);
   const [accessPassBusy, setAccessPassBusy] = useState(false);
-  const [mintPayload, setMintPayload] =
-    useState<AccessNftMintPayloadResponse | null>(null);
-  const [mintVerification, setMintVerification] =
-    useState<AccessNftMintVerificationResponse | null>(null);
-  const [mintBusy, setMintBusy] = useState(false);
-  const [mintVerifyBusy, setMintVerifyBusy] = useState(false);
 
   const summary = getAccessSummary(accessState);
   const selectedRoute = getAccessRoute(accessState.selectedRouteId);
@@ -136,19 +116,12 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
   const payloadUrl = getAccessPayloadUrl(payload);
   const payloadQr = getAccessPayloadQr(payload);
 
-  const mintPayloadUuid = getAccessNftMintPayloadUuid(mintPayload);
-  const mintPayloadUrl = getAccessNftMintPayloadUrl(mintPayload);
-  const mintPayloadQr = getAccessNftMintPayloadQr(mintPayload);
-  const mintSigned = isAccessNftMintSigned(mintVerification);
-
   useEffect(() => {
     setAccessState(loadAccessState(walletAddress));
     setPayload(null);
     setVerification(null);
     setTxHash("");
     setAccessPassCheck(null);
-    setMintPayload(null);
-    setMintVerification(null);
     setStatusMessage(c.statusMessage);
 
     if (walletAddress !== "guest") {
@@ -255,80 +228,6 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
       );
     } finally {
       setAccessPassBusy(false);
-    }
-  }
-
-  async function createMintPayload() {
-    setMintBusy(true);
-    setMintVerification(null);
-    setStatusMessage(
-      language === "en"
-        ? "Creating Xaman NFTokenMint payload for OTT Access Pass..."
-        : "Xaman NFTokenMint payload voor OTT Access Pass wordt aangemaakt...",
-    );
-
-    try {
-      const response = await createAccessNftMintPayload();
-
-      setMintPayload(response);
-      setStatusMessage(
-        language === "en"
-          ? "Access NFT mint payload created. Open Xaman and sign with the issuer/admin wallet."
-          : "Access NFT mint payload gemaakt. Open Xaman en teken met de issuer/admin wallet.",
-      );
-
-      openAccessNftMintPayload(response);
-    } catch (error) {
-      setStatusMessage(getAccessNftMintClientErrorMessage(error));
-    } finally {
-      setMintBusy(false);
-    }
-  }
-
-  async function verifyMintPayload() {
-    if (!mintPayloadUuid) {
-      setStatusMessage(
-        language === "en"
-          ? "Create an Access NFT mint payload first."
-          : "Maak eerst een Access NFT mint payload aan.",
-      );
-      return;
-    }
-
-    setMintVerifyBusy(true);
-    setStatusMessage(
-      language === "en"
-        ? "Verifying Access NFT mint payload..."
-        : "Access NFT mint payload wordt geverifieerd...",
-    );
-
-    try {
-      const response = await verifyAccessNftMintPayload(mintPayloadUuid);
-
-      setMintVerification(response);
-
-      const label = getAccessNftMintStatusLabel(response);
-      setStatusMessage(label);
-
-      if (isAccessNftMintSigned(response)) {
-        await scanAccessPass();
-      }
-    } catch (error) {
-      setStatusMessage(getAccessNftMintClientErrorMessage(error));
-    } finally {
-      setMintVerifyBusy(false);
-    }
-  }
-
-  function openMintPayload() {
-    const opened = openAccessNftMintPayload(mintPayload);
-
-    if (!opened) {
-      setStatusMessage(
-        language === "en"
-          ? "No Access NFT mint payload link found."
-          : "Geen Access NFT mint payload link gevonden.",
-      );
     }
   }
 
@@ -494,8 +393,6 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
     setVerification(null);
     setTxHash("");
     setAccessPassCheck(null);
-    setMintPayload(null);
-    setMintVerification(null);
     setStatusMessage(language === "en" ? "Access state reset." : "Access status reset.");
   }
 
@@ -677,92 +574,6 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
                 </div>
               )}
             </Panel>
-
-            <Panel>
-              <div className="flex items-center gap-2 mb-5">
-                <KeyRound size={18} className="text-[#C83888]" />
-
-                <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Mint Access Pass NFT
-                </p>
-              </div>
-
-              <div className="border border-[#D84858]/25 bg-[#D84858]/10 p-4 mb-5">
-                <p className="font-mono text-xs text-black/60 leading-relaxed">
-                  {language === "en"
-                    ? "Admin test mode: sign this NFTokenMint with the issuer/admin wallet. Customer mint/transfer flow comes after this works green."
-                    : "Admin testmodus: teken deze NFTokenMint met de issuer/admin wallet. Klant mint/transfer flow komt nadat dit groen werkt."}
-                </p>
-              </div>
-
-              <div className="space-y-3 mb-5">
-                <MiniStatus label="Issuer" value={OTT_ACCESS_PASS_ISSUER} />
-                <MiniStatus label="Taxon" value={String(OTT_ACCESS_PASS_TAXON)} />
-                <MiniStatus label="Metadata URI" value={OTT_ACCESS_PASS_METADATA_URI} />
-                <MiniStatus
-                  label="Mint Status"
-                  value={
-                    mintSigned
-                      ? "Signed"
-                      : mintVerification?.verified?.resolved
-                        ? "Resolved / not signed"
-                        : mintPayloadUuid
-                          ? "Payload created"
-                          : "Not created"
-                  }
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
-                <ActionButton
-                  title={mintBusy ? common.loading : "Mint Access Pass"}
-                  text="Open NFTokenMint in Xaman"
-                  icon={mintBusy ? Loader2 : KeyRound}
-                  disabled={mintBusy}
-                  onClick={createMintPayload}
-                />
-                <ActionButton
-                  title="Open Mint"
-                  text="Reopen Xaman link"
-                  icon={ExternalLink}
-                  disabled={!mintPayloadUrl}
-                  onClick={openMintPayload}
-                />
-                <ActionButton
-                  title={mintVerifyBusy ? common.loading : "Verify Mint"}
-                  text="Check Xaman signature"
-                  icon={mintVerifyBusy ? Loader2 : RefreshCcw}
-                  disabled={!mintPayloadUuid || mintVerifyBusy}
-                  onClick={() => void verifyMintPayload()}
-                />
-              </div>
-
-              {mintPayloadUuid && (
-                <div className="border border-black/10 bg-[#F7F8FC] p-4 mb-4">
-                  <div className="grid grid-cols-1 gap-3">
-                    <MiniStatus label="Payload UUID" value={mintPayloadUuid} />
-                    <MiniStatus
-                      label="Mint TXID"
-                      value={mintVerification?.verified?.txid ?? "Waiting for signature"}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {mintPayloadQr && (
-                <div className="border border-black/10 bg-white p-4">
-                  <p className="font-orbitron text-xs font-black uppercase text-black mb-4">
-                    QR Fallback
-                  </p>
-
-                  <img
-                    src={mintPayloadQr}
-                    alt="Xaman Access NFT mint QR"
-                    className="w-44 h-44 object-contain bg-white border border-black/10 p-2"
-                  />
-                </div>
-              )}
-            </Panel>
           </div>
 
           <div className="col-span-12 xl:col-span-5 space-y-4">
@@ -864,16 +675,6 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
                       : accessPassCheck
                         ? "Not found"
                         : "Not checked"
-                  }
-                />
-                <MiniStatus
-                  label="NFT Mint"
-                  value={
-                    mintSigned
-                      ? "Signed"
-                      : mintPayloadUuid
-                        ? "Payload ready"
-                        : "Not started"
                   }
                 />
               </div>
