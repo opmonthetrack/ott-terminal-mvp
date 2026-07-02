@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ElementType, ReactNode } from "react";
 import {
   AlertTriangle,
@@ -14,6 +14,7 @@ import {
   Loader2,
   Lock,
   QrCode,
+  RefreshCcw,
   SearchCheck,
   ShieldCheck,
   Sparkles,
@@ -52,6 +53,17 @@ import {
   type AccessPaymentPayloadResponse,
   type VerifyAccessPaymentResponse,
 } from "../lib/accessClient";
+import {
+  OTT_ACCESS_PASS_METADATA_CID,
+  OTT_ACCESS_PASS_METADATA_URI,
+  OTT_ACCESS_PASS_TAXON,
+  buildOttAccessPassLabel,
+  checkOttAccessPassOwnership,
+  getAccessPassStatusLabel,
+  shortNftId,
+  type AccessPassOwnershipResult,
+  type OttAccessPassNft,
+} from "../lib/accessNftPass";
 import { useTerminalLanguage } from "../lib/useTerminalLanguage";
 
 type AccessGateTabProps = {
@@ -90,15 +102,32 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
   const [payloadBusy, setPayloadBusy] = useState(false);
   const [verifyBusy, setVerifyBusy] = useState(false);
   const [statusMessage, setStatusMessage] = useState(c.statusMessage);
+  const [accessPassCheck, setAccessPassCheck] =
+    useState<AccessPassOwnershipResult | null>(null);
+  const [accessPassBusy, setAccessPassBusy] = useState(false);
 
   const summary = getAccessSummary(accessState);
   const selectedRoute = getAccessRoute(accessState.selectedRouteId);
-  const verified = isAccessVerified(accessState);
+  const verified =
+    isAccessVerified(accessState) || Boolean(accessPassCheck?.hasAccessPass);
   const paymentVerified = isAccessPaymentVerified(verification);
 
   const payloadUuid = getAccessPayloadUuid(payload);
   const payloadUrl = getAccessPayloadUrl(payload);
   const payloadQr = getAccessPayloadQr(payload);
+
+  useEffect(() => {
+    setAccessState(loadAccessState(walletAddress));
+    setPayload(null);
+    setVerification(null);
+    setTxHash("");
+    setAccessPassCheck(null);
+    setStatusMessage(c.statusMessage);
+
+    if (walletAddress !== "guest") {
+      void scanAccessPass({ automatic: true });
+    }
+  }, [walletAddress]);
 
   const metrics: Metric[] = [
     {
@@ -125,7 +154,82 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
       text: "Tx hash proof.",
       icon: BadgeCheck,
     },
+    {
+      label: "NFT Pass",
+      value: accessPassCheck?.hasAccessPass ? "Found" : "Scan",
+      text: accessPassCheck?.hasAccessPass
+        ? buildOttAccessPassLabel(accessPassCheck.matchedNft)
+        : "Issuer + taxon + CID.",
+      icon: KeyRound,
+    },
   ];
+
+  async function scanAccessPass(options?: { automatic?: boolean }) {
+    if (!walletAddress || walletAddress === "guest") {
+      setAccessPassCheck(null);
+
+      if (!options?.automatic) {
+        setStatusMessage(
+          language === "en"
+            ? "Connect with Xaman first. Then the terminal can scan this wallet for the OTT Access Pass NFT."
+            : "Connect eerst met Xaman. Daarna kan de terminal deze wallet scannen op de OTT Access Pass NFT.",
+        );
+      }
+
+      return;
+    }
+
+    setAccessPassBusy(true);
+
+    if (!options?.automatic) {
+      setStatusMessage(
+        language === "en"
+          ? "Scanning this wallet for the OTT Access Pass NFT..."
+          : "Deze wallet wordt gescand op de OTT Access Pass NFT...",
+      );
+    }
+
+    try {
+      const result = await checkOttAccessPassOwnership(walletAddress);
+
+      setAccessPassCheck(result);
+
+      if (result.hasAccessPass && result.matchedNft) {
+        const label = buildOttAccessPassLabel(result.matchedNft);
+
+        const nextState = markAccessVerified({
+          walletAddress,
+          routeId: "ott-access-pass",
+          txHash: result.matchedNft.nftokenId,
+          durationDays: 36500,
+          note: `${label} found. Issuer, taxon and metadata CID matched.`,
+        });
+
+        setAccessState(nextState);
+        setStatusMessage(
+          language === "en"
+            ? `${label} found. Access unlocked automatically.`
+            : `${label} gevonden. Access automatisch unlocked.`,
+        );
+
+        return;
+      }
+
+      if (!options?.automatic) {
+        setStatusMessage(getAccessPassStatusLabel(result));
+      }
+    } catch (error) {
+      setStatusMessage(
+        error instanceof Error
+          ? error.message
+          : language === "en"
+            ? "Access Pass scanner failed."
+            : "Access Pass scanner is mislukt.",
+      );
+    } finally {
+      setAccessPassBusy(false);
+    }
+  }
 
   function chooseRoute(routeId: AccessRouteId) {
     const nextState = selectAccessRoute(walletAddress, routeId);
@@ -288,6 +392,7 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
     setPayload(null);
     setVerification(null);
     setTxHash("");
+    setAccessPassCheck(null);
     setStatusMessage(language === "en" ? "Access state reset." : "Access status reset.");
   }
 
@@ -408,6 +513,67 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
                 </p>
               </div>
             </Panel>
+
+            <Panel>
+              <div className="flex items-center gap-2 mb-5">
+                <SearchCheck size={18} className="text-[#3898E8]" />
+
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  Access NFT Scanner
+                </p>
+              </div>
+
+              <div className="space-y-3 mb-5">
+                <MiniStatus
+                  label="Wallet"
+                  value={walletAddress === "guest" ? "Connect Xaman first" : walletAddress}
+                />
+                <MiniStatus label="Taxon" value={String(OTT_ACCESS_PASS_TAXON)} />
+                <MiniStatus label="Metadata CID" value={OTT_ACCESS_PASS_METADATA_CID} />
+              </div>
+
+              <button
+                onClick={() => void scanAccessPass()}
+                disabled={accessPassBusy || walletAddress === "guest"}
+                className="w-full border border-black/10 bg-white p-4 text-left hover:bg-[#F7F8FC] disabled:opacity-40 transition-all mb-5"
+              >
+                <div className="flex items-center gap-3">
+                  {accessPassBusy ? (
+                    <Loader2 size={17} className="text-[#C83888] animate-spin" />
+                  ) : (
+                    <RefreshCcw size={17} className="text-[#3898E8]" />
+                  )}
+
+                  <div>
+                    <p className="font-orbitron text-xs font-bold uppercase text-black">
+                      {accessPassBusy ? "Scanning NFT Pass" : "Scan Access Pass"}
+                    </p>
+
+                    <p className="font-mono text-[10px] text-black/40 uppercase">
+                      Issuer + taxon + metadata CID
+                    </p>
+                  </div>
+                </div>
+              </button>
+
+              {accessPassCheck?.matchedNft ? (
+                <AccessPassCard nft={accessPassCheck.matchedNft} />
+              ) : accessPassCheck ? (
+                <div className="border border-[#D84858]/25 bg-[#D84858]/10 p-4">
+                  <p className="font-mono text-xs text-black/60 leading-relaxed">
+                    {getAccessPassStatusLabel(accessPassCheck)}
+                  </p>
+                </div>
+              ) : (
+                <div className="border border-black/10 bg-[#F7F8FC] p-4">
+                  <p className="font-mono text-xs text-black/55 leading-relaxed">
+                    {language === "en"
+                      ? "After Xaman login this scanner checks account_nfts for the exact Access Pass issuer, taxon and metadata CID."
+                      : "Na Xaman login checkt deze scanner account_nfts op de exacte Access Pass issuer, taxon en metadata CID."}
+                  </p>
+                </div>
+              )}
+            </Panel>
           </div>
 
           <div className="col-span-12 xl:col-span-5 space-y-4">
@@ -500,6 +666,16 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
                 <MiniStatus
                   label="Expires"
                   value={accessState.expiresAt ?? "None"}
+                />
+                <MiniStatus
+                  label="NFT Pass"
+                  value={
+                    accessPassCheck?.matchedNft
+                      ? buildOttAccessPassLabel(accessPassCheck.matchedNft)
+                      : accessPassCheck
+                        ? "Not found"
+                        : "Not checked"
+                  }
                 />
               </div>
 
@@ -919,6 +1095,33 @@ function PassStep({ text }: { text: string }) {
       <BadgeCheck size={14} className="text-[#C83888] mt-0.5 shrink-0" />
 
       <p className="font-mono text-xs text-black/55 leading-relaxed">{text}</p>
+    </div>
+  );
+}
+
+function AccessPassCard({ nft }: { nft: OttAccessPassNft }) {
+  return (
+    <div className="border border-[#3898E8]/25 bg-[#3898E8]/10 p-4">
+      <div className="flex items-start gap-3 mb-4">
+        <BadgeCheck size={18} className="text-[#3898E8] shrink-0 mt-0.5" />
+
+        <div className="min-w-0">
+          <p className="font-orbitron text-sm font-black uppercase text-black mb-2">
+            {buildOttAccessPassLabel(nft)}
+          </p>
+
+          <p className="font-mono text-[10px] text-black/45 uppercase break-all">
+            {shortNftId(nft.nftokenId)}
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3">
+        <MiniStatus label="Issuer" value={nft.issuer} />
+        <MiniStatus label="Taxon" value={String(nft.taxon)} />
+        <MiniStatus label="Serial" value={nft.serial ? String(nft.serial) : "No serial returned"} />
+        <MiniStatus label="Metadata URI" value={nft.decodedUri || OTT_ACCESS_PASS_METADATA_URI} />
+      </div>
     </div>
   );
 }
