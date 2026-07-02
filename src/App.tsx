@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Fingerprint,
   Home,
@@ -43,6 +43,12 @@ import { DeFiTab } from "./tabs/DeFiTab";
 import { AcademyTab } from "./tabs/AcademyTab";
 import { LedgerIntelTab } from "./tabs/LedgerIntelTab";
 import { LanguageProvider, useLanguage } from "./LanguageContext";
+import { verifyMakeWavesPayload } from "./lib/xamanClient";
+import {
+  cleanXamanReturnUrl,
+  clearXamanMobileSession,
+  getXamanReturnState,
+} from "./lib/xamanMobileSession";
 
 type ActiveTab =
   | "home"
@@ -164,6 +170,7 @@ function MainApp() {
   const [walletAddress, setWalletAddress] = useState<string>("guest");
   const [activeTab, setActiveTab] = useState<ActiveTab>("home");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [xamanReturnStatus, setXamanReturnStatus] = useState("");
 
   const { lang, setLang } = useLanguage();
 
@@ -174,6 +181,70 @@ function MainApp() {
 
   const activeItem =
     allItems.find((item) => item.id === activeTab) ?? menuGroups[0].items[0];
+
+  useEffect(() => {
+    const returnState = getXamanReturnState();
+
+    if (
+      !returnState.hasReturnedFromXaman ||
+      !returnState.payloadUuid ||
+      !returnState.actionId
+    ) {
+      return;
+    }
+
+    let isMounted = true;
+
+    async function verifyReturnedPayload() {
+      setXamanReturnStatus("Xaman return detected. Verifying signature...");
+
+      try {
+        const response = await verifyMakeWavesPayload(
+          returnState.payloadUuid as string,
+          returnState.actionId,
+        );
+
+        if (!isMounted) {
+          return;
+        }
+
+        if (response.verified?.signed && response.verified?.account) {
+          setWalletAddress(response.verified.account);
+          setActiveTab(returnState.returnTarget);
+          setXamanReturnStatus("Wallet connected. Opening dashboard...");
+          clearXamanMobileSession();
+        } else if (response.verified?.resolved && !response.verified?.signed) {
+          setActiveTab("xaman");
+          setXamanReturnStatus("Xaman request was rejected or expired.");
+        } else {
+          setActiveTab("xaman");
+          setXamanReturnStatus("Xaman signing is still waiting.");
+        }
+      } catch {
+        if (!isMounted) {
+          return;
+        }
+
+        setActiveTab("xaman");
+        setXamanReturnStatus("Could not verify Xaman return. Try verify again.");
+      } finally {
+        cleanXamanReturnUrl();
+
+        window.setTimeout(() => {
+          if (isMounted) {
+            setXamanReturnStatus("");
+          }
+        }, 4500);
+      }
+    }
+
+    void verifyReturnedPayload();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
 
   function goTo(target: ActiveTab) {
     setActiveTab(target);
@@ -209,6 +280,10 @@ function MainApp() {
         walletAddress={walletAddress}
         onOpenMenu={() => setIsMobileMenuOpen(true)}
       />
+
+      {xamanReturnStatus && (
+        <XamanReturnBanner text={xamanReturnStatus} />
+      )}
 
       {isMobileMenuOpen && (
         <MobileMenu
@@ -661,6 +736,20 @@ function MobileBottomNav({
         </button>
       </div>
     </nav>
+  );
+}
+
+function XamanReturnBanner({ text }: { text: string }) {
+  return (
+    <div className="fixed top-[69px] lg:top-4 left-4 right-4 lg:left-auto lg:right-6 lg:w-[420px] z-[60] border border-white/10 bg-white text-black p-4 shadow-2xl">
+      <p className="font-orbitron text-xs font-black uppercase tracking-widest mb-2">
+        Xaman Mobile Return
+      </p>
+
+      <p className="font-mono text-xs uppercase tracking-widest text-black/60">
+        {text}
+      </p>
+    </div>
   );
 }
 
