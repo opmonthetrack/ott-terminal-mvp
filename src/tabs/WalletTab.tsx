@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import type { ElementType } from "react";
 import {
   Activity,
   AlertTriangle,
-  ArrowRight,
   BadgeCheck,
   Copy,
   Database,
@@ -17,7 +17,9 @@ import {
   Wallet,
   Zap,
 } from "lucide-react";
+import { OTTLogo, OTTProofBadge } from "../components/OTTLogo";
 import { MAKE_WAVES_SOURCE_TAG } from "../lib/makeWaves";
+import { useTerminalLanguage } from "../lib/useTerminalLanguage";
 
 type WalletTabProps = {
   walletAddress?: string;
@@ -48,6 +50,166 @@ type AccountTransaction = {
 };
 
 type LookupStatus = "idle" | "loading" | "success" | "error";
+
+type WalletCopy = {
+  eyebrow: string;
+  titleLine1: string;
+  titleLine2: string;
+  intro: string;
+  placeholder: string;
+  loadWallet: string;
+  walletState: string;
+  guestMode: string;
+  balance: string;
+  trustlines: string;
+  updated: string;
+  copy: string;
+  refresh: string;
+  xrpBalance: string;
+  validatedAccount: string;
+  ownerCount: string;
+  objectsOwned: string;
+  issuedAssets: string;
+  sourceTagHits: string;
+  account: string;
+  walletOverview: string;
+  readOnly: string;
+  loadingWallet: string;
+  noCustodyNote: string;
+  proofStatus: string;
+  officialSourceTag: string;
+  detectedRecentTxs: string;
+  proofLayer: string;
+  ready: string;
+  proofLater: string;
+  recentTransactions: string;
+  noTrustlines: string;
+  noTransactions: string;
+  guestTitle: string;
+  guestIntro: string;
+  pasteAddress: string;
+  pasteAddressText: string;
+  connectXaman: string;
+  connectXamanText: string;
+  showProof: string;
+  showProofText: string;
+  invalidAddress: string;
+  noAccountData: string;
+  lookupFailed: string;
+  parseFailed: string;
+  websocketFailed: string;
+};
+
+const walletCopy: Record<"nl" | "en", WalletCopy> = {
+  nl: {
+    eyebrow: "Xaman Wallet Dashboard Layer",
+    titleLine1: "Your XRPL",
+    titleLine2: "Command Center.",
+    intro:
+      "Dit is de connected dashboard laag. Na Xaman login komt het wallet adres automatisch binnen en wordt publieke XRPL data read-only geladen.",
+    placeholder: "Plak XRPL wallet adres dat begint met r...",
+    loadWallet: "Load Wallet",
+    walletState: "Wallet State",
+    guestMode: "Guest mode",
+    balance: "Balance",
+    trustlines: "Trustlines",
+    updated: "Updated",
+    copy: "Copy",
+    refresh: "Refresh",
+    xrpBalance: "XRP Balance",
+    validatedAccount: "Validated account",
+    ownerCount: "Owner Count",
+    objectsOwned: "Objects owned",
+    issuedAssets: "Issued assets",
+    sourceTagHits: "OTT SourceTag Hits",
+    account: "Account",
+    walletOverview: "Wallet Overview",
+    readOnly:
+      "Read-only wallet dashboard. Geen custody. Geen private keys. Alleen publieke XRPL data.",
+    loadingWallet: "Wallet data laden via XRPL...",
+    noCustodyNote:
+      "Xaman login is gekoppeld. Deze dashboard-laag gebruikt alleen het publieke wallet adres dat via Xaman binnenkomt.",
+    proofStatus: "OTT Proof Status",
+    officialSourceTag: "Official SourceTag",
+    detectedRecentTxs: "Detected In Recent Txs",
+    proofLayer: "Proof Layer",
+    ready: "Ready",
+    proofLater:
+      "Later koppelen we hier volledige SourceTag proof history, Proof Stamps, Access Gate status, NFT Access Pass en Truth Desk betalingen.",
+    recentTransactions: "Recent Transactions",
+    noTrustlines: "Geen trustlines gevonden of account data nog niet geladen.",
+    noTransactions:
+      "Geen recente transacties gevonden of account data nog niet geladen.",
+    guestTitle: "Connect layer prepared.",
+    guestIntro:
+      "Plak nu handmatig een XRPL wallet adres om het dashboard te testen. Of connect via Xaman zodat de wallet automatisch geladen wordt na sign.",
+    pasteAddress: "Paste Address",
+    pasteAddressText: "Read public wallet data.",
+    connectXaman: "Connect Xaman",
+    connectXamanText: "Automatic wallet load.",
+    showProof: "Show Proof",
+    showProofText: "Link SourceTag/XP.",
+    invalidAddress: "Dit lijkt geen geldig XRPL accountadres.",
+    noAccountData: "Geen account data gevonden.",
+    lookupFailed: "Wallet lookup is mislukt.",
+    parseFailed: "Kon XRPL response niet lezen.",
+    websocketFailed: "XRPL websocket verbinding mislukt.",
+  },
+  en: {
+    eyebrow: "Xaman Wallet Dashboard Layer",
+    titleLine1: "Your XRPL",
+    titleLine2: "Command Center.",
+    intro:
+      "This is the connected dashboard layer. After Xaman login, the wallet address is loaded automatically and public XRPL data is shown read-only.",
+    placeholder: "Paste XRPL wallet address starting with r...",
+    loadWallet: "Load Wallet",
+    walletState: "Wallet State",
+    guestMode: "Guest mode",
+    balance: "Balance",
+    trustlines: "Trustlines",
+    updated: "Updated",
+    copy: "Copy",
+    refresh: "Refresh",
+    xrpBalance: "XRP Balance",
+    validatedAccount: "Validated account",
+    ownerCount: "Owner Count",
+    objectsOwned: "Objects owned",
+    issuedAssets: "Issued assets",
+    sourceTagHits: "OTT SourceTag Hits",
+    account: "Account",
+    walletOverview: "Wallet Overview",
+    readOnly:
+      "Read-only wallet dashboard. No custody. No private keys. Public XRPL data only.",
+    loadingWallet: "Loading wallet data from XRPL...",
+    noCustodyNote:
+      "Xaman login is connected. This dashboard layer only uses the public wallet address returned by Xaman.",
+    proofStatus: "OTT Proof Status",
+    officialSourceTag: "Official SourceTag",
+    detectedRecentTxs: "Detected In Recent Txs",
+    proofLayer: "Proof Layer",
+    ready: "Ready",
+    proofLater:
+      "Later, this section will include full SourceTag proof history, Proof Stamps, Access Gate status, NFT Access Pass, and Truth Desk payments.",
+    recentTransactions: "Recent Transactions",
+    noTrustlines: "No trustlines found or account data has not loaded yet.",
+    noTransactions:
+      "No recent transactions found or account data has not loaded yet.",
+    guestTitle: "Connect layer prepared.",
+    guestIntro:
+      "Paste an XRPL wallet address to test the dashboard manually. Or connect with Xaman so the wallet loads automatically after signing.",
+    pasteAddress: "Paste Address",
+    pasteAddressText: "Read public wallet data.",
+    connectXaman: "Connect Xaman",
+    connectXamanText: "Automatic wallet load.",
+    showProof: "Show Proof",
+    showProofText: "Link SourceTag/XP.",
+    invalidAddress: "This does not look like a valid XRPL account address.",
+    noAccountData: "No account data found.",
+    lookupFailed: "Wallet lookup failed.",
+    parseFailed: "Could not read XRPL response.",
+    websocketFailed: "XRPL websocket connection failed.",
+  },
+};
 
 type XrplResponse = {
   result?: {
@@ -83,6 +245,9 @@ type XrplResponse = {
 const XRPL_ENDPOINT = "wss://xrplcluster.com/";
 
 export function WalletTab({ walletAddress = "guest" }: WalletTabProps) {
+  const { language } = useTerminalLanguage();
+  const c = walletCopy[language];
+
   const [inputAddress, setInputAddress] = useState(
     walletAddress === "guest" ? "" : walletAddress,
   );
@@ -125,7 +290,7 @@ export function WalletTab({ walletAddress = "guest" }: WalletTabProps) {
 
     if (!isLikelyXrplAddress(cleanAddress)) {
       setStatus("error");
-      setError("Dit lijkt geen geldig XRPL accountadres.");
+      setError(c.invalidAddress);
       return;
     }
 
@@ -162,7 +327,7 @@ export function WalletTab({ walletAddress = "guest" }: WalletTabProps) {
       const accountData = infoResponse.result?.account_data;
 
       if (!accountData?.Account) {
-        throw new Error("Geen account data gevonden.");
+        throw new Error(c.noAccountData);
       }
 
       setAccountInfo({
@@ -207,9 +372,7 @@ export function WalletTab({ walletAddress = "guest" }: WalletTabProps) {
       setStatus("success");
     } catch (lookupError) {
       const message =
-        lookupError instanceof Error
-          ? lookupError.message
-          : "Wallet lookup is mislukt.";
+        lookupError instanceof Error ? lookupError.message : c.lookupFailed;
 
       setStatus("error");
       setError(message);
@@ -230,38 +393,41 @@ export function WalletTab({ walletAddress = "guest" }: WalletTabProps) {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <section className="relative overflow-hidden border-b border-white/10">
-        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_20%_20%,_white,_transparent_26%),radial-gradient(circle_at_90%_10%,_white,_transparent_22%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,_transparent,_black_88%)]" />
+    <div className="min-h-screen bg-white text-[#080808]">
+      <section className="relative overflow-hidden border-b border-black/10 bg-[radial-gradient(circle_at_18%_18%,rgba(56,152,232,0.16),transparent_28%),radial-gradient(circle_at_82%_8%,rgba(200,56,136,0.16),transparent_28%),radial-gradient(circle_at_85%_82%,rgba(216,72,88,0.12),transparent_30%),#ffffff]">
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.22),#ffffff_92%)]" />
 
-        <div className="relative z-10 p-6 xl:p-10">
+        <div className="relative z-10 p-4 md:p-6 xl:p-10">
           <div className="grid grid-cols-12 gap-6 items-end">
             <div className="col-span-12 xl:col-span-8">
-              <div className="inline-flex items-center gap-2 border border-white/10 bg-white/[0.03] px-4 py-2 mb-6">
-                <Wallet size={15} className="text-white/60" />
+              <div className="mb-6">
+                <OTTLogo size="lg" subtitle="Xaman Wallet Dashboard" />
+              </div>
 
-                <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-white/50">
-                  Xaman Wallet Dashboard Layer
+              <div className="inline-flex items-center gap-2 border border-black/10 bg-white/80 shadow-sm px-4 py-2 mb-6">
+                <Wallet size={15} className="text-[#C83888]" />
+
+                <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-black/55">
+                  {c.eyebrow}
                 </p>
               </div>
 
               <h1 className="font-orbitron text-4xl xl:text-6xl font-black uppercase leading-none tracking-tight mb-6">
-                Your XRPL
+                {c.titleLine1}
                 <br />
-                Command Center.
+                <span className="bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] bg-clip-text text-transparent">
+                  {c.titleLine2}
+                </span>
               </h1>
 
-              <p className="font-mono text-sm xl:text-base text-white/50 leading-relaxed max-w-3xl mb-8">
-                Dit is de connected dashboard laag. Voor nu kan je elk XRPL
-                account opzoeken. Daarna koppelen we Xaman login zodat het adres
-                automatisch binnenkomt.
+              <p className="font-mono text-sm xl:text-base text-black/60 leading-relaxed max-w-3xl mb-8">
+                {c.intro}
               </p>
 
-              <div className="border border-white/10 bg-black/80 backdrop-blur p-3 max-w-4xl">
+              <div className="border border-black/10 bg-white/90 backdrop-blur p-3 max-w-4xl shadow-xl shadow-black/5">
                 <div className="flex flex-col md:flex-row gap-3">
-                  <div className="flex-1 flex items-center gap-3 border border-white/10 bg-white/[0.03] px-4">
-                    <Search size={18} className="text-white/35 shrink-0" />
+                  <div className="flex-1 flex items-center gap-3 border border-black/10 bg-[#F7F8FC] px-4">
+                    <Search size={18} className="text-black/35 shrink-0" />
 
                     <input
                       value={inputAddress}
@@ -271,25 +437,25 @@ export function WalletTab({ walletAddress = "guest" }: WalletTabProps) {
                           submitLookup();
                         }
                       }}
-                      placeholder="Paste XRPL wallet address starting with r..."
-                      className="w-full bg-transparent py-4 outline-none font-mono text-xs text-white placeholder:text-white/25"
+                      placeholder={c.placeholder}
+                      className="w-full bg-transparent py-4 outline-none font-mono text-xs text-black placeholder:text-black/25"
                     />
                   </div>
 
                   <button
                     onClick={submitLookup}
-                    className="bg-white text-black px-6 py-4 font-orbitron text-xs font-black uppercase tracking-widest hover:bg-white/80 transition-all"
+                    className="bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] text-white px-6 py-4 font-orbitron text-xs font-black uppercase tracking-widest hover:brightness-95 transition-all"
                   >
-                    Load Wallet
+                    {c.loadWallet}
                   </button>
                 </div>
 
                 {status === "error" && (
-                  <div className="border border-white/10 bg-white/[0.02] p-4 mt-3">
+                  <div className="border border-[#D84858]/25 bg-[#D84858]/10 p-4 mt-3">
                     <div className="flex items-start gap-3">
-                      <AlertTriangle size={18} className="text-white/50 shrink-0 mt-0.5" />
+                      <AlertTriangle size={18} className="text-[#D84858] shrink-0 mt-0.5" />
 
-                      <p className="font-mono text-xs text-white/55 leading-relaxed">
+                      <p className="font-mono text-xs text-black/60 leading-relaxed">
                         {error}
                       </p>
                     </div>
@@ -299,57 +465,58 @@ export function WalletTab({ walletAddress = "guest" }: WalletTabProps) {
             </div>
 
             <div className="col-span-12 xl:col-span-4">
-              <div className="border border-white/10 bg-black/70 backdrop-blur p-5">
+              <div className="border border-black/10 bg-white/90 backdrop-blur p-5 shadow-xl shadow-black/5">
                 <div className="flex items-center justify-between gap-3 mb-5">
                   <p className="font-orbitron text-xs uppercase tracking-widest">
-                    Wallet State
+                    {c.walletState}
                   </p>
 
                   <StatusPill status={status} />
                 </div>
 
+                <div className="mb-4 text-black">
+                  <OTTProofBadge sourceTag={String(MAKE_WAVES_SOURCE_TAG)} />
+                </div>
+
                 <div className="space-y-3">
                   <InfoRow
                     label="Address"
-                    value={hasWallet ? activeAddress : "Guest mode"}
+                    value={hasWallet ? activeAddress : c.guestMode}
                   />
                   <InfoRow
-                    label="Balance"
+                    label={c.balance}
                     value={accountInfo ? `${accountInfo.balanceXrp} XRP` : "—"}
                   />
-                  <InfoRow
-                    label="Trustlines"
-                    value={String(trustlines.length)}
-                  />
-                  <InfoRow label="Updated" value={lastUpdated} />
+                  <InfoRow label={c.trustlines} value={String(trustlines.length)} />
+                  <InfoRow label={c.updated} value={lastUpdated} />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 mt-5">
                   <button
                     onClick={copyAddress}
                     disabled={!hasWallet}
-                    className="border border-white/10 bg-white/[0.02] p-3 text-left hover:bg-white hover:text-black transition-all disabled:opacity-40 disabled:hover:bg-white/[0.02] disabled:hover:text-white"
+                    className="border border-black/10 bg-[#F7F8FC] p-3 text-left hover:bg-white hover:shadow-md transition-all disabled:opacity-40"
                   >
-                    <Copy size={15} className="mb-3 text-white/45" />
+                    <Copy size={15} className="mb-3 text-[#C83888]" />
 
                     <p className="font-orbitron text-[10px] font-black uppercase">
-                      Copy
+                      {c.copy}
                     </p>
                   </button>
 
                   <button
                     onClick={() => hasWallet && void loadWallet(activeAddress)}
                     disabled={!hasWallet || status === "loading"}
-                    className="border border-white/10 bg-white/[0.02] p-3 text-left hover:bg-white hover:text-black transition-all disabled:opacity-40 disabled:hover:bg-white/[0.02] disabled:hover:text-white"
+                    className="border border-black/10 bg-[#F7F8FC] p-3 text-left hover:bg-white hover:shadow-md transition-all disabled:opacity-40"
                   >
                     {status === "loading" ? (
-                      <Loader2 size={15} className="mb-3 text-white/45 animate-spin" />
+                      <Loader2 size={15} className="mb-3 text-[#C83888] animate-spin" />
                     ) : (
-                      <RefreshCcw size={15} className="mb-3 text-white/45" />
+                      <RefreshCcw size={15} className="mb-3 text-[#3898E8]" />
                     )}
 
                     <p className="font-orbitron text-[10px] font-black uppercase">
-                      Refresh
+                      {c.refresh}
                     </p>
                   </button>
                 </div>
@@ -359,25 +526,29 @@ export function WalletTab({ walletAddress = "guest" }: WalletTabProps) {
 
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mt-8">
             <MetricCard
-              label="XRP Balance"
+              label={c.xrpBalance}
               value={accountInfo ? accountInfo.balanceXrp : "—"}
-              text="Validated account"
+              text={c.validatedAccount}
               icon={Database}
             />
             <MetricCard
-              label="Owner Count"
-              value={accountInfo?.ownerCount !== null && accountInfo ? String(accountInfo.ownerCount) : "—"}
-              text="Objects owned"
+              label={c.ownerCount}
+              value={
+                accountInfo?.ownerCount !== null && accountInfo
+                  ? String(accountInfo.ownerCount)
+                  : "—"
+              }
+              text={c.objectsOwned}
               icon={Layers3}
             />
             <MetricCard
-              label="Trustlines"
+              label={c.trustlines}
               value={String(trustlines.length)}
-              text="Issued assets"
+              text={c.issuedAssets}
               icon={Activity}
             />
             <MetricCard
-              label="OTT SourceTag Hits"
+              label={c.sourceTagHits}
               value={String(sourceTagHits.length)}
               text={String(MAKE_WAVES_SOURCE_TAG)}
               icon={Fingerprint}
@@ -386,31 +557,30 @@ export function WalletTab({ walletAddress = "guest" }: WalletTabProps) {
         </div>
       </section>
 
-      <section className="p-6 xl:p-10">
+      <section className="p-4 md:p-6 xl:p-10 bg-white">
         {!hasWallet ? (
-          <GuestPanel />
+          <GuestPanel copy={c} />
         ) : (
           <div className="grid grid-cols-12 gap-4">
-            <div className="col-span-12 xl:col-span-7 border border-white/10 bg-white/[0.02] p-6">
+            <div className="col-span-12 xl:col-span-7 border border-black/10 bg-white p-5 md:p-6 shadow-sm">
               <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
                 <div>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-white/35 mb-3">
-                    Account
+                  <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-black/35 mb-3">
+                    {c.account}
                   </p>
 
                   <h2 className="font-orbitron text-2xl font-black uppercase">
-                    Wallet Overview
+                    {c.walletOverview}
                   </h2>
                 </div>
 
-                <p className="font-mono text-xs text-white/35 max-w-md leading-relaxed">
-                  Read-only wallet dashboard. Geen custody. Geen private keys.
-                  Alleen publieke XRPL data.
+                <p className="font-mono text-xs text-black/45 max-w-md leading-relaxed">
+                  {c.readOnly}
                 </p>
               </div>
 
               {status === "loading" ? (
-                <LoadingBox text="Wallet data laden via XRPL..." />
+                <LoadingBox text={c.loadingWallet} />
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <InfoBlock label="Address" value={activeAddress} />
@@ -428,87 +598,83 @@ export function WalletTab({ walletAddress = "guest" }: WalletTabProps) {
                   />
                   <InfoBlock
                     label="Flags"
-                    value={accountInfo?.flags !== null && accountInfo ? String(accountInfo.flags) : "—"}
+                    value={
+                      accountInfo?.flags !== null && accountInfo
+                        ? String(accountInfo.flags)
+                        : "—"
+                    }
                   />
                 </div>
               )}
 
-              <div className="border border-white/10 bg-black p-4 mt-4">
+              <div className="border border-black/10 bg-[#F7F8FC] p-4 mt-4">
                 <div className="flex items-start gap-3">
-                  <LockKeyhole size={18} className="text-white/45 mt-0.5 shrink-0" />
+                  <LockKeyhole size={18} className="text-[#C83888] mt-0.5 shrink-0" />
 
-                  <p className="font-mono text-xs text-white/45 leading-relaxed">
-                    Xaman login komt als volgende koppeling. Deze dashboard-laag
-                    is alvast klaar voor het adres dat straks via Xaman binnenkomt.
+                  <p className="font-mono text-xs text-black/55 leading-relaxed">
+                    {c.noCustodyNote}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="col-span-12 xl:col-span-5 border border-white/10 bg-white/[0.02] p-6">
+            <div className="col-span-12 xl:col-span-5 border border-black/10 bg-white p-5 md:p-6 shadow-sm">
               <div className="flex items-center gap-2 mb-5">
-                <BadgeCheck size={18} className="text-white/60" />
+                <BadgeCheck size={18} className="text-[#C83888]" />
 
                 <p className="font-orbitron text-xs uppercase tracking-widest">
-                  OTT Proof Status
+                  {c.proofStatus}
                 </p>
               </div>
 
               <div className="space-y-3">
-                <ProofRow label="Official SourceTag" value={String(MAKE_WAVES_SOURCE_TAG)} />
-                <ProofRow label="Detected In Recent Txs" value={String(sourceTagHits.length)} />
-                <ProofRow label="Proof Layer" value="Ready" />
+                <ProofRow label={c.officialSourceTag} value={String(MAKE_WAVES_SOURCE_TAG)} />
+                <ProofRow label={c.detectedRecentTxs} value={String(sourceTagHits.length)} />
+                <ProofRow label={c.proofLayer} value={c.ready} />
               </div>
 
-              <div className="border border-white/10 bg-black p-4 mt-5">
-                <p className="font-mono text-xs text-white/45 leading-relaxed">
-                  Later koppelen we hier volledige SourceTag proof history,
-                  Proof Stamps, Access Gate status en Truth Desk betalingen.
+              <div className="border border-[#C83888]/25 bg-[#C83888]/10 p-4 mt-5">
+                <p className="font-mono text-xs text-black/55 leading-relaxed">
+                  {c.proofLater}
                 </p>
               </div>
             </div>
 
-            <div className="col-span-12 xl:col-span-6 border border-white/10 bg-white/[0.02] p-6">
+            <div className="col-span-12 xl:col-span-6 border border-black/10 bg-white p-5 md:p-6 shadow-sm">
               <div className="flex items-center gap-2 mb-5">
-                <Zap size={18} className="text-white/60" />
+                <Zap size={18} className="text-[#3898E8]" />
 
                 <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Trustlines
+                  {c.trustlines}
                 </p>
               </div>
 
               {trustlines.length === 0 ? (
-                <EmptyBox text="Geen trustlines gevonden of account data nog niet geladen." />
+                <EmptyBox text={c.noTrustlines} />
               ) : (
                 <div className="space-y-2">
                   {trustlines.map((line) => (
-                    <TrustlineRow
-                      key={`${line.currency}-${line.issuer}`}
-                      line={line}
-                    />
+                    <TrustlineRow key={`${line.currency}-${line.issuer}`} line={line} />
                   ))}
                 </div>
               )}
             </div>
 
-            <div className="col-span-12 xl:col-span-6 border border-white/10 bg-white/[0.02] p-6">
+            <div className="col-span-12 xl:col-span-6 border border-black/10 bg-white p-5 md:p-6 shadow-sm">
               <div className="flex items-center gap-2 mb-5">
-                <Activity size={18} className="text-white/60" />
+                <Activity size={18} className="text-[#3898E8]" />
 
                 <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Recent Transactions
+                  {c.recentTransactions}
                 </p>
               </div>
 
               {transactions.length === 0 ? (
-                <EmptyBox text="Geen recente transacties gevonden of account data nog niet geladen." />
+                <EmptyBox text={c.noTransactions} />
               ) : (
                 <div className="space-y-2">
                   {transactions.map((transaction) => (
-                    <TransactionRow
-                      key={transaction.hash}
-                      transaction={transaction}
-                    />
+                    <TransactionRow key={transaction.hash} transaction={transaction} />
                   ))}
                 </div>
               )}
@@ -520,32 +686,38 @@ export function WalletTab({ walletAddress = "guest" }: WalletTabProps) {
   );
 }
 
-function GuestPanel() {
+function GuestPanel({ copy }: { copy: WalletCopy }) {
   return (
-    <div className="border border-white/10 bg-white/[0.02] p-8">
+    <div className="border border-black/10 bg-white p-6 md:p-8 shadow-sm">
       <div className="max-w-3xl">
-        <div className="inline-flex items-center gap-2 border border-white/10 bg-black px-4 py-2 mb-6">
-          <KeyRound size={15} className="text-white/50" />
+        <div className="inline-flex items-center gap-2 border border-black/10 bg-[#F7F8FC] px-4 py-2 mb-6">
+          <KeyRound size={15} className="text-[#C83888]" />
 
-          <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-white/45">
-            Guest Mode
+          <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-black/45">
+            {copy.guestMode}
           </p>
         </div>
 
         <h2 className="font-orbitron text-3xl font-black uppercase mb-5">
-          Connect layer prepared.
+          {copy.guestTitle}
         </h2>
 
-        <p className="font-mono text-sm text-white/45 leading-relaxed mb-6">
-          Plak nu handmatig een XRPL wallet adres om het dashboard te testen.
-          Daarna koppelen we Xaman login zodat de wallet automatisch geladen
-          wordt na connect/sign.
+        <p className="font-mono text-sm text-black/55 leading-relaxed mb-6">
+          {copy.guestIntro}
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <GuestStep number="01" title="Paste Address" text="Read public wallet data." />
-          <GuestStep number="02" title="Connect Xaman" text="Next frontend step." />
-          <GuestStep number="03" title="Show Proof" text="Link SourceTag/XP." />
+          <GuestStep
+            number="01"
+            title={copy.pasteAddress}
+            text={copy.pasteAddressText}
+          />
+          <GuestStep
+            number="02"
+            title={copy.connectXaman}
+            text={copy.connectXamanText}
+          />
+          <GuestStep number="03" title={copy.showProof} text={copy.showProofText} />
         </div>
       </div>
     </div>
@@ -562,13 +734,13 @@ function GuestStep({
   text: string;
 }) {
   return (
-    <div className="border border-white/10 bg-black p-4">
-      <p className="font-orbitron text-xs font-black text-white/35 mb-4">
+    <div className="border border-black/10 bg-[#F7F8FC] p-4">
+      <p className="font-orbitron text-xs font-black text-[#C83888] mb-4">
         {number}
       </p>
 
       <p className="font-orbitron text-xs font-black uppercase mb-2">{title}</p>
-      <p className="font-mono text-[10px] text-white/35 uppercase">{text}</p>
+      <p className="font-mono text-[10px] text-black/40 uppercase">{text}</p>
     </div>
   );
 }
@@ -584,15 +756,15 @@ function StatusPill({ status }: { status: LookupStatus }) {
           : "Idle";
 
   return (
-    <div className="border border-white/10 bg-white/[0.03] px-3 py-2">
+    <div className="border border-black/10 bg-[#F7F8FC] px-3 py-2">
       <div className="flex items-center gap-2">
         <span
           className={`w-2 h-2 rounded-full ${
-            status === "success" ? "bg-white" : "bg-white/25"
+            status === "success" ? "bg-[#3898E8]" : "bg-black/25"
           }`}
         />
 
-        <p className="font-mono text-[9px] uppercase tracking-widest text-white/55">
+        <p className="font-mono text-[9px] uppercase tracking-widest text-black/55">
           {label}
         </p>
       </div>
@@ -609,13 +781,13 @@ function MetricCard({
   label: string;
   value: string;
   text: string;
-  icon: typeof Activity;
+  icon: ElementType;
 }) {
   return (
-    <div className="border border-white/10 bg-black/60 p-4">
-      <Icon size={18} className="text-white/60 mb-3" />
+    <div className="border border-black/10 bg-white/90 p-4 shadow-sm">
+      <Icon size={18} className="text-[#C83888] mb-3" />
 
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+      <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
         {label}
       </p>
 
@@ -623,15 +795,15 @@ function MetricCard({
         {value}
       </p>
 
-      <p className="font-mono text-[10px] text-white/30 uppercase">{text}</p>
+      <p className="font-mono text-[10px] text-black/35 uppercase">{text}</p>
     </div>
   );
 }
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border border-white/10 bg-white/[0.02] p-3">
-      <p className="font-mono text-[10px] text-white/30 uppercase tracking-widest mb-2">
+    <div className="border border-black/10 bg-[#F7F8FC] p-3">
+      <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
         {label}
       </p>
 
@@ -644,20 +816,20 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 
 function InfoBlock({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border border-white/10 bg-black p-4">
-      <p className="font-mono text-[10px] text-white/30 uppercase tracking-widest mb-3">
+    <div className="border border-black/10 bg-[#F7F8FC] p-4">
+      <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-3">
         {label}
       </p>
 
-      <p className="font-mono text-sm text-white/60 break-all">{value}</p>
+      <p className="font-mono text-sm text-black/60 break-all">{value}</p>
     </div>
   );
 }
 
 function ProofRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-start justify-between gap-4 border border-white/10 bg-black p-4">
-      <p className="font-mono text-xs text-white/35 uppercase tracking-widest">
+    <div className="flex items-start justify-between gap-4 border border-black/10 bg-[#F7F8FC] p-4">
+      <p className="font-mono text-xs text-black/45 uppercase tracking-widest">
         {label}
       </p>
 
@@ -670,40 +842,36 @@ function ProofRow({ label, value }: { label: string; value: string }) {
 
 function TrustlineRow({ line }: { line: Trustline }) {
   return (
-    <div className="border border-white/10 bg-black p-4">
+    <div className="border border-black/10 bg-[#F7F8FC] p-4">
       <div className="flex items-start justify-between gap-4 mb-3">
         <div>
           <p className="font-orbitron text-xs font-black uppercase mb-2">
             {line.currency}
           </p>
 
-          <p className="font-mono text-[10px] text-white/35 uppercase">
+          <p className="font-mono text-[10px] text-black/45 uppercase">
             Balance: {line.balance}
           </p>
         </div>
 
-        <p className="font-mono text-[10px] text-white/35 text-right uppercase">
+        <p className="font-mono text-[10px] text-black/45 text-right uppercase">
           Limit: {line.limit}
         </p>
       </div>
 
-      <p className="font-mono text-[10px] text-white/30 break-all">
+      <p className="font-mono text-[10px] text-black/40 break-all">
         Issuer: {line.issuer}
       </p>
     </div>
   );
 }
 
-function TransactionRow({
-  transaction,
-}: {
-  transaction: AccountTransaction;
-}) {
+function TransactionRow({ transaction }: { transaction: AccountTransaction }) {
   const isOttSourceTag =
     transaction.sourceTag === String(MAKE_WAVES_SOURCE_TAG);
 
   return (
-    <div className="border border-white/10 bg-black p-4">
+    <div className="border border-black/10 bg-[#F7F8FC] p-4">
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-2">
@@ -712,23 +880,23 @@ function TransactionRow({
             </p>
 
             {isOttSourceTag && (
-              <span className="border border-white/10 bg-white text-black px-2 py-1 font-mono text-[8px] uppercase tracking-widest">
+              <span className="border border-transparent bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] text-white px-2 py-1 font-mono text-[8px] uppercase tracking-widest">
                 OTT
               </span>
             )}
           </div>
 
-          <p className="font-mono text-xs text-white/45 break-all">
+          <p className="font-mono text-xs text-black/55 break-all">
             {shortHash(transaction.hash)}
           </p>
         </div>
 
         <div className="md:text-right">
-          <p className="font-mono text-[10px] text-white/35 uppercase mb-2">
+          <p className="font-mono text-[10px] text-black/45 uppercase mb-2">
             SourceTag: {transaction.sourceTag}
           </p>
 
-          <p className="font-mono text-[10px] text-white/35 uppercase">
+          <p className="font-mono text-[10px] text-black/45 uppercase">
             Fee: {transaction.fee}
           </p>
         </div>
@@ -739,18 +907,18 @@ function TransactionRow({
 
 function EmptyBox({ text }: { text: string }) {
   return (
-    <div className="border border-white/10 bg-black p-6 text-center">
-      <p className="font-mono text-xs text-white/35 leading-relaxed">{text}</p>
+    <div className="border border-black/10 bg-[#F7F8FC] p-6 text-center">
+      <p className="font-mono text-xs text-black/45 leading-relaxed">{text}</p>
     </div>
   );
 }
 
 function LoadingBox({ text }: { text: string }) {
   return (
-    <div className="border border-white/10 bg-black p-8 text-center">
-      <Loader2 size={22} className="animate-spin mx-auto mb-4 text-white/45" />
+    <div className="border border-black/10 bg-[#F7F8FC] p-8 text-center">
+      <Loader2 size={22} className="animate-spin mx-auto mb-4 text-[#C83888]" />
 
-      <p className="font-mono text-xs text-white/35">{text}</p>
+      <p className="font-mono text-xs text-black/45">{text}</p>
     </div>
   );
 }
@@ -783,14 +951,14 @@ async function xrplRequest(payload: Record<string, unknown>): Promise<XrplRespon
       try {
         resolve(JSON.parse(event.data) as XrplResponse);
       } catch {
-        reject(new Error("Kon XRPL response niet lezen."));
+        reject(new Error("Could not parse XRPL response."));
       }
     };
 
     socket.onerror = () => {
       window.clearTimeout(timeout);
       socket.close();
-      reject(new Error("XRPL websocket verbinding mislukt."));
+      reject(new Error("XRPL websocket connection failed."));
     };
   });
 }
