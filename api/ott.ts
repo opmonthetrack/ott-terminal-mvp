@@ -80,10 +80,24 @@ const XRPL_RPC_URL =
   process.env.XRPL_RPC_URL || "https://s1.ripple.com:51234/";
 const ONE_XRP_DROPS = "1000000";
 
+function normalizePublicUrl(value: string | undefined) {
+  const cleanValue = value?.trim().replace(/\/$/, "");
+
+  if (!cleanValue) {
+    return "";
+  }
+
+  if (/^https?:\/\//i.test(cleanValue)) {
+    return cleanValue;
+  }
+
+  return `https://${cleanValue}`;
+}
+
 const OTT_PUBLIC_APP_URL =
-  process.env.OTT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
-  process.env.VERCEL_PROJECT_PRODUCTION_URL?.replace(/\/$/, "") ||
-  "https://ott-terminal.vercel.app";
+  normalizePublicUrl(process.env.OTT_PUBLIC_APP_URL) ||
+  normalizePublicUrl(process.env.VERCEL_PROJECT_PRODUCTION_URL) ||
+  "https://ott-terminal-mvp.vercel.app";
 
 const OTT_BRAND_NAME = "XRPL OnTheTrack Terminal";
 const OTT_LOGO_URL = `${OTT_PUBLIC_APP_URL}/logo.png`;
