@@ -1,11 +1,79 @@
-import {
-  MAKE_WAVES_SOURCE_TAG,
-  getMakeWavesAction,
-  getMakeWavesMemo,
-  isMakeWavesSourceTag,
-  type MakeWavesActionId,
-} from "../src/lib/makeWaves";
-import { getPartnerProofStampMemo } from "../src/lib/partnerCatalog";
+// api/ott.ts must be self-contained for Vercel serverless runtime.
+// Do not import from src/lib here; Node ESM cannot resolve those TS frontend modules at runtime.
+
+const MAKE_WAVES_SOURCE_TAG = 2606170002;
+
+type MakeWavesActionId =
+  | "daily-checkin"
+  | "source-tag-proof"
+  | "wallet-safety"
+  | "academy-lesson"
+  | "xrpl-verify"
+  | "ott-token-eligibility";
+
+type MakeWavesAction = {
+  id: MakeWavesActionId;
+  title: string;
+  xp: number;
+  memo: string;
+};
+
+const MAKE_WAVES_ACTIONS: Record<MakeWavesActionId, MakeWavesAction> = {
+  "daily-checkin": {
+    id: "daily-checkin",
+    title: "Daily Check-In",
+    xp: 10,
+    memo: "OTT_MAKE_WAVES | Daily Check-In | SourceTag 2606170002",
+  },
+  "source-tag-proof": {
+    id: "source-tag-proof",
+    title: "SourceTag Proof",
+    xp: 15,
+    memo: "OTT_MAKE_WAVES | SourceTag Proof | SourceTag 2606170002",
+  },
+  "wallet-safety": {
+    id: "wallet-safety",
+    title: "Wallet Safety",
+    xp: 20,
+    memo: "OTT_MAKE_WAVES | Wallet Safety | SourceTag 2606170002",
+  },
+  "academy-lesson": {
+    id: "academy-lesson",
+    title: "Academy Lesson",
+    xp: 25,
+    memo: "OTT_MAKE_WAVES | Academy Lesson | SourceTag 2606170002",
+  },
+  "xrpl-verify": {
+    id: "xrpl-verify",
+    title: "XRPL Verify",
+    xp: 20,
+    memo: "OTT_MAKE_WAVES | XRPL Verify | SourceTag 2606170002",
+  },
+  "ott-token-eligibility": {
+    id: "ott-token-eligibility",
+    title: "OTT Token Eligibility",
+    xp: 30,
+    memo: "OTT_MAKE_WAVES | OTT Token Eligibility | SourceTag 2606170002",
+  },
+};
+
+function getMakeWavesAction(actionId: MakeWavesActionId) {
+  return MAKE_WAVES_ACTIONS[actionId] ?? MAKE_WAVES_ACTIONS["daily-checkin"];
+}
+
+function getMakeWavesMemo(actionId: MakeWavesActionId) {
+  return getMakeWavesAction(actionId).memo;
+}
+
+function isMakeWavesSourceTag(value: number | null | undefined) {
+  return value === MAKE_WAVES_SOURCE_TAG;
+}
+
+function getPartnerProofStampMemo(partnerId: string) {
+  const cleanPartnerId = partnerId.trim() || "partner";
+
+  return `OTT_PROOF_STAMP | ${cleanPartnerId} | SourceTag ${MAKE_WAVES_SOURCE_TAG}`;
+}
 
 const XAMAN_API_URL = "https://xumm.app/api/v1/platform/payload";
 const XRPL_RPC_URL =
@@ -724,7 +792,7 @@ async function handleCreateProofStampPayload(body: RequestBody) {
     };
   }
 
-  const memoText = getPartnerProofStampMemo(partnerId as never);
+  const memoText = getPartnerProofStampMemo(partnerId);
   const visibleMemo = `${memoText} | ${routeName} | SourceTag ${MAKE_WAVES_SOURCE_TAG}`;
   const txjson = makePaymentTx({
     account: walletAddress || undefined,
