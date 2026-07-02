@@ -4,7 +4,6 @@ import {
   ArrowRight,
   BadgeCheck,
   BookOpen,
-  Database,
   Fingerprint,
   Gauge,
   KeyRound,
@@ -17,8 +16,10 @@ import {
   Sparkles,
   Wallet,
 } from "lucide-react";
+import { LanguageToggle } from "../components/LanguageToggle";
 import { OTTLogo, OTTLogoMark, OTTProofBadge } from "../components/OTTLogo";
 import { MAKE_WAVES_SOURCE_TAG } from "../lib/makeWaves";
+import { useTerminalLanguage } from "../lib/useTerminalLanguage";
 
 type TerminalHomeTabProps = {
   walletAddress?: string;
@@ -44,91 +45,77 @@ type Metric = {
   icon: ElementType;
 };
 
-const productLayers: ProductLayer[] = [
-  {
-    id: "explorer",
-    title: "XRPL Explorer",
-    label: "Public Layer",
-    description:
-      "De publieke voorkant: live XRPL data, search, ledgers, transactions, accounts, assets en SourceTag proof.",
-    bullets: [
-      "Live XRPL network overview",
-      "Search account / transaction / asset",
-      "SourceTag 2606170002 lookup",
-      "Explorer-style first impression",
-    ],
-    icon: Network,
-    actionLabel: "Open Explorer",
-    target: "network",
-    accent: "blue",
-  },
-  {
-    id: "dashboard",
-    title: "Xaman Wallet Dashboard",
-    label: "Connected Layer",
-    description:
-      "Na Xaman connect krijgt de gebruiker zijn eigen XRPL command center met wallet, balances, trustlines, proof history en XP.",
-    bullets: [
-      "Wallet address and balances",
-      "Recent transactions",
-      "Trustlines / NFTs later",
-      "Reward Ledger and access status",
-    ],
-    icon: Wallet,
-    actionLabel: "Open Wallet",
-    target: "wallet",
-    accent: "magenta",
-  },
-  {
-    id: "ott-proof",
-    title: "OTT Proof / Education",
-    label: "OnTheTrack Layer",
-    description:
-      "De unieke OTT-laag: Partner Hub, Proof Stamps, Truth Desk, Access Gate en education-first routes.",
-    bullets: [
-      "Learn first, act second",
-      "Risk notes before route",
-      "Optional Proof Stamps",
-      "Truth Desk and Access Gate",
-    ],
-    icon: Fingerprint,
-    actionLabel: "Open Proof Layer",
-    target: "partners",
-    accent: "coral",
-  },
-];
-
-const metrics: Metric[] = [
-  {
-    label: "Product",
-    value: "V2",
-    text: "Explorer + Dashboard + Proof",
-    icon: Layers3,
-  },
-  {
-    label: "SourceTag",
-    value: String(MAKE_WAVES_SOURCE_TAG),
-    text: "OTT proof identity",
-    icon: Fingerprint,
-  },
-  {
-    label: "Wallet",
-    value: "Xaman",
-    text: "Self-custody connect",
-    icon: KeyRound,
-  },
-  {
-    label: "Position",
-    value: "Safe",
-    text: "No custody / no broker",
-    icon: ShieldCheck,
-  },
-];
-
 export function TerminalHomeTab({
   walletAddress = "guest",
   onNavigate,
 }: TerminalHomeTabProps) {
+  const { language, setLanguage, copy } = useTerminalLanguage();
+  const c = copy.home;
+  const common = copy.common;
+
+  const productLayers: ProductLayer[] = [
+    {
+      id: "explorer",
+      title: c.explorerTitle,
+      label: c.explorerLabel,
+      description: c.explorerDescription,
+      bullets: c.explorerBullets,
+      icon: Network,
+      actionLabel: common.openExplorer,
+      target: "network",
+      accent: "blue",
+    },
+    {
+      id: "dashboard",
+      title: c.dashboardTitle,
+      label: c.dashboardLabel,
+      description: c.dashboardDescription,
+      bullets: c.dashboardBullets,
+      icon: Wallet,
+      actionLabel: common.openWallet,
+      target: "wallet",
+      accent: "magenta",
+    },
+    {
+      id: "ott-proof",
+      title: c.proofTitle,
+      label: c.proofLabel,
+      description: c.proofDescription,
+      bullets: c.proofBullets,
+      icon: Fingerprint,
+      actionLabel: common.openProofLayer,
+      target: "partners",
+      accent: "coral",
+    },
+  ];
+
+  const metrics: Metric[] = [
+    {
+      label: "Product",
+      value: "V2",
+      text: "Explorer + Dashboard + Proof",
+      icon: Layers3,
+    },
+    {
+      label: common.sourceTag,
+      value: String(MAKE_WAVES_SOURCE_TAG),
+      text: "OTT proof identity",
+      icon: Fingerprint,
+    },
+    {
+      label: common.wallet,
+      value: "Xaman",
+      text: "Self-custody connect",
+      icon: KeyRound,
+    },
+    {
+      label: "Position",
+      value: "Safe",
+      text: "No custody / no broker",
+      icon: ShieldCheck,
+    },
+  ];
+
   function navigate(target: string) {
     onNavigate?.(target);
   }
@@ -139,6 +126,10 @@ export function TerminalHomeTab({
         <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.15),#ffffff_92%)]" />
 
         <div className="relative z-10 p-4 md:p-6 xl:p-10">
+          <div className="flex justify-end mb-4">
+            <LanguageToggle language={language} onChange={setLanguage} />
+          </div>
+
           <div className="grid grid-cols-12 gap-6 items-center">
             <div className="col-span-12 xl:col-span-7">
               <div className="mb-8 text-[#080808]">
@@ -152,44 +143,42 @@ export function TerminalHomeTab({
                 <Activity size={15} className="text-[#3898E8]" />
 
                 <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-black/55">
-                  XRPL OnTheTrack Terminal V2
+                  {c.eyebrow}
                 </p>
               </div>
 
               <h1 className="font-orbitron text-4xl md:text-5xl xl:text-7xl font-black uppercase leading-none tracking-tight mb-6">
-                Explore XRPL.
+                {c.titleLine1}
                 <br />
                 <span className="bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] bg-clip-text text-transparent">
-                  Connect Xaman.
+                  {c.titleLine2}
                 </span>
                 <br />
-                Prove What Matters.
+                {c.titleLine3}
               </h1>
 
               <p className="font-mono text-sm xl:text-base text-black/60 leading-relaxed max-w-3xl mb-8">
-                Een XRPL-native terminal met drie lagen: een professionele
-                explorer, een connected Xaman wallet dashboard en de unieke OTT
-                Proof / Education laag rond SourceTag {MAKE_WAVES_SOURCE_TAG}.
+                {c.intro} {MAKE_WAVES_SOURCE_TAG}.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-4xl">
                 <PrimaryAction
-                  title="Start Explorer"
-                  text="Public XRPL layer"
+                  title={c.startExplorer}
+                  text={c.startExplorerText}
                   icon={Search}
                   accent="blue"
                   onClick={() => navigate("network")}
                 />
                 <PrimaryAction
-                  title="Connect Xaman"
-                  text="Mobile wallet flow"
+                  title={c.connectXaman}
+                  text={c.connectXamanText}
                   icon={Wallet}
                   accent="magenta"
                   onClick={() => navigate("xaman")}
                 />
                 <PrimaryAction
-                  title="Proof / Education"
-                  text="OTT unique layer"
+                  title={c.proofEducation}
+                  text={c.proofEducationText}
                   icon={BookOpen}
                   accent="coral"
                   onClick={() => navigate("partners")}
@@ -216,12 +205,12 @@ export function TerminalHomeTab({
 
                   <div className="space-y-3">
                     <IdentityRow
-                      label="Connected Wallet"
-                      value={walletAddress === "guest" ? "Guest Mode" : walletAddress}
+                      label={common.connectedWallet}
+                      value={walletAddress === "guest" ? common.guestMode : walletAddress}
                     />
                     <IdentityRow label="Brand" value="OnTheTrack" />
-                    <IdentityRow label="Mode" value="Education-first" />
-                    <IdentityRow label="Custody" value="Never" />
+                    <IdentityRow label={common.mode} value={common.educationFirst} />
+                    <IdentityRow label={common.custody} value={common.never} />
                   </div>
 
                   <div className="border border-black/10 bg-[#F7F8FC] p-4 mt-5">
@@ -229,9 +218,7 @@ export function TerminalHomeTab({
                       <LockKeyhole size={18} className="text-[#C83888] shrink-0 mt-0.5" />
 
                       <p className="font-mono text-xs text-black/55 leading-relaxed">
-                        No custody, no broker, no yield provider, no trade
-                        execution. Official routes after explanation and risk
-                        awareness.
+                        {common.noCustodyLine}
                       </p>
                     </div>
                   </div>
@@ -252,24 +239,27 @@ export function TerminalHomeTab({
         <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4 mb-6">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-black/35 mb-3">
-              Product Structure
+              {common.productStructure}
             </p>
 
             <h2 className="font-orbitron text-2xl xl:text-3xl font-black uppercase">
-              Three-Layer XRPL Terminal
+              {c.threeLayerTitle}
             </h2>
           </div>
 
           <p className="font-mono text-xs text-black/50 max-w-xl leading-relaxed">
-            Alles wat we al gebouwd hebben blijft bestaan. We tonen het alleen
-            slimmer: explorer eerst, wallet dashboard tweede, OTT proof /
-            education derde.
+            {c.threeLayerIntro}
           </p>
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-8">
           {productLayers.map((layer) => (
-            <LayerCard key={layer.id} layer={layer} onNavigate={navigate} />
+            <LayerCard
+              key={layer.id}
+              layer={layer}
+              continueText={common.continueRoute}
+              onNavigate={navigate}
+            />
           ))}
         </div>
 
@@ -279,7 +269,7 @@ export function TerminalHomeTab({
               <Gauge size={18} className="text-[#3898E8]" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                New Main Flow
+                {c.mainFlow}
               </p>
             </div>
 
@@ -297,17 +287,14 @@ export function TerminalHomeTab({
               <BadgeCheck size={18} className="text-[#C83888]" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                What We Reuse
+                {c.reuseTitle}
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <ReuseItem text="api/ott.ts single router" />
-              <ReuseItem text="Xaman payload logic" />
-              <ReuseItem text="XRPL verification logic" />
-              <ReuseItem text="Partner Hub content" />
-              <ReuseItem text="Truth Desk / Access Gate" />
-              <ReuseItem text="Reward Ledger / XP" />
+              {c.reuseItems.map((item) => (
+                <ReuseItem key={item} text={item} />
+              ))}
             </div>
           </div>
         </div>
@@ -373,9 +360,11 @@ function MetricCard({ metric }: { metric: Metric }) {
 
 function LayerCard({
   layer,
+  continueText,
   onNavigate,
 }: {
   layer: ProductLayer;
+  continueText: string;
   onNavigate: (target: string) => void;
 }) {
   const Icon = layer.icon;
@@ -422,7 +411,7 @@ function LayerCard({
               {layer.actionLabel}
             </p>
             <p className="font-mono text-[10px] uppercase text-black/45 group-hover:text-white/75">
-              Continue route
+              {continueText}
             </p>
           </div>
 
