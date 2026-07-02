@@ -611,7 +611,7 @@ function DesktopNav({
                   onClick={() => goTo(item.id)}
                   className={`w-full text-left px-3 py-3 font-orbitron text-[11px] font-bold uppercase tracking-widest transition-all border-l-2 ${
                     isActive
-                      ? "bg-[#C83888]/10 text-black border-[#C83888]"
+                      ? "bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] text-white border-transparent shadow-sm"
                       : "text-black/48 border-transparent hover:text-black hover:bg-[#F7F8FC]"
                   }`}
                 >
@@ -621,7 +621,7 @@ function DesktopNav({
                     {item.status && (
                       <span
                         className={`font-mono text-[8px] uppercase tracking-widest ${
-                          isActive ? "text-[#C83888]" : "text-black/28"
+                          isActive ? "text-white/75" : "text-black/28"
                         }`}
                       >
                         {item.status}
@@ -757,7 +757,7 @@ function MobileBottomNav({
           <Wallet size={16} className="mx-auto mb-1" />
 
           <span className="font-mono text-[8px] uppercase tracking-widest">
-            Xaman
+            XAMAN
           </span>
         </button>
       </div>
