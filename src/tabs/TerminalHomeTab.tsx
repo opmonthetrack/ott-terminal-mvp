@@ -17,6 +17,7 @@ import {
   Sparkles,
   Wallet,
 } from "lucide-react";
+import { OTTLogo, OTTLogoMark, OTTProofBadge } from "../components/OTTLogo";
 import { MAKE_WAVES_SOURCE_TAG } from "../lib/makeWaves";
 
 type TerminalHomeTabProps = {
@@ -134,9 +135,13 @@ export function TerminalHomeTab({
         <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_20%_20%,_white,_transparent_28%),radial-gradient(circle_at_80%_0%,_white,_transparent_24%)]" />
         <div className="absolute inset-0 bg-[linear-gradient(to_bottom,_transparent,_black_85%)]" />
 
-        <div className="relative z-10 p-6 xl:p-10">
-          <div className="grid grid-cols-12 gap-6 items-end">
-            <div className="col-span-12 xl:col-span-8">
+        <div className="relative z-10 p-4 md:p-6 xl:p-10">
+          <div className="grid grid-cols-12 gap-6 items-center">
+            <div className="col-span-12 xl:col-span-7">
+              <div className="mb-8">
+                <OTTLogo size="lg" subtitle="XRPL Explorer + Xaman Dashboard + Proof" />
+              </div>
+
               <div className="inline-flex items-center gap-2 border border-white/10 bg-white/[0.03] px-4 py-2 mb-6">
                 <Activity size={15} className="text-white/60" />
 
@@ -145,7 +150,7 @@ export function TerminalHomeTab({
                 </p>
               </div>
 
-              <h1 className="font-orbitron text-4xl xl:text-6xl font-black uppercase leading-none tracking-tight mb-6">
+              <h1 className="font-orbitron text-4xl md:text-5xl xl:text-7xl font-black uppercase leading-none tracking-tight mb-6">
                 Explore XRPL.
                 <br />
                 Connect Xaman.
@@ -159,7 +164,7 @@ export function TerminalHomeTab({
                 Proof / Education laag rond SourceTag {MAKE_WAVES_SOURCE_TAG}.
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-4xl">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-4xl">
                 <PrimaryAction
                   title="Start Explorer"
                   text="Public XRPL layer"
@@ -167,10 +172,10 @@ export function TerminalHomeTab({
                   onClick={() => navigate("network")}
                 />
                 <PrimaryAction
-                  title="Wallet Dashboard"
-                  text="Xaman connected layer"
+                  title="Connect Xaman"
+                  text="Mobile wallet flow"
                   icon={Wallet}
-                  onClick={() => navigate("wallet")}
+                  onClick={() => navigate("xaman")}
                 />
                 <PrimaryAction
                   title="Proof / Education"
@@ -181,34 +186,42 @@ export function TerminalHomeTab({
               </div>
             </div>
 
-            <div className="col-span-12 xl:col-span-4">
-              <div className="border border-white/10 bg-black/70 backdrop-blur p-5">
-                <p className="font-orbitron text-xs uppercase tracking-widest mb-5">
-                  Terminal Identity
-                </p>
+            <div className="col-span-12 xl:col-span-5">
+              <div className="relative border border-white/10 bg-black/70 backdrop-blur p-5 md:p-8 overflow-hidden">
+                <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full bg-white/[0.04] blur-3xl" />
 
-                <div className="space-y-3">
-                  <IdentityRow
-                    label="Connected Wallet"
-                    value={walletAddress === "guest" ? "Guest Mode" : walletAddress}
-                  />
-                  <IdentityRow
-                    label="SourceTag"
-                    value={String(MAKE_WAVES_SOURCE_TAG)}
-                  />
-                  <IdentityRow label="Mode" value="Education-first" />
-                  <IdentityRow label="Custody" value="Never" />
-                </div>
+                <div className="relative z-10">
+                  <div className="flex justify-center mb-8">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-white/10 blur-3xl" />
+                      <OTTLogoMark size="hero" className="relative z-10" />
+                    </div>
+                  </div>
 
-                <div className="border border-white/10 bg-white/[0.02] p-4 mt-5">
-                  <div className="flex items-start gap-3">
-                    <LockKeyhole size={18} className="text-white/55 shrink-0 mt-0.5" />
+                  <div className="mb-5">
+                    <OTTProofBadge sourceTag={String(MAKE_WAVES_SOURCE_TAG)} />
+                  </div>
 
-                    <p className="font-mono text-xs text-white/45 leading-relaxed">
-                      No custody, no broker, no yield provider, no trade
-                      execution. Official routes after explanation and risk
-                      awareness.
-                    </p>
+                  <div className="space-y-3">
+                    <IdentityRow
+                      label="Connected Wallet"
+                      value={walletAddress === "guest" ? "Guest Mode" : walletAddress}
+                    />
+                    <IdentityRow label="Brand" value="OnTheTrack" />
+                    <IdentityRow label="Mode" value="Education-first" />
+                    <IdentityRow label="Custody" value="Never" />
+                  </div>
+
+                  <div className="border border-white/10 bg-white/[0.02] p-4 mt-5">
+                    <div className="flex items-start gap-3">
+                      <LockKeyhole size={18} className="text-white/55 shrink-0 mt-0.5" />
+
+                      <p className="font-mono text-xs text-white/45 leading-relaxed">
+                        No custody, no broker, no yield provider, no trade
+                        execution. Official routes after explanation and risk
+                        awareness.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -223,7 +236,7 @@ export function TerminalHomeTab({
         </div>
       </section>
 
-      <section className="p-6 xl:p-10">
+      <section className="p-4 md:p-6 xl:p-10">
         <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4 mb-6">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-white/35 mb-3">
@@ -249,7 +262,7 @@ export function TerminalHomeTab({
         </div>
 
         <div className="grid grid-cols-12 gap-4">
-          <div className="col-span-12 xl:col-span-7 border border-white/10 bg-white/[0.02] p-6">
+          <div className="col-span-12 xl:col-span-7 border border-white/10 bg-white/[0.02] p-4 md:p-6">
             <div className="flex items-center gap-2 mb-5">
               <Gauge size={18} className="text-white/60" />
 
@@ -258,7 +271,7 @@ export function TerminalHomeTab({
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
               <FlowStep number="01" title="Home" text="Terminal overview" />
               <FlowStep number="02" title="Explore" text="XRPL live data" />
               <FlowStep number="03" title="Connect" text="Xaman wallet" />
@@ -267,7 +280,7 @@ export function TerminalHomeTab({
             </div>
           </div>
 
-          <div className="col-span-12 xl:col-span-5 border border-white/10 bg-white/[0.02] p-6">
+          <div className="col-span-12 xl:col-span-5 border border-white/10 bg-white/[0.02] p-4 md:p-6">
             <div className="flex items-center gap-2 mb-5">
               <BadgeCheck size={18} className="text-white/60" />
 
@@ -305,7 +318,7 @@ function PrimaryAction({
   return (
     <button
       onClick={onClick}
-      className="group border border-white/10 bg-white/[0.03] p-4 text-left hover:bg-white hover:text-black transition-all"
+      className="group border border-white/10 bg-white/[0.03] p-4 text-left hover:bg-white hover:text-black transition-all min-h-28"
     >
       <div className="flex items-start justify-between gap-3 mb-4">
         <Icon size={20} className="text-white/65 group-hover:text-black/70" />
@@ -352,7 +365,7 @@ function LayerCard({
   const Icon = layer.icon;
 
   return (
-    <div className="border border-white/10 bg-white/[0.02] p-6 hover:bg-white/[0.04] transition-all">
+    <div className="border border-white/10 bg-white/[0.02] p-5 md:p-6 hover:bg-white/[0.04] transition-all">
       <div className="flex items-start justify-between gap-4 mb-6">
         <div>
           <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.28em] mb-3">
