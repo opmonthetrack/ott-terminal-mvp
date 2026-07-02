@@ -18,6 +18,7 @@ import {
   XCircle,
   Zap,
 } from "lucide-react";
+import { OTTLogo, OTTProofBadge } from "../components/OTTLogo";
 import {
   MAKE_WAVES_SOURCE_TAG,
   createDailyCheckInPayload,
@@ -32,6 +33,11 @@ import {
   type XamanPayloadVerificationResponse,
 } from "../lib/xamanClient";
 import type { MakeWavesActionId } from "../lib/makeWaves";
+import {
+  isMobileDevice,
+  openXamanMobileDeepLink,
+  saveXamanMobileSession,
+} from "../lib/xamanMobileSession";
 
 type XamanCenterTabProps = {
   walletAddress?: string;
@@ -85,7 +91,7 @@ const connectSteps: ConnectStep[] = [
   {
     number: "02",
     title: "Open Xaman",
-    text: "Gebruiker scant QR of opent deeplink.",
+    text: "Mobiel opent direct de Xaman app via deeplink.",
     icon: Smartphone,
   },
   {
@@ -96,8 +102,8 @@ const connectSteps: ConnectStep[] = [
   },
   {
     number: "04",
-    title: "Verify",
-    text: "Terminal leest signed account en SourceTag proof.",
+    title: "Return + Verify",
+    text: "Na terugkeer verifieert Terminal de payload.",
     icon: BadgeCheck,
   },
 ];
@@ -116,6 +122,11 @@ export function XamanCenterTab({
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState("");
   const [lastVerifiedAt, setLastVerifiedAt] = useState("not verified");
+  const [mobileStatus, setMobileStatus] = useState(
+    isMobileDevice()
+      ? "Mobile mode: Xaman deeplink ready."
+      : "Desktop mode: QR and deeplink available.",
+  );
 
   const payloadUuid = getXamanPayloadUuid(payloadResponse);
   const payloadUrl = getXamanPayloadUrl(payloadResponse);
@@ -147,10 +158,11 @@ export function XamanCenterTab({
     }
   }, [verifiedAccount, onWalletConnected]);
 
-  async function createPayload() {
+  async function createPayload(options?: { openAfterCreate?: boolean }) {
     setIsCreating(true);
     setError("");
     setVerificationResponse(null);
+    setMobileStatus("Creating Xaman payload...");
 
     try {
       const response =
@@ -162,12 +174,42 @@ export function XamanCenterTab({
               walletAddress === "guest" ? undefined : walletAddress,
             );
 
+      const uuid = getXamanPayloadUuid(response);
+      const url = getXamanPayloadUrl(response);
+
+      if (uuid) {
+        saveXamanMobileSession({
+          payloadUuid: uuid,
+          actionId: selectedActionId,
+          returnTarget: "wallet",
+          expectedWallet: walletAddress === "guest" ? undefined : walletAddress,
+        });
+      }
+
       setPayloadResponse(response);
+      setMobileStatus(
+        isMobileDevice()
+          ? "Payload saved. Opening Xaman app..."
+          : "Payload created. Scan QR or open Xaman link.",
+      );
+
+      if (options?.openAfterCreate) {
+        const opened = openXamanMobileDeepLink(url);
+
+        if (!opened) {
+          setMobileStatus("Payload created, but no Xaman link was found.");
+        }
+      }
     } catch (createError) {
       setError(getErrorMessage(createError));
+      setMobileStatus("Could not create Xaman payload.");
     } finally {
       setIsCreating(false);
     }
+  }
+
+  async function createAndOpenMobile() {
+    await createPayload({ openAfterCreate: true });
   }
 
   async function verifyPayload(showLoading = true) {
@@ -188,11 +230,17 @@ export function XamanCenterTab({
       setVerificationResponse(response);
       setLastVerifiedAt(new Date().toLocaleTimeString());
 
-      if (response.verified?.account) {
+      if (response.verified?.signed && response.verified?.account) {
+        setMobileStatus("Signature found. Wallet connected.");
         onWalletConnected?.(response.verified.account);
+      } else if (response.verified?.resolved && !response.verified?.signed) {
+        setMobileStatus("Signature rejected or expired. Try again.");
+      } else {
+        setMobileStatus("Xaman signing is still waiting.");
       }
     } catch (verifyError) {
       setError(getErrorMessage(verifyError));
+      setMobileStatus("Could not verify Xaman payload.");
     } finally {
       setIsVerifying(false);
     }
@@ -203,6 +251,11 @@ export function XamanCenterTab({
     setVerificationResponse(null);
     setError("");
     setLastVerifiedAt("not verified");
+    setMobileStatus(
+      isMobileDevice()
+        ? "Mobile mode: Xaman deeplink ready."
+        : "Desktop mode: QR and deeplink available.",
+    );
   }
 
   function openPayload() {
@@ -210,7 +263,11 @@ export function XamanCenterTab({
 
     if (!opened) {
       setError("Geen Xaman deeplink gevonden.");
+      setMobileStatus("Open Xaman failed. Use QR or create a new payload.");
+      return;
     }
+
+    setMobileStatus("Xaman opened. Return here after signing.");
   }
 
   function copyValue(value: string | null) {
@@ -227,29 +284,33 @@ export function XamanCenterTab({
         <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_20%_20%,_white,_transparent_26%),radial-gradient(circle_at_90%_10%,_white,_transparent_22%)]" />
         <div className="absolute inset-0 bg-[linear-gradient(to_bottom,_transparent,_black_88%)]" />
 
-        <div className="relative z-10 p-6 xl:p-10">
+        <div className="relative z-10 p-4 md:p-6 xl:p-10">
           <div className="grid grid-cols-12 gap-6 items-end">
             <div className="col-span-12 xl:col-span-8">
+              <div className="mb-6">
+                <OTTLogo size="lg" />
+              </div>
+
               <div className="inline-flex items-center gap-2 border border-white/10 bg-white/[0.03] px-4 py-2 mb-6">
                 <KeyRound size={15} className="text-white/60" />
 
                 <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-white/50">
-                  Xaman Connect Layer
+                  Mobile Xaman Connect Layer
                 </p>
               </div>
 
               <h1 className="font-orbitron text-4xl xl:text-6xl font-black uppercase leading-none tracking-tight mb-6">
-                Connect.
+                Tap.
                 <br />
-                Sign.
+                Open Xaman.
                 <br />
-                Verify.
+                Return Smooth.
               </h1>
 
               <p className="font-mono text-sm xl:text-base text-white/50 leading-relaxed max-w-3xl mb-8">
-                Dit is de eerste echte Xaman-connect laag voor OTT Terminal V2.
-                De gebruiker tekent zelf in Xaman, daarna lezen we het signed
-                wallet account terug en koppelen we die aan het dashboard.
+                Mobiel staat voorop: de klant tapt, Xaman opent, de klant tekent
+                en komt terug naar OTT Terminal. De payload wordt lokaal bewaard
+                zodat de wallet automatisch gekoppeld kan worden.
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-4xl">
@@ -277,6 +338,10 @@ export function XamanCenterTab({
                   <StatusPill isSigned={isSigned} isCreating={isCreating} />
                 </div>
 
+                <div className="mb-4">
+                  <OTTProofBadge sourceTag={String(MAKE_WAVES_SOURCE_TAG)} />
+                </div>
+
                 <div className="space-y-3">
                   <InfoRow
                     label="Current Wallet"
@@ -286,10 +351,7 @@ export function XamanCenterTab({
                     label="Signed Account"
                     value={verifiedAccount ?? "Not connected"}
                   />
-                  <InfoRow
-                    label="SourceTag"
-                    value={String(MAKE_WAVES_SOURCE_TAG)}
-                  />
+                  <InfoRow label="Mobile Flow" value={mobileStatus} />
                   <InfoRow label="Verified At" value={lastVerifiedAt} />
                 </div>
 
@@ -311,7 +373,7 @@ export function XamanCenterTab({
             <MetricCard
               label="Payload"
               value={payloadUuid ? "Created" : "None"}
-              text="api/ott.ts"
+              text="Stored for mobile return"
               icon={QrCode}
             />
             <MetricCard
@@ -336,9 +398,9 @@ export function XamanCenterTab({
         </div>
       </section>
 
-      <section className="p-6 xl:p-10">
+      <section className="p-4 md:p-6 xl:p-10">
         <div className="grid grid-cols-12 gap-4">
-          <div className="col-span-12 xl:col-span-7 border border-white/10 bg-white/[0.02] p-6">
+          <div className="col-span-12 xl:col-span-7 border border-white/10 bg-white/[0.02] p-4 md:p-6">
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
               <div>
                 <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-white/35 mb-3">
@@ -346,13 +408,13 @@ export function XamanCenterTab({
                 </p>
 
                 <h2 className="font-orbitron text-2xl font-black uppercase">
-                  Create Sign Payload
+                  Mobile-First Sign Request
                 </h2>
               </div>
 
               <p className="font-mono text-xs text-white/35 max-w-md leading-relaxed">
-                Dit is geen exchange-login. Dit is een wallet proof sign route
-                via Xaman en SourceTag {MAKE_WAVES_SOURCE_TAG}.
+                Op mobiel gebruik je vooral de grote knop hieronder. QR blijft
+                als fallback voor desktop of als deeplink niet opent.
               </p>
             </div>
 
@@ -362,19 +424,42 @@ export function XamanCenterTab({
               ))}
             </div>
 
+            <button
+              onClick={createAndOpenMobile}
+              disabled={isCreating}
+              className="w-full bg-white text-black p-5 md:p-6 text-left hover:bg-white/80 transition-all disabled:opacity-50 mb-4"
+            >
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="font-orbitron text-base md:text-lg font-black uppercase mb-2">
+                    {isCreating ? "Creating Payload..." : "Connect With Xaman"}
+                  </p>
+                  <p className="font-mono text-xs uppercase text-black/60 tracking-widest">
+                    Mobile deeplink first / QR fallback second
+                  </p>
+                </div>
+
+                {isCreating ? (
+                  <Loader2 size={24} className="animate-spin shrink-0" />
+                ) : (
+                  <Smartphone size={24} className="shrink-0" />
+                )}
+              </div>
+            </button>
+
             <div className="border border-white/10 bg-black p-4 mb-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <ActionButton
-                  title={isCreating ? "Creating..." : "Create Payload"}
-                  text="Generate Xaman QR"
+                  title={isCreating ? "Creating..." : "Create Only"}
+                  text="Generate QR fallback"
                   icon={isCreating ? Loader2 : QrCode}
                   disabled={isCreating}
-                  onClick={createPayload}
+                  onClick={() => void createPayload()}
                 />
 
                 <ActionButton
                   title="Open Xaman"
-                  text="Open deeplink"
+                  text="Open saved deeplink"
                   icon={ExternalLink}
                   disabled={!payloadUrl}
                   onClick={openPayload}
@@ -436,7 +521,7 @@ export function XamanCenterTab({
 
                 <div className="border border-white/10 bg-black p-5">
                   <p className="font-orbitron text-xs font-black uppercase mb-4">
-                    Scan With Xaman
+                    QR Fallback
                   </p>
 
                   {payloadQr ? (
@@ -456,13 +541,27 @@ export function XamanCenterTab({
                       </p>
                     </div>
                   )}
+
+                  {payloadUrl && (
+                    <button
+                      onClick={() => copyValue(payloadUrl)}
+                      className="w-full border border-white/10 bg-white/[0.02] p-4 text-left hover:bg-white hover:text-black transition-all mt-4"
+                    >
+                      <p className="font-orbitron text-xs font-black uppercase mb-2">
+                        Copy Xaman Link
+                      </p>
+                      <p className="font-mono text-[10px] uppercase text-white/35">
+                        Fallback if app does not open
+                      </p>
+                    </button>
+                  )}
                 </div>
               </div>
             )}
           </div>
 
           <div className="col-span-12 xl:col-span-5 space-y-4">
-            <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="border border-white/10 bg-white/[0.02] p-4 md:p-6">
               <div className="flex items-center gap-2 mb-5">
                 {isSigned ? (
                   <CheckCircle2 size={18} className="text-white/70" />
@@ -492,10 +591,7 @@ export function XamanCenterTab({
                     verificationResponse?.verified?.resolved ? "Yes" : "No / waiting"
                   }
                 />
-                <InfoRow
-                  label="Account"
-                  value={verifiedAccount ?? "—"}
-                />
+                <InfoRow label="Account" value={verifiedAccount ?? "—"} />
                 <InfoRow
                   label="TXID"
                   value={verificationResponse?.verified?.txid ?? "—"}
@@ -513,7 +609,7 @@ export function XamanCenterTab({
                         Copy Connected Wallet
                       </p>
                       <p className="font-mono text-[10px] uppercase text-black/55">
-                        Use in Wallet Dashboard
+                        Wallet Dashboard opens automatically
                       </p>
                     </div>
 
@@ -523,7 +619,7 @@ export function XamanCenterTab({
               )}
             </div>
 
-            <div className="border border-white/10 bg-white/[0.02] p-6">
+            <div className="border border-white/10 bg-white/[0.02] p-4 md:p-6">
               <div className="flex items-center gap-2 mb-5">
                 <ShieldCheck size={18} className="text-white/60" />
 
