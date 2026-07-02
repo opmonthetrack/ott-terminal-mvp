@@ -1,0 +1,187 @@
+/* XRPL OnTheTrack Terminal — Logo-Based Light Theme
+   Based on public/logo.png:
+   white base, black text, XRPL blue, magenta, coral/red and soft silver.
+*/
+
+:root {
+  --ott-bg: #FFFFFF;
+  --ott-bg-soft: #F7F8FC;
+  --ott-surface: rgba(255, 255, 255, 0.92);
+  --ott-surface-strong: #FFFFFF;
+  --ott-text: #080808;
+  --ott-text-soft: rgba(8, 8, 8, 0.62);
+  --ott-text-dim: rgba(8, 8, 8, 0.38);
+  --ott-border: rgba(8, 8, 8, 0.12);
+
+  --ott-blue: #3898E8;
+  --ott-blue-soft: rgba(56, 152, 232, 0.14);
+
+  --ott-magenta: #C83888;
+  --ott-magenta-soft: rgba(200, 56, 136, 0.14);
+
+  --ott-coral: #D84858;
+  --ott-coral-soft: rgba(216, 72, 88, 0.14);
+
+  --ott-silver: #C8C8C8;
+  --ott-black: #080808;
+
+  --ott-gradient: linear-gradient(
+    135deg,
+    #3898E8 0%,
+    #8F49D8 42%,
+    #C83888 68%,
+    #D84858 100%
+  );
+
+  --ott-radial-bg:
+    radial-gradient(circle at 18% 18%, rgba(56, 152, 232, 0.18), transparent 28%),
+    radial-gradient(circle at 82% 8%, rgba(200, 56, 136, 0.18), transparent 28%),
+    radial-gradient(circle at 85% 82%, rgba(216, 72, 88, 0.12), transparent 30%),
+    #FFFFFF;
+}
+
+html,
+body {
+  background: var(--ott-bg);
+  color: var(--ott-text);
+}
+
+.ott-light-shell {
+  background: var(--ott-radial-bg);
+  color: var(--ott-text);
+}
+
+.ott-panel {
+  background: var(--ott-surface);
+  border: 1px solid var(--ott-border);
+  color: var(--ott-text);
+  box-shadow: 0 18px 50px rgba(8, 8, 8, 0.06);
+}
+
+.ott-panel-soft {
+  background: var(--ott-bg-soft);
+  border: 1px solid var(--ott-border);
+  color: var(--ott-text);
+}
+
+.ott-ink {
+  color: var(--ott-text);
+}
+
+.ott-muted {
+  color: var(--ott-text-soft);
+}
+
+.ott-dim {
+  color: var(--ott-text-dim);
+}
+
+.ott-gradient-text {
+  background: var(--ott-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.ott-gradient-border {
+  position: relative;
+  background:
+    linear-gradient(#fff, #fff) padding-box,
+    var(--ott-gradient) border-box;
+  border: 1px solid transparent;
+}
+
+.ott-primary-button {
+  background: var(--ott-gradient);
+  color: #FFFFFF;
+  border: 0;
+}
+
+.ott-primary-button:hover {
+  filter: brightness(0.96);
+}
+
+.ott-secondary-button {
+  background: #FFFFFF;
+  color: var(--ott-text);
+  border: 1px solid var(--ott-border);
+}
+
+.ott-secondary-button:hover {
+  background: var(--ott-bg-soft);
+}
+
+.ott-proof-badge {
+  background:
+    linear-gradient(#fff, #fff) padding-box,
+    var(--ott-gradient) border-box;
+  border: 1px solid transparent;
+  color: var(--ott-text);
+}
+
+.ott-logo-glow {
+  box-shadow:
+    0 0 0 1px rgba(8, 8, 8, 0.08),
+    0 22px 80px rgba(200, 56, 136, 0.18),
+    0 12px 42px rgba(56, 152, 232, 0.16);
+}
+
+.ott-card-blue {
+  background: linear-gradient(135deg, rgba(56, 152, 232, 0.16), rgba(255,255,255,0.92));
+  border: 1px solid rgba(56, 152, 232, 0.26);
+}
+
+.ott-card-magenta {
+  background: linear-gradient(135deg, rgba(200, 56, 136, 0.16), rgba(255,255,255,0.92));
+  border: 1px solid rgba(200, 56, 136, 0.26);
+}
+
+.ott-card-coral {
+  background: linear-gradient(135deg, rgba(216, 72, 88, 0.16), rgba(255,255,255,0.92));
+  border: 1px solid rgba(216, 72, 88, 0.26);
+}
+
+.ott-mobile-nav {
+  background: rgba(255, 255, 255, 0.96);
+  border-top: 1px solid var(--ott-border);
+  color: var(--ott-text);
+  backdrop-filter: blur(18px);
+}
+
+.ott-mobile-nav-active {
+  background: var(--ott-gradient);
+  color: #FFFFFF;
+}
+
+.ott-warning {
+  color: #FFFFFF;
+  background: var(--ott-coral);
+}
+
+.ott-success {
+  color: #FFFFFF;
+  background: var(--ott-blue);
+}
+
+/* Safe migration helpers.
+   Use these classes in new V2 screens instead of globally overriding Tailwind bg-black/text-white.
+*/
+.ott-page {
+  min-height: 100vh;
+  background: var(--ott-radial-bg);
+  color: var(--ott-text);
+}
+
+.ott-section {
+  border-bottom: 1px solid var(--ott-border);
+}
+
+.ott-input {
+  background: #FFFFFF;
+  color: var(--ott-text);
+  border: 1px solid var(--ott-border);
+}
+
+.ott-input::placeholder {
+  color: var(--ott-text-dim);
+}
