@@ -34,6 +34,7 @@ type ProductLayer = {
   icon: ElementType;
   actionLabel: string;
   target: string;
+  accent: "blue" | "magenta" | "coral";
 };
 
 type Metric = {
@@ -59,6 +60,7 @@ const productLayers: ProductLayer[] = [
     icon: Network,
     actionLabel: "Open Explorer",
     target: "network",
+    accent: "blue",
   },
   {
     id: "dashboard",
@@ -75,6 +77,7 @@ const productLayers: ProductLayer[] = [
     icon: Wallet,
     actionLabel: "Open Wallet",
     target: "wallet",
+    accent: "magenta",
   },
   {
     id: "ott-proof",
@@ -91,6 +94,7 @@ const productLayers: ProductLayer[] = [
     icon: Fingerprint,
     actionLabel: "Open Proof Layer",
     target: "partners",
+    accent: "coral",
   },
 ];
 
@@ -130,22 +134,24 @@ export function TerminalHomeTab({
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <section className="relative overflow-hidden border-b border-white/10">
-        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_20%_20%,_white,_transparent_28%),radial-gradient(circle_at_80%_0%,_white,_transparent_24%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,_transparent,_black_85%)]" />
+    <div className="min-h-screen bg-white text-[#080808]">
+      <section className="relative overflow-hidden border-b border-black/10 bg-[radial-gradient(circle_at_18%_18%,rgba(56,152,232,0.18),transparent_28%),radial-gradient(circle_at_82%_8%,rgba(200,56,136,0.18),transparent_28%),radial-gradient(circle_at_85%_82%,rgba(216,72,88,0.12),transparent_30%),#ffffff]">
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.15),#ffffff_92%)]" />
 
         <div className="relative z-10 p-4 md:p-6 xl:p-10">
           <div className="grid grid-cols-12 gap-6 items-center">
             <div className="col-span-12 xl:col-span-7">
-              <div className="mb-8">
-                <OTTLogo size="lg" subtitle="XRPL Explorer + Xaman Dashboard + Proof" />
+              <div className="mb-8 text-[#080808]">
+                <OTTLogo
+                  size="lg"
+                  subtitle="XRPL Explorer + Xaman Dashboard + Proof"
+                />
               </div>
 
-              <div className="inline-flex items-center gap-2 border border-white/10 bg-white/[0.03] px-4 py-2 mb-6">
-                <Activity size={15} className="text-white/60" />
+              <div className="inline-flex items-center gap-2 border border-black/10 bg-white/80 shadow-sm px-4 py-2 mb-6">
+                <Activity size={15} className="text-[#3898E8]" />
 
-                <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-white/50">
+                <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-black/55">
                   XRPL OnTheTrack Terminal V2
                 </p>
               </div>
@@ -153,12 +159,14 @@ export function TerminalHomeTab({
               <h1 className="font-orbitron text-4xl md:text-5xl xl:text-7xl font-black uppercase leading-none tracking-tight mb-6">
                 Explore XRPL.
                 <br />
-                Connect Xaman.
+                <span className="bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] bg-clip-text text-transparent">
+                  Connect Xaman.
+                </span>
                 <br />
                 Prove What Matters.
               </h1>
 
-              <p className="font-mono text-sm xl:text-base text-white/50 leading-relaxed max-w-3xl mb-8">
+              <p className="font-mono text-sm xl:text-base text-black/60 leading-relaxed max-w-3xl mb-8">
                 Een XRPL-native terminal met drie lagen: een professionele
                 explorer, een connected Xaman wallet dashboard en de unieke OTT
                 Proof / Education laag rond SourceTag {MAKE_WAVES_SOURCE_TAG}.
@@ -169,36 +177,40 @@ export function TerminalHomeTab({
                   title="Start Explorer"
                   text="Public XRPL layer"
                   icon={Search}
+                  accent="blue"
                   onClick={() => navigate("network")}
                 />
                 <PrimaryAction
                   title="Connect Xaman"
                   text="Mobile wallet flow"
                   icon={Wallet}
+                  accent="magenta"
                   onClick={() => navigate("xaman")}
                 />
                 <PrimaryAction
                   title="Proof / Education"
                   text="OTT unique layer"
                   icon={BookOpen}
+                  accent="coral"
                   onClick={() => navigate("partners")}
                 />
               </div>
             </div>
 
             <div className="col-span-12 xl:col-span-5">
-              <div className="relative border border-white/10 bg-black/70 backdrop-blur p-5 md:p-8 overflow-hidden">
-                <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full bg-white/[0.04] blur-3xl" />
+              <div className="relative border border-black/10 bg-white/90 backdrop-blur p-5 md:p-8 overflow-hidden shadow-2xl shadow-black/5">
+                <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full bg-[#C83888]/15 blur-3xl" />
+                <div className="absolute -bottom-24 -left-24 w-64 h-64 rounded-full bg-[#3898E8]/15 blur-3xl" />
 
                 <div className="relative z-10">
                   <div className="flex justify-center mb-8">
                     <div className="relative">
-                      <div className="absolute inset-0 bg-white/10 blur-3xl" />
+                      <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(56,152,232,0.28),rgba(200,56,136,0.22),rgba(216,72,88,0.18))] blur-3xl" />
                       <OTTLogoMark size="hero" className="relative z-10" />
                     </div>
                   </div>
 
-                  <div className="mb-5">
+                  <div className="mb-5 text-[#080808]">
                     <OTTProofBadge sourceTag={String(MAKE_WAVES_SOURCE_TAG)} />
                   </div>
 
@@ -212,11 +224,11 @@ export function TerminalHomeTab({
                     <IdentityRow label="Custody" value="Never" />
                   </div>
 
-                  <div className="border border-white/10 bg-white/[0.02] p-4 mt-5">
+                  <div className="border border-black/10 bg-[#F7F8FC] p-4 mt-5">
                     <div className="flex items-start gap-3">
-                      <LockKeyhole size={18} className="text-white/55 shrink-0 mt-0.5" />
+                      <LockKeyhole size={18} className="text-[#C83888] shrink-0 mt-0.5" />
 
-                      <p className="font-mono text-xs text-white/45 leading-relaxed">
+                      <p className="font-mono text-xs text-black/55 leading-relaxed">
                         No custody, no broker, no yield provider, no trade
                         execution. Official routes after explanation and risk
                         awareness.
@@ -236,10 +248,10 @@ export function TerminalHomeTab({
         </div>
       </section>
 
-      <section className="p-4 md:p-6 xl:p-10">
+      <section className="p-4 md:p-6 xl:p-10 bg-white">
         <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4 mb-6">
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-white/35 mb-3">
+            <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-black/35 mb-3">
               Product Structure
             </p>
 
@@ -248,7 +260,7 @@ export function TerminalHomeTab({
             </h2>
           </div>
 
-          <p className="font-mono text-xs text-white/40 max-w-xl leading-relaxed">
+          <p className="font-mono text-xs text-black/50 max-w-xl leading-relaxed">
             Alles wat we al gebouwd hebben blijft bestaan. We tonen het alleen
             slimmer: explorer eerst, wallet dashboard tweede, OTT proof /
             education derde.
@@ -262,9 +274,9 @@ export function TerminalHomeTab({
         </div>
 
         <div className="grid grid-cols-12 gap-4">
-          <div className="col-span-12 xl:col-span-7 border border-white/10 bg-white/[0.02] p-4 md:p-6">
+          <div className="col-span-12 xl:col-span-7 border border-black/10 bg-[#F7F8FC] p-4 md:p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Gauge size={18} className="text-white/60" />
+              <Gauge size={18} className="text-[#3898E8]" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
                 New Main Flow
@@ -280,9 +292,9 @@ export function TerminalHomeTab({
             </div>
           </div>
 
-          <div className="col-span-12 xl:col-span-5 border border-white/10 bg-white/[0.02] p-4 md:p-6">
+          <div className="col-span-12 xl:col-span-5 border border-black/10 bg-[#F7F8FC] p-4 md:p-6">
             <div className="flex items-center gap-2 mb-5">
-              <BadgeCheck size={18} className="text-white/60" />
+              <BadgeCheck size={18} className="text-[#C83888]" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
                 What We Reuse
@@ -308,27 +320,31 @@ function PrimaryAction({
   title,
   text,
   icon: Icon,
+  accent,
   onClick,
 }: {
   title: string;
   text: string;
   icon: ElementType;
+  accent: "blue" | "magenta" | "coral";
   onClick: () => void;
 }) {
+  const accentClasses = getAccentClasses(accent);
+
   return (
     <button
       onClick={onClick}
-      className="group border border-white/10 bg-white/[0.03] p-4 text-left hover:bg-white hover:text-black transition-all min-h-28"
+      className={`group border bg-white p-4 text-left transition-all min-h-28 shadow-sm hover:-translate-y-0.5 hover:shadow-xl ${accentClasses.border}`}
     >
       <div className="flex items-start justify-between gap-3 mb-4">
-        <Icon size={20} className="text-white/65 group-hover:text-black/70" />
-        <ArrowRight size={17} className="text-white/25 group-hover:text-black/70" />
+        <Icon size={20} className={accentClasses.icon} />
+        <ArrowRight size={17} className="text-black/25 group-hover:text-black" />
       </div>
 
-      <p className="font-orbitron text-xs font-black uppercase mb-2">{title}</p>
-      <p className="font-mono text-[10px] uppercase text-white/35 group-hover:text-black/55">
-        {text}
+      <p className="font-orbitron text-xs font-black uppercase mb-2 text-black">
+        {title}
       </p>
+      <p className="font-mono text-[10px] uppercase text-black/45">{text}</p>
     </button>
   );
 }
@@ -337,18 +353,18 @@ function MetricCard({ metric }: { metric: Metric }) {
   const Icon = metric.icon;
 
   return (
-    <div className="border border-white/10 bg-black/60 p-4">
-      <Icon size={18} className="text-white/60 mb-3" />
+    <div className="border border-black/10 bg-white/90 p-4 shadow-sm">
+      <Icon size={18} className="text-[#C83888] mb-3" />
 
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+      <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
         {metric.label}
       </p>
 
-      <p className="font-orbitron text-sm font-black uppercase mb-1 break-all">
+      <p className="font-orbitron text-sm font-black uppercase mb-1 break-all text-black">
         {metric.value}
       </p>
 
-      <p className="font-mono text-[10px] text-white/30 uppercase">
+      <p className="font-mono text-[10px] text-black/35 uppercase">
         {metric.text}
       </p>
     </div>
@@ -363,32 +379,33 @@ function LayerCard({
   onNavigate: (target: string) => void;
 }) {
   const Icon = layer.icon;
+  const accentClasses = getAccentClasses(layer.accent);
 
   return (
-    <div className="border border-white/10 bg-white/[0.02] p-5 md:p-6 hover:bg-white/[0.04] transition-all">
+    <div className={`border bg-white p-5 md:p-6 transition-all shadow-sm hover:shadow-xl ${accentClasses.border}`}>
       <div className="flex items-start justify-between gap-4 mb-6">
         <div>
-          <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.28em] mb-3">
+          <p className="font-mono text-[10px] text-black/35 uppercase tracking-[0.28em] mb-3">
             {layer.label}
           </p>
 
-          <h3 className="font-orbitron text-xl font-black uppercase">
+          <h3 className="font-orbitron text-xl font-black uppercase text-black">
             {layer.title}
           </h3>
         </div>
 
-        <Icon size={30} className="text-white/45 shrink-0" />
+        <Icon size={30} className={`${accentClasses.icon} shrink-0`} />
       </div>
 
-      <p className="font-mono text-sm text-white/50 leading-relaxed mb-5">
+      <p className="font-mono text-sm text-black/55 leading-relaxed mb-5">
         {layer.description}
       </p>
 
       <div className="space-y-3 mb-6">
         {layer.bullets.map((bullet) => (
           <div key={bullet} className="flex items-start gap-2">
-            <Sparkles size={13} className="text-white/35 mt-0.5 shrink-0" />
-            <p className="font-mono text-xs text-white/42 leading-relaxed">
+            <Sparkles size={13} className={`${accentClasses.icon} mt-0.5 shrink-0`} />
+            <p className="font-mono text-xs text-black/50 leading-relaxed">
               {bullet}
             </p>
           </div>
@@ -397,19 +414,19 @@ function LayerCard({
 
       <button
         onClick={() => onNavigate(layer.target)}
-        className="w-full border border-white/10 bg-black p-4 text-left hover:bg-white hover:text-black transition-all group"
+        className="w-full border border-black/10 bg-[#F7F8FC] p-4 text-left hover:bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] hover:text-white transition-all group"
       >
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="font-orbitron text-xs font-black uppercase mb-2">
               {layer.actionLabel}
             </p>
-            <p className="font-mono text-[10px] uppercase text-white/35 group-hover:text-black/55">
+            <p className="font-mono text-[10px] uppercase text-black/45 group-hover:text-white/75">
               Continue route
             </p>
           </div>
 
-          <ArrowRight size={17} className="text-white/40 group-hover:text-black/70" />
+          <ArrowRight size={17} className="text-black/40 group-hover:text-white" />
         </div>
       </button>
     </div>
@@ -418,12 +435,12 @@ function LayerCard({
 
 function IdentityRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border border-white/10 bg-white/[0.02] p-3">
-      <p className="font-mono text-[10px] text-white/30 uppercase tracking-widest mb-2">
+    <div className="border border-black/10 bg-white p-3">
+      <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
         {label}
       </p>
 
-      <p className="font-orbitron text-xs font-black uppercase break-all">
+      <p className="font-orbitron text-xs font-black uppercase break-all text-black">
         {value}
       </p>
     </div>
@@ -440,23 +457,46 @@ function FlowStep({
   text: string;
 }) {
   return (
-    <div className="border border-white/10 bg-black p-4">
-      <p className="font-orbitron text-xs font-black text-white/35 mb-4">
+    <div className="border border-black/10 bg-white p-4">
+      <p className="font-orbitron text-xs font-black text-[#C83888] mb-4">
         {number}
       </p>
 
-      <p className="font-orbitron text-xs font-black uppercase mb-2">{title}</p>
-      <p className="font-mono text-[10px] text-white/35 uppercase">{text}</p>
+      <p className="font-orbitron text-xs font-black uppercase mb-2 text-black">
+        {title}
+      </p>
+      <p className="font-mono text-[10px] text-black/40 uppercase">{text}</p>
     </div>
   );
 }
 
 function ReuseItem({ text }: { text: string }) {
   return (
-    <div className="flex items-start gap-2 border border-white/10 bg-black p-3">
-      <Link2 size={13} className="text-white/35 mt-0.5 shrink-0" />
+    <div className="flex items-start gap-2 border border-black/10 bg-white p-3">
+      <Link2 size={13} className="text-[#3898E8] mt-0.5 shrink-0" />
 
-      <p className="font-mono text-xs text-white/45 leading-relaxed">{text}</p>
+      <p className="font-mono text-xs text-black/50 leading-relaxed">{text}</p>
     </div>
   );
+}
+
+function getAccentClasses(accent: "blue" | "magenta" | "coral") {
+  if (accent === "blue") {
+    return {
+      border: "border-[#3898E8]/30 hover:border-[#3898E8]",
+      icon: "text-[#3898E8]",
+    };
+  }
+
+  if (accent === "coral") {
+    return {
+      border: "border-[#D84858]/30 hover:border-[#D84858]",
+      icon: "text-[#D84858]",
+    };
+  }
+
+  return {
+    border: "border-[#C83888]/30 hover:border-[#C83888]",
+    icon: "text-[#C83888]",
+  };
 }
