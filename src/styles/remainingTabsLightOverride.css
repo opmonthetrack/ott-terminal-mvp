@@ -1,0 +1,237 @@
+/* OTT Terminal — Remaining Tabs Light Override
+   Purpose: make older/legacy tabs match the new logo-based light palette
+   without touching their business logic, Xaman logic, API calls, or data flow.
+
+   Palette:
+   White base, black text, XRPL blue, OTT magenta, coral warning, soft silver lines.
+*/
+
+:root {
+  --ott-bg: #ffffff;
+  --ott-bg-soft: #f7f8fc;
+  --ott-text: #080808;
+  --ott-muted: rgba(8, 8, 8, 0.62);
+  --ott-dim: rgba(8, 8, 8, 0.38);
+  --ott-border: rgba(8, 8, 8, 0.12);
+  --ott-blue: #3898e8;
+  --ott-magenta: #c83888;
+  --ott-coral: #d84858;
+  --ott-gradient: linear-gradient(
+    135deg,
+    #3898e8 0%,
+    #8f49d8 42%,
+    #c83888 68%,
+    #d84858 100%
+  );
+  --ott-radial-bg:
+    radial-gradient(circle at 18% 18%, rgba(56, 152, 232, 0.16), transparent 28%),
+    radial-gradient(circle at 82% 8%, rgba(200, 56, 136, 0.16), transparent 28%),
+    radial-gradient(circle at 85% 82%, rgba(216, 72, 88, 0.12), transparent 30%),
+    #ffffff;
+}
+
+/* Page bases */
+[class*="bg-black"],
+[class*="bg-neutral-950"],
+[class*="bg-zinc-950"],
+[class*="bg-slate-950"],
+[class*="bg-gray-950"],
+[class*="bg-neutral-900"],
+[class*="bg-zinc-900"],
+[class*="bg-slate-900"],
+[class*="bg-gray-900"] {
+  background: var(--ott-bg) !important;
+  color: var(--ott-text) !important;
+}
+
+/* Full-screen old dark pages */
+.min-h-screen[class*="bg-"],
+.h-screen[class*="bg-"] {
+  background: var(--ott-radial-bg) !important;
+  color: var(--ott-text) !important;
+}
+
+/* Cards and panels */
+[class*="bg-white/5"],
+[class*="bg-white/10"],
+[class*="bg-white/15"],
+[class*="bg-black/20"],
+[class*="bg-black/30"],
+[class*="bg-black/40"],
+[class*="bg-neutral-800"],
+[class*="bg-zinc-800"],
+[class*="bg-slate-800"],
+[class*="bg-gray-800"],
+[class*="bg-neutral-900/"],
+[class*="bg-zinc-900/"],
+[class*="bg-slate-900/"] {
+  background: rgba(255, 255, 255, 0.92) !important;
+  color: var(--ott-text) !important;
+  border-color: var(--ott-border) !important;
+  box-shadow: 0 18px 50px rgba(8, 8, 8, 0.06) !important;
+}
+
+/* Soft panels */
+[class*="bg-neutral-700"],
+[class*="bg-zinc-700"],
+[class*="bg-slate-700"],
+[class*="bg-gray-700"] {
+  background: var(--ott-bg-soft) !important;
+  color: var(--ott-text) !important;
+}
+
+/* Text conversion */
+[class*="text-white"] {
+  color: var(--ott-text) !important;
+}
+
+[class*="text-white/90"],
+[class*="text-white/80"],
+[class*="text-white/70"],
+[class*="text-neutral-300"],
+[class*="text-zinc-300"],
+[class*="text-slate-300"],
+[class*="text-gray-300"] {
+  color: var(--ott-muted) !important;
+}
+
+[class*="text-white/60"],
+[class*="text-white/50"],
+[class*="text-white/40"],
+[class*="text-neutral-400"],
+[class*="text-zinc-400"],
+[class*="text-slate-400"],
+[class*="text-gray-400"] {
+  color: var(--ott-dim) !important;
+}
+
+/* Keep text on gradient/colored buttons white */
+[class*="bg-gradient"] [class*="text-white"],
+button[class*="bg-gradient"],
+a[class*="bg-gradient"],
+[class*="from-"][class*="to-"] {
+  color: #ffffff !important;
+}
+
+/* Borders */
+[class*="border-white/"],
+[class*="border-neutral-"],
+[class*="border-zinc-"],
+[class*="border-slate-"],
+[class*="border-gray-"] {
+  border-color: var(--ott-border) !important;
+}
+
+/* Buttons */
+button[class*="bg-white/"],
+a[class*="bg-white/"],
+button[class*="bg-neutral-"],
+button[class*="bg-zinc-"],
+button[class*="bg-slate-"],
+button[class*="bg-gray-"] {
+  background: #ffffff !important;
+  color: var(--ott-text) !important;
+  border-color: var(--ott-border) !important;
+}
+
+button[class*="hover:bg-white/"]:hover,
+a[class*="hover:bg-white/"]:hover,
+button[class*="hover:bg-neutral-"]:hover,
+button[class*="hover:bg-zinc-"]:hover,
+button[class*="hover:bg-slate-"]:hover,
+button[class*="hover:bg-gray-"]:hover {
+  background: var(--ott-bg-soft) !important;
+  color: var(--ott-text) !important;
+}
+
+/* Primary-looking buttons: make them brand gradient */
+button[class*="bg-blue"],
+button[class*="bg-indigo"],
+button[class*="bg-purple"],
+button[class*="bg-pink"],
+a[class*="bg-blue"],
+a[class*="bg-indigo"],
+a[class*="bg-purple"],
+a[class*="bg-pink"] {
+  background: var(--ott-gradient) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+}
+
+/* Inputs / textareas */
+input,
+textarea,
+select {
+  background: #ffffff !important;
+  color: var(--ott-text) !important;
+  border-color: var(--ott-border) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--ott-dim) !important;
+}
+
+/* Tables and code boxes */
+table,
+thead,
+tbody,
+tr,
+td,
+th,
+pre,
+code {
+  border-color: var(--ott-border) !important;
+}
+
+pre,
+code {
+  background: var(--ott-bg-soft) !important;
+  color: var(--ott-text) !important;
+}
+
+/* Badges */
+[class*="rounded-full"][class*="bg-white/"],
+[class*="rounded"][class*="bg-white/"] {
+  background: var(--ott-bg-soft) !important;
+  color: var(--ott-text) !important;
+  border-color: var(--ott-border) !important;
+}
+
+/* Icons inherit better contrast */
+svg {
+  color: currentColor;
+}
+
+/* Warning/error keeps coral tone */
+[class*="text-red"],
+[class*="text-rose"] {
+  color: var(--ott-coral) !important;
+}
+
+[class*="bg-red"],
+[class*="bg-rose"] {
+  background: rgba(216, 72, 88, 0.12) !important;
+  color: var(--ott-text) !important;
+  border-color: rgba(216, 72, 88, 0.26) !important;
+}
+
+/* Success/info accents */
+[class*="text-green"],
+[class*="text-emerald"],
+[class*="text-cyan"],
+[class*="text-blue"] {
+  color: var(--ott-blue) !important;
+}
+
+[class*="text-purple"],
+[class*="text-pink"],
+[class*="text-fuchsia"] {
+  color: var(--ott-magenta) !important;
+}
+
+/* Selection */
+::selection {
+  background: rgba(200, 56, 136, 0.22);
+  color: var(--ott-text);
+}
