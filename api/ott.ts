@@ -283,8 +283,13 @@ function getXamanHeaders() {
   };
 }
 
-function getBrandingReturnUrl() {
-  const target = `${OTT_PUBLIC_APP_URL}/?xaman_return=1`;
+function getBrandingReturnUrl(actionId = "source-tag-proof") {
+  const cleanActionId = encodeURIComponent(actionId);
+  const target =
+    `${OTT_PUBLIC_APP_URL}/?ott_xaman_return=1` +
+    `&payload={id}` +
+    `&action=${cleanActionId}` +
+    `&sourceTag=${MAKE_WAVES_SOURCE_TAG}`;
 
   return {
     app: target,
@@ -308,11 +313,18 @@ function addOttBrandingToPayload(body: Record<string, unknown>) {
       ? customMeta.instruction
       : `${OTT_BRAND_NAME} signing request`;
 
+  const actionId =
+    typeof blob.actionId === "string"
+      ? blob.actionId
+      : typeof customMeta.identifier === "string"
+        ? customMeta.identifier.replace(/^ott-/, "")
+        : "source-tag-proof";
+
   return {
     ...body,
     options: {
       ...options,
-      return_url: getBrandingReturnUrl(),
+      return_url: getBrandingReturnUrl(actionId),
     },
     custom_meta: {
       ...customMeta,
