@@ -8,6 +8,7 @@ import {
   Wallet,
   X,
 } from "lucide-react";
+import { GlobalLanguageBar } from "./components/GlobalLanguageBar";
 import { OTTLogo, OTTLogoMark, OTTProofBadge } from "./components/OTTLogo";
 import { TerminalHomeTab } from "./tabs/TerminalHomeTab";
 import { DashboardTab } from "./tabs/DashboardTab";
@@ -42,13 +43,16 @@ import { NewsTab } from "./tabs/NewsTab";
 import { DeFiTab } from "./tabs/DeFiTab";
 import { AcademyTab } from "./tabs/AcademyTab";
 import { LedgerIntelTab } from "./tabs/LedgerIntelTab";
-import { LanguageProvider, useLanguage } from "./LanguageContext";
 import { verifyMakeWavesPayload } from "./lib/xamanClient";
 import {
   cleanXamanReturnUrl,
   clearXamanMobileSession,
   getXamanReturnState,
 } from "./lib/xamanMobileSession";
+import {
+  useTerminalLanguage,
+} from "./lib/useTerminalLanguage";
+import type { TerminalLanguage } from "./lib/terminalCopy";
 
 type ActiveTab =
   | "home"
@@ -98,66 +102,70 @@ type MenuGroup = {
 
 const sourceTag = "2606170002";
 
-const menuGroups: MenuGroup[] = [
-  {
-    title: "Terminal",
-    items: [
-      { id: "home", label: "Home", status: "V2" },
-      { id: "network", label: "XRPL Explorer", status: "Live" },
-      { id: "wallet", label: "Wallet Dashboard", status: "Xaman" },
-      { id: "portfolio", label: "Portfolio", status: "View" },
-    ],
-  },
-  {
-    title: "Proof / Education",
-    items: [
-      { id: "source", label: "SourceTag", status: sourceTag },
-      { id: "xaman", label: "Xaman Center", status: "Sign" },
-      { id: "xrplverify", label: "XRPL Verify", status: "Proof" },
-      { id: "partners", label: "Partner Hub", status: "Learn" },
-      { id: "rewardledger", label: "Reward Ledger", status: "XP" },
-    ],
-  },
-  {
-    title: "Services / Access",
-    items: [
-      { id: "truthdesk", label: "Truth Desk", status: "Ask" },
-      { id: "accessgate", label: "Access Gate", status: "Pay" },
-      { id: "otttestnet", label: "OTT Testnet", status: "Sim" },
-    ],
-  },
-  {
-    title: "Demo / QA",
-    items: [
-      { id: "pitchmode", label: "Pitch Mode", status: "Demo" },
-      { id: "submission", label: "Submission Pack", status: "Ship" },
-      { id: "smoketest", label: "Smoke Test", status: "QA" },
-    ],
-  },
-  {
-    title: "Advanced",
-    items: [
-      { id: "dashboard", label: "Legacy Dashboard", status: "Old" },
-      { id: "checkin", label: "Daily Check-In", status: "XP" },
-      { id: "ecosystem", label: "Ecosystem", status: "Map" },
-      { id: "validator", label: "Validators", status: "UNL" },
-      { id: "developer", label: "Developer Hub", status: "Build" },
-      { id: "tokenization", label: "Tokenization", status: "RWA" },
-      { id: "factory", label: "Token Factory", status: "Create" },
-      { id: "profile", label: "Profile", status: "User" },
-      { id: "token", label: "OTT Token", status: "XP" },
-      { id: "rewardpolicy", label: "Reward Policy", status: "Legal" },
-      { id: "ottintelligence", label: "OTT Intelligence", status: "AI" },
-      { id: "launch", label: "Launch Control", status: "Demo" },
-      { id: "ai", label: "AI Hub", status: "Tools" },
-      { id: "marketplace", label: "Marketplace", status: "Shop" },
-      { id: "news", label: "Newsroom", status: "News" },
-      { id: "defi", label: "DeFi", status: "MVP" },
-      { id: "academy", label: "Academy", status: "Learn" },
-      { id: "intel", label: "Ledger Intel", status: "Beta" },
-    ],
-  },
-];
+function getMenuGroups(language: TerminalLanguage): MenuGroup[] {
+  const isEnglish = language === "en";
+
+  return [
+    {
+      title: "Terminal",
+      items: [
+        { id: "home", label: "Home", status: "V2" },
+        { id: "network", label: "XRPL Explorer", status: "Live" },
+        { id: "wallet", label: isEnglish ? "Wallet Dashboard" : "Wallet Dashboard", status: "Xaman" },
+        { id: "portfolio", label: "Portfolio", status: isEnglish ? "View" : "View" },
+      ],
+    },
+    {
+      title: isEnglish ? "Proof / Education" : "Proof / Educatie",
+      items: [
+        { id: "source", label: "SourceTag", status: sourceTag },
+        { id: "xaman", label: "Xaman Center", status: "Sign" },
+        { id: "xrplverify", label: "XRPL Verify", status: "Proof" },
+        { id: "partners", label: "Partner Hub", status: isEnglish ? "Learn" : "Leer" },
+        { id: "rewardledger", label: "Reward Ledger", status: "XP" },
+      ],
+    },
+    {
+      title: isEnglish ? "Services / Access" : "Services / Toegang",
+      items: [
+        { id: "truthdesk", label: "Truth Desk", status: isEnglish ? "Ask" : "Vraag" },
+        { id: "accessgate", label: "Access Gate", status: "Pay" },
+        { id: "otttestnet", label: "OTT Testnet", status: "Sim" },
+      ],
+    },
+    {
+      title: "Demo / QA",
+      items: [
+        { id: "pitchmode", label: "Pitch Mode", status: "Demo" },
+        { id: "submission", label: "Submission Pack", status: "Ship" },
+        { id: "smoketest", label: "Smoke Test", status: "QA" },
+      ],
+    },
+    {
+      title: "Advanced",
+      items: [
+        { id: "dashboard", label: "Legacy Dashboard", status: "Old" },
+        { id: "checkin", label: "Daily Check-In", status: "XP" },
+        { id: "ecosystem", label: "Ecosystem", status: "Map" },
+        { id: "validator", label: "Validators", status: "UNL" },
+        { id: "developer", label: "Developer Hub", status: "Build" },
+        { id: "tokenization", label: "Tokenization", status: "RWA" },
+        { id: "factory", label: "Token Factory", status: "Create" },
+        { id: "profile", label: "Profile", status: "User" },
+        { id: "token", label: "OTT Token", status: "XP" },
+        { id: "rewardpolicy", label: "Reward Policy", status: "Legal" },
+        { id: "ottintelligence", label: "OTT Intelligence", status: "AI" },
+        { id: "launch", label: "Launch Control", status: "Demo" },
+        { id: "ai", label: "AI Hub", status: "Tools" },
+        { id: "marketplace", label: "Marketplace", status: "Shop" },
+        { id: "news", label: "Newsroom", status: "News" },
+        { id: "defi", label: "DeFi", status: "MVP" },
+        { id: "academy", label: "Academy", status: "Learn" },
+        { id: "intel", label: "Ledger Intel", status: "Beta" },
+      ],
+    },
+  ];
+}
 
 const mobilePrimaryItems: MenuItem[] = [
   { id: "home", label: "Home", status: "V2" },
@@ -172,11 +180,13 @@ function MainApp() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [xamanReturnStatus, setXamanReturnStatus] = useState("");
 
-  const { lang, setLang } = useLanguage();
+  const { language, setLanguage } = useTerminalLanguage();
+
+  const menuGroups = useMemo(() => getMenuGroups(language), [language]);
 
   const allItems = useMemo(
     () => menuGroups.flatMap((group) => group.items),
-    [],
+    [menuGroups],
   );
 
   const activeItem =
@@ -245,7 +255,6 @@ function MainApp() {
     };
   }, []);
 
-
   function goTo(target: ActiveTab) {
     setActiveTab(target);
     setIsMobileMenuOpen(false);
@@ -266,12 +275,15 @@ function MainApp() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white selection:bg-white/20 lg:flex">
+    <div className="min-h-screen bg-white text-[#080808] selection:bg-[#C83888]/20 lg:flex">
+      <GlobalLanguageBar />
+
       <DesktopSidebar
         activeTab={activeTab}
         walletAddress={walletAddress}
-        lang={lang}
-        setLang={setLang}
+        menuGroups={menuGroups}
+        language={language}
+        setLanguage={setLanguage}
         goTo={goTo}
       />
 
@@ -289,15 +301,16 @@ function MainApp() {
         <MobileMenu
           activeTab={activeTab}
           walletAddress={walletAddress}
-          lang={lang}
-          setLang={setLang}
+          menuGroups={menuGroups}
+          language={language}
+          setLanguage={setLanguage}
           goTo={goTo}
           onClose={() => setIsMobileMenuOpen(false)}
         />
       )}
 
-      <main className="w-full min-h-screen bg-black lg:flex-1 lg:h-screen lg:overflow-y-auto pb-24 lg:pb-0">
-        <div className="hidden lg:flex sticky top-0 z-20 border-b border-white/10 px-6 xl:px-8 py-4 items-center justify-between bg-black/90 backdrop-blur">
+      <main className="w-full min-h-screen bg-white lg:flex-1 lg:h-screen lg:overflow-y-auto pb-24 lg:pb-0">
+        <div className="hidden lg:flex sticky top-0 z-20 border-b border-black/10 px-6 xl:px-8 py-4 items-center justify-between bg-white/90 backdrop-blur">
           <PageHeader activeItem={activeItem} />
         </div>
 
@@ -409,29 +422,31 @@ function MainApp() {
 function DesktopSidebar({
   activeTab,
   walletAddress,
-  lang,
-  setLang,
+  menuGroups,
+  language,
+  setLanguage,
   goTo,
 }: {
   activeTab: ActiveTab;
   walletAddress: string;
-  lang: string;
-  setLang: (language: "nl" | "en") => void;
+  menuGroups: MenuGroup[];
+  language: TerminalLanguage;
+  setLanguage: (language: TerminalLanguage) => void;
   goTo: (target: ActiveTab) => void;
 }) {
   return (
-    <aside className="hidden lg:flex w-72 border-r border-white/10 flex-col justify-between bg-black z-10 relative shrink-0 h-screen">
+    <aside className="hidden lg:flex w-72 border-r border-black/10 flex-col justify-between bg-white z-10 relative shrink-0 h-screen">
       <div className="p-6 overflow-y-auto flex-1">
         <BrandButton goTo={goTo} />
 
-        <IdentityPanel walletAddress={walletAddress} goTo={goTo} />
+        <IdentityPanel walletAddress={walletAddress} goTo={goTo} language={language} />
 
-        <DesktopNav activeTab={activeTab} goTo={goTo} />
+        <DesktopNav activeTab={activeTab} menuGroups={menuGroups} goTo={goTo} />
       </div>
 
       <SidebarFooter
-        lang={lang}
-        setLang={setLang}
+        language={language}
+        setLanguage={setLanguage}
         onReset={() => goTo("home")}
       />
     </aside>
@@ -448,23 +463,23 @@ function MobileHeader({
   onOpenMenu: () => void;
 }) {
   return (
-    <header className="lg:hidden sticky top-0 z-40 border-b border-white/10 bg-black/95 backdrop-blur">
-      <div className="px-4 py-3 flex items-center justify-between gap-3">
+    <header className="lg:hidden sticky top-0 z-40 border-b border-black/10 bg-white/95 backdrop-blur">
+      <div className="px-4 py-3 flex items-center justify-between gap-3 pr-28">
         <button
           onClick={onOpenMenu}
-          className="w-11 h-11 border border-white/10 bg-white/[0.03] flex items-center justify-center"
+          className="w-11 h-11 border border-black/10 bg-[#F7F8FC] flex items-center justify-center text-black"
           aria-label="Open menu"
         >
           <Menu size={20} />
         </button>
 
         <div className="flex-1 min-w-0">
-          <p className="font-mono text-[9px] text-white/35 uppercase tracking-[0.25em] truncate">
+          <p className="font-mono text-[9px] text-black/35 uppercase tracking-[0.25em] truncate">
             {walletAddress === "guest" ? "Guest / " : "Connected / "}
             XRPL Terminal
           </p>
 
-          <h1 className="font-orbitron text-sm font-black uppercase tracking-widest truncate">
+          <h1 className="font-orbitron text-sm font-black uppercase tracking-widest truncate text-black">
             {activeItem.label}
           </h1>
         </div>
@@ -478,27 +493,29 @@ function MobileHeader({
 function MobileMenu({
   activeTab,
   walletAddress,
-  lang,
-  setLang,
+  menuGroups,
+  language,
+  setLanguage,
   goTo,
   onClose,
 }: {
   activeTab: ActiveTab;
   walletAddress: string;
-  lang: string;
-  setLang: (language: "nl" | "en") => void;
+  menuGroups: MenuGroup[];
+  language: TerminalLanguage;
+  setLanguage: (language: TerminalLanguage) => void;
   goTo: (target: ActiveTab) => void;
   onClose: () => void;
 }) {
   return (
-    <div className="lg:hidden fixed inset-0 z-50 bg-black">
+    <div className="lg:hidden fixed inset-0 z-50 bg-white text-black">
       <div className="h-full flex flex-col">
-        <div className="border-b border-white/10 px-4 py-3 flex items-center justify-between gap-3">
+        <div className="border-b border-black/10 px-4 py-3 flex items-center justify-between gap-3 pr-28">
           <OTTLogo size="md" />
 
           <button
             onClick={onClose}
-            className="w-11 h-11 border border-white/10 bg-white/[0.03] flex items-center justify-center"
+            className="w-11 h-11 border border-black/10 bg-[#F7F8FC] flex items-center justify-center"
             aria-label="Close menu"
           >
             <X size={20} />
@@ -506,14 +523,14 @@ function MobileMenu({
         </div>
 
         <div className="p-4 overflow-y-auto flex-1">
-          <IdentityPanel walletAddress={walletAddress} goTo={goTo} />
+          <IdentityPanel walletAddress={walletAddress} goTo={goTo} language={language} />
 
-          <DesktopNav activeTab={activeTab} goTo={goTo} />
+          <DesktopNav activeTab={activeTab} menuGroups={menuGroups} goTo={goTo} />
         </div>
 
         <SidebarFooter
-          lang={lang}
-          setLang={setLang}
+          language={language}
+          setLanguage={setLanguage}
           onReset={() => goTo("home")}
         />
       </div>
@@ -535,27 +552,32 @@ function BrandButton({ goTo }: { goTo: (target: ActiveTab) => void }) {
 function IdentityPanel({
   walletAddress,
   goTo,
+  language,
 }: {
   walletAddress: string;
   goTo: (target: ActiveTab) => void;
+  language: TerminalLanguage;
 }) {
   return (
-    <div className="border border-white/10 bg-white/[0.02] p-4 mb-6">
-      <div className="mb-4">
+    <div className="border border-black/10 bg-[#F7F8FC] p-4 mb-6 shadow-sm">
+      <div className="mb-4 text-black">
         <OTTProofBadge sourceTag={sourceTag} />
       </div>
 
       <div className="space-y-2">
         <StatusRow label="Wallet" value={walletAddress} />
-        <StatusRow label="Mode" value="Education-first" />
+        <StatusRow
+          label="Mode"
+          value={language === "en" ? "Education-first" : "Education-first"}
+        />
       </div>
 
       <button
         onClick={() => goTo("xaman")}
-        className="w-full bg-white text-black p-3 mt-4 text-left hover:bg-white/80 transition-all"
+        className="w-full bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] text-white p-3 mt-4 text-left hover:brightness-95 transition-all"
       >
         <p className="font-orbitron text-[10px] font-black uppercase tracking-widest">
-          Connect / Sign with Xaman
+          {language === "en" ? "Connect / Sign with Xaman" : "Connect / Sign with Xaman"}
         </p>
       </button>
     </div>
@@ -564,16 +586,18 @@ function IdentityPanel({
 
 function DesktopNav({
   activeTab,
+  menuGroups,
   goTo,
 }: {
   activeTab: ActiveTab;
+  menuGroups: MenuGroup[];
   goTo: (target: ActiveTab) => void;
 }) {
   return (
     <nav className="space-y-6">
       {menuGroups.map((group) => (
         <div key={group.title}>
-          <p className="font-mono text-[9px] text-white/25 uppercase tracking-[0.35em] mb-2 px-2">
+          <p className="font-mono text-[9px] text-black/35 uppercase tracking-[0.35em] mb-2 px-2">
             {group.title}
           </p>
 
@@ -587,8 +611,8 @@ function DesktopNav({
                   onClick={() => goTo(item.id)}
                   className={`w-full text-left px-3 py-3 font-orbitron text-[11px] font-bold uppercase tracking-widest transition-all border-l-2 ${
                     isActive
-                      ? "bg-white/10 text-white border-white"
-                      : "text-white/38 border-transparent hover:text-white hover:bg-white/[0.04]"
+                      ? "bg-[#C83888]/10 text-black border-[#C83888]"
+                      : "text-black/48 border-transparent hover:text-black hover:bg-[#F7F8FC]"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-3">
@@ -597,7 +621,7 @@ function DesktopNav({
                     {item.status && (
                       <span
                         className={`font-mono text-[8px] uppercase tracking-widest ${
-                          isActive ? "text-white/65" : "text-white/25"
+                          isActive ? "text-[#C83888]" : "text-black/28"
                         }`}
                       >
                         {item.status}
@@ -615,36 +639,36 @@ function DesktopNav({
 }
 
 function SidebarFooter({
-  lang,
-  setLang,
+  language,
+  setLanguage,
   onReset,
 }: {
-  lang: string;
-  setLang: (language: "nl" | "en") => void;
+  language: TerminalLanguage;
+  setLanguage: (language: TerminalLanguage) => void;
   onReset: () => void;
 }) {
   return (
-    <div className="p-4 lg:p-6 space-y-5 border-t border-white/10">
-      <div className="bg-white/[0.02] border border-white/10 rounded-lg p-1 flex relative">
+    <div className="p-4 lg:p-6 space-y-5 border-t border-black/10">
+      <div className="bg-[#F7F8FC] border border-black/10 rounded-lg p-1 flex relative">
         <div
-          className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded shadow transition-all duration-300 ${
-            lang === "nl" ? "left-1" : "left-[calc(50%+2px)]"
+          className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] rounded shadow transition-all duration-300 ${
+            language === "nl" ? "left-1" : "left-[calc(50%+2px)]"
           }`}
         />
 
         <button
-          onClick={() => setLang("nl")}
+          onClick={() => setLanguage("nl")}
           className={`flex-1 relative z-10 text-[10px] font-bold uppercase tracking-widest py-2 rounded transition-colors ${
-            lang === "nl" ? "text-black" : "text-white/35 hover:text-white"
+            language === "nl" ? "text-white" : "text-black/40 hover:text-black"
           }`}
         >
           NL
         </button>
 
         <button
-          onClick={() => setLang("en")}
+          onClick={() => setLanguage("en")}
           className={`flex-1 relative z-10 text-[10px] font-bold uppercase tracking-widest py-2 rounded transition-colors ${
-            lang === "en" ? "text-black" : "text-white/35 hover:text-white"
+            language === "en" ? "text-white" : "text-black/40 hover:text-black"
           }`}
         >
           EN
@@ -653,7 +677,7 @@ function SidebarFooter({
 
       <button
         onClick={onReset}
-        className="w-full text-left px-3 py-3 text-[10px] font-mono font-bold text-white/35 uppercase tracking-widest hover:text-white transition-colors"
+        className="w-full text-left px-3 py-3 text-[10px] font-mono font-bold text-black/40 uppercase tracking-widest hover:text-black transition-colors"
       >
         Reset to home
       </button>
@@ -665,17 +689,19 @@ function PageHeader({ activeItem }: { activeItem: MenuItem }) {
   return (
     <>
       <div>
-        <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
+        <p className="font-mono text-[10px] text-black/35 uppercase tracking-[0.35em] mb-2">
           {activeItem.status ? `${activeItem.status} / ` : ""}
           XRPL OnTheTrack Terminal
         </p>
 
-        <h1 className="font-orbitron text-lg xl:text-xl font-black uppercase tracking-widest">
+        <h1 className="font-orbitron text-lg xl:text-xl font-black uppercase tracking-widest text-black">
           {activeItem.label}
         </h1>
       </div>
 
-      <OTTLogo size="sm" subtitle="Explorer + Xaman + Proof" />
+      <div className="pr-28">
+        <OTTLogo size="sm" subtitle="Explorer + Xaman + Proof" />
+      </div>
     </>
   );
 }
@@ -695,7 +721,7 @@ function MobileBottomNav({
   };
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-black/95 backdrop-blur px-2 py-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)]">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-black/10 bg-white/95 backdrop-blur px-2 py-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)]">
       <div className="grid grid-cols-5 gap-1">
         {mobilePrimaryItems.map((item) => {
           const isActive = activeTab === item.id;
@@ -707,8 +733,8 @@ function MobileBottomNav({
               onClick={() => goTo(item.id)}
               className={`min-h-14 rounded-sm border px-2 py-2 transition-all ${
                 isActive
-                  ? "border-white bg-white text-black"
-                  : "border-white/10 bg-white/[0.02] text-white/45"
+                  ? "border-transparent bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] text-white"
+                  : "border-black/10 bg-[#F7F8FC] text-black/45"
               }`}
             >
               <Icon size={16} className="mx-auto mb-1" />
@@ -724,8 +750,8 @@ function MobileBottomNav({
           onClick={() => goTo("xaman")}
           className={`min-h-14 rounded-sm border px-2 py-2 transition-all ${
             activeTab === "xaman"
-              ? "border-white bg-white text-black"
-              : "border-white/10 bg-white/[0.02] text-white/45"
+              ? "border-transparent bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] text-white"
+              : "border-black/10 bg-[#F7F8FC] text-black/45"
           }`}
         >
           <Wallet size={16} className="mx-auto mb-1" />
@@ -741,7 +767,7 @@ function MobileBottomNav({
 
 function XamanReturnBanner({ text }: { text: string }) {
   return (
-    <div className="fixed top-[69px] lg:top-4 left-4 right-4 lg:left-auto lg:right-6 lg:w-[420px] z-[60] border border-white/10 bg-white text-black p-4 shadow-2xl">
+    <div className="fixed top-[69px] lg:top-4 left-4 right-4 lg:left-auto lg:right-36 lg:w-[420px] z-[60] border border-black/10 bg-white text-black p-4 shadow-2xl shadow-black/10">
       <p className="font-orbitron text-xs font-black uppercase tracking-widest mb-2">
         Xaman Mobile Return
       </p>
@@ -755,12 +781,12 @@ function XamanReturnBanner({ text }: { text: string }) {
 
 function StatusRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-start justify-between gap-3 border border-white/10 bg-black p-2">
-      <p className="font-mono text-[9px] text-white/30 uppercase tracking-widest">
+    <div className="flex items-start justify-between gap-3 border border-black/10 bg-white p-2">
+      <p className="font-mono text-[9px] text-black/35 uppercase tracking-widest">
         {label}
       </p>
 
-      <p className="font-mono text-[9px] text-white/55 uppercase break-all text-right">
+      <p className="font-mono text-[9px] text-black/60 uppercase break-all text-right">
         {value}
       </p>
     </div>
@@ -768,9 +794,5 @@ function StatusRow({ label, value }: { label: string; value: string }) {
 }
 
 export default function App() {
-  return (
-    <LanguageProvider>
-      <MainApp />
-    </LanguageProvider>
-  );
+  return <MainApp />;
 }
