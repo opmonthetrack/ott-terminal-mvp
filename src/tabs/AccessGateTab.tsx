@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { ElementType } from "react";
+import type { ElementType, ReactNode } from "react";
 import {
   AlertTriangle,
   BadgeCheck,
@@ -19,6 +19,7 @@ import {
   Sparkles,
   Wallet,
 } from "lucide-react";
+import { LanguageToggle } from "../components/LanguageToggle";
 import { OTTLogo, OTTLogoMark, OTTProofBadge } from "../components/OTTLogo";
 import {
   ACCESS_ROUTES,
@@ -51,6 +52,7 @@ import {
   type AccessPaymentPayloadResponse,
   type VerifyAccessPaymentResponse,
 } from "../lib/accessClient";
+import { useTerminalLanguage } from "../lib/useTerminalLanguage";
 
 type AccessGateTabProps = {
   walletAddress?: string;
@@ -71,6 +73,10 @@ const routeIcons: Record<AccessRouteId, ElementType> = {
 };
 
 export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
+  const { language, setLanguage, copy } = useTerminalLanguage();
+  const c = copy.access;
+  const common = copy.common;
+
   const [accessState, setAccessState] = useState<AccessState>(() =>
     loadAccessState(walletAddress),
   );
@@ -83,9 +89,7 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
     useState<VerifyAccessPaymentResponse | null>(null);
   const [payloadBusy, setPayloadBusy] = useState(false);
   const [verifyBusy, setVerifyBusy] = useState(false);
-  const [statusMessage, setStatusMessage] = useState(
-    "Choose an access route to unlock the terminal access flow.",
-  );
+  const [statusMessage, setStatusMessage] = useState(c.statusMessage);
 
   const summary = getAccessSummary(accessState);
   const selectedRoute = getAccessRoute(accessState.selectedRouteId);
@@ -99,12 +103,12 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
   const metrics: Metric[] = [
     {
       label: "Access",
-      value: verified ? "Unlocked" : "Locked",
+      value: verified ? c.accessUnlocked : c.accessLocked,
       text: "Terminal gate.",
       icon: verified ? ShieldCheck : Lock,
     },
     {
-      label: "SourceTag",
+      label: common.sourceTag,
       value: String(ACCESS_SOURCE_TAG),
       text: "Payment proof.",
       icon: Fingerprint,
@@ -116,7 +120,7 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
       icon: Sparkles,
     },
     {
-      label: "Verified",
+      label: common.verified,
       value: paymentVerified ? "Yes" : "No",
       text: "Tx hash proof.",
       icon: BadgeCheck,
@@ -133,28 +137,34 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
     setTxHash("");
     setStatusMessage(
       route
-        ? `${route.title} selected. Next step: create or verify access payment.`
-        : "Access route selected.",
+        ? `${route.title} ${c.routeSelected}`
+        : c.routeSelected,
     );
   }
 
   async function createPayload() {
     if (!selectedRoute) {
-      setStatusMessage("Selecteer eerst een access route.");
+      setStatusMessage(c.chooseRoute);
       return;
     }
 
     if (selectedRoute.id === "banxa-fiat") {
       window.open("https://banxa.com/", "_blank", "noopener,noreferrer");
       setStatusMessage(
-        "Banxa is een externe fiat route. OTT Terminal verwerkt deze betaling niet intern.",
+        language === "en"
+          ? "Banxa is an external fiat route. OTT Terminal does not process this payment internally."
+          : "Banxa is een externe fiat route. OTT Terminal verwerkt deze betaling niet intern.",
       );
       return;
     }
 
     setPayloadBusy(true);
     setVerification(null);
-    setStatusMessage("Creating Access Gate payment payload...");
+    setStatusMessage(
+      language === "en"
+        ? "Creating Access Gate payment payload..."
+        : "Access Gate payment payload wordt aangemaakt...",
+    );
 
     try {
       const response = await createAccessPaymentPayload(
@@ -184,19 +194,27 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
 
   async function verifyPaymentHash() {
     if (!selectedRoute) {
-      setStatusMessage("Selecteer eerst een access route.");
+      setStatusMessage(c.chooseRoute);
       return;
     }
 
     const cleanHash = txHash.trim();
 
     if (!cleanHash) {
-      setStatusMessage("Vul eerst een access payment tx hash in.");
+      setStatusMessage(
+        language === "en"
+          ? "Paste an access payment tx hash first."
+          : "Vul eerst een access payment tx hash in.",
+      );
       return;
     }
 
     setVerifyBusy(true);
-    setStatusMessage("Verifying Access Gate payment...");
+    setStatusMessage(
+      language === "en"
+        ? "Verifying Access Gate payment..."
+        : "Access Gate payment wordt geverifieerd...",
+    );
 
     try {
       const response = await verifyAccessPayment({
@@ -241,13 +259,21 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
     const opened = openAccessPayload(payload);
 
     if (!opened) {
-      setStatusMessage("Geen Access Gate payload link gevonden.");
+      setStatusMessage(
+        language === "en"
+          ? "No Access Gate payload link found."
+          : "Geen Access Gate payload link gevonden.",
+      );
     }
   }
 
   async function copyUuid() {
     if (!payloadUuid) {
-      setStatusMessage("Geen Access Gate payload UUID gevonden.");
+      setStatusMessage(
+        language === "en"
+          ? "No Access Gate payload UUID found."
+          : "Geen Access Gate payload UUID gevonden.",
+      );
       return;
     }
 
@@ -262,7 +288,7 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
     setPayload(null);
     setVerification(null);
     setTxHash("");
-    setStatusMessage("Access state reset.");
+    setStatusMessage(language === "en" ? "Access state reset." : "Access status reset.");
   }
 
   return (
@@ -271,6 +297,10 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
         <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.24),#ffffff_92%)]" />
 
         <div className="relative z-10 p-4 md:p-6 xl:p-10">
+          <div className="flex justify-end mb-4">
+            <LanguageToggle language={language} onChange={setLanguage} />
+          </div>
+
           <div className="grid grid-cols-12 gap-6 items-center">
             <div className="col-span-12 xl:col-span-8">
               <div className="mb-6 text-[#080808]">
@@ -281,25 +311,22 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
                 <KeyRound size={15} className="text-[#C83888]" />
 
                 <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-black/55">
-                  Access Gate Layer
+                  {c.eyebrow}
                 </p>
               </div>
 
               <h1 className="font-orbitron text-4xl md:text-5xl xl:text-6xl font-black uppercase leading-none tracking-tight mb-6">
-                Buy Access.
+                {c.titleLine1}
                 <br />
                 <span className="bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] bg-clip-text text-transparent">
-                  Receive Pass.
+                  {c.titleLine2}
                 </span>
                 <br />
-                Unlock Services.
+                {c.titleLine3}
               </h1>
 
               <p className="font-mono text-sm xl:text-base text-black/60 max-w-3xl leading-relaxed">
-                Klanten kunnen toegang kopen voor OTT services. De lange termijn
-                flow is: Xaman betalen → OTT Access Pass NFT ontvangen → bij
-                volgende login NFT ownership check → automatisch toegang. De NFT
-                is access utility, geen investering.
+                {c.intro}
               </p>
             </div>
 
@@ -344,7 +371,7 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
                 <Sparkles size={18} className="text-[#C83888]" />
 
                 <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Access Routes
+                  {c.routeTitle}
                 </p>
               </div>
 
@@ -365,22 +392,19 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
                 <KeyRound size={18} className="text-[#3898E8]" />
 
                 <p className="font-orbitron text-xs uppercase tracking-widest">
-                  NFT Access Pass
+                  {c.nftTitle}
                 </p>
               </div>
 
               <div className="space-y-3">
-                <PassStep text="Pay once for service access." />
-                <PassStep text="Receive OTT Access Pass NFT." />
-                <PassStep text="Next login checks NFT ownership." />
-                <PassStep text="Access opens without paying again." />
+                {c.nftSteps.map((step) => (
+                  <PassStep key={step} text={step} />
+                ))}
               </div>
 
               <div className="border border-[#C83888]/25 bg-[#C83888]/10 p-4 mt-5">
                 <p className="font-mono text-xs text-black/60 leading-relaxed">
-                  Production mint + ownership check is the next build step. This
-                  screen prepares the customer journey and keeps the current
-                  working payment flow intact.
+                  {c.nftIntro}
                 </p>
               </div>
             </Panel>
@@ -390,6 +414,14 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
             {selectedRoute ? (
               <RouteDetailCard
                 route={selectedRoute}
+                copyLanguage={language}
+                labels={{
+                  createPayload: c.createPayload,
+                  openBanxa: c.openBanxa,
+                  verifyPayment: c.verifyPayment,
+                  txHashLabel: c.txHashLabel,
+                  destinationWallet: c.destinationWallet,
+                }}
                 destinationWallet={destinationWallet}
                 txHash={txHash}
                 payloadUuid={payloadUuid}
@@ -411,13 +443,12 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
                   <Lock size={18} className="text-[#C83888]" />
 
                   <p className="font-orbitron text-xs uppercase tracking-widest">
-                    No Route Selected
+                    {c.noRouteSelected}
                   </p>
                 </div>
 
                 <p className="font-mono text-sm text-black/55 leading-relaxed">
-                  Kies links een access route. Daarna zie je uitleg, risico’s,
-                  bedrag en de volgende betaal/verificatie stap.
+                  {c.noRouteSelectedText}
                 </p>
               </Panel>
             )}
@@ -427,16 +458,14 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
                 <AlertTriangle size={18} className="text-[#D84858]" />
 
                 <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Legal-Safe Language
+                  {c.legalTitle}
                 </p>
               </div>
 
               <div className="space-y-3">
-                <InfoLine text="Access payments unlock app access only." />
-                <InfoLine text="OTT Access Pass NFT is access utility only." />
-                <InfoLine text="The NFT is not an investment product." />
-                <InfoLine text="XP has no guaranteed financial value." />
-                <InfoLine text="Mainnet token conversion requires legal review." />
+                {c.legalLines.map((line) => (
+                  <InfoLine key={line} text={line} />
+                ))}
               </div>
             </Panel>
           </div>
@@ -451,14 +480,14 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
                 )}
 
                 <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Access Status
+                  {c.statusTitle}
                 </p>
               </div>
 
               <div className="space-y-3">
                 <MiniStatus
                   label="Status"
-                  value={verified ? "Verified" : accessState.status}
+                  value={verified ? common.verified : accessState.status}
                 />
                 <MiniStatus
                   label="Route"
@@ -479,7 +508,7 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
                 className="w-full border border-black/10 bg-white p-4 mt-4 text-left hover:bg-[#F7F8FC] transition-all"
               >
                 <p className="font-orbitron text-xs font-bold uppercase mb-2 text-black">
-                  Reset Access
+                  {common.reset} Access
                 </p>
 
                 <p className="font-mono text-[10px] text-black/40 uppercase">
@@ -590,6 +619,8 @@ function RouteButton({
 
 function RouteDetailCard({
   route,
+  copyLanguage,
+  labels,
   destinationWallet,
   txHash,
   payloadUuid,
@@ -606,6 +637,14 @@ function RouteDetailCard({
   onCopyUuid,
 }: {
   route: AccessRoute;
+  copyLanguage: string;
+  labels: {
+    createPayload: string;
+    openBanxa: string;
+    verifyPayment: string;
+    txHashLabel: string;
+    destinationWallet: string;
+  };
   destinationWallet: string;
   txHash: string;
   payloadUuid: string | null;
@@ -659,22 +698,25 @@ function RouteDetailCard({
             <KeyRound size={18} className="text-[#C83888] shrink-0 mt-0.5" />
 
             <p className="font-mono text-xs text-black/60 leading-relaxed">
-              This route is the future one-time Access Pass flow: pay once,
-              receive NFT pass, and unlock automatically on future logins after
-              NFT ownership check.
+              {copyLanguage === "en"
+                ? "This route is the future one-time Access Pass flow: pay once, receive NFT pass, and unlock automatically on future logins after NFT ownership check."
+                : "Dit is de toekomstige one-time Access Pass flow: één keer betalen, NFT pass ontvangen en bij volgende login automatisch unlocken na NFT ownership check."}
             </p>
           </div>
         </div>
       )}
 
-      <Section title="User Explanation" items={route.userExplanation} />
+      <Section
+        title={copyLanguage === "en" ? "User Explanation" : "Uitleg voor gebruiker"}
+        items={route.userExplanation}
+      />
 
       <div className="border border-[#D84858]/25 bg-[#D84858]/10 p-5 mb-5">
         <div className="flex items-center gap-2 mb-4">
           <AlertTriangle size={17} className="text-[#D84858]" />
 
           <p className="font-orbitron text-xs font-bold uppercase">
-            Risk Notes
+            {copyLanguage === "en" ? "Risk Notes" : "Risico-notities"}
           </p>
         </div>
 
@@ -698,7 +740,7 @@ function RouteDetailCard({
       {!isBanxa && (
         <div className="space-y-4 mb-5">
           <InputField
-            label="Destination Wallet"
+            label={labels.destinationWallet}
             value={destinationWallet}
             placeholder="Optional if OTT_ACCESS_WALLET is set"
             onChange={onDestinationChange}
@@ -723,7 +765,7 @@ function RouteDetailCard({
         ) : (
           <QrCode size={16} />
         )}
-        {isBanxa ? "Open Banxa" : "Create Access Payload"}
+        {isBanxa ? labels.openBanxa : labels.createPayload}
       </button>
 
       {payloadUuid && (
@@ -757,7 +799,7 @@ function RouteDetailCard({
       {!isBanxa && (
         <div className="space-y-4">
           <InputField
-            label="Access Payment Tx Hash"
+            label={labels.txHashLabel}
             value={txHash}
             placeholder="Paste signed XRPL payment tx hash"
             onChange={onTxHashChange}
@@ -777,7 +819,7 @@ function RouteDetailCard({
 
               <div>
                 <p className="font-orbitron text-xs font-bold uppercase text-black">
-                  Verify Access Payment
+                  {labels.verifyPayment}
                 </p>
 
                 <p className="font-mono text-[10px] text-black/40 uppercase">
@@ -815,7 +857,7 @@ function RouteDetailCard({
   );
 }
 
-function Panel({ children }: { children: React.ReactNode }) {
+function Panel({ children }: { children: ReactNode }) {
   return (
     <div className="border border-black/10 bg-white p-5 md:p-6 shadow-sm shadow-black/5">
       {children}
