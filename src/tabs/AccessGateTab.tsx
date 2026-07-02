@@ -19,6 +19,7 @@ import {
   Sparkles,
   Wallet,
 } from "lucide-react";
+import { OTTLogo, OTTLogoMark, OTTProofBadge } from "../components/OTTLogo";
 import {
   ACCESS_ROUTES,
   ACCESS_SOURCE_TAG,
@@ -71,19 +72,19 @@ const routeIcons: Record<AccessRouteId, ElementType> = {
 
 export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
   const [accessState, setAccessState] = useState<AccessState>(() =>
-    loadAccessState(walletAddress)
+    loadAccessState(walletAddress),
   );
   const [destinationWallet, setDestinationWallet] = useState("");
   const [txHash, setTxHash] = useState("");
   const [payload, setPayload] = useState<AccessPaymentPayloadResponse | null>(
-    null
+    null,
   );
   const [verification, setVerification] =
     useState<VerifyAccessPaymentResponse | null>(null);
   const [payloadBusy, setPayloadBusy] = useState(false);
   const [verifyBusy, setVerifyBusy] = useState(false);
   const [statusMessage, setStatusMessage] = useState(
-    "Choose an access route to unlock the terminal access flow."
+    "Choose an access route to unlock the terminal access flow.",
   );
 
   const summary = getAccessSummary(accessState);
@@ -133,7 +134,7 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
     setStatusMessage(
       route
         ? `${route.title} selected. Next step: create or verify access payment.`
-        : "Access route selected."
+        : "Access route selected.",
     );
   }
 
@@ -146,7 +147,7 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
     if (selectedRoute.id === "banxa-fiat") {
       window.open("https://banxa.com/", "_blank", "noopener,noreferrer");
       setStatusMessage(
-        "Banxa is een externe fiat route. OTT Terminal verwerkt deze betaling niet intern."
+        "Banxa is een externe fiat route. OTT Terminal verwerkt deze betaling niet intern.",
       );
       return;
     }
@@ -160,8 +161,8 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
         buildAccessPaymentInput(
           selectedRoute,
           walletAddress === "guest" ? undefined : walletAddress,
-          destinationWallet.trim() || undefined
-        )
+          destinationWallet.trim() || undefined,
+        ),
       );
 
       setPayload(response);
@@ -169,7 +170,7 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
       const nextState = markAccessPayloadCreated(
         walletAddress,
         selectedRoute.id,
-        `${selectedRoute.title} payload created with SourceTag ${ACCESS_SOURCE_TAG}.`
+        `${selectedRoute.title} payload created with SourceTag ${ACCESS_SOURCE_TAG}.`,
       );
 
       setAccessState(nextState);
@@ -215,12 +216,16 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
           walletAddress,
           routeId: selectedRoute.id,
           txHash: cleanHash,
-          durationDays: 30,
+          durationDays: selectedRoute.id === "ott-access-pass" ? 36500 : 30,
           note: `${selectedRoute.title} verified with SourceTag ${ACCESS_SOURCE_TAG}.`,
         });
 
         setAccessState(nextState);
-        setStatusMessage(`${label}. Terminal access unlocked for 30 days.`);
+        setStatusMessage(
+          selectedRoute.id === "ott-access-pass"
+            ? `${label}. OTT Access Pass route verified. NFT ownership check/mint is next production step.`
+            : `${label}. Terminal access unlocked for 30 days.`,
+        );
         return;
       }
 
@@ -261,206 +266,274 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
   }
 
   return (
-    <div className="p-6 bg-black min-h-screen text-white">
-      <div className="relative overflow-hidden border border-white/10 bg-white/[0.02] p-6 mb-6">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_white,_transparent_35%)]" />
+    <div className="min-h-screen bg-white text-[#080808]">
+      <section className="relative overflow-hidden border-b border-black/10 bg-[radial-gradient(circle_at_18%_18%,rgba(56,152,232,0.16),transparent_28%),radial-gradient(circle_at_82%_8%,rgba(200,56,136,0.16),transparent_28%),radial-gradient(circle_at_85%_82%,rgba(216,72,88,0.12),transparent_30%),#ffffff]">
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.24),#ffffff_92%)]" />
 
-        <div className="relative z-10 grid grid-cols-12 gap-6 items-center">
-          <div className="col-span-12 xl:col-span-8">
-            <div className="flex items-center gap-2 mb-4 text-white/45">
-              <KeyRound size={18} />
+        <div className="relative z-10 p-4 md:p-6 xl:p-10">
+          <div className="grid grid-cols-12 gap-6 items-center">
+            <div className="col-span-12 xl:col-span-8">
+              <div className="mb-6 text-[#080808]">
+                <OTTLogo size="lg" subtitle="Access Gate + NFT Access Pass" />
+              </div>
 
-              <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
-                Access Gate
+              <div className="inline-flex items-center gap-2 border border-black/10 bg-white/80 shadow-sm px-4 py-2 mb-6">
+                <KeyRound size={15} className="text-[#C83888]" />
+
+                <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-black/55">
+                  Access Gate Layer
+                </p>
+              </div>
+
+              <h1 className="font-orbitron text-4xl md:text-5xl xl:text-6xl font-black uppercase leading-none tracking-tight mb-6">
+                Buy Access.
+                <br />
+                <span className="bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] bg-clip-text text-transparent">
+                  Receive Pass.
+                </span>
+                <br />
+                Unlock Services.
+              </h1>
+
+              <p className="font-mono text-sm xl:text-base text-black/60 max-w-3xl leading-relaxed">
+                Klanten kunnen toegang kopen voor OTT services. De lange termijn
+                flow is: Xaman betalen → OTT Access Pass NFT ontvangen → bij
+                volgende login NFT ownership check → automatisch toegang. De NFT
+                is access utility, geen investering.
               </p>
             </div>
 
-            <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
-              Choose Access Route
-            </h2>
+            <div className="col-span-12 xl:col-span-4">
+              <div className="relative border border-black/10 bg-white/90 p-5 md:p-6 shadow-xl shadow-black/5 overflow-hidden">
+                <div className="absolute -top-20 -right-20 w-52 h-52 rounded-full bg-[#C83888]/15 blur-3xl" />
+                <div className="absolute -bottom-20 -left-20 w-52 h-52 rounded-full bg-[#3898E8]/15 blur-3xl" />
 
-            <p className="font-mono text-sm text-white/45 max-w-3xl leading-relaxed">
-              Terminal access kan via fiat route, XRP payment, RLUSD payment of
-              OTT Access Pass NFT. Dit is access utility, geen investering.
-              Alles blijft gekoppeld aan SourceTag {ACCESS_SOURCE_TAG}.
-            </p>
-          </div>
+                <div className="relative z-10">
+                  <div className="flex justify-center mb-6">
+                    <OTTLogoMark size="xl" />
+                  </div>
 
-          <div className="col-span-12 xl:col-span-4 grid grid-cols-2 gap-3">
-            {metrics.map((metric) => (
-              <MetricBox key={metric.label} metric={metric} />
-            ))}
-          </div>
-        </div>
-      </div>
+                  <div className="mb-5 text-[#080808]">
+                    <OTTProofBadge sourceTag={String(ACCESS_SOURCE_TAG)} />
+                  </div>
 
-      <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-12 xl:col-span-4 space-y-4">
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Sparkles size={18} className="text-white/60" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Access Routes
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {ACCESS_ROUTES.map((route) => (
-                <RouteButton
-                  key={route.id}
-                  route={route}
-                  active={accessState.selectedRouteId === route.id}
-                  onClick={() => chooseRoute(route.id)}
-                />
-              ))}
+                  <div className="grid grid-cols-2 gap-3">
+                    {metrics.map((metric) => (
+                      <MetricBox key={metric.label} metric={metric} />
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="col-span-12 xl:col-span-5 space-y-4">
-          {selectedRoute ? (
-            <RouteDetailCard
-              route={selectedRoute}
-              destinationWallet={destinationWallet}
-              txHash={txHash}
-              payloadUuid={payloadUuid}
-              payloadQr={payloadQr}
-              payloadUrl={payloadUrl}
-              payloadBusy={payloadBusy}
-              verifyBusy={verifyBusy}
-              verification={verification}
-              onDestinationChange={setDestinationWallet}
-              onTxHashChange={setTxHash}
-              onCreatePayload={createPayload}
-              onVerify={verifyPaymentHash}
-              onOpenPayload={openPayload}
-              onCopyUuid={copyUuid}
-            />
-          ) : (
-            <div className="border border-white/10 bg-white/[0.02] p-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mt-8">
+            <FlowCard number="01" title="Connect" text="Xaman wallet" />
+            <FlowCard number="02" title="Pay" text="Access route" />
+            <FlowCard number="03" title="Pass" text="NFT utility" />
+            <FlowCard number="04" title="Unlock" text="Services" />
+          </div>
+        </div>
+      </section>
+
+      <section className="p-4 md:p-6 xl:p-10 bg-white">
+        <div className="grid grid-cols-12 gap-4">
+          <div className="col-span-12 xl:col-span-4 space-y-4">
+            <Panel>
               <div className="flex items-center gap-2 mb-5">
-                <Lock size={18} className="text-white/60" />
+                <Sparkles size={18} className="text-[#C83888]" />
 
                 <p className="font-orbitron text-xs uppercase tracking-widest">
-                  No Route Selected
+                  Access Routes
                 </p>
               </div>
 
-              <p className="font-mono text-sm text-white/45 leading-relaxed">
-                Kies links een access route. Daarna zie je uitleg, risico’s,
-                bedrag en de volgende betaal/verificatie stap.
-              </p>
-            </div>
-          )}
+              <div className="space-y-3">
+                {ACCESS_ROUTES.map((route) => (
+                  <RouteButton
+                    key={route.id}
+                    route={route}
+                    active={accessState.selectedRouteId === route.id}
+                    onClick={() => chooseRoute(route.id)}
+                  />
+                ))}
+              </div>
+            </Panel>
 
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <AlertTriangle size={18} className="text-white/60" />
+            <Panel>
+              <div className="flex items-center gap-2 mb-5">
+                <KeyRound size={18} className="text-[#3898E8]" />
 
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Legal-Safe Language
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <InfoLine text="Access payments unlock app access only." />
-              <InfoLine text="OTT Access Pass NFT is not an investment product." />
-              <InfoLine text="XP has no guaranteed financial value." />
-              <InfoLine text="Mainnet token conversion requires legal review." />
-            </div>
-          </div>
-        </div>
-
-        <div className="col-span-12 xl:col-span-3 space-y-4">
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              {verified ? (
-                <ShieldCheck size={18} className="text-white/60" />
-              ) : (
-                <Lock size={18} className="text-white/60" />
-              )}
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Access Status
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <MiniStatus
-                label="Status"
-                value={verified ? "Verified" : accessState.status}
-              />
-              <MiniStatus
-                label="Route"
-                value={summary.selectedRoute?.label ?? "None"}
-              />
-              <MiniStatus
-                label="Unlocked"
-                value={accessState.unlockedAt ?? "None"}
-              />
-              <MiniStatus label="Expires" value={accessState.expiresAt ?? "None"} />
-            </div>
-
-            <button
-              onClick={resetAccess}
-              className="w-full border border-white/10 bg-black p-4 mt-4 text-left hover:bg-white/[0.03] transition-all"
-            >
-              <p className="font-orbitron text-xs font-bold uppercase mb-2">
-                Reset Access
-              </p>
-
-              <p className="font-mono text-[10px] text-white/35 uppercase">
-                Local state only
-              </p>
-            </button>
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <CheckCircle2 size={18} className="text-white/60" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Status Message
-              </p>
-            </div>
-
-            <div className="border border-white/10 bg-black p-4">
-              <p className="font-mono text-xs text-white/45 leading-relaxed">
-                {statusMessage}
-              </p>
-            </div>
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Fingerprint size={18} className="text-white/60" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Last Event
-              </p>
-            </div>
-
-            {summary.lastEvent ? (
-              <div className="border border-white/10 bg-black p-4">
-                <p className="font-orbitron text-xs font-bold uppercase mb-2">
-                  {summary.lastEvent.status}
-                </p>
-
-                <p className="font-mono text-[10px] text-white/35 uppercase mb-3">
-                  {summary.lastEvent.routeId}
-                </p>
-
-                <p className="font-mono text-xs text-white/45 leading-relaxed">
-                  {summary.lastEvent.note}
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  NFT Access Pass
                 </p>
               </div>
+
+              <div className="space-y-3">
+                <PassStep text="Pay once for service access." />
+                <PassStep text="Receive OTT Access Pass NFT." />
+                <PassStep text="Next login checks NFT ownership." />
+                <PassStep text="Access opens without paying again." />
+              </div>
+
+              <div className="border border-[#C83888]/25 bg-[#C83888]/10 p-4 mt-5">
+                <p className="font-mono text-xs text-black/60 leading-relaxed">
+                  Production mint + ownership check is the next build step. This
+                  screen prepares the customer journey and keeps the current
+                  working payment flow intact.
+                </p>
+              </div>
+            </Panel>
+          </div>
+
+          <div className="col-span-12 xl:col-span-5 space-y-4">
+            {selectedRoute ? (
+              <RouteDetailCard
+                route={selectedRoute}
+                destinationWallet={destinationWallet}
+                txHash={txHash}
+                payloadUuid={payloadUuid}
+                payloadQr={payloadQr}
+                payloadUrl={payloadUrl}
+                payloadBusy={payloadBusy}
+                verifyBusy={verifyBusy}
+                verification={verification}
+                onDestinationChange={setDestinationWallet}
+                onTxHashChange={setTxHash}
+                onCreatePayload={createPayload}
+                onVerify={verifyPaymentHash}
+                onOpenPayload={openPayload}
+                onCopyUuid={copyUuid}
+              />
             ) : (
-              <MiniStatus label="Event" value="None" />
+              <Panel>
+                <div className="flex items-center gap-2 mb-5">
+                  <Lock size={18} className="text-[#C83888]" />
+
+                  <p className="font-orbitron text-xs uppercase tracking-widest">
+                    No Route Selected
+                  </p>
+                </div>
+
+                <p className="font-mono text-sm text-black/55 leading-relaxed">
+                  Kies links een access route. Daarna zie je uitleg, risico’s,
+                  bedrag en de volgende betaal/verificatie stap.
+                </p>
+              </Panel>
             )}
+
+            <Panel>
+              <div className="flex items-center gap-2 mb-5">
+                <AlertTriangle size={18} className="text-[#D84858]" />
+
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  Legal-Safe Language
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <InfoLine text="Access payments unlock app access only." />
+                <InfoLine text="OTT Access Pass NFT is access utility only." />
+                <InfoLine text="The NFT is not an investment product." />
+                <InfoLine text="XP has no guaranteed financial value." />
+                <InfoLine text="Mainnet token conversion requires legal review." />
+              </div>
+            </Panel>
+          </div>
+
+          <div className="col-span-12 xl:col-span-3 space-y-4">
+            <Panel>
+              <div className="flex items-center gap-2 mb-5">
+                {verified ? (
+                  <ShieldCheck size={18} className="text-[#3898E8]" />
+                ) : (
+                  <Lock size={18} className="text-[#D84858]" />
+                )}
+
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  Access Status
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <MiniStatus
+                  label="Status"
+                  value={verified ? "Verified" : accessState.status}
+                />
+                <MiniStatus
+                  label="Route"
+                  value={summary.selectedRoute?.label ?? "None"}
+                />
+                <MiniStatus
+                  label="Unlocked"
+                  value={accessState.unlockedAt ?? "None"}
+                />
+                <MiniStatus
+                  label="Expires"
+                  value={accessState.expiresAt ?? "None"}
+                />
+              </div>
+
+              <button
+                onClick={resetAccess}
+                className="w-full border border-black/10 bg-white p-4 mt-4 text-left hover:bg-[#F7F8FC] transition-all"
+              >
+                <p className="font-orbitron text-xs font-bold uppercase mb-2 text-black">
+                  Reset Access
+                </p>
+
+                <p className="font-mono text-[10px] text-black/40 uppercase">
+                  Local state only
+                </p>
+              </button>
+            </Panel>
+
+            <Panel>
+              <div className="flex items-center gap-2 mb-5">
+                <CheckCircle2 size={18} className="text-[#3898E8]" />
+
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  Status Message
+                </p>
+              </div>
+
+              <div className="border border-black/10 bg-[#F7F8FC] p-4">
+                <p className="font-mono text-xs text-black/55 leading-relaxed">
+                  {statusMessage}
+                </p>
+              </div>
+            </Panel>
+
+            <Panel>
+              <div className="flex items-center gap-2 mb-5">
+                <Fingerprint size={18} className="text-[#C83888]" />
+
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  Last Event
+                </p>
+              </div>
+
+              {summary.lastEvent ? (
+                <div className="border border-black/10 bg-[#F7F8FC] p-4">
+                  <p className="font-orbitron text-xs font-bold uppercase mb-2">
+                    {summary.lastEvent.status}
+                  </p>
+
+                  <p className="font-mono text-[10px] text-black/40 uppercase mb-3">
+                    {summary.lastEvent.routeId}
+                  </p>
+
+                  <p className="font-mono text-xs text-black/55 leading-relaxed">
+                    {summary.lastEvent.note}
+                  </p>
+                </div>
+              ) : (
+                <MiniStatus label="Event" value="None" />
+              )}
+            </Panel>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 }
@@ -479,27 +552,36 @@ function RouteButton({
   return (
     <button
       onClick={onClick}
-      className={`w-full border p-4 text-left transition-all ${
+      className={`w-full border p-4 text-left transition-all shadow-sm ${
         active
-          ? "border-white/30 bg-white/[0.08]"
-          : "border-white/10 bg-black hover:bg-white/[0.03]"
+          ? "border-[#C83888] bg-[#C83888]/10"
+          : "border-black/10 bg-white hover:bg-[#F7F8FC]"
       }`}
     >
       <div className="flex items-start justify-between gap-3 mb-3">
-        <Icon size={18} className="text-white/60" />
+        <Icon
+          size={18}
+          className={
+            route.id === "xrp-payment"
+              ? "text-[#3898E8]"
+              : route.id === "ott-access-pass"
+                ? "text-[#C83888]"
+                : "text-[#D84858]"
+          }
+        />
 
         {active ? (
-          <CheckCircle2 size={16} className="text-white/70" />
+          <CheckCircle2 size={16} className="text-[#C83888]" />
         ) : (
-          <Circle size={16} className="text-white/20" />
+          <Circle size={16} className="text-black/20" />
         )}
       </div>
 
-      <p className="font-orbitron text-xs font-black uppercase mb-2">
+      <p className="font-orbitron text-xs font-black uppercase mb-2 text-black">
         {route.title}
       </p>
 
-      <p className="font-mono text-[10px] text-white/35 uppercase">
+      <p className="font-mono text-[10px] text-black/40 uppercase">
         {route.label}
       </p>
     </button>
@@ -544,38 +626,52 @@ function RouteDetailCard({
   const amountXrp = Number(amountDrops) / 1000000;
 
   return (
-    <div className="border border-white/10 bg-white/[0.02] p-6">
+    <Panel>
       <div className="flex items-start justify-between gap-4 mb-5">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-white/35 mb-3">
+          <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-black/35 mb-3">
             {route.type} • SourceTag {ACCESS_SOURCE_TAG}
           </p>
 
-          <h3 className="font-orbitron text-2xl font-black uppercase mb-3">
+          <h3 className="font-orbitron text-2xl font-black uppercase mb-3 text-black">
             {route.title}
           </h3>
 
-          <p className="font-mono text-sm text-white/50 leading-relaxed">
+          <p className="font-mono text-sm text-black/55 leading-relaxed">
             {route.description}
           </p>
         </div>
 
-        <div className="text-right">
-          <p className="font-orbitron text-lg font-black">
+        <div className="text-right shrink-0">
+          <p className="font-orbitron text-lg font-black bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] bg-clip-text text-transparent">
             €{route.targetEuroValue}
           </p>
 
-          <p className="font-mono text-[10px] text-white/35 uppercase">
+          <p className="font-mono text-[10px] text-black/35 uppercase">
             Value target
           </p>
         </div>
       </div>
 
+      {route.id === "ott-access-pass" && (
+        <div className="border border-[#C83888]/25 bg-[#C83888]/10 p-4 mb-5">
+          <div className="flex items-start gap-3">
+            <KeyRound size={18} className="text-[#C83888] shrink-0 mt-0.5" />
+
+            <p className="font-mono text-xs text-black/60 leading-relaxed">
+              This route is the future one-time Access Pass flow: pay once,
+              receive NFT pass, and unlock automatically on future logins after
+              NFT ownership check.
+            </p>
+          </div>
+        </div>
+      )}
+
       <Section title="User Explanation" items={route.userExplanation} />
 
-      <div className="border border-white/10 bg-black p-5 mb-5">
+      <div className="border border-[#D84858]/25 bg-[#D84858]/10 p-5 mb-5">
         <div className="flex items-center gap-2 mb-4">
-          <AlertTriangle size={17} className="text-white/60" />
+          <AlertTriangle size={17} className="text-[#D84858]" />
 
           <p className="font-orbitron text-xs font-bold uppercase">
             Risk Notes
@@ -589,12 +685,12 @@ function RouteDetailCard({
         </div>
       </div>
 
-      <div className="border border-white/10 bg-black p-5 mb-5">
-        <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+      <div className="border border-black/10 bg-[#F7F8FC] p-5 mb-5">
+        <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
           Proof Memo
         </p>
 
-        <p className="font-mono text-xs text-white/55 break-all leading-relaxed">
+        <p className="font-mono text-xs text-black/60 break-all leading-relaxed">
           {route.proofMemo}
         </p>
       </div>
@@ -618,7 +714,7 @@ function RouteDetailCard({
       <button
         onClick={onCreatePayload}
         disabled={payloadBusy}
-        className="w-full bg-white text-black py-4 font-orbitron text-xs font-black uppercase tracking-widest hover:bg-white/80 disabled:opacity-40 transition-all flex items-center justify-center gap-2 mb-5"
+        className="w-full bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] text-white py-4 font-orbitron text-xs font-black uppercase tracking-widest hover:brightness-95 disabled:opacity-40 transition-all flex items-center justify-center gap-2 mb-5"
       >
         {payloadBusy ? (
           <Loader2 size={16} className="animate-spin" />
@@ -633,7 +729,7 @@ function RouteDetailCard({
       {payloadUuid && (
         <div className="space-y-4 mb-5">
           {payloadQr && (
-            <div className="border border-white/10 bg-white p-4 inline-block">
+            <div className="border border-black/10 bg-white p-4 inline-block shadow-sm">
               <img src={payloadQr} alt="Access Gate QR" className="w-40 h-40" />
             </div>
           )}
@@ -670,21 +766,21 @@ function RouteDetailCard({
           <button
             onClick={onVerify}
             disabled={verifyBusy}
-            className="w-full border border-white/10 bg-black p-4 text-left hover:bg-white/[0.03] disabled:opacity-40 transition-all"
+            className="w-full border border-black/10 bg-white p-4 text-left hover:bg-[#F7F8FC] disabled:opacity-40 transition-all"
           >
             <div className="flex items-center gap-3">
               {verifyBusy ? (
-                <Loader2 size={17} className="text-white/60 animate-spin" />
+                <Loader2 size={17} className="text-[#C83888] animate-spin" />
               ) : (
-                <SearchCheck size={17} className="text-white/60" />
+                <SearchCheck size={17} className="text-[#3898E8]" />
               )}
 
               <div>
-                <p className="font-orbitron text-xs font-bold uppercase">
+                <p className="font-orbitron text-xs font-bold uppercase text-black">
                   Verify Access Payment
                 </p>
 
-                <p className="font-mono text-[10px] text-white/35 uppercase">
+                <p className="font-mono text-[10px] text-black/40 uppercase">
                   SourceTag + memo + amount proof
                 </p>
               </div>
@@ -715,6 +811,14 @@ function RouteDetailCard({
           )}
         </div>
       )}
+    </Panel>
+  );
+}
+
+function Panel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="border border-black/10 bg-white p-5 md:p-6 shadow-sm shadow-black/5">
+      {children}
     </div>
   );
 }
@@ -723,18 +827,18 @@ function MetricBox({ metric }: { metric: Metric }) {
   const Icon = metric.icon;
 
   return (
-    <div className="border border-white/10 bg-black/60 p-4">
-      <Icon size={18} className="text-white/60 mb-3" />
+    <div className="border border-black/10 bg-white/90 p-4 shadow-sm">
+      <Icon size={18} className="text-[#C83888] mb-3" />
 
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+      <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
         {metric.label}
       </p>
 
-      <p className="font-orbitron text-sm font-black uppercase mb-1 break-all">
+      <p className="font-orbitron text-sm font-black uppercase mb-1 break-all text-black">
         {metric.value}
       </p>
 
-      <p className="font-mono text-[10px] text-white/30 uppercase">
+      <p className="font-mono text-[10px] text-black/35 uppercase">
         {metric.text}
       </p>
     </div>
@@ -744,7 +848,9 @@ function MetricBox({ metric }: { metric: Metric }) {
 function Section({ title, items }: { title: string; items: string[] }) {
   return (
     <div className="mb-5">
-      <p className="font-orbitron text-xs font-bold uppercase mb-3">{title}</p>
+      <p className="font-orbitron text-xs font-bold uppercase mb-3 text-black">
+        {title}
+      </p>
 
       <div className="space-y-2">
         {items.map((item) => (
@@ -758,9 +864,19 @@ function Section({ title, items }: { title: string; items: string[] }) {
 function InfoLine({ text }: { text: string }) {
   return (
     <div className="flex items-start gap-2">
-      <CheckCircle2 size={14} className="text-white/45 mt-0.5 shrink-0" />
+      <CheckCircle2 size={14} className="text-[#3898E8] mt-0.5 shrink-0" />
 
-      <p className="font-mono text-xs text-white/45 leading-relaxed">{text}</p>
+      <p className="font-mono text-xs text-black/55 leading-relaxed">{text}</p>
+    </div>
+  );
+}
+
+function PassStep({ text }: { text: string }) {
+  return (
+    <div className="flex items-start gap-2 border border-black/10 bg-[#F7F8FC] p-3">
+      <BadgeCheck size={14} className="text-[#C83888] mt-0.5 shrink-0" />
+
+      <p className="font-mono text-xs text-black/55 leading-relaxed">{text}</p>
     </div>
   );
 }
@@ -779,13 +895,15 @@ function ActionButton({
   return (
     <button
       onClick={onClick}
-      className="border border-white/10 bg-black p-4 text-left hover:bg-white/[0.03] transition-all"
+      className="border border-black/10 bg-white p-4 text-left hover:bg-[#F7F8FC] transition-all"
     >
-      <Icon size={18} className="text-white/60 mb-3" />
+      <Icon size={18} className="text-[#C83888] mb-3" />
 
-      <p className="font-orbitron text-xs font-bold uppercase mb-2">{title}</p>
+      <p className="font-orbitron text-xs font-bold uppercase mb-2 text-black">
+        {title}
+      </p>
 
-      <p className="font-mono text-[10px] text-white/35 uppercase">{text}</p>
+      <p className="font-mono text-[10px] text-black/40 uppercase">{text}</p>
     </button>
   );
 }
@@ -803,7 +921,7 @@ function InputField({
 }) {
   return (
     <label className="block">
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+      <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
         {label}
       </p>
 
@@ -811,7 +929,7 @@ function InputField({
         value={value}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full bg-black border border-white/10 px-4 py-4 font-mono text-xs text-white/70 outline-none focus:border-white/30 placeholder:text-white/20"
+        className="w-full bg-white border border-black/10 px-4 py-4 font-mono text-xs text-black/70 outline-none focus:border-[#C83888] placeholder:text-black/25"
       />
     </label>
   );
@@ -819,14 +937,38 @@ function InputField({
 
 function MiniStatus({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border border-white/10 bg-black p-4">
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+    <div className="border border-black/10 bg-[#F7F8FC] p-4">
+      <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
         {label}
       </p>
 
-      <p className="font-orbitron text-sm font-black uppercase break-all">
+      <p className="font-orbitron text-sm font-black uppercase break-all text-black">
         {value}
       </p>
+    </div>
+  );
+}
+
+function FlowCard({
+  number,
+  title,
+  text,
+}: {
+  number: string;
+  title: string;
+  text: string;
+}) {
+  return (
+    <div className="border border-black/10 bg-white/90 p-4 shadow-sm">
+      <p className="font-orbitron text-xs font-black text-[#C83888] mb-4">
+        {number}
+      </p>
+
+      <p className="font-orbitron text-xs font-black uppercase mb-2 text-black">
+        {title}
+      </p>
+
+      <p className="font-mono text-[10px] text-black/40 uppercase">{text}</p>
     </div>
   );
 }
