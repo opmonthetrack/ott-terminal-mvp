@@ -36,12 +36,14 @@ type AccountNftsResponse = {
       Flags?: number;
       nft_serial?: number;
     }>;
+    marker?: unknown;
     error?: string;
     error_message?: string;
   };
 };
 
-const XRPL_ENDPOINT = "wss://xrplcluster.com/";
+const XRPL_ENDPOINT =
+  import.meta.env.VITE_XRPL_WEBSOCKET || "wss://xrplcluster.com/";
 
 export const OTT_ACCESS_PASS_ISSUER =
   import.meta.env.VITE_OTT_ACCESS_PASS_ISSUER ||
@@ -51,11 +53,22 @@ export const OTT_ACCESS_PASS_TAXON = Number(
   import.meta.env.VITE_OTT_ACCESS_PASS_TAXON || "2606170002",
 );
 
+export const OTT_ACCESS_PASS_METADATA_CID =
+  import.meta.env.VITE_OTT_ACCESS_PASS_METADATA_CID ||
+  "bafkreifw47mopkw7qq4fppxkhgcthyrjvger5uyrqybyj52aunqhsz2cbm";
+
+export const OTT_ACCESS_PASS_METADATA_URI =
+  import.meta.env.VITE_OTT_ACCESS_PASS_METADATA_URI ||
+  `ipfs://${OTT_ACCESS_PASS_METADATA_CID}`;
+
 export const OTT_ACCESS_PASS_URI_KEYWORDS = [
+  OTT_ACCESS_PASS_METADATA_CID,
+  OTT_ACCESS_PASS_METADATA_URI,
+  `https://ipfs.io/ipfs/${OTT_ACCESS_PASS_METADATA_CID}`,
+  `https://gateway.pinata.cloud/ipfs/${OTT_ACCESS_PASS_METADATA_CID}`,
   "OTT_ACCESS_PASS",
   "ONTHETRACK_ACCESS_PASS",
   "XRPL_OTT_TERMINAL_ACCESS",
-  "ONTHEtrack",
   "OnTheTrack",
 ];
 
@@ -82,34 +95,10 @@ export async function checkOttAccessPassOwnership(
   }
 
   try {
-    const response = await xrplRequest<AccountNftsResponse>({
-      command: "account_nfts",
-      account: cleanWallet,
-      ledger_index: "validated",
-      limit: 400,
-    });
-
-    const error = response.result?.error || response.result?.error_message;
-
-    if (error) {
-      return {
-        walletAddress: cleanWallet,
-        hasAccessPass: false,
-        checkedAt: new Date().toISOString(),
-        expectedIssuer: OTT_ACCESS_PASS_ISSUER,
-        expectedTaxon: OTT_ACCESS_PASS_TAXON,
-        matchedNft: null,
-        totalNftsChecked: 0,
-        error,
-      };
-    }
-
-    const nfts = response.result?.account_nfts ?? [];
+    const nfts = await fetchAllAccountNfts(cleanWallet);
     const normalized = nfts.map(normalizeNft);
-    const matchedNft =
-      normalized.find(isOttAccessPassNft) ??
-      normalized.find(isLikelyOttAccessPassNft) ??
-      null;
+
+    const matchedNft = normalized.find(isOttAccessPassNft) ?? null;
 
     return {
       walletAddress: cleanWallet,
@@ -137,18 +126,32 @@ export async function checkOttAccessPassOwnership(
 export function isOttAccessPassNft(nft: OttAccessPassNft) {
   const issuerMatches = nft.issuer === OTT_ACCESS_PASS_ISSUER;
   const taxonMatches = nft.taxon === OTT_ACCESS_PASS_TAXON;
-  const uriMatches = OTT_ACCESS_PASS_URI_KEYWORDS.some((keyword) =>
-    nft.decodedUri.includes(keyword),
-  );
+  const uriMatches = nftUriMatchesAccessPass(nft.uri, nft.decodedUri);
 
   return issuerMatches && taxonMatches && uriMatches;
 }
 
+/**
+ * Only use this for UI/debug labels, not for final service unlock.
+ * Final unlock should use isOttAccessPassNft(), because that checks issuer + taxon + CID/URI.
+ */
 export function isLikelyOttAccessPassNft(nft: OttAccessPassNft) {
   const issuerMatches = nft.issuer === OTT_ACCESS_PASS_ISSUER;
   const taxonMatches = nft.taxon === OTT_ACCESS_PASS_TAXON;
 
   return issuerMatches && taxonMatches;
+}
+
+export function buildOttAccessPassLabel(nft: OttAccessPassNft | null) {
+  if (!nft) {
+    return "OTT Access Pass";
+  }
+
+  if (nft.serial) {
+    return `OTT Access Pass #${nft.serial}`;
+  }
+
+  return "OTT Access Pass";
 }
 
 export function buildOttAccessPassMetadata(input: {
@@ -186,6 +189,10 @@ export function buildOttAccessPassMetadata(input: {
         value: "Access utility only",
       },
       {
+        trait_type: "Metadata CID",
+        value: OTT_ACCESS_PASS_METADATA_CID,
+      },
+      {
         trait_type: "Issued At",
         value: issuedAt,
       },
@@ -213,11 +220,15 @@ export function decodeNftUri(hexValue?: string) {
     return "";
   }
 
-  try {
-    const cleanHex = hexValue.startsWith("0x")
-      ? hexValue.slice(2)
-      : hexValue;
+  const cleanHex = hexValue.startsWith("0x")
+    ? hexValue.slice(2)
+    : hexValue;
 
+  if (!/^[0-9A-Fa-f]+$/.test(cleanHex) || cleanHex.length % 2 !== 0) {
+    return hexValue;
+  }
+
+  try {
     const bytes = cleanHex.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16));
 
     if (!bytes) {
@@ -258,6 +269,50 @@ export function shortNftId(nftokenId?: string) {
   return `${nftokenId.slice(0, 10)}...${nftokenId.slice(-8)}`;
 }
 
+export function getAcceptedAccessPassUris() {
+  return [
+    OTT_ACCESS_PASS_METADATA_URI,
+    `ipfs://${OTT_ACCESS_PASS_METADATA_CID}`,
+    OTT_ACCESS_PASS_METADATA_CID,
+    `https://ipfs.io/ipfs/${OTT_ACCESS_PASS_METADATA_CID}`,
+    `https://gateway.pinata.cloud/ipfs/${OTT_ACCESS_PASS_METADATA_CID}`,
+  ];
+}
+
+function nftUriMatchesAccessPass(rawUri: string, decodedUri: string) {
+  const normalizedRaw = normalizeText(rawUri);
+  const normalizedDecoded = normalizeText(decodedUri);
+  const normalizedAcceptedUris = getAcceptedAccessPassUris().map(normalizeText);
+
+  if (
+    normalizedAcceptedUris.includes(normalizedDecoded) ||
+    normalizedAcceptedUris.includes(normalizedRaw)
+  ) {
+    return true;
+  }
+
+  if (
+    normalizedDecoded.includes(normalizeText(OTT_ACCESS_PASS_METADATA_CID)) ||
+    normalizedRaw.includes(normalizeText(encodeNftUri(OTT_ACCESS_PASS_METADATA_URI))) ||
+    normalizedRaw.includes(normalizeText(encodeNftUri(OTT_ACCESS_PASS_METADATA_CID)))
+  ) {
+    return true;
+  }
+
+  return OTT_ACCESS_PASS_URI_KEYWORDS.some((keyword) => {
+    const normalizedKeyword = normalizeText(keyword);
+
+    return (
+      normalizedDecoded.includes(normalizedKeyword) ||
+      normalizedRaw.includes(normalizedKeyword)
+    );
+  });
+}
+
+function normalizeText(value: string) {
+  return value.trim().toLowerCase();
+}
+
 function normalizeNft(input: {
   NFTokenID?: string;
   Issuer?: string;
@@ -275,6 +330,37 @@ function normalizeNft(input: {
     flags: input.Flags,
     serial: input.nft_serial,
   };
+}
+
+async function fetchAllAccountNfts(walletAddress: string) {
+  const allNfts: NonNullable<AccountNftsResponse["result"]>["account_nfts"] = [];
+  let marker: unknown = undefined;
+
+  for (let page = 0; page < 10; page += 1) {
+    const response = await xrplRequest<AccountNftsResponse>({
+      command: "account_nfts",
+      account: walletAddress,
+      ledger_index: "validated",
+      limit: 400,
+      ...(marker ? { marker } : {}),
+    });
+
+    const error = response.result?.error || response.result?.error_message;
+
+    if (error) {
+      throw new Error(error);
+    }
+
+    allNfts.push(...(response.result?.account_nfts ?? []));
+
+    marker = response.result?.marker;
+
+    if (!marker) {
+      break;
+    }
+  }
+
+  return allNfts;
 }
 
 async function xrplRequest<T>(payload: Record<string, unknown>): Promise<T> {
