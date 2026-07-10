@@ -102,87 +102,109 @@ type MenuGroup = {
 
 const sourceTag = "2606170002";
 
-function getMenuGroups(language: TerminalLanguage): MenuGroup[] {
+function getMenuGroups(language: TerminalLanguage, showLabs: boolean): MenuGroup[] {
   const isEnglish = language === "en";
 
-  return [
+  const coreGroups: MenuGroup[] = [
     {
-      title: "Terminal",
+      title: isEnglish ? "V1 Terminal" : "V1 Terminal",
       items: [
-        { id: "home", label: "Home", status: "V2" },
-        { id: "network", label: "XRPL Explorer", status: "Live" },
-        { id: "wallet", label: isEnglish ? "Wallet Dashboard" : "Wallet Dashboard", status: "Xaman" },
-        { id: "portfolio", label: "Portfolio", status: isEnglish ? "View" : "View" },
+        { id: "home", label: isEnglish ? "Home" : "Start", status: "V1" },
+        { id: "network", label: isEnglish ? "XRPL Explorer" : "XRPL Verkenner", status: "Live" },
+        { id: "wallet", label: isEnglish ? "Wallet Dashboard" : "Wallet Overzicht", status: "Xaman" },
+        { id: "portfolio", label: "Portfolio", status: isEnglish ? "View" : "Bekijk" },
       ],
     },
     {
       title: isEnglish ? "Proof / Education" : "Proof / Educatie",
       items: [
         { id: "source", label: "SourceTag", status: sourceTag },
-        { id: "xaman", label: "Xaman Center", status: "Sign" },
-        { id: "xrplverify", label: "XRPL Verify", status: "Proof" },
+        { id: "xaman", label: "Xaman Center", status: isEnglish ? "Sign" : "Sign" },
+        { id: "xrplverify", label: isEnglish ? "XRPL Verify" : "XRPL Verificatie", status: "Proof" },
         { id: "partners", label: "Partner Hub", status: isEnglish ? "Learn" : "Leer" },
-        { id: "rewardledger", label: "Reward Ledger", status: "XP" },
+        { id: "rewardledger", label: isEnglish ? "Reward Ledger" : "Beloningsoverzicht", status: "XP" },
+        { id: "academy", label: isEnglish ? "Academy" : "Academie", status: isEnglish ? "Learn" : "Leer" },
       ],
     },
     {
       title: isEnglish ? "Services / Access" : "Services / Toegang",
       items: [
         { id: "truthdesk", label: "Truth Desk", status: isEnglish ? "Ask" : "Vraag" },
-        { id: "accessgate", label: "Access Gate", status: "Pay" },
+        { id: "accessgate", label: isEnglish ? "Access Gate" : "Toegangspoort", status: isEnglish ? "Pay" : "Betaal" },
+        { id: "marketplace", label: isEnglish ? "Marketplace" : "Webshop", status: "Shop" },
         { id: "otttestnet", label: "OTT Testnet", status: "Sim" },
       ],
     },
+  ];
+
+  if (!showLabs) {
+    return coreGroups;
+  }
+
+  return [
+    ...coreGroups,
     {
       title: "Demo / QA",
       items: [
-        { id: "pitchmode", label: "Pitch Mode", status: "Demo" },
-        { id: "submission", label: "Submission Pack", status: "Ship" },
+        { id: "pitchmode", label: isEnglish ? "Pitch Mode" : "Pitch Modus", status: "Demo" },
+        { id: "submission", label: isEnglish ? "Submission Pack" : "Inzendpakket", status: isEnglish ? "Ship" : "Ship" },
         { id: "smoketest", label: "Smoke Test", status: "QA" },
       ],
     },
     {
-      title: "Advanced",
+      title: isEnglish ? "Labs / Advanced" : "Labs / Geavanceerd",
       items: [
-        { id: "dashboard", label: "Legacy Dashboard", status: "Old" },
-        { id: "checkin", label: "Daily Check-In", status: "XP" },
-        { id: "ecosystem", label: "Ecosystem", status: "Map" },
+        { id: "dashboard", label: isEnglish ? "Legacy Dashboard" : "Oud Dashboard", status: isEnglish ? "Old" : "Oud" },
+        { id: "checkin", label: isEnglish ? "Daily Check-In" : "Dagelijkse Check-in", status: "XP" },
+        { id: "ecosystem", label: isEnglish ? "Ecosystem" : "Ecosysteem", status: isEnglish ? "Map" : "Kaart" },
         { id: "validator", label: "Validators", status: "UNL" },
-        { id: "developer", label: "Developer Hub", status: "Build" },
-        { id: "tokenization", label: "Tokenization", status: "RWA" },
-        { id: "factory", label: "Token Factory", status: "Create" },
-        { id: "profile", label: "Profile", status: "User" },
+        { id: "developer", label: "Developer Hub", status: isEnglish ? "Build" : "Bouw" },
+        { id: "tokenization", label: isEnglish ? "Tokenization" : "Tokenisatie", status: "RWA" },
+        { id: "factory", label: isEnglish ? "Token Factory" : "Token Fabriek", status: isEnglish ? "Create" : "Maak" },
+        { id: "profile", label: isEnglish ? "Profile" : "Profiel", status: "User" },
         { id: "token", label: "OTT Token", status: "XP" },
-        { id: "rewardpolicy", label: "Reward Policy", status: "Legal" },
+        { id: "rewardpolicy", label: isEnglish ? "Reward Policy" : "Beloningsbeleid", status: "Legal" },
         { id: "ottintelligence", label: "OTT Intelligence", status: "AI" },
         { id: "launch", label: "Launch Control", status: "Demo" },
         { id: "ai", label: "AI Hub", status: "Tools" },
-        { id: "marketplace", label: "Marketplace", status: "Shop" },
-        { id: "news", label: "Newsroom", status: "News" },
+        { id: "news", label: isEnglish ? "Newsroom" : "Nieuwsruimte", status: isEnglish ? "News" : "Nieuws" },
         { id: "defi", label: "DeFi", status: "MVP" },
-        { id: "academy", label: "Academy", status: "Learn" },
         { id: "intel", label: "Ledger Intel", status: "Beta" },
       ],
     },
   ];
 }
 
-const mobilePrimaryItems: MenuItem[] = [
-  { id: "home", label: "Home", status: "V2" },
-  { id: "network", label: "Explore", status: "Live" },
-  { id: "wallet", label: "Wallet", status: "Xaman" },
-  { id: "source", label: "Proof", status: sourceTag },
-];
+function getMobilePrimaryItems(language: TerminalLanguage): MenuItem[] {
+  const isEnglish = language === "en";
+
+  return [
+    { id: "home", label: isEnglish ? "Home" : "Start", status: "V1" },
+    { id: "network", label: isEnglish ? "Explore" : "Verken", status: "Live" },
+    { id: "wallet", label: "Wallet", status: "Xaman" },
+    { id: "source", label: "Proof", status: sourceTag },
+  ];
+}
+
 
 function MainApp() {
   const [walletAddress, setWalletAddress] = useState<string>("guest");
   const [activeTab, setActiveTab] = useState<ActiveTab>("home");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [xamanReturnStatus, setXamanReturnStatus] = useState("");
+  const [showLabs, setShowLabs] = useState(false);
 
   const { language, setLanguage } = useTerminalLanguage();
 
-  const menuGroups = useMemo(() => getMenuGroups(language), [language]);
+  const menuGroups = useMemo(
+    () => getMenuGroups(language, showLabs),
+    [language, showLabs],
+  );
+
+  const mobilePrimaryItems = useMemo(
+    () => getMobilePrimaryItems(language),
+    [language],
+  );
 
   const allItems = useMemo(
     () => menuGroups.flatMap((group) => group.items),
@@ -284,6 +306,8 @@ function MainApp() {
         menuGroups={menuGroups}
         language={language}
         setLanguage={setLanguage}
+        showLabs={showLabs}
+        setShowLabs={setShowLabs}
         goTo={goTo}
       />
 
@@ -304,6 +328,8 @@ function MainApp() {
           menuGroups={menuGroups}
           language={language}
           setLanguage={setLanguage}
+          showLabs={showLabs}
+          setShowLabs={setShowLabs}
           goTo={goTo}
           onClose={() => setIsMobileMenuOpen(false)}
         />
@@ -414,7 +440,11 @@ function MainApp() {
         {activeTab === "intel" && <LedgerIntelTab />}
       </main>
 
-      <MobileBottomNav activeTab={activeTab} goTo={goTo} />
+      <MobileBottomNav
+        activeTab={activeTab}
+        items={mobilePrimaryItems}
+        goTo={goTo}
+      />
     </div>
   );
 }
@@ -425,6 +455,8 @@ function DesktopSidebar({
   menuGroups,
   language,
   setLanguage,
+  showLabs,
+  setShowLabs,
   goTo,
 }: {
   activeTab: ActiveTab;
@@ -432,6 +464,8 @@ function DesktopSidebar({
   menuGroups: MenuGroup[];
   language: TerminalLanguage;
   setLanguage: (language: TerminalLanguage) => void;
+  showLabs: boolean;
+  setShowLabs: (value: boolean) => void;
   goTo: (target: ActiveTab) => void;
 }) {
   return (
@@ -447,6 +481,8 @@ function DesktopSidebar({
       <SidebarFooter
         language={language}
         setLanguage={setLanguage}
+        showLabs={showLabs}
+        onToggleLabs={() => setShowLabs(!showLabs)}
         onReset={() => goTo("home")}
       />
     </aside>
@@ -496,6 +532,8 @@ function MobileMenu({
   menuGroups,
   language,
   setLanguage,
+  showLabs,
+  setShowLabs,
   goTo,
   onClose,
 }: {
@@ -504,6 +542,8 @@ function MobileMenu({
   menuGroups: MenuGroup[];
   language: TerminalLanguage;
   setLanguage: (language: TerminalLanguage) => void;
+  showLabs: boolean;
+  setShowLabs: (value: boolean) => void;
   goTo: (target: ActiveTab) => void;
   onClose: () => void;
 }) {
@@ -531,6 +571,8 @@ function MobileMenu({
         <SidebarFooter
           language={language}
           setLanguage={setLanguage}
+          showLabs={showLabs}
+          onToggleLabs={() => setShowLabs(!showLabs)}
           onReset={() => goTo("home")}
         />
       </div>
@@ -568,7 +610,7 @@ function IdentityPanel({
         <StatusRow label="Wallet" value={walletAddress} />
         <StatusRow
           label="Mode"
-          value={language === "en" ? "Education-first" : "Education-first"}
+          value={language === "en" ? "Education-first" : "Educatie-eerst"}
         />
       </div>
 
@@ -577,7 +619,7 @@ function IdentityPanel({
         className="w-full bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] text-white p-3 mt-4 text-left hover:brightness-95 transition-all"
       >
         <p className="font-orbitron text-[10px] font-black uppercase tracking-widest">
-          {language === "en" ? "Connect / Sign with Xaman" : "Connect / Sign with Xaman"}
+          {language === "en" ? "Connect / Sign with Xaman" : "Connect / Sign met Xaman"}
         </p>
       </button>
     </div>
@@ -641,10 +683,14 @@ function DesktopNav({
 function SidebarFooter({
   language,
   setLanguage,
+  showLabs,
+  onToggleLabs,
   onReset,
 }: {
   language: TerminalLanguage;
   setLanguage: (language: TerminalLanguage) => void;
+  showLabs: boolean;
+  onToggleLabs: () => void;
   onReset: () => void;
 }) {
   return (
@@ -676,10 +722,27 @@ function SidebarFooter({
       </div>
 
       <button
+        onClick={onToggleLabs}
+        className={`w-full text-left px-3 py-3 text-[10px] font-mono font-bold uppercase tracking-widest border border-black/10 transition-colors ${
+          showLabs
+            ? "bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] text-white"
+            : "bg-[#F7F8FC] text-black/45 hover:text-black"
+        }`}
+      >
+        {showLabs
+          ? language === "en"
+            ? "Hide Labs / QA"
+            : "Verberg Labs / QA"
+          : language === "en"
+            ? "Show Labs / QA"
+            : "Toon Labs / QA"}
+      </button>
+
+      <button
         onClick={onReset}
         className="w-full text-left px-3 py-3 text-[10px] font-mono font-bold text-black/40 uppercase tracking-widest hover:text-black transition-colors"
       >
-        Reset to home
+        {language === "en" ? "Reset to home" : "Terug naar start"}
       </button>
     </div>
   );
@@ -708,9 +771,11 @@ function PageHeader({ activeItem }: { activeItem: MenuItem }) {
 
 function MobileBottomNav({
   activeTab,
+  items,
   goTo,
 }: {
   activeTab: ActiveTab;
+  items: MenuItem[];
   goTo: (target: ActiveTab) => void;
 }) {
   const iconMap = {
@@ -723,7 +788,7 @@ function MobileBottomNav({
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-black/10 bg-white/95 backdrop-blur px-2 py-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)]">
       <div className="grid grid-cols-5 gap-1">
-        {mobilePrimaryItems.map((item) => {
+        {items.map((item) => {
           const isActive = activeTab === item.id;
           const Icon = iconMap[item.id as keyof typeof iconMap] ?? MoreHorizontal;
 
