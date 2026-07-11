@@ -1,566 +1,464 @@
 import { useState } from "react";
-import type { ElementType } from "react";
+import type { ElementType, ReactNode } from "react";
 import {
   BadgeCheck,
-  Boxes,
   CheckCircle2,
-  Coins,
   CreditCard,
+  ExternalLink,
   Gift,
-  Gem,
   GraduationCap,
-  Layers,
-  Lock,
-  Package,
-  Receipt,
-  Search,
+  LockKeyhole,
+  PackageCheck,
+  ReceiptText,
   ShieldCheck,
   ShoppingBag,
-  Sparkles,
-  Star,
   Store,
-  Ticket,
-  Trophy,
+  TicketCheck,
   Wallet,
-  Zap,
 } from "lucide-react";
+import { OTTLogo, OTTProofBadge } from "../components/OTTLogo";
+import { useTerminalLanguage } from "../lib/useTerminalLanguage";
 
-type MarketCategory = {
-  id: string;
-  title: string;
-  status: string;
-  text: string;
+type MarketplaceTabProps = {
+  walletAddress?: string;
+};
+
+type ProductKind = "free" | "access" | "academy" | "merch";
+
+type Product = {
+  id: ProductKind;
+  titleNl: string;
+  titleEn: string;
+  textNl: string;
+  textEn: string;
+  priceNl: string;
+  priceEn: string;
+  tagNl: string;
+  tagEn: string;
   icon: ElementType;
+  featuresNl: string[];
+  featuresEn: string[];
 };
 
-type MarketItem = {
-  title: string;
-  category: string;
-  price: string;
-  status: string;
-  text: string;
-};
-
-type CheckoutRule = {
-  title: string;
-  status: string;
-  text: string;
-  icon: ElementType;
-};
-
-const categories: MarketCategory[] = [
+const products: Product[] = [
+  {
+    id: "free",
+    titleNl: "Free Terminal Account",
+    titleEn: "Free Terminal Account",
+    textNl: "Gratis instap met Xaman login, basis wallet, explorer en academy preview.",
+    textEn: "Free entry with Xaman login, basic wallet, explorer and academy preview.",
+    priceNl: "Gratis",
+    priceEn: "Free",
+    tagNl: "1/3 open",
+    tagEn: "1/3 open",
+    icon: Gift,
+    featuresNl: ["Xaman login", "Basis wallet overzicht", "XRPL Explorer preview", "Academy intro"],
+    featuresEn: ["Xaman login", "Basic wallet overview", "XRPL Explorer preview", "Academy intro"],
+  },
+  {
+    id: "access",
+    titleNl: "OTT Access Pass",
+    titleEn: "OTT Access Pass",
+    textNl: "Betaalde terminal toegang met NFT Access Pass fulfillment.",
+    textEn: "Paid terminal access with NFT Access Pass fulfillment.",
+    priceNl: "Betaald",
+    priceEn: "Paid",
+    tagNl: "2/3 premium",
+    tagEn: "2/3 premium",
+    icon: TicketCheck,
+    featuresNl: ["Premium Academy", "Truth Desk", "Partner Hub", "Reward Ledger / XP"],
+    featuresEn: ["Premium Academy", "Truth Desk", "Partner Hub", "Reward Ledger / XP"],
+  },
+  {
+    id: "academy",
+    titleNl: "Academy Course Bundle",
+    titleEn: "Academy Course Bundle",
+    textNl: "Gestructureerde XRPL e-learning met quiz, XP en certificaat-proof.",
+    textEn: "Structured XRPL e-learning with quiz, XP and certificate proof.",
+    priceNl: "Premium",
+    priceEn: "Premium",
+    tagNl: "Educatie",
+    tagEn: "Education",
+    icon: GraduationCap,
+    featuresNl: ["XRPL Starter", "Xaman Safety", "SourceTag & Proof", "NFT Access uitleg"],
+    featuresEn: ["XRPL Starter", "Xaman Safety", "SourceTag & Proof", "NFT Access explainer"],
+  },
   {
     id: "merch",
-    title: "OTT Merch",
-    status: "Shop",
-    text: "Caps, shirts, hoodies, stickers en physical drops voor de OTT community.",
+    titleNl: "OnTheTrack Merch + NFT",
+    titleEn: "OnTheTrack Merch + NFT",
+    textNl: "Fysieke producten met digitale NFT badge en terminal perk.",
+    textEn: "Physical products with digital NFT badge and terminal perk.",
+    priceNl: "Shopify",
+    priceEn: "Shopify",
+    tagNl: "Merch",
+    tagEn: "Merch",
     icon: ShoppingBag,
-  },
-  {
-    id: "badges",
-    title: "NFT Badges",
-    status: "Proof",
-    text: "Achievement badges, member proof, Academy certificates en event access.",
-    icon: BadgeCheck,
-  },
-  {
-    id: "courses",
-    title: "Courses",
-    status: "Learn",
-    text: "XRPL, wallet safety, DeFi, AI, tokenization en builder education.",
-    icon: GraduationCap,
-  },
-  {
-    id: "tickets",
-    title: "Event Tickets",
-    status: "Access",
-    text: "Meetups, livestreams, workshops, AMAs, hackathon sessions en partner events.",
-    icon: Ticket,
-  },
-  {
-    id: "rewards",
-    title: "Reward Store",
-    status: "XP",
-    text: "Gebruik XP, streaks en badges later voor toegang, perks en community rewards.",
-    icon: Gift,
-  },
-  {
-    id: "partners",
-    title: "Partner Offers",
-    status: "Later",
-    text: "Partner tools, builder services, ecosystem perks en curated XRPL resources.",
-    icon: Store,
+    featuresNl: ["OnTheTrack merch", "NFT bij aankoop", "Access perk mogelijk", "Purchase proof later"],
+    featuresEn: ["OnTheTrack merch", "NFT with purchase", "Access perk possible", "Purchase proof later"],
   },
 ];
 
-const items: MarketItem[] = [
-  {
-    title: "OTT Founder Badge",
-    category: "NFT Badges",
-    price: "260 XP",
-    status: "Mock",
-    text: "Early supporter badge voor OTT Terminal testers en Make Waves users.",
-  },
-  {
-    title: "XRPL Starter Course",
-    category: "Courses",
-    price: "Free",
-    status: "Academy",
-    text: "Beginner course voor wallets, XRP Ledger basics en safe onboarding.",
-  },
-  {
-    title: "Make Waves Ticket",
-    category: "Event Tickets",
-    price: "589 XP",
-    status: "Soon",
-    text: "Toegang tot community demo, AMA of builder session rond source tag 2606.",
-  },
-  {
-    title: "OTT Black Cap",
-    category: "OTT Merch",
-    price: "€29",
-    status: "Concept",
-    text: "Minimal black/white OTT cap voor community merch drops.",
-  },
-  {
-    title: "Wallet Guardian Badge",
-    category: "NFT Badges",
-    price: "Safety XP",
-    status: "Locked",
-    text: "Badge voor gebruikers die wallet safety en trustline lessons afronden.",
-  },
-  {
-    title: "Builder Toolkit",
-    category: "Partner Offers",
-    price: "Partner",
-    status: "Later",
-    text: "Curated tools voor XRPL builders, xApps, APIs en secure backend flows.",
-  },
+const steps = [
+  { nl: "Kies product", en: "Choose product", textNl: "Free, Access Pass, Academy of merch.", textEn: "Free, Access Pass, Academy or merch.", icon: Store },
+  { nl: "Koppel wallet", en: "Connect wallet", textNl: "Xaman wallet of wallet veld bij checkout.", textEn: "Xaman wallet or wallet field at checkout.", icon: Wallet },
+  { nl: "Betaal / claim", en: "Pay / claim", textNl: "Shopify of Xaman route activeert toegang.", textEn: "Shopify or Xaman route activates access.", icon: CreditCard },
+  { nl: "NFT fulfillment", en: "NFT fulfillment", textNl: "Access Pass of purchase badge veilig uitgeven.", textEn: "Issue Access Pass or purchase badge safely.", icon: PackageCheck },
 ];
 
-const checkoutRules: CheckoutRule[] = [
-  {
-    title: "No Hidden Payments",
-    status: "Rule",
-    text: "Elke echte betaling moet zichtbaar zijn voordat de gebruiker bevestigt.",
-    icon: ShieldCheck,
-  },
-  {
-    title: "Wallet Confirmation",
-    status: "Required",
-    text: "XRPL betalingen of claims gaan later alleen via wallet confirmation.",
-    icon: Wallet,
-  },
-  {
-    title: "Clear Price",
-    status: "Rule",
-    text: "Prijs, asset, issuer, fees en voorwaarden moeten vooraf duidelijk zijn.",
-    icon: Receipt,
-  },
-  {
-    title: "Digital Proof",
-    status: "Later",
-    text: "Badges, tickets en certificates kunnen later als XRPL proof worden uitgegeven.",
-    icon: Gem,
-  },
-];
+export function MarketplaceTab({ walletAddress = "guest" }: MarketplaceTabProps) {
+  const { language } = useTerminalLanguage();
+  const isEnglish = language === "en";
+  const [selectedId, setSelectedId] = useState<ProductKind>("access");
+  const [checkoutIntent, setCheckoutIntent] = useState<ProductKind | null>(null);
+  const selected = products.find((product) => product.id === selectedId) ?? products[1];
 
-const roadmap = [
-  "Product cards bouwen",
-  "XP reward store koppelen",
-  "Academy badges toevoegen",
-  "Event ticket flow maken",
-  "NFT certificate preview bouwen",
-  "Xaman checkout later koppelen",
-  "Partner marketplace openen",
-  "Order history per wallet tonen",
-];
-
-export function MarketplaceTab() {
-  const [selectedCategory, setSelectedCategory] = useState<MarketCategory>(
-    categories[0]
-  );
-  const [selectedItem, setSelectedItem] = useState<MarketItem>(items[0]);
-
-  const SelectedCategoryIcon = selectedCategory.icon;
-
-  const filteredItems = items.filter(
-    (item) => item.category === selectedCategory.title
-  );
-
-  const visibleItems = filteredItems.length > 0 ? filteredItems : items.slice(0, 4);
+  function prepareCheckout(productId: ProductKind) {
+    setSelectedId(productId);
+    setCheckoutIntent(productId);
+  }
 
   return (
-    <div className="p-6 bg-black min-h-screen text-white">
-      <div className="relative overflow-hidden border border-white/10 bg-white/[0.02] p-6 mb-6">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_white,_transparent_35%)]" />
+    <div className="min-h-screen bg-white text-[#080808]">
+      <section className="relative overflow-hidden border-b border-black/10 bg-[radial-gradient(circle_at_18%_18%,rgba(56,152,232,0.16),transparent_28%),radial-gradient(circle_at_82%_8%,rgba(200,56,136,0.16),transparent_28%),radial-gradient(circle_at_85%_82%,rgba(216,72,88,0.12),transparent_30%),#ffffff]">
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.26),#ffffff_92%)]" />
 
-        <div className="relative z-10 grid grid-cols-12 gap-6 items-center">
-          <div className="col-span-12 xl:col-span-8">
-            <div className="flex items-center gap-2 mb-4 text-white/45">
-              <ShoppingBag size={17} />
+        <div className="relative z-10 p-4 md:p-6 xl:p-10">
+          <div className="grid grid-cols-12 gap-6 items-end">
+            <div className="col-span-12 xl:col-span-8">
+              <div className="mb-6">
+                <OTTLogo
+                  size="lg"
+                  subtitle={isEnglish ? "Access, academy and OnTheTrack products" : "Toegang, academy en OnTheTrack producten"}
+                />
+              </div>
 
-              <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
-                OTT Marketplace
+              <div className="inline-flex items-center gap-2 border border-black/10 bg-white/80 shadow-sm px-4 py-2 mb-6">
+                <Store size={15} className="text-[#C83888]" />
+                <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-black/55">
+                  {isEnglish ? "Marketplace V1.0" : "Webshop V1.0"}
+                </p>
+              </div>
+
+              <h1 className="font-orbitron text-4xl xl:text-6xl font-black uppercase leading-none tracking-tight mb-6">
+                {isEnglish ? "Shop Access." : "Koop Toegang."}
+                <br />
+                <span className="bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] bg-clip-text text-transparent">
+                  {isEnglish ? "Unlock Terminal." : "Unlock Terminal."}
+                </span>
+              </h1>
+
+              <p className="font-mono text-sm xl:text-base text-black/60 leading-relaxed max-w-3xl mb-8">
+                {isEnglish
+                  ? "V1 shop layer for free account, paid Access Pass, Academy bundles and OnTheTrack products. Shopify orders can later be linked to wallet-based NFT access."
+                  : "V1 shoplaag voor gratis account, betaalde Access Pass, Academy bundels en OnTheTrack producten. Shopify orders kunnen later gekoppeld worden aan wallet-based NFT toegang."}
               </p>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-4xl">
+                <MetricCard label={isEnglish ? "Free Access" : "Gratis toegang"} value="1/3" text={isEnglish ? "Open terminal" : "Open terminal"} icon={Gift} />
+                <MetricCard label={isEnglish ? "Paid Access" : "Betaalde toegang"} value="2/3" text="Premium" icon={LockKeyhole} />
+                <MetricCard label={isEnglish ? "Products" : "Producten"} value={String(products.length)} text={isEnglish ? "V1 catalog" : "V1 catalogus"} icon={ShoppingBag} />
+                <MetricCard label="NFT" value="Utility" text={isEnglish ? "Access only" : "Alleen toegang"} icon={BadgeCheck} />
+              </div>
             </div>
 
-            <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
-              Rewards. Merch. Badges. Access.
-            </h2>
+            <div className="col-span-12 xl:col-span-4">
+              <div className="border border-black/10 bg-white/90 backdrop-blur p-5 shadow-xl shadow-black/5">
+                <div className="flex items-center justify-between gap-3 mb-5">
+                  <p className="font-orbitron text-xs uppercase tracking-widest">
+                    {isEnglish ? "Checkout Status" : "Checkout Status"}
+                  </p>
+                  <div className="border border-black/10 bg-[#F7F8FC] px-3 py-2">
+                    <p className="font-mono text-[9px] uppercase tracking-widest text-black/55">V1 Prep</p>
+                  </div>
+                </div>
 
-            <p className="font-mono text-sm text-white/45 max-w-3xl leading-relaxed">
-              De marketplace-laag van OTT Terminal. Hier komen merch, NFT badges,
-              Academy certificates, tickets, XP rewards, partner offers en veilige
-              checkout flows samen.
-            </p>
+                <div className="mb-4">
+                  <OTTProofBadge sourceTag="2606170002" />
+                </div>
+
+                <div className="space-y-3">
+                  <InfoRow label="Wallet" value={walletAddress === "guest" ? "Guest / Free Preview" : walletAddress} />
+                  <InfoRow label={isEnglish ? "Selected" : "Gekozen"} value={isEnglish ? selected.titleEn : selected.titleNl} />
+                  <InfoRow label="Shopify" value={isEnglish ? "Webhook next" : "Webhook volgt"} />
+                  <InfoRow label="Access" value={checkoutIntent ? "Checkout intent ready" : "Select product"} />
+                </div>
+
+                <div className="border border-[#C83888]/25 bg-[#C83888]/10 p-4 mt-5">
+                  <div className="flex items-start gap-3">
+                    <ShieldCheck size={18} className="text-[#C83888] mt-0.5 shrink-0" />
+                    <p className="font-mono text-xs text-black/60 leading-relaxed">
+                      {isEnglish
+                        ? "NFTs are utility access or purchase proof only. No yield, no value promise and no investment language."
+                        : "NFTs zijn alleen utility toegang of aankoop-proof. Geen yield, geen waardebelofte en geen investment-taal."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="col-span-12 xl:col-span-4 grid grid-cols-2 gap-3">
-            <StatBox icon={Boxes} label="Items" value="24+" />
-            <StatBox icon={Zap} label="XP Store" value="Ready" />
-            <StatBox icon={Ticket} label="Tickets" value="Soon" />
-            <StatBox icon={ShieldCheck} label="Checkout" value="Safe" />
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mt-8">
+            {steps.map((step, index) => (
+              <StepCard key={step.en} number={`0${index + 1}`} step={step} language={language} />
+            ))}
           </div>
+        </div>
+      </section>
+
+      <section className="p-4 md:p-6 xl:p-10 bg-white">
+        <div className="grid grid-cols-12 gap-4">
+          <div className="col-span-12 xl:col-span-8">
+            <Panel title={isEnglish ? "V1 Product Catalog" : "V1 Productcatalogus"} icon={ShoppingBag}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {products.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    language={language}
+                    selected={selectedId === product.id}
+                    onSelect={() => setSelectedId(product.id)}
+                    onPrepareCheckout={() => prepareCheckout(product.id)}
+                  />
+                ))}
+              </div>
+            </Panel>
+          </div>
+
+          <div className="col-span-12 xl:col-span-4 space-y-4">
+            <Panel title={isEnglish ? "Selected Product" : "Gekozen Product"} icon={ReceiptText}>
+              <SelectedProduct product={selected} language={language} />
+
+              <button
+                onClick={() => prepareCheckout(selected.id)}
+                className="w-full bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] text-white p-4 font-orbitron text-xs font-black uppercase tracking-widest hover:brightness-95 transition-all mt-5"
+              >
+                {selected.id === "free"
+                  ? isEnglish
+                    ? "Activate Free Account"
+                    : "Activeer Gratis Account"
+                  : isEnglish
+                    ? "Prepare Checkout"
+                    : "Bereid Checkout Voor"}
+              </button>
+
+              {checkoutIntent && (
+                <div className="border border-[#3898E8]/25 bg-[#3898E8]/10 p-4 mt-4">
+                  <p className="font-mono text-xs text-black/60 leading-relaxed">
+                    {isEnglish
+                      ? "Checkout intent prepared. Next build connects this to Shopify product links, wallet capture and server-side access records."
+                      : "Checkout intent voorbereid. Volgende build koppelt dit aan Shopify productlinks, wallet capture en server-side access records."}
+                  </p>
+                </div>
+              )}
+            </Panel>
+
+            <Panel title={isEnglish ? "Shopify Build Order" : "Shopify Bouwvolgorde"} icon={ExternalLink}>
+              <div className="space-y-3">
+                <RoadmapLine text={isEnglish ? "Create Shopify products." : "Shopify producten aanmaken."} />
+                <RoadmapLine text={isEnglish ? "Add wallet field or claim page." : "Wallet veld of claimpagina toevoegen."} />
+                <RoadmapLine text={isEnglish ? "Webhook sends paid order to OTT backend." : "Webhook stuurt betaalde order naar OTT backend."} />
+                <RoadmapLine text={isEnglish ? "Backend unlocks paid access." : "Backend opent betaalde toegang."} />
+                <RoadmapLine text={isEnglish ? "NFT fulfillment queue issues pass/badge." : "NFT fulfillment queue geeft pass/badge uit."} />
+              </div>
+            </Panel>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function SelectedProduct({ product, language }: { product: Product; language: "nl" | "en" }) {
+  const isEnglish = language === "en";
+  const Icon = product.icon;
+
+  return (
+    <div className="border border-black/10 bg-[#F7F8FC] p-5">
+      <div className="flex items-start gap-3 mb-4">
+        <Icon size={22} className="text-[#C83888] shrink-0 mt-0.5" />
+        <div>
+          <p className="font-orbitron text-sm font-black uppercase text-black mb-2">
+            {isEnglish ? product.titleEn : product.titleNl}
+          </p>
+          <p className="font-mono text-xs text-black/55 leading-relaxed">
+            {isEnglish ? product.textEn : product.textNl}
+          </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-12 xl:col-span-4 space-y-4">
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Layers size={18} className="text-white/60" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Categories
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {categories.map((category) => (
-                <CategoryButton
-                  key={category.id}
-                  category={category}
-                  active={selectedCategory.id === category.id}
-                  onClick={() => setSelectedCategory(category)}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="col-span-12 xl:col-span-5 space-y-4">
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
-                  Selected Category
-                </p>
-
-                <h3 className="font-orbitron text-xl font-black uppercase">
-                  {selectedCategory.title}
-                </h3>
-              </div>
-
-              <SelectedCategoryIcon size={22} className="text-white/60" />
-            </div>
-
-            <p className="font-mono text-sm text-white/45 leading-relaxed mb-5">
-              {selectedCategory.text}
-            </p>
-
-            <MiniStatus label="Status" value={selectedCategory.status} />
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
-                  Items
-                </p>
-
-                <h3 className="font-orbitron text-xl font-black uppercase">
-                  Marketplace Feed
-                </h3>
-              </div>
-
-              <Search size={20} className="text-white/60" />
-            </div>
-
-            <div className="space-y-3">
-              {visibleItems.map((item) => (
-                <ItemRow
-                  key={`${item.title}-${item.category}`}
-                  item={item}
-                  active={selectedItem.title === item.title}
-                  onClick={() => setSelectedItem(item)}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Package size={18} className="text-white/60" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Selected Item
-              </p>
-            </div>
-
-            <p className="font-orbitron text-2xl font-black uppercase mb-2">
-              {selectedItem.title}
-            </p>
-
-            <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-4">
-              {selectedItem.category} • {selectedItem.status}
-            </p>
-
-            <p className="font-mono text-sm text-white/45 leading-relaxed mb-5">
-              {selectedItem.text}
-            </p>
-
-            <div className="grid grid-cols-2 gap-3">
-              <MiniStatus label="Price" value={selectedItem.price} />
-              <MiniStatus label="Status" value={selectedItem.status} />
-            </div>
-          </div>
-        </div>
-
-        <div className="col-span-12 xl:col-span-3 space-y-4">
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <CreditCard size={18} className="text-white/60" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Checkout Rules
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {checkoutRules.map((rule) => (
-                <RuleCard key={rule.title} rule={rule} />
-              ))}
-            </div>
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Trophy size={18} className="text-white/60" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Reward Logic
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <RewardLine icon={Star} label="XP unlocks access" />
-              <RewardLine icon={Flame} label="Streak boosts rewards" />
-              <RewardLine icon={BadgeCheck} label="Badges unlock drops" />
-              <RewardLine icon={Coins} label="OTT utility later" />
-            </div>
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Sparkles size={18} className="text-white/60" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Roadmap
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {roadmap.map((item) => (
-                <RoadmapLine key={item} label={item} />
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="col-span-12 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <FeatureBox icon={ShoppingBag} title="Merch" text="OTT product drops" />
-          <FeatureBox icon={BadgeCheck} title="Badges" text="Proof and access" />
-          <FeatureBox icon={Ticket} title="Tickets" text="Events and AMAs" />
-          <FeatureBox icon={Wallet} title="Checkout" text="Xaman later" />
-        </div>
+      <div className="space-y-3">
+        {(isEnglish ? product.featuresEn : product.featuresNl).map((feature) => (
+          <FeatureLine key={feature} text={feature} />
+        ))}
       </div>
     </div>
   );
 }
 
-function StatBox({
-  icon: Icon,
-  label,
-  value,
+function ProductCard({
+  product,
+  language,
+  selected,
+  onSelect,
+  onPrepareCheckout,
 }: {
-  icon: ElementType;
-  label: string;
-  value: string;
+  product: Product;
+  language: "nl" | "en";
+  selected: boolean;
+  onSelect: () => void;
+  onPrepareCheckout: () => void;
 }) {
-  return (
-    <div className="border border-white/10 bg-black/60 p-4">
-      <Icon size={18} className="text-white/60 mb-3" />
+  const isEnglish = language === "en";
+  const Icon = product.icon;
 
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
-        {label}
+  return (
+    <div className={`border p-5 transition-all ${selected ? "border-[#C83888] bg-[#C83888]/10" : "border-black/10 bg-[#F7F8FC]"}`}>
+      <div className="flex items-start justify-between gap-4 mb-5">
+        <div className="w-12 h-12 border border-black/10 bg-white flex items-center justify-center">
+          <Icon size={22} className={product.id === "free" ? "text-[#3898E8]" : "text-[#C83888]"} />
+        </div>
+        <div className="border border-black/10 bg-white px-3 py-2">
+          <p className="font-mono text-[9px] uppercase tracking-widest text-black/45">
+            {isEnglish ? product.tagEn : product.tagNl}
+          </p>
+        </div>
+      </div>
+
+      <p className="font-orbitron text-lg font-black uppercase text-black mb-2">
+        {isEnglish ? product.titleEn : product.titleNl}
       </p>
 
-      <p className="font-orbitron text-sm font-black uppercase">{value}</p>
-    </div>
-  );
-}
+      <p className="font-mono text-xs text-black/55 leading-relaxed mb-5">
+        {isEnglish ? product.textEn : product.textNl}
+      </p>
 
-function CategoryButton({
-  category,
-  active,
-  onClick,
-}: {
-  category: MarketCategory;
-  active: boolean;
-  onClick: () => void;
-}) {
-  const Icon = category.icon;
+      <div className="space-y-3 mb-5">
+        {(isEnglish ? product.featuresEn : product.featuresNl).map((feature) => (
+          <FeatureLine key={feature} text={feature} />
+        ))}
+      </div>
 
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full border p-4 text-left transition-all ${
-        active
-          ? "border-white/30 bg-white/[0.08]"
-          : "border-white/10 bg-black hover:bg-white/[0.03]"
-      }`}
-    >
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Icon size={16} className="text-white/60" />
-
-          <p className="font-orbitron text-xs font-bold uppercase">
-            {category.title}
+      <div className="flex items-center justify-between gap-3 border-t border-black/10 pt-4">
+        <div>
+          <p className="font-mono text-[10px] uppercase tracking-widest text-black/35 mb-1">
+            {isEnglish ? "Price" : "Prijs"}
+          </p>
+          <p className="font-orbitron text-sm font-black uppercase">
+            {isEnglish ? product.priceEn : product.priceNl}
           </p>
         </div>
 
-        <p className="font-mono text-[10px] text-white/35 uppercase">
-          {category.status}
-        </p>
+        <div className="flex gap-2">
+          <button onClick={onSelect} className="border border-black/10 bg-white px-4 py-3 hover:bg-[#F7F8FC] transition-all">
+            <span className="font-orbitron text-[10px] font-black uppercase">
+              {isEnglish ? "View" : "Bekijk"}
+            </span>
+          </button>
+
+          <button onClick={onPrepareCheckout} className="bg-black text-white px-4 py-3 hover:bg-[#080808]/80 transition-all">
+            <span className="font-orbitron text-[10px] font-black uppercase">
+              {product.id === "free" ? "Claim" : isEnglish ? "Buy" : "Koop"}
+            </span>
+          </button>
+        </div>
       </div>
-    </button>
+    </div>
   );
 }
 
-function ItemRow({
-  item,
-  active,
-  onClick,
+function StepCard({
+  number,
+  step,
+  language,
 }: {
-  item: MarketItem;
-  active: boolean;
-  onClick: () => void;
+  number: string;
+  step: (typeof steps)[number];
+  language: "nl" | "en";
 }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full border p-4 text-left transition-all ${
-        active
-          ? "border-white/30 bg-white/[0.08]"
-          : "border-white/10 bg-black hover:bg-white/[0.03]"
-      }`}
-    >
-      <div className="flex items-center justify-between gap-4 mb-2">
-        <p className="font-orbitron text-sm font-bold uppercase">
-          {item.title}
-        </p>
+  const isEnglish = language === "en";
+  const Icon = step.icon;
 
-        <p className="font-mono text-[10px] text-white/45 uppercase">
-          {item.price}
-        </p>
+  return (
+    <div className="border border-black/10 bg-white/90 p-4 shadow-sm">
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <p className="font-orbitron text-xs font-black text-[#C83888]">{number}</p>
+        <Icon size={16} className="text-black/35" />
       </div>
-
-      <p className="font-mono text-[10px] text-white/35 uppercase">
-        {item.category} • {item.status}
+      <p className="font-orbitron text-xs font-black uppercase mb-2">
+        {isEnglish ? step.en : step.nl}
       </p>
-    </button>
-  );
-}
-
-function MiniStatus({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="border border-white/10 bg-black p-4">
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
-        {label}
-      </p>
-
-      <p className="font-orbitron text-sm font-black uppercase">{value}</p>
-    </div>
-  );
-}
-
-function RuleCard({ rule }: { rule: CheckoutRule }) {
-  const Icon = rule.icon;
-
-  return (
-    <div className="border border-white/10 bg-black p-4">
-      <div className="flex items-start justify-between mb-3">
-        <Icon size={17} className="text-white/60" />
-
-        <p className="font-mono text-[10px] text-white/30 uppercase">
-          {rule.status}
-        </p>
-      </div>
-
-      <p className="font-orbitron text-xs font-bold uppercase mb-2">
-        {rule.title}
-      </p>
-
-      <p className="font-mono text-[10px] text-white/40 leading-relaxed">
-        {rule.text}
+      <p className="font-mono text-[10px] text-black/45 leading-relaxed">
+        {isEnglish ? step.textEn : step.textNl}
       </p>
     </div>
   );
 }
 
-function RewardLine({
-  icon: Icon,
+function MetricCard({
   label,
-}: {
-  icon: ElementType;
-  label: string;
-}) {
-  return (
-    <div className="border border-white/10 bg-black p-3 flex items-center gap-2">
-      <Icon size={14} className="text-white/60" />
-
-      <p className="font-mono text-xs text-white/50">{label}</p>
-    </div>
-  );
-}
-
-function RoadmapLine({ label }: { label: string }) {
-  return (
-    <div className="border border-white/10 bg-black p-3 flex items-center gap-2">
-      <CheckCircle2 size={14} className="text-white/60" />
-
-      <p className="font-mono text-xs text-white/50">{label}</p>
-    </div>
-  );
-}
-
-function FeatureBox({
-  icon: Icon,
-  title,
+  value,
   text,
+  icon: Icon,
 }: {
-  icon: ElementType;
-  title: string;
+  label: string;
+  value: string;
   text: string;
+  icon: ElementType;
 }) {
   return (
-    <div className="border border-white/10 bg-white/[0.02] p-5">
-      <Icon size={19} className="text-white/60 mb-4" />
+    <div className="border border-black/10 bg-white/90 p-4 shadow-sm">
+      <Icon size={18} className="text-[#C83888] mb-3" />
+      <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">{label}</p>
+      <p className="font-orbitron text-xl font-black uppercase mb-1 break-all">{value}</p>
+      <p className="font-mono text-[10px] text-black/35 uppercase">{text}</p>
+    </div>
+  );
+}
 
-      <p className="font-orbitron text-sm font-bold uppercase mb-2">{title}</p>
+function Panel({
+  title,
+  icon: Icon,
+  children,
+}: {
+  title: string;
+  icon: ElementType;
+  children: ReactNode;
+}) {
+  return (
+    <div className="border border-black/10 bg-white p-5 md:p-6 shadow-sm">
+      <div className="flex items-center gap-2 mb-5">
+        <Icon size={18} className="text-[#3898E8]" />
+        <p className="font-orbitron text-xs uppercase tracking-widest">{title}</p>
+      </div>
+      {children}
+    </div>
+  );
+}
 
-      <p className="font-mono text-xs text-white/40">{text}</p>
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-black/10 bg-[#F7F8FC] p-3">
+      <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">{label}</p>
+      <p className="font-orbitron text-xs font-black uppercase break-all">{value}</p>
+    </div>
+  );
+}
+
+function FeatureLine({ text }: { text: string }) {
+  return (
+    <div className="flex items-start gap-3">
+      <CheckCircle2 size={14} className="text-[#3898E8] shrink-0 mt-0.5" />
+      <p className="font-mono text-xs text-black/55 leading-relaxed">{text}</p>
+    </div>
+  );
+}
+
+function RoadmapLine({ text }: { text: string }) {
+  return (
+    <div className="flex items-center gap-3 border border-black/10 bg-[#F7F8FC] p-3">
+      <BadgeCheck size={14} className="text-[#C83888] shrink-0" />
+      <p className="font-mono text-xs text-black/55 leading-relaxed">{text}</p>
     </div>
   );
 }
