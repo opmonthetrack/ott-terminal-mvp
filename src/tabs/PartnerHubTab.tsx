@@ -1,908 +1,572 @@
 import { useMemo, useState } from "react";
-import type { ElementType } from "react";
+import type { ElementType, ReactNode } from "react";
 import {
-  AlertTriangle,
-  ArrowUpRight,
-  BookOpen,
+  BadgeCheck,
+  Building2,
   CheckCircle2,
-  Circle,
-  Compass,
-  Copy,
-  ExternalLink,
-  Fingerprint,
-  Flame,
+  ClipboardCheck,
+  FileText,
   GraduationCap,
+  Handshake,
   Layers,
-  Link2,
-  Loader2,
-  Lock,
-  MessageCircle,
-  QrCode,
-  Route,
-  SearchCheck,
-  ShieldAlert,
+  LockKeyhole,
+  Network,
+  Rocket,
+  ShieldCheck,
   Sparkles,
-  Trophy,
+  Store,
+  Target,
   Wallet,
 } from "lucide-react";
-import {
-  PARTNER_SOURCE_TAG,
-  getPartnerCompletionXp,
-  getRiskLabel,
-  getStatusLabel,
-  partnerCatalog,
-  type PartnerEducationCard,
-  type PartnerId,
-} from "../lib/partnerCatalog";
-import {
-  createProofStampPayload,
-  getProofStampErrorMessage as getProofStampPayloadErrorMessage,
-  getProofStampPayloadQr,
-  getProofStampPayloadUrl,
-  getProofStampPayloadUuid,
-  getProofStampStatusLabel,
-  openProofStampPayload,
-  type ProofStampPayloadResponse,
-} from "../lib/proofStampClient";
-import {
-  getProofStampErrorMessage as getProofStampVerifyErrorMessage,
-  getProofStampVerificationLabel,
-  isProofStampVerified,
-  shortProofStampHash,
-  verifyProofStamp,
-  type VerifyProofStampResponse,
-} from "../lib/proofStampVerifyClient";
-import { addPartnerProofStampReward } from "../lib/rewardStore";
+import { OTTLogo, OTTProofBadge } from "../components/OTTLogo";
+import { useTerminalLanguage } from "../lib/useTerminalLanguage";
 
 type PartnerHubTabProps = {
   walletAddress?: string;
 };
 
-type StepKey = "read" | "risk" | "opened";
+type PartnerView = "map" | "onboarding" | "brief" | "access";
 
-type PartnerProgress = {
-  read?: boolean;
-  risk?: boolean;
-  opened?: boolean;
-};
-
-type ProgressStore = Record<string, PartnerProgress>;
-
-type Metric = {
-  label: string;
-  value: string;
-  text: string;
+type PartnerRoute = {
+  id: string;
+  titleNl: string;
+  titleEn: string;
+  textNl: string;
+  textEn: string;
+  tagNl: string;
+  tagEn: string;
+  access: "free" | "premium";
   icon: ElementType;
 };
 
-const categoryIcons: Record<string, ElementType> = {
-  DeFi: Flame,
-  Onramp: Wallet,
-  Ecosystem: Compass,
-  "Market Data": Layers,
-  NFT: Sparkles,
-  "Cross-chain": Link2,
-  Service: MessageCircle,
-};
+const partnerRoutes: PartnerRoute[] = [
+  {
+    id: "education",
+    titleNl: "Educatie Partner",
+    titleEn: "Education Partner",
+    textNl: "Voor trainers, scholen, communities en creators die XRPL lessen willen aanbieden.",
+    textEn: "For trainers, schools, communities and creators who want to offer XRPL lessons.",
+    tagNl: "Academy",
+    tagEn: "Academy",
+    access: "free",
+    icon: GraduationCap,
+  },
+  {
+    id: "commerce",
+    titleNl: "Commerce Partner",
+    titleEn: "Commerce Partner",
+    textNl: "Voor shops en merken die producten willen koppelen aan NFT badges of toegang.",
+    textEn: "For shops and brands that want to connect products to NFT badges or access.",
+    tagNl: "Webshop",
+    tagEn: "Shop",
+    access: "premium",
+    icon: Store,
+  },
+  {
+    id: "xrpl",
+    titleNl: "XRPL Builder Partner",
+    titleEn: "XRPL Builder Partner",
+    textNl: "Voor builders die proof, SourceTag, wallet access of tokenisatie willen testen.",
+    textEn: "For builders testing proof, SourceTag, wallet access or tokenization.",
+    tagNl: "Build",
+    tagEn: "Build",
+    access: "premium",
+    icon: Network,
+  },
+  {
+    id: "business",
+    titleNl: "Business Onboarding",
+    titleEn: "Business Onboarding",
+    textNl: "Voor bedrijven die veilig willen starten met wallet-based access en XRPL educatie.",
+    textEn: "For businesses starting safely with wallet-based access and XRPL education.",
+    tagNl: "B2B",
+    tagEn: "B2B",
+    access: "premium",
+    icon: Building2,
+  },
+];
 
-function getStorageKey(walletAddress: string) {
-  return `ott-partner-hub-progress-${walletAddress}`;
-}
-
-function loadProgress(walletAddress: string): ProgressStore {
-  if (typeof window === "undefined") {
-    return {};
-  }
-
-  try {
-    const value = window.localStorage.getItem(getStorageKey(walletAddress));
-    return value ? (JSON.parse(value) as ProgressStore) : {};
-  } catch {
-    return {};
-  }
-}
-
-function saveProgress(walletAddress: string, progress: ProgressStore) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.setItem(getStorageKey(walletAddress), JSON.stringify(progress));
-}
-
-function isComplete(progress: PartnerProgress | undefined) {
-  return Boolean(progress?.read && progress.risk && progress.opened);
-}
+const onboardingSteps = [
+  {
+    nl: "Doel bepalen",
+    en: "Define goal",
+    textNl: "Educatie, webshop, access, proof of community onboarding.",
+    textEn: "Education, webshop, access, proof or community onboarding.",
+    icon: Target,
+  },
+  {
+    nl: "Wallet route kiezen",
+    en: "Choose wallet route",
+    textNl: "Xaman login, wallet scan, Access Pass of purchase badge.",
+    textEn: "Xaman login, wallet scan, Access Pass or purchase badge.",
+    icon: Wallet,
+  },
+  {
+    nl: "Proof model maken",
+    en: "Build proof model",
+    textNl: "SourceTag, XP, certificaat, NFT of order proof.",
+    textEn: "SourceTag, XP, certificate, NFT or order proof.",
+    icon: BadgeCheck,
+  },
+  {
+    nl: "Pilot lanceren",
+    en: "Launch pilot",
+    textNl: "Kleine pilot live zetten en meten wat werkt.",
+    textEn: "Launch a small pilot and measure what works.",
+    icon: Rocket,
+  },
+];
 
 export function PartnerHubTab({ walletAddress = "guest" }: PartnerHubTabProps) {
-  const [selectedId, setSelectedId] = useState<PartnerId>("anodos");
-  const [progress, setProgress] = useState<ProgressStore>(() =>
-    loadProgress(walletAddress)
+  const { language } = useTerminalLanguage();
+  const isEnglish = language === "en";
+
+  const [view, setView] = useState<PartnerView>("map");
+  const [selectedRouteId, setSelectedRouteId] = useState("education");
+  const [briefReady, setBriefReady] = useState(false);
+
+  const selectedRoute =
+    partnerRoutes.find((route) => route.id === selectedRouteId) ?? partnerRoutes[0];
+
+  const premiumRoutes = useMemo(
+    () => partnerRoutes.filter((route) => route.access === "premium").length,
+    [],
   );
-  const [proofDestinationWallet, setProofDestinationWallet] = useState("");
-  const [proofTxHash, setProofTxHash] = useState("");
-  const [proofPayload, setProofPayload] =
-    useState<ProofStampPayloadResponse | null>(null);
-  const [proofVerification, setProofVerification] =
-    useState<VerifyProofStampResponse | null>(null);
-  const [proofBusy, setProofBusy] = useState(false);
-  const [verifyBusy, setVerifyBusy] = useState(false);
-  const [statusMessage, setStatusMessage] = useState(
-    "Complete a partner route to unlock the Proof Stamp payload."
-  );
-
-  const selectedPartner = useMemo(
-    () => partnerCatalog.find((partner) => partner.id === selectedId) ?? partnerCatalog[0],
-    [selectedId]
-  );
-
-  const completedRoutes = partnerCatalog.filter((partner) =>
-    isComplete(progress[partner.id])
-  ).length;
-
-  const totalXpReady = partnerCatalog.reduce((total, partner) => {
-    if (!isComplete(progress[partner.id])) {
-      return total;
-    }
-
-    return total + getPartnerCompletionXp(partner);
-  }, 0);
-
-  const proofVerified = isProofStampVerified(proofVerification);
-
-  const metrics: Metric[] = [
-    {
-      label: "SourceTag",
-      value: String(PARTNER_SOURCE_TAG),
-      text: "Make Waves stamp.",
-      icon: Fingerprint,
-    },
-    {
-      label: "Routes",
-      value: String(partnerCatalog.length),
-      text: "Education cards.",
-      icon: Route,
-    },
-    {
-      label: "Completed",
-      value: String(completedRoutes),
-      text: "Ready for proof.",
-      icon: CheckCircle2,
-    },
-    {
-      label: "Verified",
-      value: proofVerified ? "Yes" : "No",
-      text: "Proof stamp.",
-      icon: Trophy,
-    },
-  ];
-
-  function selectPartner(partnerId: PartnerId) {
-    setSelectedId(partnerId);
-    setProofPayload(null);
-    setProofVerification(null);
-    setProofTxHash("");
-    setStatusMessage("Complete this route to unlock the Proof Stamp payload.");
-  }
-
-  function updateStep(partnerId: PartnerId, step: StepKey, value: boolean) {
-    const nextProgress: ProgressStore = {
-      ...progress,
-      [partnerId]: {
-        ...progress[partnerId],
-        [step]: value,
-      },
-    };
-
-    setProgress(nextProgress);
-    saveProgress(walletAddress, nextProgress);
-  }
-
-  function openOfficialLink(partner: PartnerEducationCard) {
-    updateStep(partner.id, "opened", true);
-    window.open(partner.officialUrl, "_blank", "noopener,noreferrer");
-  }
-
-  async function createProofStamp(partner: PartnerEducationCard) {
-    if (!isComplete(progress[partner.id])) {
-      setStatusMessage("Proof Stamp blijft locked tot lezen, risico-check en officiële link klaar zijn.");
-      return;
-    }
-
-    setProofBusy(true);
-    setProofVerification(null);
-    setStatusMessage("Creating Partner Proof Stamp payload...");
-
-    try {
-      const response = await createProofStampPayload({
-        walletAddress: walletAddress === "guest" ? undefined : walletAddress,
-        destinationWallet: proofDestinationWallet.trim() || undefined,
-        partnerId: partner.id,
-        routeName: partner.name,
-        amountDrops: "1",
-      });
-
-      setProofPayload(response);
-      setStatusMessage(getProofStampStatusLabel(response));
-    } catch (error) {
-      setStatusMessage(getProofStampPayloadErrorMessage(error));
-    } finally {
-      setProofBusy(false);
-    }
-  }
-
-  async function verifyProofStampHash(partner: PartnerEducationCard) {
-    const cleanHash = proofTxHash.trim();
-
-    if (!cleanHash) {
-      setStatusMessage("Vul eerst een Proof Stamp tx hash in.");
-      return;
-    }
-
-    setVerifyBusy(true);
-    setStatusMessage("Verifying Partner Proof Stamp transaction...");
-
-    try {
-      const response = await verifyProofStamp({
-        txHash: cleanHash,
-        expectedWallet: walletAddress === "guest" ? undefined : walletAddress,
-        expectedDestination: proofDestinationWallet.trim() || undefined,
-        expectedAmountDrops: "1",
-        expectedMemoContains: partner.proofStampMemo,
-      });
-
-      setProofVerification(response);
-
-      const label = getProofStampVerificationLabel(response);
-
-      if (isProofStampVerified(response)) {
-        addPartnerProofStampReward({
-          walletAddress,
-          partnerId: partner.id,
-          routeName: partner.name,
-          xp: partner.proofStampXp,
-          txHash: cleanHash,
-          note: `${partner.name} Proof Stamp verified with SourceTag ${PARTNER_SOURCE_TAG}.`,
-        });
-
-        setStatusMessage(`${label}. Reward Ledger credited +${partner.proofStampXp} XP.`);
-        return;
-      }
-
-      setStatusMessage(label);
-    } catch (error) {
-      setStatusMessage(getProofStampVerifyErrorMessage(error));
-    } finally {
-      setVerifyBusy(false);
-    }
-  }
-
-  async function copyProofStampUuid() {
-    const uuid = getProofStampPayloadUuid(proofPayload);
-
-    if (!uuid) {
-      setStatusMessage("Geen Proof Stamp UUID gevonden.");
-      return;
-    }
-
-    await navigator.clipboard.writeText(uuid);
-    setStatusMessage("Proof Stamp UUID copied.");
-  }
-
-  function openProofStamp() {
-    const opened = openProofStampPayload(proofPayload);
-
-    if (!opened) {
-      setStatusMessage("Geen Proof Stamp payload link gevonden.");
-    }
-  }
 
   return (
-    <div className="p-6 bg-black min-h-screen text-white">
-      <div className="relative overflow-hidden border border-white/10 bg-white/[0.02] p-6 mb-6">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_white,_transparent_35%)]" />
+    <div className="min-h-screen bg-white text-[#080808]">
+      <section className="relative overflow-hidden border-b border-black/10 bg-[radial-gradient(circle_at_18%_18%,rgba(56,152,232,0.16),transparent_28%),radial-gradient(circle_at_82%_8%,rgba(200,56,136,0.16),transparent_28%),radial-gradient(circle_at_85%_82%,rgba(216,72,88,0.12),transparent_30%),#ffffff]">
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.26),#ffffff_92%)]" />
 
-        <div className="relative z-10 grid grid-cols-12 gap-6 items-center">
-          <div className="col-span-12 xl:col-span-8">
-            <div className="flex items-center gap-2 mb-4 text-white/45">
-              <GraduationCap size={18} />
+        <div className="relative z-10 p-4 md:p-6 xl:p-10">
+          <div className="grid grid-cols-12 gap-6 items-end">
+            <div className="col-span-12 xl:col-span-8">
+              <div className="mb-6">
+                <OTTLogo
+                  size="lg"
+                  subtitle={isEnglish ? "Partner onboarding and proof routes" : "Partner onboarding en proof routes"}
+                />
+              </div>
 
-              <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
-                Partner Education Hub
+              <div className="inline-flex items-center gap-2 border border-black/10 bg-white/80 shadow-sm px-4 py-2 mb-6">
+                <Handshake size={15} className="text-[#3898E8]" />
+
+                <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-black/55">
+                  Partner Hub V1.0
+                </p>
+              </div>
+
+              <h1 className="font-orbitron text-4xl xl:text-6xl font-black uppercase leading-none tracking-tight mb-6">
+                {isEnglish ? "Build With" : "Bouw Met"}
+                <br />
+                <span className="bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] bg-clip-text text-transparent">
+                  OnTheTrack.
+                </span>
+              </h1>
+
+              <p className="font-mono text-sm xl:text-base text-black/60 leading-relaxed max-w-3xl mb-8">
+                {isEnglish
+                  ? "A professional partner layer for education, commerce, builder pilots and business onboarding. Every route stays education-first, utility-first and proof-ready."
+                  : "Een professionele partnerlaag voor educatie, commerce, builder pilots en business onboarding. Elke route blijft education-first, utility-first en proof-ready."}
               </p>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-4xl">
+                <MetricCard label={isEnglish ? "Routes" : "Routes"} value={String(partnerRoutes.length)} text="V1" icon={Layers} />
+                <MetricCard label="Premium" value={String(premiumRoutes)} text={isEnglish ? "Access gated" : "Achter toegang"} icon={LockKeyhole} />
+                <MetricCard label="Wallet" value={walletAddress === "guest" ? "Guest" : "Linked"} text="Xaman" icon={Wallet} />
+                <MetricCard label="Proof" value="2606170002" text="SourceTag" icon={BadgeCheck} />
+              </div>
             </div>
 
-            <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
-              Read First. Route Second. Stamp After.
-            </h2>
+            <div className="col-span-12 xl:col-span-4">
+              <div className="border border-black/10 bg-white/90 backdrop-blur p-5 shadow-xl shadow-black/5">
+                <div className="flex items-center justify-between gap-3 mb-5">
+                  <p className="font-orbitron text-xs uppercase tracking-widest">
+                    {isEnglish ? "Partner Status" : "Partnerstatus"}
+                  </p>
 
-            <p className="font-mono text-sm text-white/45 max-w-3xl leading-relaxed">
-              Elke partner krijgt uitleg, risico-check en officiële link voordat
-              de gebruiker het platform opent. SourceTag {PARTNER_SOURCE_TAG} is
-              alleen voor betekenisvolle Proof Stamps, niet voor spammy clicks.
-            </p>
+                  <div className="border border-black/10 bg-[#F7F8FC] px-3 py-2">
+                    <p className="font-mono text-[9px] uppercase tracking-widest text-black/55">V1</p>
+                  </div>
+                </div>
+
+                <div className="mb-4">
+                  <OTTProofBadge sourceTag="2606170002" />
+                </div>
+
+                <div className="space-y-3">
+                  <InfoRow label="Wallet" value={walletAddress === "guest" ? "Guest / Free Preview" : walletAddress} />
+                  <InfoRow label={isEnglish ? "Selected" : "Gekozen"} value={isEnglish ? selectedRoute.titleEn : selectedRoute.titleNl} />
+                  <InfoRow label="Access" value={selectedRoute.access === "free" ? "Free" : "Premium"} />
+                  <InfoRow label={isEnglish ? "Brief" : "Brief"} value={briefReady ? "Ready" : "Not created"} />
+                </div>
+
+                <div className="border border-[#C83888]/25 bg-[#C83888]/10 p-4 mt-5">
+                  <div className="flex items-start gap-3">
+                    <ShieldCheck size={18} className="text-[#C83888] mt-0.5 shrink-0" />
+
+                    <p className="font-mono text-xs text-black/60 leading-relaxed">
+                      {isEnglish
+                        ? "No investment promise. Partner routes focus on education, access, proof and utility."
+                        : "Geen investeringsbelofte. Partner routes focussen op educatie, toegang, proof en utility."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="col-span-12 xl:col-span-4 grid grid-cols-2 gap-3">
-            {metrics.map((metric) => (
-              <MetricBox key={metric.label} metric={metric} />
-            ))}
+          <div className="flex flex-wrap gap-2 mt-8">
+            <ModeButton active={view === "map"} label={isEnglish ? "Partner Map" : "Partnerkaart"} onClick={() => setView("map")} />
+            <ModeButton active={view === "onboarding"} label={isEnglish ? "Onboarding" : "Onboarding"} onClick={() => setView("onboarding")} />
+            <ModeButton active={view === "brief"} label={isEnglish ? "Partner Brief" : "Partner Brief"} onClick={() => setView("brief")} />
+            <ModeButton active={view === "access"} label={isEnglish ? "Access" : "Toegang"} onClick={() => setView("access")} />
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-12 xl:col-span-4 space-y-4">
-          <div className="border border-white/10 bg-white/[0.02] p-5">
-            <div className="flex items-center gap-2 mb-5">
-              <BookOpen size={18} className="text-white/60" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Routes
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {partnerCatalog.map((partner) => (
-                <PartnerButton
-                  key={partner.id}
-                  partner={partner}
-                  selected={selectedPartner.id === partner.id}
-                  completed={isComplete(progress[partner.id])}
-                  onClick={() => selectPartner(partner.id)}
+      <section className="p-4 md:p-6 xl:p-10 bg-white">
+        {view === "map" && (
+          <Panel title={isEnglish ? "Partner Route Map" : "Partner Routekaart"} icon={Network}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {partnerRoutes.map((route) => (
+                <PartnerRouteCard
+                  key={route.id}
+                  route={route}
+                  language={language}
+                  selected={selectedRouteId === route.id}
+                  onSelect={() => setSelectedRouteId(route.id)}
                 />
               ))}
             </div>
-          </div>
-        </div>
+          </Panel>
+        )}
 
-        <div className="col-span-12 xl:col-span-5 space-y-4">
-          <PartnerDetailCard
-            partner={selectedPartner}
-            progress={progress[selectedPartner.id]}
-            onStepChange={(step, value) =>
-              updateStep(selectedPartner.id, step, value)
-            }
-            onOpen={() => openOfficialLink(selectedPartner)}
-          />
-        </div>
-
-        <div className="col-span-12 xl:col-span-3 space-y-4">
-          <ProofStatusCard
-            partner={selectedPartner}
-            progress={progress[selectedPartner.id]}
-            destinationWallet={proofDestinationWallet}
-            txHash={proofTxHash}
-            payload={proofPayload}
-            verification={proofVerification}
-            busy={proofBusy}
-            verifyBusy={verifyBusy}
-            statusMessage={statusMessage}
-            onDestinationChange={setProofDestinationWallet}
-            onTxHashChange={setProofTxHash}
-            onCreate={() => createProofStamp(selectedPartner)}
-            onVerify={() => verifyProofStampHash(selectedPartner)}
-            onOpen={openProofStamp}
-            onCopy={copyProofStampUuid}
-          />
-
-          <div className="border border-white/10 bg-white/[0.02] p-5">
-            <div className="flex items-center gap-2 mb-5">
-              <ShieldAlert size={18} className="text-white/60" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Compliance Language
-              </p>
+        {view === "onboarding" && (
+          <div className="grid grid-cols-12 gap-4">
+            <div className="col-span-12 xl:col-span-8">
+              <Panel title={isEnglish ? "Partner Onboarding Flow" : "Partner Onboarding Flow"} icon={ClipboardCheck}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {onboardingSteps.map((step, index) => (
+                    <StepCard
+                      key={step.en}
+                      number={`0${index + 1}`}
+                      step={step}
+                      language={language}
+                    />
+                  ))}
+                </div>
+              </Panel>
             </div>
 
-            <div className="space-y-3">
-              <InfoLine text="Education-first, not broker-first." />
-              <InfoLine text="Official provider handles the real service." />
-              <InfoLine text="No custody, no yield promise, no trade execution." />
-              <InfoLine text="XP is off-chain engagement until legal review." />
+            <div className="col-span-12 xl:col-span-4">
+              <Panel title={isEnglish ? "Selected Route" : "Gekozen Route"} icon={FileText}>
+                <SelectedRoute route={selectedRoute} language={language} />
+              </Panel>
             </div>
           </div>
+        )}
 
-          <div className="border border-white/10 bg-white/[0.02] p-5">
-            <div className="flex items-center gap-2 mb-5">
-              <Lock size={18} className="text-white/60" />
+        {view === "brief" && (
+          <div className="grid grid-cols-12 gap-4">
+            <div className="col-span-12 xl:col-span-8">
+              <Panel title={isEnglish ? "Partner Brief Template" : "Partner Brief Template"} icon={FileText}>
+                <div className="space-y-3">
+                  <BriefLine title="1. Goal" text={isEnglish ? "What does the partner want to build or teach?" : "Wat wil de partner bouwen of onderwijzen?"} />
+                  <BriefLine title="2. Audience" text={isEnglish ? "Who will use it: students, customers, community or business users?" : "Wie gebruikt het: studenten, klanten, community of zakelijke gebruikers?"} />
+                  <BriefLine title="3. Access Model" text={isEnglish ? "Free preview, paid access, NFT pass or purchase proof." : "Gratis preview, betaalde toegang, NFT pass of purchase proof."} />
+                  <BriefLine title="4. Proof Model" text={isEnglish ? "SourceTag, XP, certificate, badge, order proof or task proof." : "SourceTag, XP, certificaat, badge, order proof of task proof."} />
+                  <BriefLine title="5. Launch Plan" text={isEnglish ? "Small pilot, measure, improve and scale." : "Kleine pilot, meten, verbeteren en opschalen."} />
+                </div>
 
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Next Build
-              </p>
+                <button
+                  onClick={() => setBriefReady(true)}
+                  className="mt-5 w-full bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] text-white p-4 font-orbitron text-xs font-black uppercase tracking-widest hover:brightness-95 transition-all"
+                >
+                  {isEnglish ? "Create Partner Brief" : "Maak Partner Brief"}
+                </button>
+              </Panel>
             </div>
 
-            <div className="space-y-3">
-              <InfoLine text="Credit Reward Ledger after verification." />
-              <InfoLine text="Add Truth Desk service payments." />
-              <InfoLine text="Polish XRPL Foundation pitch flow." />
+            <div className="col-span-12 xl:col-span-4 space-y-4">
+              <Panel title={isEnglish ? "Brief Status" : "Brief Status"} icon={CheckCircle2}>
+                <div className="space-y-3">
+                  <StatusLine text={briefReady ? (isEnglish ? "Partner brief ready." : "Partner brief klaar.") : (isEnglish ? "Brief not created yet." : "Brief nog niet gemaakt.")} />
+                  <StatusLine text={isEnglish ? "Next: save server-side." : "Volgende: server-side opslaan."} />
+                  <StatusLine text={isEnglish ? "Next: route to Truth Desk / email." : "Volgende: routeren naar Truth Desk / e-mail."} />
+                </div>
+              </Panel>
+
+              <Panel title={isEnglish ? "Make Waves Angle" : "Make Waves Angle"} icon={Sparkles}>
+                <p className="font-mono text-xs text-black/60 leading-relaxed">
+                  {isEnglish
+                    ? "Partner Hub shows that OTT Terminal is not just a dashboard. It is an onboarding engine for education, commerce and proof-based XRPL adoption."
+                    : "Partner Hub laat zien dat OTT Terminal niet zomaar een dashboard is. Het is een onboarding engine voor educatie, commerce en proof-based XRPL adoptie."}
+                </p>
+              </Panel>
             </div>
           </div>
-        </div>
-      </div>
+        )}
+
+        {view === "access" && (
+          <Panel title={isEnglish ? "Free vs Premium Partner Access" : "Gratis vs Premium Partner Toegang"} icon={LockKeyhole}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <AccessBox
+                title={isEnglish ? "Free Partner Preview" : "Gratis Partner Preview"}
+                lines={[
+                  isEnglish ? "Education partner route" : "Educatie partner route",
+                  isEnglish ? "Basic brief template" : "Basis brief template",
+                  isEnglish ? "Public onboarding explanation" : "Publieke onboarding uitleg",
+                ]}
+              />
+              <AccessBox
+                title={isEnglish ? "Premium Partner Hub" : "Premium Partner Hub"}
+                premium
+                lines={[
+                  isEnglish ? "Commerce and business routes" : "Commerce en business routes",
+                  isEnglish ? "Proof model planning" : "Proof model planning",
+                  isEnglish ? "Truth Desk partner support" : "Truth Desk partner support",
+                  isEnglish ? "Access Pass gated" : "Access Pass gated",
+                ]}
+              />
+            </div>
+          </Panel>
+        )}
+      </section>
     </div>
   );
 }
 
-function PartnerButton({
-  partner,
+function PartnerRouteCard({
+  route,
+  language,
   selected,
-  completed,
-  onClick,
+  onSelect,
 }: {
-  partner: PartnerEducationCard;
+  route: PartnerRoute;
+  language: "nl" | "en";
   selected: boolean;
-  completed: boolean;
-  onClick: () => void;
+  onSelect: () => void;
 }) {
-  const Icon = categoryIcons[partner.category] ?? Layers;
+  const isEnglish = language === "en";
+  const Icon = route.icon;
 
   return (
     <button
-      onClick={onClick}
-      className={`w-full border p-4 text-left transition-all ${
+      onClick={onSelect}
+      className={`border p-5 text-left transition-all ${
         selected
-          ? "border-white/35 bg-white/[0.08]"
-          : "border-white/10 bg-black hover:bg-white/[0.03]"
+          ? "border-[#C83888] bg-[#C83888]/10"
+          : "border-black/10 bg-[#F7F8FC] hover:bg-white"
       }`}
     >
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <Icon size={18} className="text-white/60" />
+      <div className="flex items-start justify-between gap-4 mb-5">
+        <div className="w-12 h-12 border border-black/10 bg-white flex items-center justify-center">
+          <Icon size={22} className={route.access === "free" ? "text-[#3898E8]" : "text-[#C83888]"} />
+        </div>
 
-        {completed ? (
-          <CheckCircle2 size={16} className="text-white/70" />
-        ) : (
-          <Circle size={16} className="text-white/20" />
-        )}
+        <div className="border border-black/10 bg-white px-3 py-2">
+          <p className="font-mono text-[9px] uppercase tracking-widest text-black/45">
+            {isEnglish ? route.tagEn : route.tagNl}
+          </p>
+        </div>
       </div>
 
-      <p className="font-orbitron text-xs font-black uppercase mb-2">
-        {partner.name}
+      <p className="font-orbitron text-sm font-black uppercase text-black mb-3">
+        {isEnglish ? route.titleEn : route.titleNl}
       </p>
 
-      <p className="font-mono text-[10px] text-white/35 uppercase mb-3">
-        {partner.label}
+      <p className="font-mono text-xs text-black/55 leading-relaxed mb-4">
+        {isEnglish ? route.textEn : route.textNl}
       </p>
 
-      <div className="flex flex-wrap gap-2">
-        <MiniPill text={partner.category} />
-        <MiniPill text={partner.riskLevel} />
+      <div className="flex items-center gap-2">
+        {route.access === "premium" ? (
+          <LockKeyhole size={14} className="text-[#C83888]" />
+        ) : (
+          <CheckCircle2 size={14} className="text-[#3898E8]" />
+        )}
+
+        <p className="font-mono text-[10px] uppercase tracking-widest text-black/40">
+          {route.access === "premium" ? "Premium" : "Free"}
+        </p>
       </div>
     </button>
   );
 }
 
-function PartnerDetailCard({
-  partner,
-  progress,
-  onStepChange,
-  onOpen,
+function SelectedRoute({
+  route,
+  language,
 }: {
-  partner: PartnerEducationCard;
-  progress: PartnerProgress | undefined;
-  onStepChange: (step: StepKey, value: boolean) => void;
-  onOpen: () => void;
+  route: PartnerRoute;
+  language: "nl" | "en";
 }) {
+  const isEnglish = language === "en";
+  const Icon = route.icon;
+
   return (
-    <div className="border border-white/10 bg-white/[0.02] p-6">
-      <div className="flex items-start justify-between gap-4 mb-5">
+    <div className="border border-black/10 bg-[#F7F8FC] p-5">
+      <div className="flex items-start gap-3 mb-4">
+        <Icon size={22} className="text-[#C83888] shrink-0 mt-0.5" />
+
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-white/35 mb-3">
-            {partner.category} • {getStatusLabel(partner.status)}
+          <p className="font-orbitron text-sm font-black uppercase text-black mb-2">
+            {isEnglish ? route.titleEn : route.titleNl}
           </p>
 
-          <h3 className="font-orbitron text-2xl font-black uppercase mb-3">
-            {partner.name}
-          </h3>
-
-          <p className="font-mono text-sm text-white/50 leading-relaxed">
-            {partner.headline}
-          </p>
-        </div>
-
-        <div className="text-right">
-          <p className="font-orbitron text-lg font-black">
-            +{partner.xpReward}
-          </p>
-
-          <p className="font-mono text-[10px] text-white/35 uppercase">
-            Learn XP
+          <p className="font-mono text-xs text-black/55 leading-relaxed">
+            {isEnglish ? route.textEn : route.textNl}
           </p>
         </div>
       </div>
 
-      <div className="border border-white/10 bg-black p-5 mb-5">
-        <p className="font-mono text-xs text-white/55 leading-relaxed">
-          {partner.oneLine}
-        </p>
-      </div>
-
-      <Section title="Why it matters" items={[partner.whyItMatters]} />
-      <Section title="What it does" items={partner.whatItDoes} />
-      <Section title="How to use" items={partner.howToUse} />
-
-      <div className="border border-white/10 bg-black p-5 mb-5">
-        <div className="flex items-center gap-2 mb-4">
-          <AlertTriangle size={17} className="text-white/60" />
-
-          <p className="font-orbitron text-xs font-bold uppercase">
-            {getRiskLabel(partner.riskLevel)}
-          </p>
-        </div>
-
-        <div className="space-y-3">
-          {partner.riskNotes.map((note) => (
-            <InfoLine key={note} text={note} />
-          ))}
-        </div>
-      </div>
-
-      <Section title="OTT Angle" items={partner.ottAngle} />
-
-      <div className="border border-white/10 bg-black p-5 mb-5">
-        <p className="font-orbitron text-xs font-bold uppercase mb-4">
-          Completion Checklist
-        </p>
-
-        <div className="space-y-3">
-          <CheckButton
-            checked={Boolean(progress?.read)}
-            title="I read this route"
-            text="The user understands the basic partner route."
-            onClick={() => onStepChange("read", !progress?.read)}
-          />
-
-          <CheckButton
-            checked={Boolean(progress?.risk)}
-            title="I understand the risk notes"
-            text="The user confirms this is external and education-first."
-            onClick={() => onStepChange("risk", !progress?.risk)}
-          />
-
-          <CheckButton
-            checked={Boolean(progress?.opened)}
-            title="Official link opened"
-            text="The user has been routed to the official provider link."
-            onClick={() => onStepChange("opened", !progress?.opened)}
-          />
-        </div>
-      </div>
-
-      <button
-        onClick={onOpen}
-        className="w-full bg-white text-black py-4 font-orbitron text-xs font-black uppercase tracking-widest hover:bg-white/80 transition-all flex items-center justify-center gap-2"
-      >
-        <ExternalLink size={16} />
-        {partner.ctaLabel}
-      </button>
+      <InfoRow label="Access" value={route.access === "free" ? "Free" : "Premium"} />
     </div>
   );
 }
 
-function ProofStatusCard({
-  partner,
-  progress,
-  destinationWallet,
-  txHash,
-  payload,
-  verification,
-  busy,
-  verifyBusy,
-  statusMessage,
-  onDestinationChange,
-  onTxHashChange,
-  onCreate,
-  onVerify,
-  onOpen,
-  onCopy,
+function StepCard({
+  number,
+  step,
+  language,
 }: {
-  partner: PartnerEducationCard;
-  progress: PartnerProgress | undefined;
-  destinationWallet: string;
-  txHash: string;
-  payload: ProofStampPayloadResponse | null;
-  verification: VerifyProofStampResponse | null;
-  busy: boolean;
-  verifyBusy: boolean;
-  statusMessage: string;
-  onDestinationChange: (value: string) => void;
-  onTxHashChange: (value: string) => void;
-  onCreate: () => void;
-  onVerify: () => void;
-  onOpen: () => void;
-  onCopy: () => void;
+  number: string;
+  step: (typeof onboardingSteps)[number];
+  language: "nl" | "en";
 }) {
-  const completed = isComplete(progress);
-  const uuid = getProofStampPayloadUuid(payload);
-  const url = getProofStampPayloadUrl(payload);
-  const qr = getProofStampPayloadQr(payload);
-  const verified = isProofStampVerified(verification);
+  const isEnglish = language === "en";
+  const Icon = step.icon;
 
   return (
-    <div className="border border-white/10 bg-white/[0.02] p-5">
-      <div className="flex items-center gap-2 mb-5">
-        <Fingerprint size={18} className="text-white/60" />
-
-        <p className="font-orbitron text-xs uppercase tracking-widest">
-          Proof Stamp
-        </p>
+    <div className="border border-black/10 bg-[#F7F8FC] p-5">
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <p className="font-orbitron text-xs font-black text-[#C83888]">{number}</p>
+        <Icon size={18} className="text-black/35" />
       </div>
 
-      <div className="space-y-3 mb-5">
-        <MiniStatus label="Route" value={partner.name} />
-        <MiniStatus label="Status" value={completed ? "Ready" : "Locked"} />
-        <MiniStatus label="Verified" value={verified ? "Yes" : "No"} />
-        <MiniStatus label="SourceTag" value={String(PARTNER_SOURCE_TAG)} />
-      </div>
-
-      <InputField
-        label="Destination Wallet"
-        value={destinationWallet}
-        placeholder="Optional if Vercel env is set"
-        onChange={onDestinationChange}
-      />
-
-      <div className="border border-white/10 bg-black p-4 my-4">
-        <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
-          Memo
-        </p>
-
-        <p className="font-mono text-xs text-white/55 break-all leading-relaxed">
-          {partner.proofStampMemo}
-        </p>
-      </div>
-
-      <button
-        onClick={onCreate}
-        disabled={!completed || busy}
-        className="w-full bg-white text-black py-4 font-orbitron text-xs font-black uppercase tracking-widest hover:bg-white/80 disabled:opacity-40 transition-all flex items-center justify-center gap-2 mb-4"
-      >
-        {busy ? <Loader2 size={16} className="animate-spin" /> : <QrCode size={16} />}
-        Create Proof Stamp
-      </button>
-
-      {uuid && (
-        <div className="space-y-4 mb-5">
-          {qr && (
-            <div className="border border-white/10 bg-white p-4 inline-block">
-              <img src={qr} alt="Proof Stamp QR" className="w-36 h-36" />
-            </div>
-          )}
-
-          <MiniStatus label="Payload UUID" value={uuid} />
-
-          <div className="grid grid-cols-1 gap-3">
-            <ActionButton
-              icon={ExternalLink}
-              title="Open Xaman"
-              text={url ? "Launch proof payload" : "No link"}
-              onClick={onOpen}
-            />
-
-            <ActionButton
-              icon={Copy}
-              title="Copy UUID"
-              text="For payload tracking"
-              onClick={onCopy}
-            />
-          </div>
-        </div>
-      )}
-
-      <InputField
-        label="Proof Stamp Tx Hash"
-        value={txHash}
-        placeholder="Paste signed XRPL tx hash"
-        onChange={onTxHashChange}
-      />
-
-      <button
-        onClick={onVerify}
-        disabled={verifyBusy}
-        className="w-full border border-white/10 bg-black p-4 mt-4 text-left hover:bg-white/[0.03] disabled:opacity-40 transition-all"
-      >
-        <div className="flex items-center gap-3">
-          {verifyBusy ? (
-            <Loader2 size={17} className="text-white/60 animate-spin" />
-          ) : (
-            <SearchCheck size={17} className="text-white/60" />
-          )}
-
-          <div>
-            <p className="font-orbitron text-xs font-bold uppercase">
-              Verify Proof Stamp
-            </p>
-
-            <p className="font-mono text-[10px] text-white/35 uppercase">
-              SourceTag + memo + payment proof
-            </p>
-          </div>
-        </div>
-      </button>
-
-      {verification?.verified && (
-        <div className="space-y-3 mt-4">
-          <MiniStatus
-            label="Tx"
-            value={shortProofStampHash(verification.txHash)}
-          />
-          <MiniStatus
-            label="Result"
-            value={verification.verified.transactionResult}
-          />
-          <MiniStatus
-            label="Amount Drops"
-            value={verification.verified.amountDrops ?? "None"}
-          />
-        </div>
-      )}
-
-      <div className="border border-white/10 bg-black p-4 mt-4">
-        <p className="font-mono text-xs text-white/45 leading-relaxed">
-          {statusMessage}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function MetricBox({ metric }: { metric: Metric }) {
-  const Icon = metric.icon;
-
-  return (
-    <div className="border border-white/10 bg-black/60 p-4">
-      <Icon size={18} className="text-white/60 mb-3" />
-
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
-        {metric.label}
+      <p className="font-orbitron text-sm font-black uppercase mb-2">
+        {isEnglish ? step.en : step.nl}
       </p>
 
-      <p className="font-orbitron text-sm font-black uppercase mb-1 break-all">
-        {metric.value}
-      </p>
-
-      <p className="font-mono text-[10px] text-white/30 uppercase">
-        {metric.text}
+      <p className="font-mono text-xs text-black/55 leading-relaxed">
+        {isEnglish ? step.textEn : step.textNl}
       </p>
     </div>
   );
 }
 
-function Section({ title, items }: { title: string; items: string[] }) {
+function AccessBox({
+  title,
+  lines,
+  premium = false,
+}: {
+  title: string;
+  lines: string[];
+  premium?: boolean;
+}) {
   return (
-    <div className="mb-5">
-      <p className="font-orbitron text-xs font-bold uppercase mb-3">{title}</p>
+    <div className={`border p-5 ${premium ? "border-[#C83888]/25 bg-[#C83888]/10" : "border-[#3898E8]/25 bg-[#3898E8]/10"}`}>
+      <p className="font-orbitron text-lg font-black uppercase mb-5">{title}</p>
 
-      <div className="space-y-2">
-        {items.map((item) => (
-          <InfoLine key={item} text={item} />
+      <div className="space-y-3">
+        {lines.map((line) => (
+          <StatusLine key={line} text={line} />
         ))}
       </div>
     </div>
   );
 }
 
-function CheckButton({
-  checked,
-  title,
-  text,
-  onClick,
-}: {
-  checked: boolean;
-  title: string;
-  text: string;
-  onClick: () => void;
-}) {
+function BriefLine({ title, text }: { title: string; text: string }) {
   return (
-    <button
-      onClick={onClick}
-      className={`w-full border p-4 text-left transition-all ${
-        checked
-          ? "border-white/30 bg-white/[0.08]"
-          : "border-white/10 bg-black hover:bg-white/[0.03]"
-      }`}
-    >
-      <div className="flex items-start gap-3">
-        {checked ? (
-          <CheckCircle2 size={17} className="text-white/70 mt-0.5" />
-        ) : (
-          <Circle size={17} className="text-white/25 mt-0.5" />
-        )}
-
-        <div>
-          <p className="font-orbitron text-xs font-bold uppercase mb-2">
-            {title}
-          </p>
-
-          <p className="font-mono text-[10px] text-white/40 leading-relaxed">
-            {text}
-          </p>
-        </div>
-      </div>
-    </button>
-  );
-}
-
-function InfoLine({ text }: { text: string }) {
-  return (
-    <div className="flex items-start gap-2">
-      <ArrowUpRight size={13} className="text-white/35 mt-0.5 shrink-0" />
-
-      <p className="font-mono text-xs text-white/45 leading-relaxed">{text}</p>
+    <div className="border border-black/10 bg-white p-4">
+      <p className="font-orbitron text-xs font-black uppercase mb-2">{title}</p>
+      <p className="font-mono text-xs text-black/55 leading-relaxed">{text}</p>
     </div>
   );
 }
 
-function ActionButton({
-  icon: Icon,
-  title,
-  text,
+function StatusLine({ text }: { text: string }) {
+  return (
+    <div className="flex items-start gap-3 border border-black/10 bg-[#F7F8FC] p-3">
+      <CheckCircle2 size={14} className="text-[#3898E8] shrink-0 mt-0.5" />
+      <p className="font-mono text-xs text-black/55 leading-relaxed">{text}</p>
+    </div>
+  );
+}
+
+function ModeButton({
+  active,
+  label,
   onClick,
 }: {
-  icon: ElementType;
-  title: string;
-  text: string;
+  active: boolean;
+  label: string;
   onClick: () => void;
 }) {
   return (
     <button
       onClick={onClick}
-      className="border border-white/10 bg-black p-4 text-left hover:bg-white/[0.03] transition-all"
+      className={`px-4 py-3 border font-orbitron text-[10px] font-black uppercase tracking-widest transition-all ${
+        active
+          ? "bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] text-white border-transparent"
+          : "bg-white text-black/50 border-black/10 hover:text-black hover:bg-[#F7F8FC]"
+      }`}
     >
-      <Icon size={18} className="text-white/60 mb-3" />
-
-      <p className="font-orbitron text-xs font-bold uppercase mb-2">{title}</p>
-
-      <p className="font-mono text-[10px] text-white/35 uppercase">{text}</p>
+      {label}
     </button>
   );
 }
 
-function InputField({
+function MetricCard({
   label,
   value,
-  placeholder,
-  onChange,
+  text,
+  icon: Icon,
 }: {
   label: string;
   value: string;
-  placeholder?: string;
-  onChange: (value: string) => void;
+  text: string;
+  icon: ElementType;
 }) {
   return (
-    <label className="block">
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
-        {label}
-      </p>
-
-      <input
-        value={value}
-        placeholder={placeholder}
-        onChange={(event) => onChange(event.target.value)}
-        className="w-full bg-black border border-white/10 px-4 py-4 font-mono text-xs text-white/70 outline-none focus:border-white/30 placeholder:text-white/20"
-      />
-    </label>
-  );
-}
-
-function MiniStatus({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="border border-white/10 bg-black p-4">
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
-        {label}
-      </p>
-
-      <p className="font-orbitron text-sm font-black uppercase break-all">
-        {value}
-      </p>
+    <div className="border border-black/10 bg-white/90 p-4 shadow-sm">
+      <Icon size={18} className="text-[#C83888] mb-3" />
+      <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">{label}</p>
+      <p className="font-orbitron text-sm font-black uppercase mb-1 break-all">{value}</p>
+      <p className="font-mono text-[10px] text-black/35 uppercase">{text}</p>
     </div>
   );
 }
 
-function MiniPill({ text }: { text: string }) {
+function Panel({
+  title,
+  icon: Icon,
+  children,
+}: {
+  title: string;
+  icon: ElementType;
+  children: ReactNode;
+}) {
   return (
-    <span className="border border-white/10 px-2 py-1 font-mono text-[9px] text-white/35 uppercase">
-      {text}
-    </span>
+    <div className="border border-black/10 bg-white p-5 md:p-6 shadow-sm">
+      <div className="flex items-center gap-2 mb-5">
+        <Icon size={18} className="text-[#3898E8]" />
+        <p className="font-orbitron text-xs uppercase tracking-widest">{title}</p>
+      </div>
+      {children}
+    </div>
   );
 }
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-black/10 bg-[#F7F8FC] p-3">
+      <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">{label}</p>
+      <p className="font-orbitron text-xs font-black uppercase break-all">{value}</p>
+    </div>
+  );
+}
+
+export default PartnerHubTab;
