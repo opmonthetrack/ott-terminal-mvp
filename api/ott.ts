@@ -578,9 +578,33 @@ async function handleCreateMakeWavesPayload(body: RequestBody) {
 async function handleVerifyMakeWavesPayload(body: RequestBody) {
   const uuid = getString(body, "uuid");
   const actionId = (getString(body, "actionId") || "daily-checkin") as MakeWavesActionId;
+  const expectedWallet = getString(body, "expectedWallet");
+  const expectedDestination =
+    process.env.OTT_PROOF_DESTINATION_WALLET?.trim() ||
+    process.env.OTT_TRUTH_DESK_WALLET?.trim() ||
+    "";
+  const expectedAmountDrops = "1";
 
   if (!uuid) {
     return { status: 400, body: { ok: false, error: "Missing uuid." } };
+  }
+
+  if (expectedWallet && !isValidXrplAddress(expectedWallet)) {
+    return {
+      status: 400,
+      body: { ok: false, error: "Invalid expectedWallet." },
+    };
+  }
+
+  if (!expectedDestination || !isValidXrplAddress(expectedDestination)) {
+    return {
+      status: 500,
+      body: {
+        ok: false,
+        error:
+          "Missing valid OTT_PROOF_DESTINATION_WALLET for Make Waves verification.",
+      },
+    };
   }
 
   const result = await getXamanPayload(uuid);
@@ -595,8 +619,124 @@ async function handleVerifyMakeWavesPayload(body: RequestBody) {
   };
   const action = getMakeWavesAction(actionId);
   const signed = Boolean(payload.meta?.signed);
+  const resolved = Boolean(payload.meta?.resolved);
   const account = payload.response?.account ?? null;
   const txid = payload.response?.txid ?? null;
+
+  if (!signed || !resolved || !txid || !isValidTxHash(txid)) {
+    return {
+      status: 200,
+      body: {
+        ok: true,
+        sourceTag: MAKE_WAVES_SOURCE_TAG,
+        verified: {
+          signed,
+          resolved,
+          account,
+          txid,
+          sourceTag: null,
+          actionId,
+          xp: 0,
+          makeWavesVerified: false,
+          ledgerStatus: signed ? "pending" : "not-signed",
+          validated: false,
+          success: false,
+          transactionResult: null,
+          transactionType: null,
+          destination: null,
+          amountDrops: null,
+          sourceTagMatches: false,
+          walletMatches: false,
+          xamanAccountMatchesTx: false,
+          destinationMatches: false,
+          amountMatches: false,
+          memoMatches: false,
+          memoTypeMatches: false,
+        },
+        payload,
+      },
+    };
+  }
+
+  const ledgerResult = await fetchXrplTransaction(txid);
+
+  if (ledgerResult.status === 404) {
+    return {
+      status: 200,
+      body: {
+        ok: true,
+        sourceTag: MAKE_WAVES_SOURCE_TAG,
+        verified: {
+          signed,
+          resolved,
+          account,
+          txid,
+          sourceTag: null,
+          actionId,
+          xp: 0,
+          makeWavesVerified: false,
+          ledgerStatus: "pending",
+          validated: false,
+          success: false,
+          transactionResult: null,
+          transactionType: null,
+          destination: null,
+          amountDrops: null,
+          sourceTagMatches: false,
+          walletMatches: false,
+          xamanAccountMatchesTx: false,
+          destinationMatches: false,
+          amountMatches: false,
+          memoMatches: false,
+          memoTypeMatches: false,
+        },
+        payload,
+      },
+    };
+  }
+
+  if (ledgerResult.status !== 200) {
+    return ledgerResult;
+  }
+
+  const data = ledgerResult.body as XrplRpcResponse;
+  const txResult = data.result as XrplTxResult;
+  const txJson = readTxJson(txResult);
+  const meta = readMeta(txResult);
+  const memoText = extractMemoText(txJson.Memos);
+  const memoData = memoText.map((memo) => memo.data).filter(Boolean);
+  const memoTypes = memoText.map((memo) => memo.type).filter(Boolean);
+  const sourceTag = txJson.SourceTag ?? null;
+  const amountDrops = typeof txJson.Amount === "string" ? txJson.Amount : null;
+  const validated = Boolean(txResult.validated);
+  const transactionResult = meta.TransactionResult ?? "unknown";
+  const success = transactionResult === "tesSUCCESS";
+  const isPayment = txJson.TransactionType === "Payment";
+  const sourceTagMatches = isMakeWavesSourceTag(sourceTag);
+  const walletMatches = matchesOptional(expectedWallet, txJson.Account ?? null);
+  const xamanAccountMatchesTx = Boolean(
+    account && txJson.Account && account === txJson.Account
+  );
+  const destinationMatches = txJson.Destination === expectedDestination;
+  const amountMatches = amountDrops === expectedAmountDrops;
+  const memoMatches = memoData.some((memo) => memo.includes(action.memo));
+  const memoTypeMatches = memoTypes.some((memo) =>
+    memo.includes("OTT_MAKE_WAVES")
+  );
+  const makeWavesVerified = Boolean(
+    signed &&
+      resolved &&
+      validated &&
+      success &&
+      isPayment &&
+      sourceTagMatches &&
+      walletMatches &&
+      xamanAccountMatchesTx &&
+      destinationMatches &&
+      amountMatches &&
+      memoMatches &&
+      memoTypeMatches
+  );
 
   return {
     status: 200,
@@ -605,14 +745,30 @@ async function handleVerifyMakeWavesPayload(body: RequestBody) {
       sourceTag: MAKE_WAVES_SOURCE_TAG,
       verified: {
         signed,
-        resolved: Boolean(payload.meta?.resolved),
+        resolved,
         account,
         txid,
-        sourceTag: MAKE_WAVES_SOURCE_TAG,
+        sourceTag,
         actionId,
-        xp: signed ? action.xp : 0,
+        xp: makeWavesVerified ? action.xp : 0,
+        makeWavesVerified,
+        ledgerStatus: makeWavesVerified ? "verified" : "failed",
+        validated,
+        success,
+        transactionResult,
+        transactionType: txJson.TransactionType ?? null,
+        destination: txJson.Destination ?? null,
+        amountDrops,
+        sourceTagMatches,
+        walletMatches,
+        xamanAccountMatchesTx,
+        destinationMatches,
+        amountMatches,
+        memoMatches,
+        memoTypeMatches,
       },
       payload,
+      xrpl: data.result,
     },
   };
 }
