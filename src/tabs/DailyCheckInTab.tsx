@@ -20,6 +20,7 @@ import {
   createMakeWavesPayload,
   getMakeWavesVerificationLabel,
   getXamanPayloadQr,
+  isMakeWavesRewardAllowed,
   getXamanPayloadUrl,
   getXamanPayloadUuid,
   openXamanPayload,
@@ -50,7 +51,7 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
   const [busy, setBusy] = useState(false);
   const [verifyBusy, setVerifyBusy] = useState(false);
   const [statusMessage, setStatusMessage] = useState(
-    "Create a Xaman payload to earn XP with SourceTag 2606170002."
+    "Create, sign and validate a Mainnet proof to earn XP with SourceTag 2606170002."
   );
 
   const selectedAction = useMemo(
@@ -98,22 +99,26 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
     setStatusMessage("Verifying Xaman payload...");
 
     try {
-      const response = await verifyMakeWavesPayload(uuid, selectedActionId);
+      const response = await verifyMakeWavesPayload(
+        uuid,
+        selectedActionId,
+        walletAddress
+      );
       setVerification(response);
 
-      if (response.verified?.signed) {
+      if (isMakeWavesRewardAllowed(response, selectedActionId)) {
         const xpState = addXpRewardEvent({
           walletAddress,
           actionId: selectedActionId,
-          txHash: response.verified.txid,
-          note: `${selectedAction.title} signed through Xaman with SourceTag ${MAKE_WAVES_SOURCE_TAG}.`,
+          txHash: response.verified?.txid,
+          note: `${selectedAction.title} validated on XRPL Mainnet with SourceTag ${MAKE_WAVES_SOURCE_TAG}.`,
         });
 
         const lockedState = addMainnetLockedEvent({
           walletAddress,
           actionId: selectedActionId,
-          txHash: response.verified.txid,
-          note: "Mainnet OTT token reward stays locked until legal review is complete.",
+          txHash: response.verified?.txid,
+          note: "Future on-chain OTT token conversion stays disabled until utility, profitability and legal review are complete.",
         });
 
         setRewardState({
@@ -175,7 +180,7 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
 
             <p className="font-mono text-sm text-white/45 max-w-3xl leading-relaxed">
               Maak een Xaman payload, sign met wallet, verifieer de payload en
-              credit daarna XP in de Reward Ledger. Alles draait rond SourceTag{" "}
+              verifieer daarna de Mainnet-transactie en credit pas dan XP in de Reward Ledger. Alles draait rond SourceTag{" "}
               {MAKE_WAVES_SOURCE_TAG}.
             </p>
           </div>
@@ -315,7 +320,7 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
                   </p>
 
                   <p className="font-mono text-[10px] text-white/35 uppercase">
-                    Signed payload credits local XP
+                    Validated Mainnet transaction credits XP
                   </p>
                 </div>
               </div>
@@ -344,8 +349,16 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
             {verification?.verified ? (
               <div className="space-y-3">
                 <MiniStatus
-                  label="Signed"
-                  value={verification.verified.signed ? "Yes" : "No"}
+                  label="Mainnet verified"
+                  value={verification.verified.makeWavesVerified ? "Yes" : "No"}
+                />
+                <MiniStatus
+                  label="Ledger status"
+                  value={verification.verified.ledgerStatus}
+                />
+                <MiniStatus
+                  label="Result"
+                  value={verification.verified.transactionResult ?? "Pending"}
                 />
                 <MiniStatus
                   label="Account"
