@@ -703,8 +703,8 @@ export function AcademyTab({ walletAddress = "guest" }: AcademyTabProps) {
 
                 <p className="font-mono text-sm text-black/55 leading-relaxed mb-8">
                   {isEnglish
-                    ? "Proof-ready foundation for progress, XP, credits, wallet address and future certificates."
-                    : "Proof-ready basis voor voortgang, XP, credits, walletadres en toekomstige certificaten."}
+                    ? "Proof-ready foundation for progress, XP, credits, wallet address and future certificates. The NFT certificate/payment route is intentionally not active in V2 yet."
+                    : "Proof-ready basis voor voortgang, XP, credits, walletadres en toekomstige certificaten. De NFT certificate/payment route is bewust nog niet actief in V2."}
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-8">
@@ -714,14 +714,75 @@ export function AcademyTab({ walletAddress = "guest" }: AcademyTabProps) {
                   <InfoRow label="SourceTag" value={String(MAKE_WAVES_SOURCE_TAG)} />
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 text-left">
+                  <div className="border border-[#3898E8]/25 bg-[#3898E8]/10 p-5">
+                    <div className="flex items-start gap-3 mb-4">
+                      <BadgeCheck size={20} className="text-[#3898E8] shrink-0 mt-0.5" />
+
+                      <div>
+                        <p className="font-orbitron text-sm font-black uppercase mb-2">
+                          {isEnglish ? "Free Completion Proof" : "Gratis Afronding Proof"}
+                        </p>
+
+                        <p className="font-mono text-xs text-black/60 leading-relaxed">
+                          {isEnglish
+                            ? "Users can show progress, quiz score, wallet and SourceTag as a local proof-ready certificate screen."
+                            : "Gebruikers kunnen voortgang, quizscore, wallet en SourceTag tonen als lokaal proof-ready certificaatscherm."}
+                        </p>
+                      </div>
+                    </div>
+
+                    <InfoRow
+                      label={isEnglish ? "Status" : "Status"}
+                      value={progressPercent >= 100 ? "Ready" : "Locked"}
+                    />
+                  </div>
+
+                  <div className="border border-[#C83888]/25 bg-[#C83888]/10 p-5">
+                    <div className="flex items-start gap-3 mb-4">
+                      <Lock size={20} className="text-[#C83888] shrink-0 mt-0.5" />
+
+                      <div>
+                        <p className="font-orbitron text-sm font-black uppercase mb-2">
+                          {isEnglish ? "Future Certificate NFT" : "Toekomstige Certificaat NFT"}
+                        </p>
+
+                        <p className="font-mono text-xs text-black/60 leading-relaxed">
+                          {isEnglish
+                            ? "Later: optional certificate NFT for about €1 equivalent in XRP or RLUSD. Funds are transparently routed back into terminal development."
+                            : "Later: optionele certificaat-NFT voor ongeveer €1 waarde in XRP of RLUSD. Opbrengsten worden transparant teruggestort in terminalontwikkeling."}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3">
+                      <InfoRow label={isEnglish ? "Mint" : "Mint"} value="Coming soon" />
+                      <InfoRow label={isEnglish ? "Utility" : "Utility"} value="Certificate / Events / Tickets" />
+                      <InfoRow label={isEnglish ? "Legal" : "Legal"} value="No investment / no yield" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border border-black/10 bg-[#F7F8FC] p-5 mb-8 text-left">
+                  <p className="font-orbitron text-sm font-black uppercase mb-3">
+                    {isEnglish ? "Why NFT later?" : "Waarom NFT later?"}
+                  </p>
+
+                  <p className="font-mono text-xs text-black/55 leading-relaxed">
+                    {isEnglish
+                      ? "A paid certificate NFT must be built with payment verification, mint confirmation, duplicate protection, refund handling and clear legal copy. That belongs in a separate safe production step."
+                      : "Een betaalde certificaat-NFT moet gebouwd worden met payment verification, mint confirmation, dubbele bescherming, refund-afhandeling en duidelijke legal copy. Dat hoort in een aparte veilige productiestap."}
+                  </p>
+                </div>
+
                 <button
                   disabled={progressPercent < 100}
                   className="bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] text-white px-6 py-4 font-orbitron text-xs font-black uppercase tracking-widest hover:brightness-95 transition-all disabled:opacity-40"
                 >
                   {progressPercent >= 100
                     ? isEnglish
-                      ? "Generate Proof"
-                      : "Genereer Proof"
+                      ? "Generate Free Proof"
+                      : "Genereer Gratis Proof"
                     : isEnglish
                       ? "Complete all modules first"
                       : "Rond eerst alle modules af"}
