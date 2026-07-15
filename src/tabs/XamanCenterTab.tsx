@@ -7,6 +7,7 @@ import {
   Copy,
   ExternalLink,
   Fingerprint,
+  GraduationCap,
   KeyRound,
   Loader2,
   LockKeyhole,
@@ -14,6 +15,7 @@ import {
   RefreshCcw,
   ShieldCheck,
   Smartphone,
+  Trophy,
   Wallet,
   XCircle,
   Zap,
@@ -71,8 +73,8 @@ function getConnectRoutes(language: string): RouteCard[] {
       label: language === "en" ? "Recommended" : "Aanbevolen",
       text:
         language === "en"
-          ? "Use this route as wallet-connect proof for OTT Terminal V2."
-          : "Gebruik deze route als wallet-connect proof voor OTT Terminal V2.",
+          ? "Best first step for the Make Waves demo: connect, sign and prove the OTT SourceTag."
+          : "Beste eerste stap voor de Make Waves demo: connect, teken en bewijs de OTT SourceTag.",
       xp: "+15 XP",
       icon: Fingerprint,
     },
@@ -82,8 +84,8 @@ function getConnectRoutes(language: string): RouteCard[] {
       label: language === "en" ? "Activity" : "Activiteit",
       text:
         language === "en"
-          ? "Use this route as a simple daily Xaman signing test."
-          : "Gebruik deze route als simpele dagelijkse Xaman sign test.",
+          ? "After connecting, use this route to create daily Mainnet proof and earn XP."
+          : "Na connect gebruik je deze route voor dagelijkse Mainnet proof en XP.",
       xp: "+10 XP",
       icon: Activity,
     },
@@ -97,8 +99,8 @@ function getConnectSteps(language: string): ConnectStep[] {
       title: language === "en" ? "Create Payload" : "Payload maken",
       text:
         language === "en"
-          ? "Terminal creates a Xaman payload through api/ott.ts."
-          : "Terminal maakt een Xaman payload via api/ott.ts.",
+          ? "Terminal creates a safe Xaman request with the OTT Make Waves SourceTag."
+          : "Terminal maakt een veilige Xaman request met de OTT Make Waves SourceTag.",
       icon: QrCode,
     },
     {
@@ -124,8 +126,8 @@ function getConnectSteps(language: string): ConnectStep[] {
       title: language === "en" ? "Return + Verify" : "Terug + Verify",
       text:
         language === "en"
-          ? "After returning, Terminal verifies the payload."
-          : "Na terugkeer verifieert Terminal de payload.",
+          ? "After returning, Terminal verifies the account, signature and proof route."
+          : "Na terugkeer verifieert Terminal account, signature en proof-route.",
       icon: BadgeCheck,
     },
   ];
@@ -353,17 +355,19 @@ export function XamanCenterTab({
               </div>
 
               <h1 className="font-orbitron text-4xl xl:text-6xl font-black uppercase leading-none tracking-tight mb-6">
-                {xamanCopy.titleLine1}
+                {language === "en" ? "Connect" : "Connect"}
                 <br />
                 <span className="bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] bg-clip-text text-transparent">
-                  {xamanCopy.titleLine2}
+                  Xaman.
                 </span>
                 <br />
-                {xamanCopy.titleLine3}
+                {language === "en" ? "Prove SourceTag." : "Bewijs SourceTag."}
               </h1>
 
               <p className="font-mono text-sm xl:text-base text-black/60 leading-relaxed max-w-3xl mb-8">
-                {xamanCopy.intro}
+                {language === "en"
+                  ? "This is the first step of the Make Waves journey. Xaman stays self-custody, OTT never sees private keys, and the terminal only verifies signed proof with SourceTag 2606170002."
+                  : "Dit is de eerste stap van de Make Waves journey. Xaman blijft self-custody, OTT ziet nooit private keys en de terminal verifieert alleen signed proof met SourceTag 2606170002."}
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-4xl">
@@ -443,9 +447,9 @@ export function XamanCenterTab({
               icon={Fingerprint}
             />
             <MetricCard
-              label="Dashboard"
-              value={verifiedAccount ? "Linked" : "Guest"}
-              text="Wallet layer"
+              label="Next"
+              value={verifiedAccount ? "Check-In" : "Connect"}
+              text="Demo route"
               icon={Zap}
             />
           </div>
@@ -477,6 +481,32 @@ export function XamanCenterTab({
               {connectSteps.map((step) => (
                 <StepCard key={step.number} step={step} />
               ))}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+              <TrustBox
+                icon={ShieldCheck}
+                title={language === "en" ? "Self-Custody" : "Self-Custody"}
+                text={
+                  language === "en"
+                    ? "You sign inside Xaman. OTT never controls your wallet."
+                    : "Je tekent in Xaman. OTT beheert nooit je wallet."
+                }
+              />
+              <TrustBox
+                icon={Fingerprint}
+                title="SourceTag"
+                text={`2606170002 · ${language === "en" ? "Make Waves proof identity" : "Make Waves proof identity"}`}
+              />
+              <TrustBox
+                icon={GraduationCap}
+                title={language === "en" ? "Education First" : "Education First"}
+                text={
+                  language === "en"
+                    ? "Connect first, learn the action, then prove it."
+                    : "Eerst connecten, actie begrijpen, daarna bewijzen."
+                }
+              />
             </div>
 
             <button
@@ -691,6 +721,47 @@ export function XamanCenterTab({
                 ))}
               </div>
             </div>
+
+            <div className="border border-black/10 bg-white p-4 md:p-6 shadow-sm">
+              <div className="flex items-center gap-2 mb-5">
+                <Trophy size={18} className="text-[#C83888]" />
+
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  Make Waves Demo Route
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <SafeLine
+                  text={
+                    language === "en"
+                      ? "1. Connect Xaman with SourceTag proof"
+                      : "1. Connect Xaman met SourceTag proof"
+                  }
+                />
+                <SafeLine
+                  text={
+                    language === "en"
+                      ? "2. Go to Daily Check-In for Mainnet proof"
+                      : "2. Ga naar Daily Check-In voor Mainnet proof"
+                  }
+                />
+                <SafeLine
+                  text={
+                    language === "en"
+                      ? "3. Show XP and OTT Credits in Reward Ledger"
+                      : "3. Toon XP en OTT Credits in Reward Ledger"
+                  }
+                />
+                <SafeLine
+                  text={
+                    language === "en"
+                      ? "4. Verify tx hash on the SourceTag page"
+                      : "4. Verifieer tx hash op de SourceTag pagina"
+                  }
+                />
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -893,6 +964,30 @@ function DetailRow({ label, value }: { label: string; value: string }) {
       </p>
 
       <p className="font-mono text-xs text-black/55 break-all">{value}</p>
+    </div>
+  );
+}
+
+function TrustBox({
+  icon: Icon,
+  title,
+  text,
+}: {
+  icon: ElementType;
+  title: string;
+  text: string;
+}) {
+  return (
+    <div className="border border-black/10 bg-[#F7F8FC] p-4">
+      <Icon size={18} className="text-[#C83888] mb-3" />
+
+      <p className="font-orbitron text-xs font-black uppercase mb-2">
+        {title}
+      </p>
+
+      <p className="font-mono text-xs text-black/55 leading-relaxed">
+        {text}
+      </p>
     </div>
   );
 }
