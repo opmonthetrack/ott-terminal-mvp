@@ -5,7 +5,6 @@ import {
   ArrowUpRight,
   Bell,
   BookOpen,
-  CheckCircle2,
   Clipboard,
   ExternalLink,
   FileSearch,
@@ -62,7 +61,11 @@ type Rule = {
 
 const SOURCE_TAG = 2606170002;
 const TERMINAL_URL = "https://ott-terminal-mvp.vercel.app";
+const BRAND_LINE = "Built by TruthOnTheTrack · XRPL OnTheTrack Terminal";
 const ATTRIBUTION = `Powered by XRPL OnTheTrack Terminal\nSourceTag ${SOURCE_TAG}\nBuilt by TruthOnTheTrack\n${TERMINAL_URL}`;
+const CORE_HASHTAGS = "#XRPL #XRP #Ripple #Xaman #DigitalAssets #OnTheTrack #TruthOnTheTrack";
+const BUILDER_HASHTAGS = "#XRPL #XRP #Web3 #Blockchain #Tokenization #DigitalAssets #Builders #OnTheTrack";
+const MACRO_HASHTAGS = "#CBDC #ISO20022 #DigitalMoney #Payments #Tokenization #XRPL #OnTheTrack";
 
 const outputOptions: OutputOption[] = [
   {
@@ -70,56 +73,56 @@ const outputOptions: OutputOption[] = [
     title: "X Post",
     status: "Share",
     icon: Newspaper,
-    text: "Korte post met bron, context, attribution en share-link.",
+    text: "Korte post met emoji hook, hashtags, bron en share-link.",
   },
   {
     id: "linkedin",
     title: "LinkedIn",
     status: "Share",
     icon: Linkedin,
-    text: "Zakelijke caption met infrastructuur-context en builder angle.",
+    text: "Professionele caption met builder angle, CTA en attribution.",
   },
   {
     id: "instagram",
     title: "Instagram",
     status: "Copy",
     icon: Sparkles,
-    text: "Caption voor carousel/reel. Instagram opent zonder prefilled post.",
+    text: "Caption voor carousel/reel met emoji structuur en hashtags.",
   },
   {
     id: "facebook",
     title: "Facebook",
     status: "Share",
     icon: MessageCircle,
-    text: "Community post met bronlink en OTT attribution.",
+    text: "Community post met uitleg, bronlink en OTT attribution.",
   },
   {
     id: "medium",
     title: "Medium Article",
     status: "Article",
     icon: FileText,
-    text: "Artikel-outline met intro, bullets, context en CTA.",
+    text: "Artikel-outline met titel, intro, bullets, CTA en tags.",
   },
   {
     id: "tiktok",
     title: "TikTok Hook",
     status: "Upload",
     icon: Video,
-    text: "Snelle hook + talking points voor short-form video.",
+    text: "Sterke video hook + talking points + caption.",
   },
   {
     id: "whatsapp",
     title: "WhatsApp Status",
     status: "Send",
     icon: Send,
-    text: "Compacte update voor community en status sharing.",
+    text: "Compacte community update met emoji en bron.",
   },
   {
     id: "youtube",
     title: "YouTube Bullets",
     status: "Studio",
     icon: BookOpen,
-    text: "Bullet flow voor video, short of livestream segment.",
+    text: "Video/Shorts outline met title, description en hashtags.",
   },
 ];
 
@@ -145,7 +148,7 @@ const rules: Rule[] = [
   {
     title: "No Hype",
     status: "Guard",
-    text: "Geen prijsvoorspellingen, koopadvies, gegarandeerde adoptie of winstbelofte.",
+    text: "Meer bereik mag, maar geen prijsvoorspellingen, koopadvies of winstbelofte.",
     icon: AlertTriangle,
   },
 ];
@@ -261,13 +264,13 @@ export function NewsTab() {
               </div>
 
               <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
-                Turn Intel Into Action
+                Turn Intel Into Reach
               </h2>
 
               <p className="font-mono text-sm text-black/55 max-w-3xl leading-relaxed">
                 Zet XRPL Intelligence om naar posts, captions, video hooks en
-                article outlines. Gebruik copy, open source en platform-buttons.
-                Public output houdt standaard OTT attribution zichtbaar.
+                article outlines met emoji&apos;s, hashtags, CTA&apos;s en zichtbare OTT
+                attribution. Gebruik copy, open source en platform-buttons.
               </p>
 
               <div className="flex flex-wrap gap-3 mt-5">
@@ -458,39 +461,79 @@ function buildSocialOutput(item: XrplIntelItem, mode: OutputMode) {
   const date = formatIntelDate(item.pubDate);
   const sourceLine = `Source: ${item.source} (${getSourceTypeLabel(item.sourceType)})`;
   const safetyLine = item.needsConfirmation
-    ? "Needs confirmation before publishing."
-    : "Source-weighted signal, still review before publishing.";
+    ? "⚠️ Needs confirmation before publishing."
+    : "✅ Source-weighted signal. Still review before publishing.";
+  const hashtags = getHashtags(item);
+  const mentions = getSuggestedMentions(item);
+  const sourceUrl = item.link && item.link !== "#" ? item.link : TERMINAL_URL;
   const footer = `\n\n${ATTRIBUTION}`;
 
   if (mode === "linkedin") {
-    return `XRPL Intelligence note\n\n${item.title}\n\n${item.whyItMatters}\n\nContext:\n${item.description}\n\n${sourceLine}\nDate: ${date}\nConfidence: ${item.confidenceScore}%\n\nThis is infrastructure awareness, not financial advice or a trading signal.\n${footer}\n\n#XRPL #Ripple #XRP #Tokenization #DigitalAssets`;
+    return `🔎 XRPL Intelligence Note\n\n${item.title}\n\nWhy this matters:\n${item.whyItMatters}\n\nBuilder context:\n${item.description}\n\n${sourceLine}\nDate: ${date}\nConfidence: ${item.confidenceScore}%\n\n${safetyLine}\n\nQuestion for builders:\nWhat would you verify before turning this into product strategy?\n\n${BRAND_LINE}\n${TERMINAL_URL}\n\nSuggested tags to verify before posting: ${mentions}\n\n${hashtags}`;
   }
 
   if (mode === "instagram") {
-    return `${item.title}\n\nWhat matters:\n${item.whyItMatters}\n\nContext:\n${item.description}\n\nSave this for later and always check the source before sharing.\n\n${sourceLine}\n${date}\n${footer}\n\n#XRPL #XRP #Ripple #DigitalAssets #OnTheTrack #TruthOnTheTrack`;
+    return `🚨 XRPL Intel Drop\n\n${item.title}\n\n🧠 Why it matters:\n${item.whyItMatters}\n\n🔍 Context:\n${item.description}\n\n📌 Save this. Check the source. Follow the rails, not the hype.\n\n${sourceLine}\n📅 ${date}\n\n${BRAND_LINE}\nSourceTag ${SOURCE_TAG}\n${TERMINAL_URL}\n\n${hashtags}\n#CryptoEducation #Web3Community #589StepsAhead`;
   }
 
   if (mode === "facebook") {
-    return `XRPL Intelligence update\n\n${item.title}\n\n${item.whyItMatters}\n\n${sourceLine}\nDate: ${date}\n\nEducation only. No hype, no trading signal.\n${footer}`;
+    return `📡 XRPL Intelligence Update\n\n${item.title}\n\n${item.whyItMatters}\n\nWhat to check:\n1️⃣ Read the source\n2️⃣ Separate facts from hype\n3️⃣ Watch the infrastructure signal\n\n${sourceLine}\nDate: ${date}\n\nEducation only. No hype, no trading signal.\n\n${BRAND_LINE}\n${TERMINAL_URL}\n\n${hashtags}`;
   }
 
   if (mode === "medium") {
-    return `# ${item.title}\n\n## Summary\n${item.description}\n\n## Why it matters\n${item.whyItMatters}\n\n## Source context\n- ${sourceLine}\n- Date: ${date}\n- Bucket: ${item.bucket}\n- Confidence: ${item.confidenceScore}%\n\n## What builders should watch\n- Protocol or infrastructure impact\n- Ecosystem adoption context\n- What still needs verification\n\n## Safety note\nThis article is education only. It is not financial advice, not a trading signal and not a claim of guaranteed adoption.\n${footer}`;
+    return `# ${item.title}\n\n## Quick summary\n${item.description}\n\n## Why it matters\n${item.whyItMatters}\n\n## Source context\n- ${sourceLine}\n- Date: ${date}\n- Bucket: ${item.bucket}\n- Confidence: ${item.confidenceScore}%\n- Source URL: ${sourceUrl}\n\n## What builders should watch\n- Protocol or infrastructure impact\n- Ecosystem adoption context\n- What still needs verification\n- Whether this is official, technical or macro context\n\n## Safety note\nThis article is education only. It is not financial advice, not a trading signal and not a claim of guaranteed adoption.\n\n## About\n${ATTRIBUTION}\n\nTags: XRPL, XRP, Ripple, Tokenization, Digital Assets, OnTheTrack`;
   }
 
   if (mode === "tiktok") {
-    return `HOOK:\nMost people only see crypto headlines. Builders watch infrastructure signals.\n\nTOPIC:\n${item.title}\n\n3 TALKING POINTS:\n1. What happened: ${item.description}\n2. Why it matters: ${item.whyItMatters}\n3. Safety: ${safetyLine}\n\nCTA:\nFollow the sources. Learn the rails. Stay 589 steps ahead.\n\n${sourceLine}\n${footer}`;
+    return `🎬 HOOK:\nMost people chase crypto headlines. Builders watch infrastructure signals.\n\nTOPIC:\n${item.title}\n\nTALKING POINTS:\n1️⃣ What happened: ${item.description}\n2️⃣ Why it matters: ${item.whyItMatters}\n3️⃣ Safety: ${safetyLine}\n\nCTA:\nFollow the source. Learn the rails. Stay 589 steps ahead.\n\nCaption:\n${item.title} ⚡ Source-first XRPL intelligence. Education only.\n\n${BRAND_LINE}\n${hashtags}\n#CryptoTikTok #Web3Education`;
   }
 
   if (mode === "whatsapp") {
-    return `XRPL Intelligence update\n\n${item.title}\n\n${item.whyItMatters}\n\n${sourceLine}\n${date}\n\nEducation only. No hype, no trading signal.\n${footer}`;
+    return `📡 XRPL Intelligence Update\n\n${item.title}\n\n${item.whyItMatters}\n\n${sourceLine}\n${date}\n\nEducation only. No hype, no trading signal.\n\n${BRAND_LINE}\n${TERMINAL_URL}`;
   }
 
   if (mode === "youtube") {
-    return `YouTube / Live bullets\n\nTitle: ${item.title}\n\n- Source: ${item.source}\n- Date: ${date}\n- Bucket: ${item.bucket}\n- Confidence: ${item.confidenceScore}%\n- What happened: ${item.description}\n- Why it matters: ${item.whyItMatters}\n- Safety note: ${safetyLine}\n- Closing: This is awareness and education, not financial advice.\n${footer}`;
+    return `YouTube / Shorts Outline\n\n🎥 Title idea:\n${item.title}\n\nOpening hook:\nThis is not a price signal. This is an infrastructure signal.\n\nVideo bullets:\n- Source: ${item.source}\n- Date: ${date}\n- Bucket: ${item.bucket}\n- Confidence: ${item.confidenceScore}%\n- What happened: ${item.description}\n- Why it matters: ${item.whyItMatters}\n- Safety note: ${safetyLine}\n\nDescription:\nSource-first XRPL intelligence from XRPL OnTheTrack Terminal.\n${sourceUrl}\n\n${ATTRIBUTION}\n\n${hashtags}\n#CryptoNews #Web3Education #Blockchain`;
   }
 
-  return `${item.title}\n\n${item.whyItMatters}\n\n${sourceLine}\nConfidence: ${item.confidenceScore}%\n\nEducation only. Not financial advice. Not a trading signal.\n${footer}\n\n#XRPL #XRP #Ripple #OnTheTrack`;
+  return `🚨 XRPL Intel\n\n${item.title}\n\n${item.whyItMatters}\n\n${sourceLine}\nConfidence: ${item.confidenceScore}%\n\n${safetyLine}\n\n${BRAND_LINE}\n${TERMINAL_URL}\n\nSuggested tags to verify: ${mentions}\n\n${hashtags}`;
+}
+
+function getHashtags(item: XrplIntelItem) {
+  const text = `${item.title} ${item.bucket} ${item.description}`.toLowerCase();
+
+  if (text.includes("cbdc") || text.includes("iso 20022") || text.includes("swift")) {
+    return MACRO_HASHTAGS;
+  }
+
+  if (text.includes("xls") || text.includes("amendment") || text.includes("mpt") || text.includes("escrow")) {
+    return `${BUILDER_HASHTAGS} #XLS #XRPLDev`;
+  }
+
+  return CORE_HASHTAGS;
+}
+
+function getSuggestedMentions(item: XrplIntelItem) {
+  const source = item.source.toLowerCase();
+  const bucket = item.bucket.toLowerCase();
+
+  if (source.includes("xaman")) {
+    return "@XamanWallet @XRPLF @Ripple";
+  }
+
+  if (source.includes("ripple")) {
+    return "@Ripple @XRPLF";
+  }
+
+  if (source.includes("xrpl") || bucket.includes("xls")) {
+    return "@XRPLF @Ripple";
+  }
+
+  if (bucket.includes("cbdc") || bucket.includes("iso")) {
+    return "@BIS_org @swiftcommunity @Ripple";
+  }
+
+  return "@XRPLF @Ripple @XamanWallet";
 }
 
 function getPlatformActionUrl(
