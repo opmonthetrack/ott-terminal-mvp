@@ -3,6 +3,7 @@ import type { ElementType } from "react";
 import {
   BadgeCheck,
   BookOpen,
+  Brain,
   CheckCircle2,
   ClipboardCheck,
   Copy,
@@ -13,6 +14,8 @@ import {
   Globe2,
   Lightbulb,
   Link2,
+  Megaphone,
+  Newspaper,
   Rocket,
   ShieldCheck,
   Sparkles,
@@ -50,23 +53,26 @@ type Metric = {
   icon: ElementType;
 };
 
+const TERMINAL_URL = "https://ott-terminal-mvp.vercel.app";
+const REPO_URL = "https://github.com/opmonthetrack/ott-terminal-mvp";
+
 const deliverables: Deliverable[] = [
   {
     id: "live-project",
     title: "Live Project",
-    status: "needs-link",
+    status: "ready",
     description:
-      "Vercel live link naar XRPL OnTheTrack Terminal. Jury route: Home → Xaman → Daily Proof → Reward Ledger → SourceTag Support → Academy.",
-    action: "Add final Vercel URL in the Make Waves submission.",
+      "Vercel live link naar XRPL OnTheTrack Terminal. Jury route: Dashboard Snapshot → XRPL Intelligence → OTT Intelligence → Newsroom → Xaman Proof → Reward Ledger.",
+    action: `Use live URL: ${TERMINAL_URL}`,
     icon: Globe2,
   },
   {
     id: "source-code",
     title: "Source Code",
-    status: "needs-link",
+    status: "ready",
     description:
-      "GitHub repository met React/Vite frontend, api/ott.ts router, Xaman flows, SourceTag proof en reward ledger.",
-    action: "Add public or shared GitHub link.",
+      "GitHub repository met React/Vite frontend, api/ott.ts router, Xaman flows, /api/news intelligence feed, SourceTag proof, reward ledger en social newsroom.",
+    action: `Use repo URL: ${REPO_URL}`,
     icon: Github,
   },
   {
@@ -74,8 +80,8 @@ const deliverables: Deliverable[] = [
     title: "2-Min Demo Video",
     status: "needs-polish",
     description:
-      "Gebruik Pitch Mode: Home → Xaman Center → Daily Check-In → Reward Ledger → SourceTag Support → Academy → Access Gate.",
-    action: "Record 2-minute screen demo after final build is green.",
+      "Gebruik Pitch Mode: Dashboard Snapshot → XRPL Intelligence → OTT Intelligence AI Studio → Newsroom → Xaman Center → Daily Check-In → Reward Ledger.",
+    action: "Record the screen after final smoke test is all pass.",
     icon: Film,
   },
   {
@@ -83,16 +89,34 @@ const deliverables: Deliverable[] = [
     title: "Pitch Deck",
     status: "needs-polish",
     description:
-      "6 slides: Problem, Solution, Live Demo, SourceTag Proof, Business Model, Roadmap.",
-    action: "Turn current Pitch Mode into a deck.",
+      "6 slides: Problem, Live Intelligence Layer, Guided Proof Flow, Retention Loop, Business Model, Roadmap.",
+    action: "Turn Pitch Mode into a concise deck or PDF after final QA.",
     icon: FileText,
+  },
+  {
+    id: "intelligence",
+    title: "XRPL Intelligence Layer",
+    status: "ready",
+    description:
+      "Dashboard Snapshot, XRPL Intelligence, OTT Intelligence AI Studio and Newsroom now turn live source data into explanation, checklist and social drafts.",
+    action: "Show this early in the demo to prove the terminal is more than a static dashboard.",
+    icon: Brain,
+  },
+  {
+    id: "social-newsroom",
+    title: "Public Social Newsroom",
+    status: "ready",
+    description:
+      "Users can select a source, generate copy-ready drafts for X, LinkedIn, Instagram, Facebook, Medium, TikTok, WhatsApp and YouTube, then open source/platform buttons.",
+    action: "Mention public attribution: Built by TruthOnTheTrack, SourceTag and terminal link stay visible.",
+    icon: Megaphone,
   },
   {
     id: "legal",
     title: "Legal-Safe Positioning",
     status: "ready",
     description:
-      "Education-first, no custody, no broker, no yield provider, no trade execution, no token value promise.",
+      "Education-first, no custody, no broker, no yield provider, no trade execution, no token value promise and no trading signals.",
     action: "Use this exact wording in pitch, submission and social copy.",
     icon: ShieldCheck,
   },
@@ -101,8 +125,8 @@ const deliverables: Deliverable[] = [
     title: "SourceTag Proof",
     status: "ready",
     description:
-      "Make Waves proof identity is SourceTag 2606170002. Daily Proof and SourceTag pages explain how proof and memo awareness work.",
-    action: "Mention SourceTag during demo and show it on Home, Xaman, Daily Check-In and Reward Ledger.",
+      "Make Waves proof identity is SourceTag 2606170002. Daily Proof, Xaman Center, Reward Ledger and SourceTag pages explain the proof loop.",
+    action: "Mention SourceTag during demo and show it on Home, Xaman, Daily Check-In, Reward Ledger and Dashboard.",
     icon: Fingerprint,
   },
   {
@@ -110,17 +134,26 @@ const deliverables: Deliverable[] = [
     title: "XRPL Academy",
     status: "ready",
     description:
-      "Academy deep catalog built from official XRPL learning themes, rewritten in OTT language with free and premium routes.",
-    action: "Show free modules first, then premium depth.",
+      "Academy deep catalog explains XRPL, wallets, payments, DeFi, stablecoins, tokenization, DID, coding and AI agents through free and premium routes.",
+    action: "Show free modules first, then premium depth and Certificate NFT coming soon.",
     icon: BookOpen,
   },
   {
-    id: "not-active",
+    id: "access-gate",
+    title: "Access Gate Scanner-Only",
+    status: "ready",
+    description:
+      "Access Gate is live-safe as a scanner-only utility pass check. No mint, payment, claim or XRP movement is active in this V1 flow.",
+    action: "Use as legal-safe roadmap proof, not as active paid minting.",
+    icon: BadgeCheck,
+  },
+  {
+    id: "coming-soon",
     title: "Coming Soon Clearly Marked",
     status: "ready",
     description:
-      "Certificate NFT, donation/payment and XRP/RLUSD support are shown as future layers only. No active mint/payment flow in this V1 screen.",
-    action: "Say coming soon clearly. Do not imply it is active.",
+      "Certificate NFT, donation/payment and XRP/RLUSD support are future layers only. No active mint/payment flow in V1.",
+    action: "Say coming soon clearly. Do not imply those flows are active today.",
     icon: Lightbulb,
   },
 ];
@@ -131,42 +164,63 @@ const copyBlocks: CopyBlock[] = [
     title: "One-Liner",
     icon: Lightbulb,
     text:
-      "XRPL OnTheTrack Terminal is an education-first Make Waves terminal where users learn XRPL, connect Xaman, prove SourceTag actions, earn XP and discover safe premium utility routes.",
+      "XRPL OnTheTrack Terminal is an education-first Make Waves terminal that turns live XRPL intelligence into learning, source verification, Xaman proof, XP and copy-ready social awareness.",
   },
   {
     id: "short-description",
     title: "Short Description",
     icon: BookOpen,
     text:
-      "XRPL OnTheTrack Terminal helps users understand XRPL before taking action. The live MVP combines a social landingpage, Xaman self-custody connect, Daily SourceTag proof, Reward Ledger XP/OTT Credits, SourceTag verification/support awareness, XRPL Academy and scanner-only Access Pass gating. It does not custody funds, does not act as broker, does not provide yield and does not execute trades. SourceTag 2606170002 is used as the public Make Waves proof identity.",
+      "XRPL OnTheTrack Terminal helps users understand XRPL before taking action. The live MVP combines a Daily Intelligence Snapshot, XRPL Intelligence feed, OTT Intelligence AI analysis, Social Newsroom, Xaman self-custody connect, Daily SourceTag proof, Reward Ledger XP/OTT Credits, SourceTag support awareness, XRPL Academy and scanner-only Access Gate. It does not custody funds, does not act as broker, does not provide yield and does not execute trades. SourceTag 2606170002 is used as the public Make Waves proof identity.",
   },
   {
     id: "problem",
     title: "Problem",
     icon: ClipboardCheck,
     text:
-      "XRPL has strong tools and official learning material, but many new users get sent away to portals or apps and do not stay engaged. They need a guided path that explains wallet safety, payments, SourceTags, DeFi, tokens, identity, coding and AI agents in a way that keeps them returning.",
+      "XRPL has strong tools, official learning material and constant ecosystem updates, but new users often get lost between news, portals, wallets and technical documentation. They need one guided path that explains what matters, what to verify and how to take safe proof-based actions.",
   },
   {
     id: "solution",
     title: "Solution",
     icon: Rocket,
     text:
-      "The Terminal wraps XRPL learning and proof in an OTT experience: free onboarding, visible premium depth, Xaman signing, SourceTag tracking, XP, OTT Credits and clear next steps. Users learn, prove and return instead of getting lost between separate tools.",
+      "The Terminal wraps XRPL learning, live intelligence and proof into an OTT experience: source-first news, AI-assisted explanations, copy-ready social drafts, Xaman signing, SourceTag tracking, XP, OTT Credits and clear next steps. Users learn, verify, prove and return instead of getting lost between separate tools.",
+  },
+  {
+    id: "intelligence-story",
+    title: "Intelligence Story",
+    icon: Brain,
+    text:
+      "The new intelligence layer has three parts: XRPL Intelligence for source-first signals, OTT Intelligence for beginner explanations/risk/checklists, and Newsroom for platform-ready social drafts with public OTT attribution. This makes the terminal useful daily, even before a user takes an on-chain action.",
   },
   {
     id: "live-demo",
     title: "Live Demo Route",
     icon: Video,
     text:
-      "Home → Connect Xaman → Daily Check-In proof → Reward Ledger XP/OTT Credits → SourceTag Support page → Academy deep catalog → Access Pass scanner. This route shows the product, proof, retention loop and legal-safe premium roadmap.",
+      "Dashboard Snapshot → XRPL Intelligence → OTT Intelligence AI Studio → Newsroom social draft → Xaman Center → Daily Check-In proof → Reward Ledger XP/OTT Credits → SourceTag Support → Academy deep catalog → Access Gate scanner-only. This route shows intelligence, education, proof, retention and legal-safe utility.",
+  },
+  {
+    id: "social-copy",
+    title: "Social Caption",
+    icon: Newspaper,
+    text:
+      "🌊 Building XRPL OnTheTrack Terminal for Make Waves. A source-first XRPL terminal where users can follow live intelligence, understand what matters, connect Xaman, prove actions with SourceTag 2606170002 and turn education into XP. Built by TruthOnTheTrack. Education only — no custody, no broker, no yield, no trading signals. #XRPL #XRP #Ripple #Xaman #MakeWaves #OnTheTrack",
+  },
+  {
+    id: "business-model",
+    title: "Business Model",
+    icon: Sparkles,
+    text:
+      "The V1 public layer creates reach through free intelligence, education and social drafts with OTT attribution. Premium routes can later include deeper Academy paths, Access Pass utility, branded outputs, certificate NFTs and event utility — only after payment verification, safeguards and legal review.",
   },
   {
     id: "compliance",
     title: "Safe Compliance Line",
     icon: ShieldCheck,
     text:
-      "The Terminal is education-first. It does not custody funds, does not act as broker, does not provide yield and does not execute trades. XP and OTT Credits are internal progress/utility signals, not tradable tokens or value promises.",
+      "The Terminal is education-first. It does not custody funds, does not act as broker, does not provide yield and does not execute trades. XP and OTT Credits are internal progress/utility signals, not tradable tokens or value promises. The intelligence layer is awareness only, not financial advice or a trading signal.",
   },
   {
     id: "coming-soon",
@@ -180,7 +234,7 @@ const copyBlocks: CopyBlock[] = [
     title: "Closing Line",
     icon: BadgeCheck,
     text:
-      "This is not another wallet dashboard. It is a guided XRPL education, proof and retention layer built by TruthOnTheTrack to help users, builders and partners move safely OnTheTrack.",
+      "This is not another wallet dashboard. It is a guided XRPL intelligence, education, proof and retention layer built by TruthOnTheTrack to help users, builders and partners move safely OnTheTrack.",
   },
 ];
 
@@ -235,7 +289,7 @@ export function SubmissionPackTab({
   return (
     <div className="min-h-screen bg-white text-[#080808]">
       <div className="relative overflow-hidden border border-black/10 bg-white p-6 mb-6">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_white,_transparent_35%)]" />
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_#3898E8,_transparent_35%)]" />
 
         <div className="relative z-10 grid grid-cols-12 gap-6 items-center">
           <div className="col-span-12 xl:col-span-8">
@@ -253,7 +307,8 @@ export function SubmissionPackTab({
 
             <p className="font-mono text-sm text-black/55 max-w-3xl leading-relaxed">
               Alles voor de Make Waves inzending: live route, GitHub, demo video,
-              pitch copy, SourceTag proof, legal-safe wording en duidelijke coming-soon grenzen.
+              pitch copy, intelligence story, SourceTag proof, legal-safe wording,
+              social copy en duidelijke coming-soon grenzen.
             </p>
           </div>
 
@@ -321,13 +376,15 @@ export function SubmissionPackTab({
             </div>
 
             <div className="space-y-3">
-              <StepLine number="01" text="Open Home: social landing + SourceTag." />
-              <StepLine number="02" text="Open Xaman Center: self-custody connect." />
-              <StepLine number="03" text="Open Daily Check-In: create and verify proof." />
-              <StepLine number="04" text="Open Reward Ledger: XP + OTT Credits." />
-              <StepLine number="05" text="Open SourceTag Support: XRP/RLUSD + memo coming soon." />
-              <StepLine number="06" text="Open Academy: free + premium deep catalog." />
-              <StepLine number="07" text="Open Access Gate: scanner-only utility pass." />
+              <StepLine number="01" text="Open Dashboard: Daily Intelligence Snapshot." />
+              <StepLine number="02" text="Open XRPL Intelligence: source-first live feed." />
+              <StepLine number="03" text="Open OTT Intelligence: beginner/risk/checklist analysis." />
+              <StepLine number="04" text="Open Newsroom: generate and copy social draft." />
+              <StepLine number="05" text="Open Xaman Center: self-custody connect." />
+              <StepLine number="06" text="Open Daily Check-In: create and verify proof." />
+              <StepLine number="07" text="Open Reward Ledger: XP + OTT Credits." />
+              <StepLine number="08" text="Open SourceTag Support: support/memo coming soon." />
+              <StepLine number="09" text="Open Academy + Access Gate scanner-only." />
             </div>
           </div>
 
@@ -365,10 +422,27 @@ export function SubmissionPackTab({
 
             <div className="space-y-3">
               <InfoLine text="Do not say XP or Credits have cash value." />
+              <InfoLine text="Do not say Newsroom output is financial advice or trading signal." />
               <InfoLine text="Do not say Certificate NFT or donations are active today." />
-              <InfoLine text="Do not promise yield, profit, token value or trading signals." />
-              <InfoLine text="Say education-first, self-custody and proof before trust." />
+              <InfoLine text="Do not promise yield, profit, token value or guaranteed adoption." />
+              <InfoLine text="Say education-first, source-first, self-custody and proof before trust." />
               <InfoLine text="Say support is voluntary and transparent, not an investment." />
+            </div>
+          </div>
+
+          <div className="border border-black/10 bg-white p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Globe2 size={18} className="text-[#C83888]" />
+
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Final Links
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <StepLine number="APP" text={TERMINAL_URL} />
+              <StepLine number="GIT" text={REPO_URL} />
+              <StepLine number="TAG" text={String(MAKE_WAVES_SOURCE_TAG)} />
             </div>
           </div>
         </div>
@@ -401,7 +475,7 @@ function DeliverableCard({ deliverable }: { deliverable: Deliverable }) {
           Action
         </p>
 
-        <p className="font-mono text-xs text-black/55 leading-relaxed">
+        <p className="font-mono text-xs text-black/55 leading-relaxed break-words">
           {deliverable.action}
         </p>
       </div>
@@ -466,11 +540,11 @@ function StatusBadge({ status }: { status: DeliverableStatus }) {
 function StepLine({ number, text }: { number: string; text: string }) {
   return (
     <div className="flex items-start gap-3 border border-black/10 bg-[#F7F8FC] p-3">
-      <p className="font-orbitron text-xs font-black text-[#C83888]">
+      <p className="font-orbitron text-xs font-black text-[#C83888] shrink-0">
         {number}
       </p>
 
-      <p className="font-mono text-xs text-black/55 leading-relaxed">{text}</p>
+      <p className="font-mono text-xs text-black/55 leading-relaxed break-words">{text}</p>
     </div>
   );
 }
