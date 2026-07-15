@@ -6,6 +6,7 @@ import {
   BookOpen,
   Fingerprint,
   Gauge,
+  HeartHandshake,
   KeyRound,
   Layers3,
   Link2,
@@ -14,6 +15,7 @@ import {
   Search,
   ShieldCheck,
   Sparkles,
+  Trophy,
   Wallet,
 } from "lucide-react";
 import { LanguageToggle } from "../components/LanguageToggle";
@@ -52,39 +54,58 @@ export function TerminalHomeTab({
   const { language, setLanguage, copy } = useTerminalLanguage();
   const c = copy.home;
   const common = copy.common;
+  const isEnglish = language === "en";
 
   const productLayers: ProductLayer[] = [
     {
       id: "explorer",
-      title: c.explorerTitle,
-      label: c.explorerLabel,
-      description: c.explorerDescription,
-      bullets: c.explorerBullets,
+      title: isEnglish ? "XRPL Explorer" : "XRPL Verkenner",
+      label: isEnglish ? "Free Preview" : "Free Preview",
+      description: isEnglish
+        ? "Explore the XRPL from a clean education-first interface."
+        : "Verken de XRPL via een duidelijke education-first interface.",
+      bullets: [
+        isEnglish ? "Live network orientation." : "Live netwerkoriëntatie.",
+        isEnglish ? "SourceTag awareness." : "SourceTag-bewustzijn.",
+        isEnglish ? "No custody and no broker layer." : "Geen custody en geen brokerlaag.",
+      ],
       icon: Network,
       actionLabel: common.openExplorer,
       target: "network",
       accent: "blue",
     },
     {
-      id: "dashboard",
-      title: c.dashboardTitle,
-      label: c.dashboardLabel,
-      description: c.dashboardDescription,
-      bullets: c.dashboardBullets,
-      icon: Wallet,
-      actionLabel: common.openWallet,
-      target: "wallet",
+      id: "academy",
+      title: isEnglish ? "Academy + Proof" : "Academy + Proof",
+      label: isEnglish ? "Learn to verify" : "Leer verifiëren",
+      description: isEnglish
+        ? "Learn wallet safety, XRPL basics and proof actions before touching advanced tools."
+        : "Leer walletveiligheid, XRPL-basics en proof-acties voordat je geavanceerde tools gebruikt.",
+      bullets: [
+        isEnglish ? "Start with free education." : "Start met gratis educatie.",
+        isEnglish ? "Earn XP through verified actions." : "Verdien XP via geverifieerde acties.",
+        isEnglish ? "Understand why 589 keeps returning." : "Begrijp later waarom 589 terugkomt.",
+      ],
+      icon: BookOpen,
+      actionLabel: isEnglish ? "Start Academy" : "Start Academy",
+      target: "academy",
       accent: "magenta",
     },
     {
-      id: "ott-proof",
-      title: c.proofTitle,
-      label: c.proofLabel,
-      description: c.proofDescription,
-      bullets: c.proofBullets,
-      icon: Fingerprint,
-      actionLabel: common.openProofLayer,
-      target: "partners",
+      id: "access-pass",
+      title: isEnglish ? "Access Pass" : "Access Pass",
+      label: isEnglish ? "Premium gate" : "Premium gate",
+      description: isEnglish
+        ? "Premium areas unlock only when the connected wallet holds the exact OTT Access Pass NFT."
+        : "Premiumdelen unlocken alleen wanneer de gekoppelde wallet de exacte OTT Access Pass NFT bezit.",
+      bullets: [
+        isEnglish ? "Scanner-only V1 gate." : "Scanner-only V1 gate.",
+        isEnglish ? "Issuer, taxon and metadata CID match." : "Issuer, taxon en metadata CID match.",
+        isEnglish ? "No mint or payment flow active here." : "Geen mint- of paymentflow actief hier.",
+      ],
+      icon: KeyRound,
+      actionLabel: isEnglish ? "Scan Access Pass" : "Scan Access Pass",
+      target: "accessgate",
       accent: "coral",
     },
   ];
@@ -92,21 +113,21 @@ export function TerminalHomeTab({
   const metrics: Metric[] = [
     {
       label: "Product",
-      value: "V2",
-      text: "Explorer + Dashboard + Proof",
+      value: "V1 Live",
+      text: "Free preview + Access Pass",
       icon: Layers3,
     },
     {
       label: common.sourceTag,
       value: String(MAKE_WAVES_SOURCE_TAG),
-      text: "OTT proof identity",
+      text: "Make Waves identity",
       icon: Fingerprint,
     },
     {
       label: common.wallet,
       value: "Xaman",
       text: "Self-custody connect",
-      icon: KeyRound,
+      icon: Wallet,
     },
     {
       label: "Position",
@@ -135,7 +156,7 @@ export function TerminalHomeTab({
               <div className="mb-8 text-[#080808]">
                 <OTTLogo
                   size="lg"
-                  subtitle="XRPL Explorer + Xaman Dashboard + Proof"
+                  subtitle="XRPL Explorer + Xaman + Academy + Access Pass"
                 />
               </div>
 
@@ -143,45 +164,49 @@ export function TerminalHomeTab({
                 <Activity size={15} className="text-[#3898E8]" />
 
                 <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-black/55">
-                  {c.eyebrow}
+                  {isEnglish
+                    ? "Make Waves Builder Terminal"
+                    : "Make Waves Builder Terminal"}
                 </p>
               </div>
 
               <h1 className="font-orbitron text-4xl md:text-5xl xl:text-7xl font-black uppercase leading-none tracking-tight mb-6">
-                {c.titleLine1}
+                XRPL
                 <br />
                 <span className="bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] bg-clip-text text-transparent">
-                  {c.titleLine2}
+                  OnTheTrack
                 </span>
                 <br />
-                {c.titleLine3}
+                Terminal
               </h1>
 
               <p className="font-mono text-sm xl:text-base text-black/60 leading-relaxed max-w-3xl mb-8">
-                {c.intro} {MAKE_WAVES_SOURCE_TAG}.
+                {isEnglish
+                  ? `Built by TruthOnTheTrack with years of XRPL community knowledge, love for education and a clear Make Waves proof identity: SourceTag ${MAKE_WAVES_SOURCE_TAG}. Start free, learn safely, connect Xaman and verify before you trust.`
+                  : `Gebouwd door TruthOnTheTrack met jaren XRPL community-kennis, liefde voor educatie en een duidelijke Make Waves proof-identiteit: SourceTag ${MAKE_WAVES_SOURCE_TAG}. Start gratis, leer veilig, connect Xaman en verifieer voordat je vertrouwt.`}
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-4xl">
                 <PrimaryAction
-                  title={c.startExplorer}
-                  text={c.startExplorerText}
-                  icon={Search}
-                  accent="blue"
-                  onClick={() => navigate("network")}
-                />
-                <PrimaryAction
-                  title={c.connectXaman}
-                  text={c.connectXamanText}
+                  title={isEnglish ? "Connect Xaman" : "Connect Xaman"}
+                  text={isEnglish ? "Wallet first" : "Wallet eerst"}
                   icon={Wallet}
                   accent="magenta"
                   onClick={() => navigate("xaman")}
                 />
                 <PrimaryAction
-                  title={c.proofEducation}
-                  text={c.proofEducationText}
+                  title={isEnglish ? "Start Academy" : "Start Academy"}
+                  text={isEnglish ? "Free learning" : "Gratis leren"}
                   icon={BookOpen}
+                  accent="blue"
+                  onClick={() => navigate("academy")}
+                />
+                <PrimaryAction
+                  title={isEnglish ? "Scan Access Pass" : "Scan Access Pass"}
+                  text={isEnglish ? "Premium gate" : "Premium gate"}
+                  icon={KeyRound}
                   accent="coral"
-                  onClick={() => navigate("partners")}
+                  onClick={() => navigate("accessgate")}
                 />
               </div>
             </div>
@@ -208,8 +233,8 @@ export function TerminalHomeTab({
                       label={common.connectedWallet}
                       value={walletAddress === "guest" ? common.guestMode : walletAddress}
                     />
+                    <IdentityRow label="Builder" value="TruthOnTheTrack" />
                     <IdentityRow label="Brand" value="OnTheTrack" />
-                    <IdentityRow label={common.mode} value={common.educationFirst} />
                     <IdentityRow label={common.custody} value={common.never} />
                   </div>
 
@@ -236,19 +261,99 @@ export function TerminalHomeTab({
       </section>
 
       <section className="p-4 md:p-6 xl:p-10 bg-white">
+        <div className="grid grid-cols-12 gap-4 mb-8">
+          <div className="col-span-12 xl:col-span-7 border border-black/10 bg-[#F7F8FC] p-5 md:p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Trophy size={18} className="text-[#C83888]" />
+
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                {isEnglish ? "Make Waves Mission" : "Make Waves Missie"}
+              </p>
+            </div>
+
+            <h2 className="font-orbitron text-2xl xl:text-3xl font-black uppercase mb-5">
+              {isEnglish
+                ? "A terminal built from community history."
+                : "Een terminal gebouwd vanuit community-geschiedenis."}
+            </h2>
+
+            <p className="font-mono text-sm text-black/55 leading-relaxed mb-5">
+              {isEnglish
+                ? "OTT Terminal is a practical XRPL onboarding layer: learn, connect, verify, earn XP and unlock premium routes with an Access Pass. The goal is not hype, custody or speculation. The goal is to make real XRPL actions understandable, trackable and usable."
+                : "OTT Terminal is een praktische XRPL-onboardinglaag: leren, connecten, verifiëren, XP verdienen en premiumroutes unlocken met een Access Pass. Het doel is geen hype, custody of speculatie. Het doel is echte XRPL-acties begrijpelijk, controleerbaar en bruikbaar maken."}
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <MissionPoint
+                title={isEnglish ? "Learn" : "Leer"}
+                text={isEnglish ? "Education-first onboarding." : "Education-first onboarding."}
+              />
+              <MissionPoint
+                title={isEnglish ? "Prove" : "Bewijs"}
+                text={`SourceTag ${MAKE_WAVES_SOURCE_TAG}.`}
+              />
+              <MissionPoint
+                title={isEnglish ? "Unlock" : "Unlock"}
+                text={isEnglish ? "Access Pass utility only." : "Access Pass utility only."}
+              />
+            </div>
+          </div>
+
+          <div className="col-span-12 xl:col-span-5 border border-[#C83888]/25 bg-[#C83888]/10 p-5 md:p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <HeartHandshake size={18} className="text-[#C83888]" />
+
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                {isEnglish ? "Future Support Layer" : "Toekomstige Supportlaag"}
+              </p>
+            </div>
+
+            <h3 className="font-orbitron text-xl font-black uppercase mb-4">
+              {isEnglish ? "Transparent donations later." : "Transparante donaties later."}
+            </h3>
+
+            <p className="font-mono text-xs text-black/60 leading-relaxed mb-4">
+              {isEnglish
+                ? "A later support area can show voluntary XRP donations, total received and what the funds are used for: extending the terminal and giving value back to users. Donations must stay voluntary support, not an investment or guaranteed reward."
+                : "Een latere support-sectie kan vrijwillige XRP-donaties tonen, hoeveel er binnenkomt en waar het voor gebruikt wordt: de terminal uitbreiden en waarde terugbrengen naar gebruikers. Donaties blijven vrijwillige support, geen investering of gegarandeerde reward."}
+            </p>
+
+            <div className="grid grid-cols-3 gap-2">
+              {["0.0589", "0.589", "1.0589", "1.589", "2.0589", "2.589"].map((amount) => (
+                <div key={amount} className="border border-black/10 bg-white p-3">
+                  <p className="font-orbitron text-[11px] font-black uppercase text-black">
+                    {amount}
+                  </p>
+                  <p className="font-mono text-[8px] uppercase tracking-widest text-black/35">
+                    XRP
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <p className="font-mono text-[10px] text-black/45 leading-relaxed mt-4">
+              {isEnglish
+                ? "Draft only: no donation flow is active in this V1 screen."
+                : "Concept alleen: geen donatieflow actief in dit V1-scherm."}
+            </p>
+          </div>
+        </div>
+
         <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4 mb-6">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-black/35 mb-3">
-              {common.productStructure}
+              {isEnglish ? "Live Product Structure" : "Live Productstructuur"}
             </p>
 
             <h2 className="font-orbitron text-2xl xl:text-3xl font-black uppercase">
-              {c.threeLayerTitle}
+              {isEnglish ? "Free preview, proof and access." : "Free preview, proof en access."}
             </h2>
           </div>
 
           <p className="font-mono text-xs text-black/50 max-w-xl leading-relaxed">
-            {c.threeLayerIntro}
+            {isEnglish
+              ? "The terminal is structured so users can learn and verify first. Premium services remain behind the Access Pass scanner."
+              : "De terminal is zo opgebouwd dat gebruikers eerst kunnen leren en verifiëren. Premiumservices blijven achter de Access Pass scanner."}
           </p>
         </div>
 
@@ -269,16 +374,16 @@ export function TerminalHomeTab({
               <Gauge size={18} className="text-[#3898E8]" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                {c.mainFlow}
+                {isEnglish ? "Main Flow" : "Main Flow"}
               </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
               <FlowStep number="01" title="Home" text="Terminal overview" />
-              <FlowStep number="02" title="Explore" text="XRPL live data" />
-              <FlowStep number="03" title="Connect" text="Xaman wallet" />
-              <FlowStep number="04" title="Prove" text="SourceTag / tx" />
-              <FlowStep number="05" title="Learn" text="OTT routes" />
+              <FlowStep number="02" title="Connect" text="Xaman wallet" />
+              <FlowStep number="03" title="Learn" text="Academy" />
+              <FlowStep number="04" title="Prove" text="SourceTag / XP" />
+              <FlowStep number="05" title="Access" text="NFT scanner" />
             </div>
           </div>
 
@@ -287,14 +392,15 @@ export function TerminalHomeTab({
               <BadgeCheck size={18} className="text-[#C83888]" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                {c.reuseTitle}
+                {isEnglish ? "Legal-safe V1" : "Legal-safe V1"}
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {c.reuseItems.map((item) => (
-                <ReuseItem key={item} text={item} />
-              ))}
+              <ReuseItem text={isEnglish ? "No custody." : "Geen custody."} />
+              <ReuseItem text={isEnglish ? "No broker." : "Geen broker."} />
+              <ReuseItem text={isEnglish ? "No yield promise." : "Geen yield-belofte."} />
+              <ReuseItem text={isEnglish ? "No token value promise." : "Geen tokenwaarde-belofte."} />
             </div>
           </div>
         </div>
@@ -436,6 +542,20 @@ function IdentityRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function MissionPoint({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="border border-black/10 bg-white p-4">
+      <p className="font-orbitron text-xs font-black uppercase text-black mb-2">
+        {title}
+      </p>
+
+      <p className="font-mono text-xs text-black/45 leading-relaxed">
+        {text}
+      </p>
+    </div>
+  );
+}
+
 function FlowStep({
   number,
   title,
@@ -489,3 +609,5 @@ function getAccentClasses(accent: "blue" | "magenta" | "coral") {
     icon: "text-[#C83888]",
   };
 }
+
+export default TerminalHomeTab;
