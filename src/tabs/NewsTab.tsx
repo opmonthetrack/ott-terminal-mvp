@@ -25,6 +25,13 @@ import {
   Zap,
 } from "lucide-react";
 import {
+  getHandlesForPlatform,
+  getPlatformRule,
+  getRecommendedTagSetIds,
+  getTagSetById,
+  type SocialPlatform,
+} from "../data/socialTagPlaybook";
+import {
   fetchXrplIntelligence,
   formatIntelDate,
   getConfidenceLabel,
@@ -59,13 +66,19 @@ type Rule = {
   icon: ElementType;
 };
 
+type TagStrategy = {
+  platformLabel: string;
+  hashtags: string;
+  mentions: string;
+  contexts: string[];
+  ruleText: string;
+  placement: string;
+};
+
 const SOURCE_TAG = 2606170002;
 const TERMINAL_URL = "https://ott-terminal-mvp.vercel.app";
 const BRAND_LINE = "Built by TruthOnTheTrack · XRPL OnTheTrack Terminal";
 const ATTRIBUTION = `Powered by XRPL OnTheTrack Terminal\nSourceTag ${SOURCE_TAG}\nBuilt by TruthOnTheTrack\n${TERMINAL_URL}`;
-const CORE_HASHTAGS = "#XRPL #XRP #Ripple #Xaman #DigitalAssets #OnTheTrack #TruthOnTheTrack";
-const BUILDER_HASHTAGS = "#XRPL #XRP #Web3 #Blockchain #Tokenization #DigitalAssets #Builders #OnTheTrack";
-const MACRO_HASHTAGS = "#CBDC #ISO20022 #DigitalMoney #Payments #Tokenization #XRPL #OnTheTrack";
 
 const outputOptions: OutputOption[] = [
   {
@@ -73,56 +86,56 @@ const outputOptions: OutputOption[] = [
     title: "X Post",
     status: "Share",
     icon: Newspaper,
-    text: "Korte post met emoji hook, hashtags, bron en share-link.",
+    text: "Korte post met cashtags, hashtags, bron en verified mention suggestions.",
   },
   {
     id: "linkedin",
     title: "LinkedIn",
     status: "Share",
     icon: Linkedin,
-    text: "Professionele caption met builder angle, CTA en attribution.",
+    text: "Professionele caption met 3-5 tags en business/compliance angle.",
   },
   {
     id: "instagram",
     title: "Instagram",
     status: "Copy",
     icon: Sparkles,
-    text: "Caption voor carousel/reel met emoji structuur en hashtags.",
+    text: "Caption voor carousel/reel met discovery hashtags onderaan.",
   },
   {
     id: "facebook",
     title: "Facebook",
     status: "Share",
     icon: MessageCircle,
-    text: "Community post met uitleg, bronlink en OTT attribution.",
+    text: "Community post met uitleg, bronlink en toegankelijke hashtags.",
   },
   {
     id: "medium",
     title: "Medium Article",
     status: "Article",
     icon: FileText,
-    text: "Artikel-outline met titel, intro, bullets, CTA en tags.",
+    text: "Artikel-outline met source links, topics en veilige uitleg.",
   },
   {
     id: "tiktok",
     title: "TikTok Hook",
     status: "Upload",
     icon: Video,
-    text: "Sterke video hook + talking points + caption.",
+    text: "Sterke video hook + talking points + FYP topic hashtags.",
   },
   {
     id: "whatsapp",
     title: "WhatsApp Status",
     status: "Send",
     icon: Send,
-    text: "Compacte community update met emoji en bron.",
+    text: "Compacte community update zonder tag-spam.",
   },
   {
     id: "youtube",
     title: "YouTube Bullets",
     status: "Studio",
     icon: BookOpen,
-    text: "Video/Shorts outline met title, description en hashtags.",
+    text: "Video/Shorts outline met description hashtags en chapters.",
   },
 ];
 
@@ -134,15 +147,15 @@ const rules: Rule[] = [
     icon: FileSearch,
   },
   {
-    title: "Public Attribution",
-    status: "OTT",
-    text: "Free/public output bevat standaard OnTheTrack attribution, SourceTag en terminal-link.",
+    title: "Playbook Tags",
+    status: "Data",
+    text: "Hashtags, cashtags en mentions komen uit src/data/socialTagPlaybook.ts per platform en context.",
     icon: Target,
   },
   {
-    title: "No Auto-Posting",
+    title: "Verify Mentions",
     status: "Safe",
-    text: "Buttons openen platformen of share dialogs. Account-koppeling/OAuth komt later als aparte privacy-laag.",
+    text: "@ handles zijn suggesties. De app markeert ze als verify-before-posting om spam en fouten te voorkomen.",
     icon: ShieldCheck,
   },
   {
@@ -215,6 +228,11 @@ export function NewsTab() {
   const selectedOutputOption =
     outputOptions.find((option) => option.id === selectedOutput) ?? outputOptions[0];
 
+  const tagStrategy = useMemo(
+    () => buildTagStrategy(selectedItem, selectedOutput),
+    [selectedItem, selectedOutput],
+  );
+
   const generatedOutput = useMemo(
     () => buildSocialOutput(selectedItem, selectedOutput),
     [selectedItem, selectedOutput],
@@ -268,9 +286,9 @@ export function NewsTab() {
               </h2>
 
               <p className="font-mono text-sm text-black/55 max-w-3xl leading-relaxed">
-                Zet XRPL Intelligence om naar posts, captions, video hooks en
-                article outlines met emoji&apos;s, hashtags, CTA&apos;s en zichtbare OTT
-                attribution. Gebruik copy, open source en platform-buttons.
+                Zet XRPL Intelligence om naar posts, captions, video hooks en article
+                outlines. Tags komen nu uit het social tag playbook: per platform, per
+                onderwerp en met verify-before-posting voor mentions.
               </p>
 
               <div className="flex flex-wrap gap-3 mt-5">
@@ -307,7 +325,7 @@ export function NewsTab() {
               <StatBox icon={Newspaper} label="Items" value={loading ? "..." : String(items.length)} />
               <StatBox icon={Bell} label="Fallback" value={data?.fallback ? "Yes" : "No"} />
               <StatBox icon={Target} label="SourceTag" value={String(data?.sourceTag ?? SOURCE_TAG)} />
-              <StatBox icon={Sparkles} label="Mode" value={selectedOutputOption.status} />
+              <StatBox icon={Sparkles} label="Tags" value={tagStrategy.platformLabel} />
             </div>
           </div>
         </div>
@@ -436,6 +454,16 @@ export function NewsTab() {
               </div>
             </Panel>
 
+            <Panel title="Tag Strategy" icon={Globe2}>
+              <div className="space-y-3">
+                <TagInfo label="Platform" value={tagStrategy.platformLabel} />
+                <TagInfo label="Contexts" value={tagStrategy.contexts.join(", ")} />
+                <TagInfo label="Placement" value={tagStrategy.placement} />
+                <TagInfo label="Mentions" value={tagStrategy.mentions || "No mentions for this mode"} warn />
+                <TagInfo label="Hashtags" value={tagStrategy.hashtags || "No hashtags"} />
+              </div>
+            </Panel>
+
             <Panel title="Publishing Rules" icon={ShieldCheck}>
               <div className="space-y-3">
                 {rules.map((rule) => (
@@ -447,7 +475,7 @@ export function NewsTab() {
 
           <div className="col-span-12 grid grid-cols-1 md:grid-cols-4 gap-4">
             <FeatureBox icon={Newspaper} title="Share Buttons" text="X, LinkedIn, Facebook, WhatsApp" />
-            <FeatureBox icon={FileText} title="Article Mode" text="Medium outline with attribution" />
+            <FeatureBox icon={FileText} title="Playbook Data" text="Platform hashtags + mentions" />
             <FeatureBox icon={Video} title="Video Mode" text="TikTok and YouTube workflows" />
             <FeatureBox icon={Globe2} title="Public Attribution" text="OTT + TruthOnTheTrack visible" />
           </div>
@@ -463,29 +491,29 @@ function buildSocialOutput(item: XrplIntelItem, mode: OutputMode) {
   const safetyLine = item.needsConfirmation
     ? "⚠️ Needs confirmation before publishing."
     : "✅ Source-weighted signal. Still review before publishing.";
-  const hashtags = getHashtags(item);
-  const mentions = getSuggestedMentions(item);
   const sourceUrl = item.link && item.link !== "#" ? item.link : TERMINAL_URL;
-  const footer = `\n\n${ATTRIBUTION}`;
+  const strategy = buildTagStrategy(item, mode);
+  const hashtags = strategy.hashtags;
+  const mentions = strategy.mentions;
 
   if (mode === "linkedin") {
     return `🔎 XRPL Intelligence Note\n\n${item.title}\n\nWhy this matters:\n${item.whyItMatters}\n\nBuilder context:\n${item.description}\n\n${sourceLine}\nDate: ${date}\nConfidence: ${item.confidenceScore}%\n\n${safetyLine}\n\nQuestion for builders:\nWhat would you verify before turning this into product strategy?\n\n${BRAND_LINE}\n${TERMINAL_URL}\n\nSuggested tags to verify before posting: ${mentions}\n\n${hashtags}`;
   }
 
   if (mode === "instagram") {
-    return `🚨 XRPL Intel Drop\n\n${item.title}\n\n🧠 Why it matters:\n${item.whyItMatters}\n\n🔍 Context:\n${item.description}\n\n📌 Save this. Check the source. Follow the rails, not the hype.\n\n${sourceLine}\n📅 ${date}\n\n${BRAND_LINE}\nSourceTag ${SOURCE_TAG}\n${TERMINAL_URL}\n\n${hashtags}\n#CryptoEducation #Web3Community #589StepsAhead`;
+    return `🚨 XRPL Intel Drop\n\n${item.title}\n\n🧠 Why it matters:\n${item.whyItMatters}\n\n🔍 Context:\n${item.description}\n\n📌 Save this. Check the source. Follow the rails, not the hype.\n\n${sourceLine}\n📅 ${date}\n\n${BRAND_LINE}\nSourceTag ${SOURCE_TAG}\n${TERMINAL_URL}\n\nSuggested tags to verify before posting: ${mentions}\n\n${hashtags}`;
   }
 
   if (mode === "facebook") {
-    return `📡 XRPL Intelligence Update\n\n${item.title}\n\n${item.whyItMatters}\n\nWhat to check:\n1️⃣ Read the source\n2️⃣ Separate facts from hype\n3️⃣ Watch the infrastructure signal\n\n${sourceLine}\nDate: ${date}\n\nEducation only. No hype, no trading signal.\n\n${BRAND_LINE}\n${TERMINAL_URL}\n\n${hashtags}`;
+    return `📡 XRPL Intelligence Update\n\n${item.title}\n\n${item.whyItMatters}\n\nWhat to check:\n1️⃣ Read the source\n2️⃣ Separate facts from hype\n3️⃣ Watch the infrastructure signal\n\n${sourceLine}\nDate: ${date}\n\nEducation only. No hype, no trading signal.\n\n${BRAND_LINE}\n${TERMINAL_URL}\n\nSuggested tags to verify before posting: ${mentions}\n\n${hashtags}`;
   }
 
   if (mode === "medium") {
-    return `# ${item.title}\n\n## Quick summary\n${item.description}\n\n## Why it matters\n${item.whyItMatters}\n\n## Source context\n- ${sourceLine}\n- Date: ${date}\n- Bucket: ${item.bucket}\n- Confidence: ${item.confidenceScore}%\n- Source URL: ${sourceUrl}\n\n## What builders should watch\n- Protocol or infrastructure impact\n- Ecosystem adoption context\n- What still needs verification\n- Whether this is official, technical or macro context\n\n## Safety note\nThis article is education only. It is not financial advice, not a trading signal and not a claim of guaranteed adoption.\n\n## About\n${ATTRIBUTION}\n\nTags: XRPL, XRP, Ripple, Tokenization, Digital Assets, OnTheTrack`;
+    return `# ${item.title}\n\n## Quick summary\n${item.description}\n\n## Why it matters\n${item.whyItMatters}\n\n## Source context\n- ${sourceLine}\n- Date: ${date}\n- Bucket: ${item.bucket}\n- Confidence: ${item.confidenceScore}%\n- Source URL: ${sourceUrl}\n\n## What builders should watch\n- Protocol or infrastructure impact\n- Ecosystem adoption context\n- What still needs verification\n- Whether this is official, technical or macro context\n\n## Safety note\nThis article is education only. It is not financial advice, not a trading signal and not a claim of guaranteed adoption.\n\n## About\n${ATTRIBUTION}\n\nMedium topics/tags:\n${hashtags.replaceAll("#", "")}`;
   }
 
   if (mode === "tiktok") {
-    return `🎬 HOOK:\nMost people chase crypto headlines. Builders watch infrastructure signals.\n\nTOPIC:\n${item.title}\n\nTALKING POINTS:\n1️⃣ What happened: ${item.description}\n2️⃣ Why it matters: ${item.whyItMatters}\n3️⃣ Safety: ${safetyLine}\n\nCTA:\nFollow the source. Learn the rails. Stay 589 steps ahead.\n\nCaption:\n${item.title} ⚡ Source-first XRPL intelligence. Education only.\n\n${BRAND_LINE}\n${hashtags}\n#CryptoTikTok #Web3Education`;
+    return `🎬 HOOK:\nMost people chase crypto headlines. Builders watch infrastructure signals.\n\nTOPIC:\n${item.title}\n\nTALKING POINTS:\n1️⃣ What happened: ${item.description}\n2️⃣ Why it matters: ${item.whyItMatters}\n3️⃣ Safety: ${safetyLine}\n\nCTA:\nFollow the source. Learn the rails. Stay 589 steps ahead.\n\nCaption:\n${item.title} ⚡ Source-first XRPL intelligence. Education only.\n\n${BRAND_LINE}\n${hashtags}`;
   }
 
   if (mode === "whatsapp") {
@@ -493,47 +521,139 @@ function buildSocialOutput(item: XrplIntelItem, mode: OutputMode) {
   }
 
   if (mode === "youtube") {
-    return `YouTube / Shorts Outline\n\n🎥 Title idea:\n${item.title}\n\nOpening hook:\nThis is not a price signal. This is an infrastructure signal.\n\nVideo bullets:\n- Source: ${item.source}\n- Date: ${date}\n- Bucket: ${item.bucket}\n- Confidence: ${item.confidenceScore}%\n- What happened: ${item.description}\n- Why it matters: ${item.whyItMatters}\n- Safety note: ${safetyLine}\n\nDescription:\nSource-first XRPL intelligence from XRPL OnTheTrack Terminal.\n${sourceUrl}\n\n${ATTRIBUTION}\n\n${hashtags}\n#CryptoNews #Web3Education #Blockchain`;
+    return `YouTube / Shorts Outline\n\n🎥 Title idea:\n${item.title}\n\nOpening hook:\nThis is not a price signal. This is an infrastructure signal.\n\nVideo bullets:\n- Source: ${item.source}\n- Date: ${date}\n- Bucket: ${item.bucket}\n- Confidence: ${item.confidenceScore}%\n- What happened: ${item.description}\n- Why it matters: ${item.whyItMatters}\n- Safety note: ${safetyLine}\n\nDescription:\nSource-first XRPL intelligence from XRPL OnTheTrack Terminal.\n${sourceUrl}\n\n${ATTRIBUTION}\n\nSuggested tags to verify before posting: ${mentions}\n\n${hashtags}`;
   }
 
   return `🚨 XRPL Intel\n\n${item.title}\n\n${item.whyItMatters}\n\n${sourceLine}\nConfidence: ${item.confidenceScore}%\n\n${safetyLine}\n\n${BRAND_LINE}\n${TERMINAL_URL}\n\nSuggested tags to verify: ${mentions}\n\n${hashtags}`;
 }
 
-function getHashtags(item: XrplIntelItem) {
-  const text = `${item.title} ${item.bucket} ${item.description}`.toLowerCase();
+function buildTagStrategy(item: XrplIntelItem, mode: OutputMode): TagStrategy {
+  const platform = getSocialPlatform(mode);
+  const contexts = detectTagContexts(item);
 
-  if (text.includes("cbdc") || text.includes("iso 20022") || text.includes("swift")) {
-    return MACRO_HASHTAGS;
+  if (!platform) {
+    return {
+      platformLabel: "WhatsApp",
+      hashtags: "",
+      mentions: "",
+      contexts,
+      ruleText: "No hashtag strategy for WhatsApp status.",
+      placement: "Keep WhatsApp clean: source, summary, link.",
+    };
+  }
+
+  const rule = getPlatformRule(platform);
+  const contextSetIds = contexts.flatMap((context) => getRecommendedTagSetIds(context));
+  const orderedSetIds = [...new Set([...contextSetIds, platformSpecificSetId(platform)].filter(Boolean))];
+  const tagSets = orderedSetIds
+    .map((id) => getTagSetById(id))
+    .filter((set) => set && set.platforms.includes(platform));
+
+  const maxTags = rule?.maxHashtags ?? 6;
+  const hashtags = uniqueStrings(
+    tagSets.flatMap((set) => [
+      ...(rule?.useCashtags ? set?.cashtags ?? [] : []),
+      ...(set?.hashtags ?? []),
+    ]),
+  ).slice(0, maxTags);
+
+  const handles = getHandlesForPlatform(platform)
+    .filter((handle) => isHandleRelevant(handle.useFor, item, contexts))
+    .slice(0, 3)
+    .map((handle) => handle.handle);
+
+  return {
+    platformLabel: rule?.label ?? platform,
+    hashtags: hashtags.join(" "),
+    mentions: uniqueStrings(handles).join(" "),
+    contexts,
+    ruleText: rule?.mentionPolicy ?? "Use mentions only when directly relevant.",
+    placement: rule?.placement ?? "Place tags at the bottom after source context.",
+  };
+}
+
+function getSocialPlatform(mode: OutputMode): SocialPlatform | null {
+  if (mode === "whatsapp") {
+    return null;
+  }
+
+  return mode;
+}
+
+function platformSpecificSetId(platform: SocialPlatform) {
+  if (platform === "instagram") {
+    return "instagram-discovery";
+  }
+
+  if (platform === "tiktok") {
+    return "tiktok-fyp";
+  }
+
+  if (platform === "linkedin") {
+    return "linkedin-professional";
+  }
+
+  if (platform === "facebook") {
+    return "facebook-community";
+  }
+
+  return "ott-brand";
+}
+
+function detectTagContexts(item: XrplIntelItem) {
+  const text = `${item.title} ${item.bucket} ${item.category} ${item.description} ${item.tags.join(" ")}`.toLowerCase();
+  const contexts: string[] = [];
+
+  if (text.includes("ripple") || text.includes("rlusd") || text.includes("payments")) {
+    contexts.push("ripple");
+  }
+
+  if (text.includes("rlusd") || text.includes("stablecoin")) {
+    contexts.push("rlusd");
   }
 
   if (text.includes("xls") || text.includes("amendment") || text.includes("mpt") || text.includes("escrow")) {
-    return `${BUILDER_HASHTAGS} #XLS #XRPLDev`;
+    contexts.push("xls");
   }
 
-  return CORE_HASHTAGS;
+  if (text.includes("cbdc")) {
+    contexts.push("cbdc");
+  }
+
+  if (text.includes("iso") || text.includes("swift")) {
+    contexts.push("iso20022");
+  }
+
+  if (text.includes("rwa") || text.includes("tokenization")) {
+    contexts.push("rwa");
+  }
+
+  if (text.includes("defi") || text.includes("xahau") || text.includes("evernode") || text.includes("sologenic")) {
+    contexts.push("defi");
+  }
+
+  if (text.includes("ott") || text.includes("make waves") || text.includes("mak ewaves")) {
+    contexts.push("ott");
+  }
+
+  if (contexts.length === 0) {
+    contexts.push("xrpl");
+  }
+
+  return uniqueStrings(contexts).slice(0, 4);
 }
 
-function getSuggestedMentions(item: XrplIntelItem) {
-  const source = item.source.toLowerCase();
-  const bucket = item.bucket.toLowerCase();
+function isHandleRelevant(useFor: string[], item: XrplIntelItem, contexts: string[]) {
+  const haystack = `${item.title} ${item.source} ${item.bucket} ${item.description} ${contexts.join(" ")}`.toLowerCase();
 
-  if (source.includes("xaman")) {
-    return "@XamanWallet @XRPLF @Ripple";
-  }
+  return useFor.some((term) => {
+    const normalized = term.toLowerCase();
+    return normalized.split(/\s+/).some((part) => part.length > 3 && haystack.includes(part));
+  });
+}
 
-  if (source.includes("ripple")) {
-    return "@Ripple @XRPLF";
-  }
-
-  if (source.includes("xrpl") || bucket.includes("xls")) {
-    return "@XRPLF @Ripple";
-  }
-
-  if (bucket.includes("cbdc") || bucket.includes("iso")) {
-    return "@BIS_org @swiftcommunity @Ripple";
-  }
-
-  return "@XRPLF @Ripple @XamanWallet";
+function uniqueStrings(values: string[]) {
+  return [...new Set(values.filter(Boolean))];
 }
 
 function getPlatformActionUrl(
@@ -563,19 +683,19 @@ function getPlatformActionUrl(
   }
 
   if (mode === "medium") {
-    return `https://medium.com/new-story`;
+    return "https://medium.com/new-story";
   }
 
   if (mode === "instagram") {
-    return `https://www.instagram.com/`;
+    return "https://www.instagram.com/";
   }
 
   if (mode === "tiktok") {
-    return `https://www.tiktok.com/upload?lang=en`;
+    return "https://www.tiktok.com/upload?lang=en";
   }
 
   if (mode === "youtube") {
-    return `https://studio.youtube.com/`;
+    return "https://studio.youtube.com/";
   }
 
   return `${TERMINAL_URL}?title=${encodedTitle}`;
@@ -760,6 +880,28 @@ function RuleCard({ rule }: { rule: Rule }) {
 
       <p className="font-mono text-[10px] text-black/45 leading-relaxed">
         {rule.text}
+      </p>
+    </div>
+  );
+}
+
+function TagInfo({
+  label,
+  value,
+  warn = false,
+}: {
+  label: string;
+  value: string;
+  warn?: boolean;
+}) {
+  return (
+    <div className={`border p-3 ${warn ? "border-[#D84858]/25 bg-[#D84858]/10" : "border-black/10 bg-[#F7F8FC]"}`}>
+      <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
+        {label}
+      </p>
+
+      <p className="font-mono text-xs text-black/55 leading-relaxed break-words">
+        {value}
       </p>
     </div>
   );
