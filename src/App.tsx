@@ -2,9 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Fingerprint,
   Home,
+  KeyRound,
+  Lock,
   Menu,
   MoreHorizontal,
   Search,
+  ShieldCheck,
   Wallet,
   X,
 } from "lucide-react";
@@ -43,6 +46,7 @@ import { NewsTab } from "./tabs/NewsTab";
 import { DeFiTab } from "./tabs/DeFiTab";
 import { AcademyTab } from "./tabs/AcademyTab";
 import { LedgerIntelTab } from "./tabs/LedgerIntelTab";
+import { isAccessVerified, loadAccessState } from "./lib/accessStore";
 import { verifyMakeWavesPayload } from "./lib/xamanClient";
 import {
   cleanXamanReturnUrl,
@@ -102,6 +106,33 @@ type MenuGroup = {
 
 const sourceTag = "2606170002";
 
+const FREE_TABS: ActiveTab[] = [
+  "home",
+  "network",
+  "wallet",
+  "source",
+  "xaman",
+  "xrplverify",
+  "rewardledger",
+  "academy",
+  "accessgate",
+  "pitchmode",
+  "submission",
+  "smoketest",
+];
+
+function isFreeTab(tab: ActiveTab) {
+  return FREE_TABS.includes(tab);
+}
+
+function getAccessUnlocked(walletAddress: string) {
+  if (!walletAddress || walletAddress === "guest") {
+    return false;
+  }
+
+  return isAccessVerified(loadAccessState(walletAddress));
+}
+
 function getMenuGroups(language: TerminalLanguage, showLabs: boolean): MenuGroup[] {
   const isEnglish = language === "en";
 
@@ -129,10 +160,10 @@ function getMenuGroups(language: TerminalLanguage, showLabs: boolean): MenuGroup
     {
       title: isEnglish ? "Services / Access" : "Services / Toegang",
       items: [
-        { id: "truthdesk", label: "Truth Desk", status: isEnglish ? "Ask" : "Vraag" },
-        { id: "accessgate", label: isEnglish ? "Access Gate" : "Toegangspoort", status: isEnglish ? "Pay" : "Betaal" },
-        { id: "marketplace", label: isEnglish ? "Marketplace" : "Webshop", status: "Shop" },
-        { id: "otttestnet", label: "OTT Testnet", status: "Sim" },
+        { id: "truthdesk", label: "Truth Desk", status: isEnglish ? "Pass" : "Pass" },
+        { id: "accessgate", label: isEnglish ? "Access Gate" : "Toegangspoort", status: isEnglish ? "Scan" : "Scan" },
+        { id: "marketplace", label: isEnglish ? "Marketplace" : "Webshop", status: "Pass" },
+        { id: "otttestnet", label: "OTT Testnet", status: "Pass" },
       ],
     },
   ];
@@ -193,6 +224,9 @@ function MainApp() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [xamanReturnStatus, setXamanReturnStatus] = useState("");
   const [showLabs, setShowLabs] = useState(false);
+  const [accessUnlocked, setAccessUnlocked] = useState(() =>
+    getAccessUnlocked(walletAddress),
+  );
 
   const { language, setLanguage } = useTerminalLanguage();
 
@@ -213,6 +247,23 @@ function MainApp() {
 
   const activeItem =
     allItems.find((item) => item.id === activeTab) ?? menuGroups[0].items[0];
+
+  const activeTabLocked = !accessUnlocked && !isFreeTab(activeTab);
+
+  useEffect(() => {
+    const refreshAccess = () => {
+      setAccessUnlocked(getAccessUnlocked(walletAddress));
+    };
+
+    refreshAccess();
+    window.addEventListener("focus", refreshAccess);
+    window.addEventListener("storage", refreshAccess);
+
+    return () => {
+      window.removeEventListener("focus", refreshAccess);
+      window.removeEventListener("storage", refreshAccess);
+    };
+  }, [walletAddress]);
 
   useEffect(() => {
     const returnState = getXamanReturnState();
@@ -278,6 +329,7 @@ function MainApp() {
   }, []);
 
   function goTo(target: ActiveTab) {
+    setAccessUnlocked(getAccessUnlocked(walletAddress));
     setActiveTab(target);
     setIsMobileMenuOpen(false);
   }
@@ -340,6 +392,15 @@ function MainApp() {
           <PageHeader activeItem={activeItem} />
         </div>
 
+        {activeTabLocked ? (
+          <LockedPremiumPreview
+            activeItem={activeItem}
+            walletAddress={walletAddress}
+            language={language}
+            goTo={goTo}
+          />
+        ) : (
+          <>
         {activeTab === "home" && (
           <TerminalHomeTab walletAddress={walletAddress} onNavigate={navigateTo} />
         )}
@@ -438,6 +499,8 @@ function MainApp() {
         {activeTab === "academy" && <AcademyTab />}
 
         {activeTab === "intel" && <LedgerIntelTab />}
+          </>
+        )}
       </main>
 
       <MobileBottomNav
@@ -766,6 +829,122 @@ function PageHeader({ activeItem }: { activeItem: MenuItem }) {
         <OTTLogo size="sm" subtitle="Explorer + Xaman + Proof" />
       </div>
     </>
+  );
+}
+
+function LockedPremiumPreview({
+  activeItem,
+  walletAddress,
+  language,
+  goTo,
+}: {
+  activeItem: MenuItem;
+  walletAddress: string;
+  language: TerminalLanguage;
+  goTo: (target: ActiveTab) => void;
+}) {
+  const isEnglish = language === "en";
+  const isGuest = !walletAddress || walletAddress === "guest";
+
+  return (
+    <section className="min-h-screen bg-white p-4 md:p-6 xl:p-10">
+      <div className="relative overflow-hidden border border-black/10 bg-[radial-gradient(circle_at_18%_18%,rgba(56,152,232,0.16),transparent_28%),radial-gradient(circle_at_82%_8%,rgba(200,56,136,0.16),transparent_28%),#ffffff] p-6 md:p-8 xl:p-10 shadow-sm">
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.22),#ffffff_94%)]" />
+
+        <div className="relative z-10 grid grid-cols-12 gap-6 items-center">
+          <div className="col-span-12 xl:col-span-8">
+            <div className="inline-flex items-center gap-2 border border-black/10 bg-white/80 shadow-sm px-4 py-2 mb-6">
+              <Lock size={15} className="text-[#C83888]" />
+
+              <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-black/55">
+                {isEnglish ? "Access Pass Area" : "Access Pass Gebied"}
+              </p>
+            </div>
+
+            <h2 className="font-orbitron text-4xl xl:text-6xl font-black uppercase leading-none tracking-tight mb-6">
+              {activeItem.label}
+              <br />
+              <span className="bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] bg-clip-text text-transparent">
+                {isEnglish ? "Locked Preview" : "Locked Preview"}
+              </span>
+            </h2>
+
+            <p className="font-mono text-sm xl:text-base text-black/60 leading-relaxed max-w-3xl mb-8">
+              {isEnglish
+                ? "This part of the terminal is reserved for Access Pass holders. Free preview stays open for learning, proof, wallet connection and Make Waves verification."
+                : "Dit deel van de terminal is gereserveerd voor Access Pass holders. Free preview blijft open voor leren, proof, wallet connectie en Make Waves verificatie."}
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-3xl">
+              <button
+                onClick={() => goTo(isGuest ? "xaman" : "accessgate")}
+                className="border border-transparent bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] p-4 text-left text-white hover:brightness-95 transition-all"
+              >
+                <KeyRound size={18} className="mb-3" />
+
+                <p className="font-orbitron text-xs font-black uppercase tracking-widest mb-2">
+                  {isGuest
+                    ? isEnglish
+                      ? "Connect Xaman"
+                      : "Connect Xaman"
+                    : isEnglish
+                      ? "Scan Access Pass"
+                      : "Scan Access Pass"}
+                </p>
+
+                <p className="font-mono text-[10px] uppercase tracking-widest text-white/75">
+                  {isGuest ? "Wallet first" : "Scanner-only"}
+                </p>
+              </button>
+
+              <button
+                onClick={() => goTo("academy")}
+                className="border border-black/10 bg-white p-4 text-left hover:bg-[#F7F8FC] transition-all"
+              >
+                <ShieldCheck size={18} className="text-[#3898E8] mb-3" />
+
+                <p className="font-orbitron text-xs font-black uppercase tracking-widest mb-2 text-black">
+                  {isEnglish ? "Continue Free Preview" : "Ga door met Free Preview"}
+                </p>
+
+                <p className="font-mono text-[10px] uppercase tracking-widest text-black/40">
+                  Academy / Proof / XP
+                </p>
+              </button>
+            </div>
+          </div>
+
+          <div className="col-span-12 xl:col-span-4">
+            <div className="border border-black/10 bg-white/90 p-5 shadow-xl shadow-black/5">
+              <p className="font-orbitron text-xs uppercase tracking-widest mb-5">
+                {isEnglish ? "Live Access Model" : "Live Access Model"}
+              </p>
+
+              <div className="space-y-3">
+                <LockInfoRow label="Free" value="Home, Academy, Proof, XP, Access Gate" />
+                <LockInfoRow label="Premium" value="Truth Desk, Marketplace, Partner Hub, advanced tools" />
+                <LockInfoRow label="Unlock" value="Exact OTT Access Pass NFT match" />
+                <LockInfoRow label="Safety" value="No mint, no payment, scanner-only gate" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function LockInfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-black/10 bg-[#F7F8FC] p-3">
+      <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
+        {label}
+      </p>
+
+      <p className="font-orbitron text-xs font-black uppercase break-words text-black">
+        {value}
+      </p>
+    </div>
   );
 }
 
