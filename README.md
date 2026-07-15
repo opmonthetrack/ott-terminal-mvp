@@ -1,102 +1,391 @@
 # XRPL OnTheTrack Terminal
 
-**XRPL OnTheTrack Terminal** is an education-first onboarding, partner discovery and proof layer for XRPL users, builders and service routes.
+**XRPL OnTheTrack Terminal** is an education-first XRPL intelligence, onboarding and proof terminal built for the XRPL Commons **Make Waves** challenge.
 
-The Terminal helps users understand XRPL routes before taking action. It combines learning flows, partner discovery, Xaman payloads, optional on-ledger Proof Stamps, local XP, access routes and safe service routes.
+It helps users, builders and community members understand XRPL activity before they act. The terminal combines live intelligence, SourceTag proof, Xaman signing, Academy learning, local XP, social publishing workflows and pitch-ready submission tools.
 
-## Core Positioning
+Live terminal:
 
-XRPL OnTheTrack Terminal is education-first.
+```txt
+https://ott-terminal-mvp.vercel.app
+```
 
-It does **not**:
-
-- custody funds
-- act as broker
-- provide yield
-- execute trades
-- promise token value
-- promise investment returns
-
-It explains routes, shows risk awareness and directs users to official providers after education.
-
-## SourceTag
-
-The Make Waves proof identity for this project is:
+Make Waves SourceTag:
 
 ```txt
 2606170002
 ```
 
-Meaningful proof routes use this SourceTag for traceability:
+---
 
-- Daily Check-In
-- Partner Proof Stamp
-- XRPL Verify
-- Truth Desk payment
-- Access Gate payment
-- OTT testnet token demo flow
+## What It Is
 
-## Main Features
+XRPL OnTheTrack Terminal is not just a wallet dashboard.
 
-### Dashboard
+It is a guided XRPL layer for:
 
-Shows the overall project state, SourceTag, XP overview and next steps.
+- learning XRPL safely
+- following XRPL ecosystem signals
+- turning news into source-first social output
+- connecting and signing with Xaman
+- proving activity with SourceTag `2606170002`
+- tracking local XP and OTT Credits
+- preparing a clean Make Waves demo and pitch
 
-### Daily Check-In
+The product position is simple:
 
-Creates a Xaman payload for user engagement and credits local XP after signed payload verification.
+```txt
+Connect → Learn → Prove → Unlock → Share
+```
 
-### SourceTag Monitor
+---
 
-Shows the Make Waves SourceTag identity and proof strategy.
+## Core Safety Positioning
+
+The terminal is **education-first**.
+
+It does **not**:
+
+- custody funds
+- act as a broker
+- execute trades
+- provide yield
+- promise token value
+- promise investment returns
+- give financial advice
+- guarantee rewards, profit or resale value
+
+It explains, routes, verifies and teaches.
+
+Future token, certificate, donation or access features remain utility-focused and legal-gated.
+
+---
+
+## Main Live Modules
+
+### Home / Make Waves Landing
+
+The landing page introduces the terminal as a Make Waves intelligence and proof terminal. It highlights the live SourceTag, the intelligence workflow, the education layer and the safe access model.
+
+Main routes from Home:
+
+- XRPL Intelligence
+- Newsroom
+- Daily Proof
+- Academy
+
+---
+
+### Daily Snapshot / Dashboard
+
+The Dashboard gives a quick live overview of the terminal state.
+
+It shows:
+
+- Daily Intelligence Snapshot
+- live `/api/news` status
+- top XRPL signal
+- source health
+- SourceTag `2606170002`
+- quick routes into Intelligence, Newsroom, OTT Intelligence and Reward Ledger
+
+---
+
+### XRPL Intelligence
+
+XRPL Intelligence pulls source-weighted ecosystem signals from official and high-context sources.
+
+It tracks:
+
+- XRPL Core / Amendments
+- XLS standards
+- Ripple / RLUSD / payments context
+- Xaman ecosystem updates
+- CBDC / ISO 20022 / macro payment infrastructure
+- RWA / tokenization context
+
+Macro content is treated as context only. The terminal does not claim XRP or XRPL usage unless a direct source supports it.
+
+---
+
+### OTT Intelligence AI Studio
+
+OTT Intelligence turns selected XRPL Intelligence items into structured analysis.
+
+Modes include:
+
+- Builder Lens
+- Beginner Explain
+- Risk Context
+- Content Angle
+- Verify Checklist
+
+The goal is to separate facts, context, opportunity and risk before posting or acting.
+
+---
+
+### Social Newsroom
+
+The Newsroom converts live XRPL Intelligence items into platform-specific drafts.
+
+Supported output modes:
+
+- X / Twitter post
+- LinkedIn post
+- Instagram caption
+- Facebook post
+- TikTok hook
+- YouTube outline
+- Medium article outline
+- WhatsApp status
+
+The Newsroom uses a dedicated social tag playbook:
+
+```txt
+src/data/socialTagPlaybook.ts
+```
+
+That file separates:
+
+- hashtags
+- cashtags
+- suggested mentions
+- platform rules
+- topic context
+- verify-before-posting handles
+
+The app does **not** auto-post. It opens platforms or share dialogs and lets the user review first.
+
+---
 
 ### Xaman Center
 
-Creates and verifies Xaman payloads for proof-based user actions.
+Xaman Center is the self-custody signing layer.
 
-### XRPL Verify
+It supports Xaman payload creation and verification for proof-based user actions.
 
-Verifies XRPL transaction hashes and checks SourceTag proof.
+Important boundary:
 
-### Partner Hub
+```txt
+Xaman signing remains user-controlled.
+The terminal does not custody funds or secretly execute transactions.
+```
 
-Education-first partner discovery route with checklists, risk awareness and optional Proof Stamp verification.
+---
 
-### Truth Desk
+### Daily Check-In
 
-Paid service route for:
+Daily Check-In creates a Xaman Make Waves proof payload.
 
-- Ask Truth: 1 XRP for one short question
-- 1-on-1 booking request: demo XRP payment route
+Flow:
 
-This is for education, orientation and project feedback only.
+1. connect Xaman
+2. choose a proof action
+3. create payload
+4. sign in Xaman
+5. verify payload
+6. credit local XP and OTT Credits after validation
 
-### Access Gate
+Example reward:
 
-Access route layer for:
+```txt
++10 XP
++1 OTT Credit
+```
 
-- fiat route via external provider
-- XRP payment
-- RLUSD route concept
-- OTT Access Pass NFT concept
-
-Access payments unlock app access only. They are not investment products.
+---
 
 ### Reward Ledger
 
-Local XP and proof ledger. XP is off-chain and has no guaranteed financial value.
+Reward Ledger shows local proof progress for the connected wallet.
 
-### OTT Testnet Token
+It tracks:
 
-Testnet-only token simulation and verification. Mainnet token distribution is locked until legal review.
+- XP
+- OTT Credits
+- proof events
+- SourceTag proof context
+- local demo event history
+- locked future-token policy
+
+Important:
+
+```txt
+XP = learning/reputation progress
+OTT Credits = internal terminal utility points
+Future OTT Token = inactive until utility, profitability and legal review
+```
+
+XP and OTT Credits have no cash value, no withdrawal and no guaranteed token conversion.
+
+---
+
+### SourceTag Monitor
+
+SourceTag Monitor explains the Make Waves identity layer.
+
+Project SourceTag:
+
+```txt
+2606170002
+```
+
+The SourceTag is used to make activity traceable and demo-ready.
+
+---
+
+### Academy
+
+Academy is the education layer of the terminal.
+
+It includes free and premium-oriented learning modules around:
+
+- blockchain basics
+- XRPL basics
+- payments
+- SourceTag proof
+- DeFi island / ecosystem education
+- stablecoins
+- RWA
+- DID
+- React / JavaScript / AI agents
+
+Certificate NFT functionality is framed as a future optional completion proof, not an investment product.
+
+---
+
+### Access Gate
+
+Access Gate is currently scanner-only and live-safe.
+
+It checks for an OTT Access Pass NFT conceptually, but active mint/payment routes are disabled for V1 safety.
+
+Access Pass positioning:
+
+```txt
+utility access only
+no yield
+no value promise
+no investment claim
+```
+
+---
 
 ### Pitch Mode
 
-Two-minute demo flow for judges, partners and hackathon presentation.
+Pitch Mode contains a jury-ready Make Waves story and demo script.
+
+Current demo story highlights:
+
+- Dashboard Snapshot
+- XRPL Intelligence
+- OTT Intelligence
+- Newsroom
+- Xaman Proof
+- Reward Ledger
+- Academy / Access / future certificate utility
+
+---
 
 ### Submission Pack
 
-Copy-ready hackathon submission text, checklist and demo recording order.
+Submission Pack contains copy-ready Make Waves material:
+
+- one-liner
+- short description
+- feature list
+- demo route
+- business model angle
+- compliance notes
+- social caption
+- final links checklist
+
+---
+
+### Smoke Test
+
+Smoke Test is the final QA page.
+
+It checks whether the Make Waves demo route is ready:
+
+- Home
+- Dashboard Snapshot
+- XRPL Intelligence
+- OTT Intelligence
+- Newsroom
+- Xaman Center
+- Daily Check-In
+- Reward Ledger
+- SourceTag
+- Academy
+- Access Gate scanner-only
+- Pitch Mode
+- Submission Pack
+
+---
+
+## API Design
+
+The project uses Vercel serverless API routes.
+
+Main proof/signing router:
+
+```txt
+api/ott.ts
+```
+
+This handles:
+
+- Xaman Make Waves payload creation
+- Xaman payload verification
+- XRPL transaction verification
+- token payment verification
+- proof stamp verification
+- Truth Desk verification
+- Access verification
+
+Intelligence router:
+
+```txt
+api/news.js
+```
+
+This powers:
+
+- XRPL Intelligence
+- Dashboard Snapshot
+- Newsroom
+- OTT Intelligence
+
+---
+
+## Data Helpers
+
+Social tag and platform playbook:
+
+```txt
+src/data/socialTagPlaybook.ts
+```
+
+News/intelligence client:
+
+```txt
+src/lib/newsClient.ts
+```
+
+Reward storage:
+
+```txt
+src/lib/rewardStore.ts
+```
+
+Access scanner helper:
+
+```txt
+src/lib/accessNftPass.ts
+```
+
+---
 
 ## Tech Stack
 
@@ -104,35 +393,27 @@ Copy-ready hackathon submission text, checklist and demo recording order.
 - TypeScript
 - Vite
 - Tailwind CSS
+- Lucide icons
 - Xaman payload API
 - XRPL JSON-RPC verification
-- Vercel serverless API router
+- Vercel serverless functions
+- local browser storage for V1 XP demo state
 
-## API Design
-
-To stay within Vercel Hobby plan limits, the project uses one serverless API router:
-
-```txt
-api/ott.ts
-```
-
-This router handles:
-
-- Xaman payload creation
-- Xaman payload verification
-- XRPL transaction verification
-- token payment verification
-- proof stamp verification
-- Truth Desk payment verification
-- Access Gate payment verification
+---
 
 ## Required Environment Variables
 
-For Xaman payload creation:
+Xaman payload creation:
 
 ```txt
 XAMAN_API_KEY=
 XAMAN_API_SECRET=
+```
+
+Public app URL:
+
+```txt
+OTT_PUBLIC_APP_URL=https://ott-terminal-mvp.vercel.app
 ```
 
 Optional destination wallets:
@@ -149,32 +430,48 @@ Optional XRPL RPC override:
 XRPL_RPC_URL=https://s1.ripple.com:51234/
 ```
 
-## Demo Flow
+---
 
-Recommended two-minute demo:
+## Recommended Make Waves Demo Flow
 
-1. Open Dashboard and show SourceTag `2606170002`.
-2. Open Partner Hub and show education/risk checks.
-3. Create a Proof Stamp payload.
-4. Verify a transaction hash.
-5. Open Truth Desk and show paid question route.
-6. Open Access Gate and show payment route.
-7. End with Reward Ledger and legal lock.
+Two-minute version:
+
+1. Open Home and show the terminal positioning.
+2. Open Dashboard Snapshot and show live intelligence status.
+3. Open XRPL Intelligence and select a live signal.
+4. Open OTT Intelligence and explain the source-first analysis.
+5. Open Newsroom and show platform-ready social output.
+6. Open Xaman Center or Daily Check-In.
+7. Sign/verify a SourceTag proof payload.
+8. Open Reward Ledger and show XP / OTT Credits.
+9. End with Pitch Mode or Submission Pack.
+
+Core sentence:
+
+```txt
+XRPL OnTheTrack Terminal helps users learn, verify and share XRPL activity safely before they act.
+```
+
+---
 
 ## Hackathon One-Liner
 
-XRPL OnTheTrack Terminal is an education-first onboarding, partner discovery and proof layer for XRPL users, builders and service routes.
+XRPL OnTheTrack Terminal is an education-first XRPL intelligence, onboarding and proof terminal that helps users learn, verify and share XRPL activity safely with Make Waves SourceTag `2606170002`.
+
+---
 
 ## Short Description
 
-XRPL OnTheTrack Terminal helps users understand XRPL routes before taking action. It combines learning flows, partner discovery, Xaman payloads, optional on-ledger Proof Stamps, local XP and safe access/service routes.
+XRPL OnTheTrack Terminal combines live XRPL intelligence, Xaman proof flows, SourceTag verification, Academy education, Reward Ledger XP and a social Newsroom into one guided terminal. It helps users and builders understand XRPL activity before taking action, while keeping the product education-first, non-custodial and legal-safe.
 
-The MVP does not custody funds, does not act as broker, does not provide yield and does not execute trades. It explains, routes and verifies proof with SourceTag `2606170002`.
+---
 
 ## Legal-Safe Pitch Line
 
-The Terminal is education-first. It does not custody funds, does not act as broker, does not provide yield and does not execute trades. It routes users to official providers only after explanation and risk awareness.
+The terminal is education-first. It does not custody funds, act as a broker, execute trades, provide yield or promise investment returns. It helps users learn, verify sources and route themselves safely through XRPL ecosystem activity.
+
+---
 
 ## Closing Line
 
-This is not another wallet dashboard. It is a guided XRPL education and proof layer built to help users, builders and partners move safely on the track.
+This is not another wallet dashboard. It is an XRPL intelligence, education and proof terminal built to help users move safely on the track.
