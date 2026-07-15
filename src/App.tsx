@@ -115,6 +115,8 @@ const FREE_TABS: ActiveTab[] = [
   "xrplverify",
   "rewardledger",
   "academy",
+  "intel",
+  "news",
   "accessgate",
   "pitchmode",
   "submission",
@@ -155,6 +157,7 @@ function getMenuGroups(language: TerminalLanguage, showLabs: boolean): MenuGroup
         { id: "partners", label: "Partner Hub", status: isEnglish ? "Learn" : "Leer" },
         { id: "rewardledger", label: isEnglish ? "Reward Ledger" : "Beloningsoverzicht", status: "XP" },
         { id: "academy", label: isEnglish ? "Academy" : "Academie", status: isEnglish ? "Learn" : "Leer" },
+        { id: "intel", label: isEnglish ? "XRPL Intelligence" : "XRPL Intelligence", status: "Live" },
       ],
     },
     {
@@ -200,7 +203,6 @@ function getMenuGroups(language: TerminalLanguage, showLabs: boolean): MenuGroup
         { id: "ai", label: "AI Hub", status: "Tools" },
         { id: "news", label: isEnglish ? "Newsroom" : "Nieuwsruimte", status: isEnglish ? "News" : "Nieuws" },
         { id: "defi", label: "DeFi", status: "MVP" },
-        { id: "intel", label: "Ledger Intel", status: "Beta" },
       ],
     },
   ];
