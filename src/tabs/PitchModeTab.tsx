@@ -10,8 +10,10 @@ import {
   Copy,
   ExternalLink,
   Fingerprint,
+  Gauge,
   KeyRound,
   MessageCircle,
+  Newspaper,
   PlayCircle,
   ShieldCheck,
   Sparkles,
@@ -42,18 +44,20 @@ type Metric = {
   icon: ElementType;
 };
 
+const TERMINAL_URL = "https://ott-terminal-mvp.vercel.app";
+
 const pitchSteps: PitchStep[] = [
   {
     id: "hook",
     time: "0:00",
     title: "Hook",
-    headline: "XRPL is powerful, but users need a guided path that keeps them coming back.",
+    headline: "XRPL has strong rails. Users need one terminal that turns signals into action.",
     script:
-      "XRPL OnTheTrack Terminal turns onboarding into a simple journey: learn, connect Xaman, prove a real SourceTag action, earn XP and return for deeper Academy modules.",
+      "XRPL OnTheTrack Terminal is a guided intelligence, education and proof layer. It helps users understand what is happening in the XRPL ecosystem, learn safely, connect Xaman, prove real SourceTag actions and return for deeper Academy routes.",
     proof: [
-      "Home social landing",
-      "Xaman self-custody onboarding",
-      `Official SourceTag ${MAKE_WAVES_SOURCE_TAG} proof identity`,
+      "Dashboard Daily Intelligence Snapshot",
+      "Public social landing with Make Waves positioning",
+      `Official SourceTag ${MAKE_WAVES_SOURCE_TAG} visible across the flow`,
     ],
     icon: Waves,
   },
@@ -61,13 +65,13 @@ const pitchSteps: PitchStep[] = [
     id: "problem",
     time: "0:20",
     title: "Problem",
-    headline: "People get sent to portals and tools, but they do not always stay engaged.",
+    headline: "Crypto users see noise. Builders need verified context before they act or post.",
     script:
-      "The XRPL ecosystem has strong education and tools, but new users often leave before they understand wallets, payments, SourceTags, DeFi, tokens, identity or builder routes.",
+      "Most people jump from headlines to hype. XRPL users need a safer path: source-first news, beginner explanation, risk context, wallet education and proof-based engagement without custody, broker activity or yield promises.",
     proof: [
-      "Users need guided learning",
-      "High-risk actions need context",
-      "Retention needs XP, credits and clear next steps",
+      "XRPL Intelligence filters official, technical and macro sources",
+      "OTT Intelligence explains the signal before users share it",
+      "Newsroom creates drafts with source, disclaimer and OTT attribution",
     ],
     icon: Users,
   },
@@ -75,15 +79,15 @@ const pitchSteps: PitchStep[] = [
     id: "solution",
     time: "0:45",
     title: "Solution",
-    headline: "OTT wraps official XRPL learning in a proof-based terminal.",
+    headline: "OTT connects intelligence, education, proof and content in one loop.",
     script:
-      "The Academy uses the XRPL learning path in an OTT jacket. Free users see enough to trust the product, while premium users see deeper routes: DeFi, business, tokenization, stablecoins, DID, coding and AI agents.",
+      "The user journey is simple: see a daily XRPL signal, understand it in OTT Intelligence, turn it into safe social output in Newsroom, then continue into Academy and SourceTag proof actions with Xaman.",
     proof: [
-      "XRPL Academy deep catalog",
-      "Free preview plus premium depth",
-      "Education-first, not investment advice",
+      "Dashboard Snapshot → XRPL Intelligence → OTT Intelligence",
+      "Newsroom output for X, LinkedIn, Instagram, Facebook, Medium, TikTok, WhatsApp and YouTube",
+      "Academy routes for free preview, premium depth and certificate layer later",
     ],
-    icon: BookOpen,
+    icon: Brain,
   },
   {
     id: "demo",
@@ -91,12 +95,12 @@ const pitchSteps: PitchStep[] = [
     title: "Demo Flow",
     headline: "Show the product path in 30 seconds.",
     script:
-      "Open Home, connect Xaman, run Daily Check-In, verify the Mainnet SourceTag proof, show XP and OTT Credits in Reward Ledger, then open SourceTag Support landing.",
+      "Open Dashboard to show the live intelligence snapshot. Open XRPL Intelligence to show sources. Open OTT Intelligence to explain one signal. Open Newsroom to create a social draft. Then show Xaman, Daily Check-In, Reward Ledger and SourceTag proof.",
     proof: [
-      "Connect Xaman",
-      "Daily proof payload",
-      "Reward Ledger with tx-linked proof",
-      "SourceTag support and memo awareness",
+      "Daily Intelligence Snapshot loads from /api/news",
+      "Open Source and Copy buttons work",
+      "Daily proof payload and Reward Ledger stay separate from social tools",
+      "SourceTag 2606170002 remains the proof identity",
     ],
     icon: PlayCircle,
   },
@@ -104,13 +108,13 @@ const pitchSteps: PitchStep[] = [
     id: "business",
     time: "1:40",
     title: "Business",
-    headline: "A safe path toward access, certificates, support and events.",
+    headline: "A safe path toward access, education, content utility and community support.",
     script:
-      "The business model can grow through Access Pass utility, premium Academy routes, optional certificate NFTs, transparent XRP/RLUSD support and later event ticket utility.",
+      "The model can grow through premium Academy routes, Access Pass utility, optional certificate NFTs, transparent support and content tools. Free users keep OTT attribution in social output, while premium users can later unlock deeper tools and branding options.",
     proof: [
-      "Access Pass scanner-only V1",
-      "Certificate NFT coming soon, no active mint/payment yet",
-      "Support stays voluntary, transparent and legal-safe",
+      "Access Gate is scanner-only in V1",
+      "Certificate NFT and XRP/RLUSD support are coming soon, not active payment promises",
+      "Public Newsroom output keeps Powered by OTT / TruthOnTheTrack attribution visible",
     ],
     icon: KeyRound,
   },
@@ -118,14 +122,14 @@ const pitchSteps: PitchStep[] = [
     id: "close",
     time: "2:00",
     title: "Close",
-    headline: "A Make Waves terminal that turns learning into proof.",
+    headline: "A Make Waves terminal that turns XRPL awareness into proof-based learning.",
     script:
-      "This is not a bank, exchange or yield product. It is a guided XRPL education, proof and community terminal built by TruthOnTheTrack for users, builders and partners.",
+      "This is not a bank, exchange or yield product. It is a safe XRPL intelligence, education, proof and content terminal built by TruthOnTheTrack for users, builders and partners who want to verify before they trust.",
     proof: [
       "No custody",
       "No broker",
-      "No yield promise",
-      "Proof-based engagement around XRPL and Xaman",
+      "No yield or trading signal",
+      "Source-first intelligence plus Xaman proof-based onboarding",
     ],
     icon: Sparkles,
   },
@@ -136,6 +140,7 @@ export function PitchModeTab({ walletAddress = "guest" }: PitchModeTabProps) {
   const [copied, setCopied] = useState(false);
 
   const activeStep = pitchSteps[activeStepIndex];
+  const ActiveIcon = activeStep.icon;
 
   const metrics: Metric[] = [
     {
@@ -147,7 +152,7 @@ export function PitchModeTab({ walletAddress = "guest" }: PitchModeTabProps) {
     {
       label: "SourceTag",
       value: String(MAKE_WAVES_SOURCE_TAG),
-      text: "Proof layer.",
+      text: "Proof identity.",
       icon: Fingerprint,
     },
     {
@@ -157,7 +162,7 @@ export function PitchModeTab({ walletAddress = "guest" }: PitchModeTabProps) {
       icon: Wallet,
     },
     {
-      label: "Compliance",
+      label: "Positioning",
       value: "Safe",
       text: "No custody.",
       icon: ShieldCheck,
@@ -166,12 +171,18 @@ export function PitchModeTab({ walletAddress = "guest" }: PitchModeTabProps) {
 
   const fullScript = useMemo(
     () =>
-      pitchSteps
-        .map(
+      [
+        "XRPL OnTheTrack Terminal — Make Waves 2-Minute Demo Script",
+        `SourceTag: ${MAKE_WAVES_SOURCE_TAG}`,
+        TERMINAL_URL,
+        "",
+        ...pitchSteps.map(
           (step) =>
-            `${step.time} — ${step.title}\n${step.headline}\n${step.script}`
-        )
-        .join("\n\n"),
+            `${step.time} — ${step.title}\n${step.headline}\n\n${step.script}\n\nShow:\n- ${step.proof.join("\n- ")}`
+        ),
+        "",
+        "Safety line: Education-first. No custody, no broker, no yield, no trade execution and no financial advice.",
+      ].join("\n\n"),
     []
   );
 
@@ -197,7 +208,7 @@ export function PitchModeTab({ walletAddress = "guest" }: PitchModeTabProps) {
   return (
     <div className="min-h-screen bg-white text-[#080808]">
       <div className="relative overflow-hidden border border-black/10 bg-white p-6 mb-6">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_white,_transparent_35%)]" />
+        <div className="absolute inset-0 opacity-[0.08] bg-[radial-gradient(circle_at_top_right,_#3898E8,_transparent_34%),radial-gradient(circle_at_bottom_left,_#C83888,_transparent_32%)]" />
 
         <div className="relative z-10 grid grid-cols-12 gap-6 items-center">
           <div className="col-span-12 xl:col-span-8">
@@ -210,12 +221,12 @@ export function PitchModeTab({ walletAddress = "guest" }: PitchModeTabProps) {
             </div>
 
             <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
-              Make Waves Demo Script
+              Intelligence Demo Script
             </h2>
 
             <p className="font-mono text-sm text-black/55 max-w-3xl leading-relaxed">
-              Een 2-minuten pitch flow voor jury, partners en social video. De route is simpel:
-              Home → Xaman → Daily Proof → Reward Ledger → SourceTag Support → Academy.
+              Een 2-minuten pitch flow voor jury, partners en social video. De route is nu:
+              Dashboard Snapshot → XRPL Intelligence → OTT Intelligence → Newsroom → Xaman Proof → Reward Ledger.
             </p>
           </div>
 
@@ -268,7 +279,7 @@ export function PitchModeTab({ walletAddress = "guest" }: PitchModeTabProps) {
                 </p>
               </div>
 
-              <activeStep.icon size={34} className="text-[#C83888] shrink-0" />
+              <ActiveIcon size={34} className="text-[#C83888] shrink-0" />
             </div>
 
             <div className="border border-black/10 bg-[#F7F8FC] p-5 mb-5">
@@ -307,7 +318,7 @@ export function PitchModeTab({ walletAddress = "guest" }: PitchModeTabProps) {
                       Next Step
                     </p>
 
-                    <p className="font-mono text-[10px] text-black/55 uppercase">
+                    <p className="font-mono text-[10px] text-white/70 uppercase">
                       Continue demo
                     </p>
                   </div>
@@ -331,8 +342,8 @@ export function PitchModeTab({ walletAddress = "guest" }: PitchModeTabProps) {
               <p className="font-mono text-sm text-black/55 leading-relaxed">
                 XRPL OnTheTrack Terminal is education-first. It does not custody funds,
                 does not act as broker, does not provide yield and does not execute trades.
-                It teaches users to verify before they trust, using Xaman, XRPL proof,
-                SourceTag 2606170002, XP and transparent reward history.
+                It helps users verify sources, understand XRPL, connect Xaman and prove
+                selected actions with SourceTag {MAKE_WAVES_SOURCE_TAG}.
               </p>
             </div>
 
@@ -341,8 +352,8 @@ export function PitchModeTab({ walletAddress = "guest" }: PitchModeTabProps) {
                 Social caption core
               </p>
               <p className="font-mono text-xs text-black/60 leading-relaxed">
-                I am building XRPL OnTheTrack Terminal for Make Waves: a safe way to learn XRPL,
-                connect Xaman, prove actions with SourceTag 2606170002 and turn education into XP.
+                I am building XRPL OnTheTrack Terminal for Make Waves: a source-first XRPL intelligence,
+                education and proof terminal with Xaman, SourceTag {MAKE_WAVES_SOURCE_TAG}, safe social drafts and XP.
               </p>
             </div>
           </div>
@@ -367,6 +378,15 @@ export function PitchModeTab({ walletAddress = "guest" }: PitchModeTabProps) {
 
             <ActionButton
               icon={ExternalLink}
+              title="Open Terminal"
+              text="Live demo"
+              onClick={() =>
+                window.open(TERMINAL_URL, "_blank", "noopener,noreferrer")
+              }
+            />
+
+            <ActionButton
+              icon={ExternalLink}
               title="Open XRPL"
               text="Reference site"
               onClick={() =>
@@ -377,20 +397,22 @@ export function PitchModeTab({ walletAddress = "guest" }: PitchModeTabProps) {
 
           <div className="border border-black/10 bg-white p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Brain size={18} className="text-[#3898E8]" />
+              <Gauge size={18} className="text-[#3898E8]" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                Demo Checklist
+                Demo Order
               </p>
             </div>
 
             <div className="space-y-3">
-              <InfoLine text="Start at Home: social landing + SourceTag." />
-              <InfoLine text="Show Xaman Center: self-custody connect." />
-              <InfoLine text="Show Daily Check-In: Mainnet proof payload." />
-              <InfoLine text="Show Reward Ledger: XP + OTT Credits." />
-              <InfoLine text="Show SourceTag Support: XRP/RLUSD + memo coming soon." />
-              <InfoLine text="End with Academy depth + Access Pass utility." />
+              <InfoLine text="Dashboard: Daily Intelligence Snapshot." />
+              <InfoLine text="XRPL Intelligence: source queue + buckets." />
+              <InfoLine text="OTT Intelligence: explain one signal." />
+              <InfoLine text="Newsroom: copy social draft + open source." />
+              <InfoLine text="Xaman Center: self-custody connect." />
+              <InfoLine text="Daily Check-In: Mainnet SourceTag proof." />
+              <InfoLine text="Reward Ledger: XP + OTT Credits." />
+              <InfoLine text="Close with Academy + Access Gate scanner-only." />
             </div>
           </div>
 
@@ -405,10 +427,27 @@ export function PitchModeTab({ walletAddress = "guest" }: PitchModeTabProps) {
 
             <div className="border border-black/10 bg-[#F7F8FC] p-4">
               <p className="font-mono text-xs text-black/55 leading-relaxed">
-                The MVP is not trying to be a bank or exchange. It is a guided
-                XRPL learning and proof terminal that keeps users engaged through
-                education, SourceTag actions, XP, internal credits and future utility.
+                The MVP is not trying to be a bank, exchange or trading bot. It is a guided
+                XRPL intelligence and proof terminal that keeps users engaged through verified
+                sources, Xaman onboarding, education, SourceTag actions, XP and future utility.
               </p>
+            </div>
+          </div>
+
+          <div className="border border-black/10 bg-white p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Newspaper size={18} className="text-[#C83888]" />
+
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Content Angle
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <InfoLine text="Not hype: source-first awareness." />
+              <InfoLine text="Not trading: education and verification." />
+              <InfoLine text="Not closed: public tools include OTT attribution." />
+              <InfoLine text="Premium later: deeper routes and branding options." />
             </div>
           </div>
         </div>
