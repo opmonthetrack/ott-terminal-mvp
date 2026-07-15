@@ -39,74 +39,74 @@ type Metric = {
 
 const smokeTests: TestItem[] = [
   {
-    id: "dashboard",
-    area: "Core",
-    title: "Dashboard loads",
-    expected: "Dashboard opent zonder blanco scherm en toont SourceTag / XP overview.",
-    risk: "Import fout of Reward Store fout.",
-  },
-  {
-    id: "daily-checkin",
-    area: "Xaman",
-    title: "Daily Check-In loads",
-    expected: "Tab opent en Create Xaman Payload knop is zichtbaar.",
-    risk: "xamanClient import of api/ott route fout.",
+    id: "home",
+    area: "Landing",
+    title: "Home social landing loads",
+    expected: "Home opent, toont Make Waves, SourceTag 2606170002 en CTA's naar Xaman, Daily Proof, Academy en Support.",
+    risk: "onNavigate target fout of import fout in TerminalHomeTab.",
   },
   {
     id: "xaman-center",
     area: "Xaman",
-    title: "Xaman Center loads",
-    expected: "Xaman Center opent en SourceTag 2606170002 wordt getoond.",
-    risk: "Verkeerde export uit xamanClient.ts.",
+    title: "Xaman Center connects",
+    expected: "Xaman Center opent, SourceTag route is zichtbaar, payload/deeplink/QR fallback blijft werken.",
+    risk: "xamanClient of mobile session import fout.",
   },
   {
-    id: "xrpl-verify",
-    area: "XRPL",
-    title: "XRPL Verify loads",
-    expected: "Tx hash input en verification knop zijn zichtbaar.",
-    risk: "xrplClient import of type fout.",
-  },
-  {
-    id: "partner-hub",
-    area: "Partner",
-    title: "Partner Hub loads",
-    expected: "Partner cards, education checks en Proof Stamp flow zijn zichtbaar.",
-    risk: "partnerCatalog, proofStampClient of rewardStore fout.",
-  },
-  {
-    id: "truth-desk",
-    area: "Service",
-    title: "Truth Desk loads",
-    expected: "Ask Truth en 1-on-1 routes zijn zichtbaar.",
-    risk: "truthDeskClient of truthDeskVerifyClient fout.",
-  },
-  {
-    id: "access-gate",
-    area: "Access",
-    title: "Access Gate loads",
-    expected: "Banxa, XRP, RLUSD en NFT access routes zijn zichtbaar.",
-    risk: "accessStore of accessClient fout.",
+    id: "daily-checkin",
+    area: "Proof",
+    title: "Daily Check-In proof works",
+    expected: "Create Xaman Proof Payload werkt, signed payload kan worden verified en SourceTag 2606170002 blijft zichtbaar.",
+    risk: "api/ott action, xamanClient of MakeWaves action mismatch.",
   },
   {
     id: "reward-ledger",
     area: "Rewards",
-    title: "Reward Ledger loads",
-    expected: "Local XP events en legal lock status zijn zichtbaar.",
-    risk: "Reward event type mismatch.",
+    title: "Reward Ledger records proof",
+    expected: "XP, OTT Credits, SourceTag en tx-linked proof events zijn zichtbaar na verified action.",
+    risk: "rewardStore type mismatch of local storage wallet mismatch.",
+  },
+  {
+    id: "source-tag",
+    area: "Proof",
+    title: "SourceTag Support page loads",
+    expected: "SourceTag verifier, support coming soon, XRP/RLUSD concept en memo awareness zijn zichtbaar.",
+    risk: "SourceTagMonitorTab import of XRPL websocket verifier fout.",
+  },
+  {
+    id: "academy",
+    area: "Education",
+    title: "Academy deep catalog loads",
+    expected: "Free modules, premium depth, AI agents route en Certificate NFT coming soon zijn zichtbaar.",
+    risk: "Academy state/import fout of te zware component render.",
+  },
+  {
+    id: "access-gate",
+    area: "Access",
+    title: "Access Gate scanner-only loads",
+    expected: "Access Gate opent als scanner-only utility pass check. Geen mint, payment, claim of XRP move actief.",
+    risk: "accessStore/accessNftPass import fout of oude payment copy teruggekomen.",
   },
   {
     id: "pitch-mode",
     area: "Demo",
-    title: "Pitch Mode loads",
-    expected: "2-minute pitch steps zijn zichtbaar.",
-    risk: "App import of tab type fout.",
+    title: "Pitch Mode works",
+    expected: "2-minute Make Waves demo script opent, steps werken en Copy Full Script werkt.",
+    risk: "PitchModeTab import, icon of clipboard issue.",
   },
   {
     id: "submission-pack",
     area: "Submission",
-    title: "Submission Pack loads",
-    expected: "Checklist, copy blocks en demo order zijn zichtbaar.",
-    risk: "App import of lucide unused/missing icon fout.",
+    title: "Submission Pack works",
+    expected: "Make Waves checklist, copy blocks, demo order and red flag avoidance zijn zichtbaar.",
+    risk: "SubmissionPackTab import, unused icon or clipboard issue.",
+  },
+  {
+    id: "legal-safe",
+    area: "Legal",
+    title: "Coming-soon boundaries are clear",
+    expected: "Certificate NFT, XRP/RLUSD support, donations and payments staan als future/concept, niet als actieve flow.",
+    risk: "Jury/user denkt dat er actieve payment, mint, yield or token promise is.",
   },
 ];
 
@@ -168,7 +168,7 @@ export function SmokeTestTab({ walletAddress = "guest" }: SmokeTestTabProps) {
     });
 
     return [
-      "XRPL OnTheTrack Terminal — Smoke Test Report",
+      "XRPL OnTheTrack Terminal — Make Waves Final QA Report",
       `Wallet: ${walletAddress}`,
       `SourceTag: ${MAKE_WAVES_SOURCE_TAG}`,
       `Passed: ${counts.pass}/${counts.total}`,
@@ -204,13 +204,13 @@ export function SmokeTestTab({ walletAddress = "guest" }: SmokeTestTabProps) {
   }
 
   return (
-    <div className="p-6 bg-black min-h-screen text-white">
-      <div className="relative overflow-hidden border border-white/10 bg-white/[0.02] p-6 mb-6">
+    <div className="min-h-screen bg-white text-[#080808]">
+      <div className="relative overflow-hidden border border-black/10 bg-white p-6 mb-6">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_white,_transparent_35%)]" />
 
         <div className="relative z-10 grid grid-cols-12 gap-6 items-center">
           <div className="col-span-12 xl:col-span-8">
-            <div className="flex items-center gap-2 mb-4 text-white/45">
+            <div className="flex items-center gap-2 mb-4 text-black/55">
               <ListChecks size={18} />
 
               <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
@@ -219,13 +219,12 @@ export function SmokeTestTab({ walletAddress = "guest" }: SmokeTestTabProps) {
             </div>
 
             <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
-              Final App Function Check
+              Make Waves Final QA Check
             </h2>
 
-            <p className="font-mono text-sm text-white/45 max-w-3xl leading-relaxed">
-              Gebruik deze tab vóór UI polish. Klik elke hoofdtab in de app,
-              markeer pass/fail en fix eerst rode meldingen voordat we design
-              gaan doen.
+            <p className="font-mono text-sm text-black/55 max-w-3xl leading-relaxed">
+              Gebruik deze tab vlak vóór deploy, demo-opname en social posts. Klik de live
+              Make Waves route door, markeer pass/fail en fix alleen rode punten voordat je publiceert.
             </p>
           </div>
 
@@ -239,9 +238,9 @@ export function SmokeTestTab({ walletAddress = "guest" }: SmokeTestTabProps) {
 
       <div className="grid grid-cols-12 gap-4">
         <div className="col-span-12 xl:col-span-8">
-          <div className="border border-white/10 bg-white/[0.02] p-6">
+          <div className="border border-black/10 bg-white p-6">
             <div className="flex items-center gap-2 mb-5">
-              <ClipboardCheck size={18} className="text-white/60" />
+              <ClipboardCheck size={18} className="text-[#3898E8]" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
                 Manual Test Checklist
@@ -264,9 +263,9 @@ export function SmokeTestTab({ walletAddress = "guest" }: SmokeTestTabProps) {
         </div>
 
         <div className="col-span-12 xl:col-span-4 space-y-4">
-          <div className="border border-white/10 bg-white/[0.02] p-6">
+          <div className="border border-black/10 bg-white p-6">
             <div className="flex items-center gap-2 mb-5">
-              <PlayCircle size={18} className="text-white/60" />
+              <PlayCircle size={18} className="text-[#3898E8]" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
                 Test Order
@@ -274,18 +273,19 @@ export function SmokeTestTab({ walletAddress = "guest" }: SmokeTestTabProps) {
             </div>
 
             <div className="space-y-3">
-              <StepLine number="01" text="Open each tab from sidebar." />
-              <StepLine number="02" text="Check blank screen or red console." />
-              <StepLine number="03" text="Create payload only where safe." />
-              <StepLine number="04" text="Verify SourceTag stays 2606170002." />
-              <StepLine number="05" text="Mark each item pass/fail." />
-              <StepLine number="06" text="Copy report after full check." />
+              <StepLine number="01" text="Home → Xaman → Daily Proof." />
+              <StepLine number="02" text="Verify XP/Credits in Reward Ledger." />
+              <StepLine number="03" text="Check SourceTag Support page." />
+              <StepLine number="04" text="Check Academy + Access Gate." />
+              <StepLine number="05" text="Check Pitch + Submission screens." />
+              <StepLine number="06" text="Check legal-safe coming-soon copy." />
+              <StepLine number="07" text="Copy report after all items pass." />
             </div>
           </div>
 
-          <div className="border border-white/10 bg-white/[0.02] p-6">
+          <div className="border border-black/10 bg-white p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Copy size={18} className="text-white/60" />
+              <Copy size={18} className="text-[#3898E8]" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
                 Report
@@ -294,50 +294,68 @@ export function SmokeTestTab({ walletAddress = "guest" }: SmokeTestTabProps) {
 
             <button
               onClick={copyReport}
-              className="w-full bg-white text-black p-4 text-left hover:bg-white/80 transition-all mb-3"
+              className="w-full bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] text-white p-4 text-left hover:brightness-95 transition-all mb-3"
             >
               <p className="font-orbitron text-xs font-black uppercase mb-2">
                 {copied ? "Copied" : "Copy Test Report"}
               </p>
 
-              <p className="font-mono text-[10px] text-black/55 uppercase">
-                Share result before UI polish
+              <p className="font-mono text-[10px] text-white/75 uppercase">
+                Share before deploy/social
               </p>
             </button>
 
             <button
               onClick={resetTests}
-              className="w-full border border-white/10 bg-black p-4 text-left hover:bg-white/[0.03] transition-all"
+              className="w-full border border-black/10 bg-[#F7F8FC] p-4 text-left hover:bg-[#D84858]/10 transition-all"
             >
-              <RotateCcw size={18} className="text-white/60 mb-3" />
+              <RotateCcw size={18} className="text-[#3898E8] mb-3" />
 
               <p className="font-orbitron text-xs font-bold uppercase mb-2">
                 Reset Checklist
               </p>
 
-              <p className="font-mono text-[10px] text-white/35 uppercase">
+              <p className="font-mono text-[10px] text-black/35 uppercase">
                 Start smoke test again
               </p>
             </button>
           </div>
 
-          <div className="border border-white/10 bg-white/[0.02] p-6">
+          <div className="border border-black/10 bg-white p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Sparkles size={18} className="text-white/60" />
+              <Sparkles size={18} className="text-[#3898E8]" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
                 Go / No-Go
               </p>
             </div>
 
-            <div className="border border-white/10 bg-black p-4">
-              <p className="font-mono text-xs text-white/45 leading-relaxed">
+            <div className="border border-black/10 bg-[#F7F8FC] p-4">
+              <p className="font-mono text-xs text-black/55 leading-relaxed">
                 {counts.fail > 0
                   ? "No-Go: fix failed items first."
                   : counts.todo > 0
                     ? "Testing: finish all todo checks."
-                    : "Go: app is ready for UI polish and demo recording."}
+                    : "Go: app is ready for deploy, demo recording and social posts."}
               </p>
+            </div>
+          </div>
+
+          <div className="border border-black/10 bg-white p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <ShieldCheck size={18} className="text-[#C83888]" />
+
+              <p className="font-orbitron text-xs uppercase tracking-widest">
+                Final Legal / Social Check
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <StepLine number="A" text="No custody, no broker, no yield, no trade execution." />
+              <StepLine number="B" text="XP and OTT Credits are internal progress/utility signals." />
+              <StepLine number="C" text="No token value, conversion or profit promise." />
+              <StepLine number="D" text="Certificate NFT and XRP/RLUSD support are coming soon only." />
+              <StepLine number="E" text="Support is voluntary and not guaranteed reward." />
             </div>
           </div>
         </div>
@@ -363,10 +381,10 @@ function TestCard({
     <div
       className={`border p-5 transition-all ${
         status === "pass"
-          ? "border-white/25 bg-white/[0.06]"
+          ? "border-[#3898E8]/30 bg-[#3898E8]/10"
           : status === "fail"
-            ? "border-white/25 bg-white/[0.03]"
-            : "border-white/10 bg-black"
+            ? "border-[#3898E8]/30 bg-[#D84858]/10"
+            : "border-black/10 bg-[#F7F8FC]"
       }`}
     >
       <div className="grid grid-cols-12 gap-4 items-start">
@@ -374,7 +392,7 @@ function TestCard({
           <div className="flex items-center gap-2 mb-3">
             <StatusIcon status={status} />
 
-            <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.25em]">
+            <p className="font-mono text-[10px] text-black/35 uppercase tracking-[0.25em]">
               {test.area}
             </p>
           </div>
@@ -383,16 +401,16 @@ function TestCard({
             {test.title}
           </h3>
 
-          <p className="font-mono text-xs text-white/50 leading-relaxed mb-3">
+          <p className="font-mono text-xs text-black/55 leading-relaxed mb-3">
             {test.expected}
           </p>
 
-          <div className="border border-white/10 bg-white/[0.02] p-3">
-            <p className="font-mono text-[10px] text-white/30 uppercase tracking-widest mb-2">
+          <div className="border border-black/10 bg-white p-3">
+            <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
               Risk if red
             </p>
 
-            <p className="font-mono text-xs text-white/45 leading-relaxed">
+            <p className="font-mono text-xs text-black/55 leading-relaxed">
               {test.risk}
             </p>
           </div>
@@ -410,14 +428,14 @@ function TestCard({
 
 function StatusIcon({ status }: { status: TestStatus }) {
   if (status === "pass") {
-    return <CheckCircle2 size={16} className="text-white/70" />;
+    return <CheckCircle2 size={16} className="text-[#3898E8]" />;
   }
 
   if (status === "fail") {
-    return <XCircle size={16} className="text-white/70" />;
+    return <XCircle size={16} className="text-[#D84858]" />;
   }
 
-  return <BadgeCheck size={16} className="text-white/25" />;
+  return <BadgeCheck size={16} className="text-black/25" />;
 }
 
 function SmallButton({
@@ -430,21 +448,21 @@ function SmallButton({
   return (
     <button
       onClick={onClick}
-      className="border border-white/10 bg-black p-3 text-center hover:bg-white/[0.04] transition-all"
+      className="border border-black/10 bg-[#F7F8FC] p-3 text-center hover:bg-white transition-all"
     >
-      <p className="font-mono text-[10px] uppercase text-white/45">{label}</p>
+      <p className="font-mono text-[10px] uppercase text-black/55">{label}</p>
     </button>
   );
 }
 
 function StepLine({ number, text }: { number: string; text: string }) {
   return (
-    <div className="flex items-start gap-3 border border-white/10 bg-black p-3">
-      <p className="font-orbitron text-xs font-black text-white/40">
+    <div className="flex items-start gap-3 border border-black/10 bg-[#F7F8FC] p-3">
+      <p className="font-orbitron text-xs font-black text-[#C83888]">
         {number}
       </p>
 
-      <p className="font-mono text-xs text-white/45 leading-relaxed">{text}</p>
+      <p className="font-mono text-xs text-black/55 leading-relaxed">{text}</p>
     </div>
   );
 }
@@ -453,10 +471,10 @@ function MetricBox({ metric }: { metric: Metric }) {
   const Icon = metric.icon;
 
   return (
-    <div className="border border-white/10 bg-black/60 p-4">
-      <Icon size={18} className="text-white/60 mb-3" />
+    <div className="border border-black/10 bg-[#F7F8FC]/60 p-4">
+      <Icon size={18} className="text-[#3898E8] mb-3" />
 
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+      <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
         {metric.label}
       </p>
 
@@ -464,7 +482,7 @@ function MetricBox({ metric }: { metric: Metric }) {
         {metric.value}
       </p>
 
-      <p className="font-mono text-[10px] text-white/30 uppercase">
+      <p className="font-mono text-[10px] text-black/35 uppercase">
         {metric.text}
       </p>
     </div>
