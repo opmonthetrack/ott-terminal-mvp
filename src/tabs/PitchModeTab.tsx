@@ -47,13 +47,13 @@ const pitchSteps: PitchStep[] = [
     id: "hook",
     time: "0:00",
     title: "Hook",
-    headline: "XRPL is powerful, but new users need a safe path.",
+    headline: "XRPL is powerful, but users need a guided path that keeps them coming back.",
     script:
-      "XRPL OnTheTrack Terminal turns onboarding into an education-first journey: learn first, connect wallet second, and only then route to official providers.",
+      "XRPL OnTheTrack Terminal turns onboarding into a simple journey: learn, connect Xaman, prove a real SourceTag action, earn XP and return for deeper Academy modules.",
     proof: [
-      "Education-first onboarding",
-      "No custody, no broker, no yield provider",
-      "Risk awareness before action",
+      "Home social landing",
+      "Xaman self-custody onboarding",
+      `Official SourceTag ${MAKE_WAVES_SOURCE_TAG} proof identity`,
     ],
     icon: Waves,
   },
@@ -61,13 +61,13 @@ const pitchSteps: PitchStep[] = [
     id: "problem",
     time: "0:20",
     title: "Problem",
-    headline: "The ecosystem has many doors, but no simple guided hallway.",
+    headline: "People get sent to portals and tools, but they do not always stay engaged.",
     script:
-      "Users discover tools like Xaman, Xahau, DEX, onramps, bridges, DeFi routes and partner apps separately. That creates confusion and risk.",
+      "The XRPL ecosystem has strong education and tools, but new users often leave before they understand wallets, payments, SourceTags, DeFi, tokens, identity or builder routes.",
     proof: [
-      "Fragmented user journey",
-      "High-risk actions need explanation",
-      "Builders need better discovery",
+      "Users need guided learning",
+      "High-risk actions need context",
+      "Retention needs XP, credits and clear next steps",
     ],
     icon: Users,
   },
@@ -75,27 +75,28 @@ const pitchSteps: PitchStep[] = [
     id: "solution",
     time: "0:45",
     title: "Solution",
-    headline: "A terminal that explains, routes and records proof.",
+    headline: "OTT wraps official XRPL learning in a proof-based terminal.",
     script:
-      "The Terminal gives structured routes: Partner Hub, Daily XP, Proof Stamps, Truth Desk, Access Gate and Reward Ledger. Every meaningful proof can use SourceTag 2606170002.",
+      "The Academy uses the XRPL learning path in an OTT jacket. Free users see enough to trust the product, while premium users see deeper routes: DeFi, business, tokenization, stablecoins, DID, coding and AI agents.",
     proof: [
-      "Partner discovery layer",
-      "Optional on-ledger Proof Stamps",
-      "Local XP and reward ledger",
+      "XRPL Academy deep catalog",
+      "Free preview plus premium depth",
+      "Education-first, not investment advice",
     ],
-    icon: Fingerprint,
+    icon: BookOpen,
   },
   {
     id: "demo",
     time: "1:10",
     title: "Demo Flow",
-    headline: "Show the path in 30 seconds.",
+    headline: "Show the product path in 30 seconds.",
     script:
-      "Open Partner Hub, complete education checks, create a Proof Stamp, verify tx hash, then show Reward Ledger and Access Gate.",
+      "Open Home, connect Xaman, run Daily Check-In, verify the Mainnet SourceTag proof, show XP and OTT Credits in Reward Ledger, then open SourceTag Support landing.",
     proof: [
-      "Partner route completion",
-      "Xaman payload creation",
-      "XRPL tx verification",
+      "Connect Xaman",
+      "Daily proof payload",
+      "Reward Ledger with tx-linked proof",
+      "SourceTag support and memo awareness",
     ],
     icon: PlayCircle,
   },
@@ -103,13 +104,13 @@ const pitchSteps: PitchStep[] = [
     id: "business",
     time: "1:40",
     title: "Business",
-    headline: "Access, education and verified service routes.",
+    headline: "A safe path toward access, certificates, support and events.",
     script:
-      "OTT can grow with safe access routes, Ask Truth, 1-on-1 sessions, partner discovery and later legal-reviewed token eligibility.",
+      "The business model can grow through Access Pass utility, premium Academy routes, optional certificate NFTs, transparent XRP/RLUSD support and later event ticket utility.",
     proof: [
-      "Access Gate: fiat, XRP, RLUSD, NFT route",
-      "Truth Desk: ask or book",
-      "Mainnet token rewards locked until legal review",
+      "Access Pass scanner-only V1",
+      "Certificate NFT coming soon, no active mint/payment yet",
+      "Support stays voluntary, transparent and legal-safe",
     ],
     icon: KeyRound,
   },
@@ -117,13 +118,14 @@ const pitchSteps: PitchStep[] = [
     id: "close",
     time: "2:00",
     title: "Close",
-    headline: "XRPL onboarding that is 589 steps ahead.",
+    headline: "A Make Waves terminal that turns learning into proof.",
     script:
-      "This is not another wallet dashboard. It is a guided XRPL education and proof layer built for users, builders and partners.",
+      "This is not a bank, exchange or yield product. It is a guided XRPL education, proof and community terminal built by TruthOnTheTrack for users, builders and partners.",
     proof: [
-      "Education-first",
-      "Proof-based engagement",
-      "Built around XRPL and Xaman",
+      "No custody",
+      "No broker",
+      "No yield promise",
+      "Proof-based engagement around XRPL and Xaman",
     ],
     icon: Sparkles,
   },
@@ -193,13 +195,13 @@ export function PitchModeTab({ walletAddress = "guest" }: PitchModeTabProps) {
   }
 
   return (
-    <div className="p-6 bg-black min-h-screen text-white">
-      <div className="relative overflow-hidden border border-white/10 bg-white/[0.02] p-6 mb-6">
+    <div className="min-h-screen bg-white text-[#080808]">
+      <div className="relative overflow-hidden border border-black/10 bg-white p-6 mb-6">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_white,_transparent_35%)]" />
 
         <div className="relative z-10 grid grid-cols-12 gap-6 items-center">
           <div className="col-span-12 xl:col-span-8">
-            <div className="flex items-center gap-2 mb-4 text-white/45">
+            <div className="flex items-center gap-2 mb-4 text-black/55">
               <PlayCircle size={18} />
 
               <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
@@ -208,13 +210,12 @@ export function PitchModeTab({ walletAddress = "guest" }: PitchModeTabProps) {
             </div>
 
             <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
-              XRPL OnTheTrack Terminal Demo
+              Make Waves Demo Script
             </h2>
 
-            <p className="font-mono text-sm text-white/45 max-w-3xl leading-relaxed">
-              Een 2-minuten hackathon pitch flow voor jury, partners en demo
-              video. Houd de taal simpel: education-first, no custody, no broker,
-              no yield provider, no trade execution.
+            <p className="font-mono text-sm text-black/55 max-w-3xl leading-relaxed">
+              Een 2-minuten pitch flow voor jury, partners en social video. De route is simpel:
+              Home → Xaman → Daily Proof → Reward Ledger → SourceTag Support → Academy.
             </p>
           </div>
 
@@ -228,9 +229,9 @@ export function PitchModeTab({ walletAddress = "guest" }: PitchModeTabProps) {
 
       <div className="grid grid-cols-12 gap-4">
         <div className="col-span-12 xl:col-span-4">
-          <div className="border border-white/10 bg-white/[0.02] p-6">
+          <div className="border border-black/10 bg-white p-6">
             <div className="flex items-center gap-2 mb-5">
-              <BookOpen size={18} className="text-white/60" />
+              <BookOpen size={18} className="text-[#3898E8]" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
                 Pitch Steps
@@ -251,10 +252,10 @@ export function PitchModeTab({ walletAddress = "guest" }: PitchModeTabProps) {
         </div>
 
         <div className="col-span-12 xl:col-span-5 space-y-4">
-          <div className="border border-white/10 bg-white/[0.02] p-6">
+          <div className="border border-black/10 bg-white p-6">
             <div className="flex items-start justify-between gap-4 mb-5">
               <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.3em] mb-3">
+                <p className="font-mono text-[10px] text-black/35 uppercase tracking-[0.3em] mb-3">
                   {activeStep.time} • {activeStep.title}
                 </p>
 
@@ -262,15 +263,15 @@ export function PitchModeTab({ walletAddress = "guest" }: PitchModeTabProps) {
                   {activeStep.headline}
                 </h3>
 
-                <p className="font-mono text-sm text-white/55 leading-relaxed">
+                <p className="font-mono text-sm text-black/55 leading-relaxed">
                   {activeStep.script}
                 </p>
               </div>
 
-              <activeStep.icon size={34} className="text-white/50 shrink-0" />
+              <activeStep.icon size={34} className="text-[#C83888] shrink-0" />
             </div>
 
-            <div className="border border-white/10 bg-black p-5 mb-5">
+            <div className="border border-black/10 bg-[#F7F8FC] p-5 mb-5">
               <p className="font-orbitron text-xs font-bold uppercase mb-4">
                 What to show
               </p>
@@ -285,20 +286,20 @@ export function PitchModeTab({ walletAddress = "guest" }: PitchModeTabProps) {
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={goPrevious}
-                className="border border-white/10 bg-black p-4 text-left hover:bg-white/[0.03] transition-all"
+                className="border border-black/10 bg-[#F7F8FC] p-4 text-left hover:bg-white transition-all"
               >
                 <p className="font-orbitron text-xs font-bold uppercase mb-2">
                   Previous
                 </p>
 
-                <p className="font-mono text-[10px] text-white/35 uppercase">
+                <p className="font-mono text-[10px] text-black/35 uppercase">
                   Back one step
                 </p>
               </button>
 
               <button
                 onClick={goNext}
-                className="bg-white text-black p-4 text-left hover:bg-white/80 transition-all"
+                className="bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] text-white p-4 text-left hover:brightness-95 transition-all"
               >
                 <div className="flex items-center justify-between gap-3">
                   <div>
@@ -317,30 +318,40 @@ export function PitchModeTab({ walletAddress = "guest" }: PitchModeTabProps) {
             </div>
           </div>
 
-          <div className="border border-white/10 bg-white/[0.02] p-6">
+          <div className="border border-black/10 bg-white p-6">
             <div className="flex items-center gap-2 mb-5">
-              <ShieldCheck size={18} className="text-white/60" />
+              <ShieldCheck size={18} className="text-[#3898E8]" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
                 Exact Safe Pitch Line
               </p>
             </div>
 
-            <div className="border border-white/10 bg-black p-5">
-              <p className="font-mono text-sm text-white/55 leading-relaxed">
-                XRPL OnTheTrack Terminal is education-first. It does not custody
-                funds, does not act as broker, does not provide yield, and does
-                not execute trades. It explains routes, shows risk awareness and
-                directs users to official providers.
+            <div className="border border-black/10 bg-[#F7F8FC] p-5 mb-4">
+              <p className="font-mono text-sm text-black/55 leading-relaxed">
+                XRPL OnTheTrack Terminal is education-first. It does not custody funds,
+                does not act as broker, does not provide yield and does not execute trades.
+                It teaches users to verify before they trust, using Xaman, XRPL proof,
+                SourceTag 2606170002, XP and transparent reward history.
+              </p>
+            </div>
+
+            <div className="border border-[#C83888]/25 bg-[#C83888]/10 p-5">
+              <p className="font-orbitron text-xs font-black uppercase mb-3">
+                Social caption core
+              </p>
+              <p className="font-mono text-xs text-black/60 leading-relaxed">
+                I am building XRPL OnTheTrack Terminal for Make Waves: a safe way to learn XRPL,
+                connect Xaman, prove actions with SourceTag 2606170002 and turn education into XP.
               </p>
             </div>
           </div>
         </div>
 
         <div className="col-span-12 xl:col-span-3 space-y-4">
-          <div className="border border-white/10 bg-white/[0.02] p-6">
+          <div className="border border-black/10 bg-white p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Copy size={18} className="text-white/60" />
+              <Copy size={18} className="text-[#3898E8]" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
                 Script Tools
@@ -364,9 +375,9 @@ export function PitchModeTab({ walletAddress = "guest" }: PitchModeTabProps) {
             />
           </div>
 
-          <div className="border border-white/10 bg-white/[0.02] p-6">
+          <div className="border border-black/10 bg-white p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Brain size={18} className="text-white/60" />
+              <Brain size={18} className="text-[#3898E8]" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
                 Demo Checklist
@@ -374,29 +385,29 @@ export function PitchModeTab({ walletAddress = "guest" }: PitchModeTabProps) {
             </div>
 
             <div className="space-y-3">
-              <InfoLine text="Start at Dashboard: SourceTag + XP overview." />
-              <InfoLine text="Show Partner Hub: education checks." />
-              <InfoLine text="Show Proof Stamp: Xaman payload + tx verify." />
-              <InfoLine text="Show Truth Desk: paid question route." />
-              <InfoLine text="Show Access Gate: access payment routes." />
-              <InfoLine text="End with Reward Ledger and legal lock." />
+              <InfoLine text="Start at Home: social landing + SourceTag." />
+              <InfoLine text="Show Xaman Center: self-custody connect." />
+              <InfoLine text="Show Daily Check-In: Mainnet proof payload." />
+              <InfoLine text="Show Reward Ledger: XP + OTT Credits." />
+              <InfoLine text="Show SourceTag Support: XRP/RLUSD + memo coming soon." />
+              <InfoLine text="End with Academy depth + Access Pass utility." />
             </div>
           </div>
 
-          <div className="border border-white/10 bg-white/[0.02] p-6">
+          <div className="border border-black/10 bg-white p-6">
             <div className="flex items-center gap-2 mb-5">
-              <BadgeCheck size={18} className="text-white/60" />
+              <BadgeCheck size={18} className="text-[#3898E8]" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
                 Judge Answer
               </p>
             </div>
 
-            <div className="border border-white/10 bg-black p-4">
-              <p className="font-mono text-xs text-white/45 leading-relaxed">
+            <div className="border border-black/10 bg-[#F7F8FC] p-4">
+              <p className="font-mono text-xs text-black/55 leading-relaxed">
                 The MVP is not trying to be a bank or exchange. It is a guided
-                XRPL learning, partner discovery and proof layer that can help
-                users take safer first steps.
+                XRPL learning and proof terminal that keeps users engaged through
+                education, SourceTag actions, XP, internal credits and future utility.
               </p>
             </div>
           </div>
@@ -422,14 +433,14 @@ function StepButton({
       onClick={onClick}
       className={`w-full border p-4 text-left transition-all ${
         active
-          ? "border-white/30 bg-white/[0.08]"
-          : "border-white/10 bg-black hover:bg-white/[0.03]"
+          ? "border-[#C83888] bg-[#C83888]/10"
+          : "border-black/10 bg-[#F7F8FC] hover:bg-white"
       }`}
     >
       <div className="flex items-start justify-between gap-3 mb-3">
-        <Icon size={18} className="text-white/60" />
+        <Icon size={18} className="text-[#3898E8]" />
 
-        <p className="font-mono text-[10px] text-white/35 uppercase">
+        <p className="font-mono text-[10px] text-black/35 uppercase">
           {step.time}
         </p>
       </div>
@@ -438,7 +449,7 @@ function StepButton({
         {step.title}
       </p>
 
-      <p className="font-mono text-[10px] text-white/35 uppercase leading-relaxed">
+      <p className="font-mono text-[10px] text-black/35 uppercase leading-relaxed">
         {step.headline}
       </p>
     </button>
@@ -449,10 +460,10 @@ function MetricBox({ metric }: { metric: Metric }) {
   const Icon = metric.icon;
 
   return (
-    <div className="border border-white/10 bg-black/60 p-4">
-      <Icon size={18} className="text-white/60 mb-3" />
+    <div className="border border-black/10 bg-[#F7F8FC] p-4">
+      <Icon size={18} className="text-[#3898E8] mb-3" />
 
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+      <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
         {metric.label}
       </p>
 
@@ -460,7 +471,7 @@ function MetricBox({ metric }: { metric: Metric }) {
         {metric.value}
       </p>
 
-      <p className="font-mono text-[10px] text-white/30 uppercase">
+      <p className="font-mono text-[10px] text-black/35 uppercase">
         {metric.text}
       </p>
     </div>
@@ -481,13 +492,13 @@ function ActionButton({
   return (
     <button
       onClick={onClick}
-      className="w-full border border-white/10 bg-black p-4 text-left hover:bg-white/[0.03] transition-all mb-3"
+      className="w-full border border-black/10 bg-[#F7F8FC] p-4 text-left hover:bg-white transition-all mb-3"
     >
-      <Icon size={18} className="text-white/60 mb-3" />
+      <Icon size={18} className="text-[#3898E8] mb-3" />
 
       <p className="font-orbitron text-xs font-bold uppercase mb-2">{title}</p>
 
-      <p className="font-mono text-[10px] text-white/35 uppercase">{text}</p>
+      <p className="font-mono text-[10px] text-black/35 uppercase">{text}</p>
     </button>
   );
 }
@@ -495,9 +506,9 @@ function ActionButton({
 function InfoLine({ text }: { text: string }) {
   return (
     <div className="flex items-start gap-2">
-      <CheckCircle2 size={14} className="text-white/45 mt-0.5 shrink-0" />
+      <CheckCircle2 size={14} className="text-black/55 mt-0.5 shrink-0" />
 
-      <p className="font-mono text-xs text-white/45 leading-relaxed">{text}</p>
+      <p className="font-mono text-xs text-black/55 leading-relaxed">{text}</p>
     </div>
   );
 }
