@@ -11,7 +11,7 @@ import {
   Layers3,
   Link2,
   LockKeyhole,
-  Network,
+  MessageSquareText,
   Search,
   ShieldCheck,
   Sparkles,
@@ -58,20 +58,20 @@ export function TerminalHomeTab({
 
   const productLayers: ProductLayer[] = [
     {
-      id: "explorer",
-      title: isEnglish ? "XRPL Explorer" : "XRPL Verkenner",
-      label: isEnglish ? "Free Preview" : "Free Preview",
+      id: "make-waves-support",
+      title: isEnglish ? "Make Waves Support" : "Make Waves Support",
+      label: isEnglish ? "Social landing" : "Social landing",
       description: isEnglish
-        ? "Explore the XRPL from a clean education-first interface."
-        : "Verken de XRPL via een duidelijke education-first interface.",
+        ? "Explain SourceTag proof, transparent future XRP/RLUSD support and memo/comment awareness."
+        : "Leg SourceTag proof, toekomstige transparante XRP/RLUSD support en memo/comment awareness uit.",
       bullets: [
-        isEnglish ? "Live network orientation." : "Live netwerkoriëntatie.",
-        isEnglish ? "SourceTag awareness." : "SourceTag-bewustzijn.",
-        isEnglish ? "No custody and no broker layer." : "Geen custody en geen brokerlaag.",
+        isEnglish ? "SourceTag 2606170002." : "SourceTag 2606170002.",
+        isEnglish ? "Future XRP/RLUSD support." : "Toekomstige XRP/RLUSD support.",
+        isEnglish ? "Memo/comment education." : "Memo/comment educatie.",
       ],
-      icon: Network,
-      actionLabel: common.openExplorer,
-      target: "network",
+      icon: HeartHandshake,
+      actionLabel: isEnglish ? "Open Support Page" : "Open Support Page",
+      target: "source",
       accent: "blue",
     },
     {
@@ -156,7 +156,7 @@ export function TerminalHomeTab({
               <div className="mb-8 text-[#080808]">
                 <OTTLogo
                   size="lg"
-                  subtitle="XRPL Explorer + Xaman + Academy + Access Pass"
+                  subtitle="Make Waves + Xaman + Academy + SourceTag Proof"
                 />
               </div>
 
@@ -186,7 +186,7 @@ export function TerminalHomeTab({
                   : `Gebouwd door TruthOnTheTrack met jaren XRPL community-kennis, liefde voor educatie en een duidelijke Make Waves proof-identiteit: SourceTag ${MAKE_WAVES_SOURCE_TAG}. Start gratis, leer veilig, connect Xaman en verifieer voordat je vertrouwt.`}
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-4xl">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 max-w-5xl">
                 <PrimaryAction
                   title={isEnglish ? "Connect Xaman" : "Connect Xaman"}
                   text={isEnglish ? "Wallet first" : "Wallet eerst"}
@@ -195,18 +195,25 @@ export function TerminalHomeTab({
                   onClick={() => navigate("xaman")}
                 />
                 <PrimaryAction
-                  title={isEnglish ? "Start Academy" : "Start Academy"}
-                  text={isEnglish ? "Free learning" : "Gratis leren"}
-                  icon={BookOpen}
+                  title={isEnglish ? "Daily Proof" : "Daily Proof"}
+                  text={isEnglish ? "Make Waves XP" : "Make Waves XP"}
+                  icon={Fingerprint}
                   accent="blue"
+                  onClick={() => navigate("dailycheckin")}
+                />
+                <PrimaryAction
+                  title={isEnglish ? "Start Academy" : "Start Academy"}
+                  text={isEnglish ? "Deep XRPL learning" : "Diepe XRPL educatie"}
+                  icon={BookOpen}
+                  accent="magenta"
                   onClick={() => navigate("academy")}
                 />
                 <PrimaryAction
-                  title={isEnglish ? "Scan Access Pass" : "Scan Access Pass"}
-                  text={isEnglish ? "Premium gate" : "Premium gate"}
-                  icon={KeyRound}
+                  title={isEnglish ? "Support Page" : "Support Page"}
+                  text={isEnglish ? "XRP / RLUSD soon" : "XRP / RLUSD soon"}
+                  icon={HeartHandshake}
                   accent="coral"
-                  onClick={() => navigate("accessgate")}
+                  onClick={() => navigate("source")}
                 />
               </div>
             </div>
@@ -279,8 +286,8 @@ export function TerminalHomeTab({
 
             <p className="font-mono text-sm text-black/55 leading-relaxed mb-5">
               {isEnglish
-                ? "OTT Terminal is a practical XRPL onboarding layer: learn, connect, verify, earn XP and unlock premium routes with an Access Pass. The goal is not hype, custody or speculation. The goal is to make real XRPL actions understandable, trackable and usable."
-                : "OTT Terminal is een praktische XRPL-onboardinglaag: leren, connecten, verifiëren, XP verdienen en premiumroutes unlocken met een Access Pass. Het doel is geen hype, custody of speculatie. Het doel is echte XRPL-acties begrijpelijk, controleerbaar en bruikbaar maken."}
+                ? "OTT Terminal is a practical XRPL onboarding layer built for the Make Waves journey and social sharing: visitors can learn, connect Xaman, verify SourceTag proof, earn XP and see why premium routes exist. The goal is not hype, custody or speculation. The goal is to make real XRPL actions understandable, trackable and usable."
+                : "OTT Terminal is een praktische XRPL-onboardinglaag gebouwd voor de Make Waves journey en social sharing: bezoekers kunnen leren, Xaman connecten, SourceTag proof verifiëren, XP verdienen en zien waarom premiumroutes bestaan. Het doel is geen hype, custody of speculatie. Het doel is echte XRPL-acties begrijpelijk, controleerbaar en bruikbaar maken."}
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -304,18 +311,18 @@ export function TerminalHomeTab({
               <HeartHandshake size={18} className="text-[#C83888]" />
 
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                {isEnglish ? "Future Support Layer" : "Toekomstige Supportlaag"}
+                {isEnglish ? "Future XRP / RLUSD Support" : "Toekomstige XRP / RLUSD Support"}
               </p>
             </div>
 
             <h3 className="font-orbitron text-xl font-black uppercase mb-4">
-              {isEnglish ? "Transparent donations later." : "Transparante donaties later."}
+              {isEnglish ? "Transparent support later." : "Transparante support later."}
             </h3>
 
             <p className="font-mono text-xs text-black/60 leading-relaxed mb-4">
               {isEnglish
-                ? "A later support area can show voluntary XRP donations, total received and what the funds are used for: extending the terminal and giving value back to users. Donations must stay voluntary support, not an investment or guaranteed reward."
-                : "Een latere support-sectie kan vrijwillige XRP-donaties tonen, hoeveel er binnenkomt en waar het voor gebruikt wordt: de terminal uitbreiden en waarde terugbrengen naar gebruikers. Donaties blijven vrijwillige support, geen investering of gegarandeerde reward."}
+                ? "A later support area can create voluntary XRP or RLUSD support transactions with SourceTag 2606170002 and an optional memo/comment. The page can show total received and what funds are used for: terminal development, education, community tools and future events. Support stays voluntary, not an investment or guaranteed reward."
+                : "Een latere support-sectie kan vrijwillige XRP- of RLUSD-supporttransacties maken met SourceTag 2606170002 en optionele memo/comment. De pagina kan tonen hoeveel er binnenkomt en waarvoor het gebruikt wordt: terminalontwikkeling, educatie, community tools en toekomstige events. Support blijft vrijwillig, geen investering of gegarandeerde reward."}
             </p>
 
             <div className="grid grid-cols-3 gap-2">
@@ -325,16 +332,37 @@ export function TerminalHomeTab({
                     {amount}
                   </p>
                   <p className="font-mono text-[8px] uppercase tracking-widest text-black/35">
-                    XRP
+                    XRP / RLUSD
                   </p>
                 </div>
               ))}
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+              <SupportMini
+                icon={MessageSquareText}
+                title={isEnglish ? "Memo / Comment" : "Memo / Comment"}
+                text={
+                  isEnglish
+                    ? "Supporters can later add a short message, tip or personal note."
+                    : "Supporters kunnen later een korte boodschap, tip of persoonlijke note meesturen."
+                }
+              />
+              <SupportMini
+                icon={Search}
+                title={isEnglish ? "Transparent Use" : "Transparant Gebruik"}
+                text={
+                  isEnglish
+                    ? "Funds can be shown as terminal, education, tools and events."
+                    : "Funds kunnen worden getoond als terminal, educatie, tools en events."
+                }
+              />
+            </div>
+
             <p className="font-mono text-[10px] text-black/45 leading-relaxed mt-4">
               {isEnglish
-                ? "Draft only: no donation flow is active in this V1 screen."
-                : "Concept alleen: geen donatieflow actief in dit V1-scherm."}
+                ? "Draft only: no donation/payment flow is active in this V1 screen."
+                : "Concept alleen: geen donatie/paymentflow actief in dit V1-scherm."}
             </p>
           </div>
         </div>
@@ -378,12 +406,13 @@ export function TerminalHomeTab({
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-              <FlowStep number="01" title="Home" text="Terminal overview" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-3">
+              <FlowStep number="01" title="Home" text="Social landing" />
               <FlowStep number="02" title="Connect" text="Xaman wallet" />
               <FlowStep number="03" title="Learn" text="Academy" />
-              <FlowStep number="04" title="Prove" text="SourceTag / XP" />
-              <FlowStep number="05" title="Access" text="NFT scanner" />
+              <FlowStep number="04" title="Prove" text="Daily proof" />
+              <FlowStep number="05" title="Ledger" text="XP / Credits" />
+              <FlowStep number="06" title="Support" text="SourceTag page" />
             </div>
           </div>
 
@@ -401,6 +430,8 @@ export function TerminalHomeTab({
               <ReuseItem text={isEnglish ? "No broker." : "Geen broker."} />
               <ReuseItem text={isEnglish ? "No yield promise." : "Geen yield-belofte."} />
               <ReuseItem text={isEnglish ? "No token value promise." : "Geen tokenwaarde-belofte."} />
+              <ReuseItem text={isEnglish ? "Support is voluntary." : "Support is vrijwillig."} />
+              <ReuseItem text={isEnglish ? "Memo/comment can be readable." : "Memo/comment kan leesbaar zijn."} />
             </div>
           </div>
         </div>
@@ -537,6 +568,30 @@ function IdentityRow({ label, value }: { label: string; value: string }) {
 
       <p className="font-orbitron text-xs font-black uppercase break-all text-black">
         {value}
+      </p>
+    </div>
+  );
+}
+
+function SupportMini({
+  icon: Icon,
+  title,
+  text,
+}: {
+  icon: ElementType;
+  title: string;
+  text: string;
+}) {
+  return (
+    <div className="border border-black/10 bg-white p-3">
+      <Icon size={15} className="text-[#C83888] mb-2" />
+
+      <p className="font-orbitron text-[10px] font-black uppercase text-black mb-2">
+        {title}
+      </p>
+
+      <p className="font-mono text-[10px] text-black/50 leading-relaxed">
+        {text}
       </p>
     </div>
   );
