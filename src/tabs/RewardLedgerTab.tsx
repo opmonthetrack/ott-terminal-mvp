@@ -6,9 +6,9 @@ import {
   CheckCircle2,
   ClipboardCheck,
   FileCheck2,
+  Fingerprint,
   GraduationCap,
   LockKeyhole,
-  Medal,
   RefreshCcw,
   ShieldCheck,
   Sparkles,
@@ -45,6 +45,8 @@ type RewardItem = {
   proofType: string;
   icon: ElementType;
 };
+
+const SOURCE_TAG = "2606170002";
 
 const rewardMeta: Record<
   string,
@@ -178,38 +180,19 @@ export function RewardLedgerTab({
 
   const totalXp = summary.totalXp;
   const ottCredits = summary.ottCredits;
-  const proofEvents = useMemo(
-    () =>
-      rewardState.events.filter(
-        (event) =>
-          Boolean(event.txHash) &&
-          (event.type === "xp-earned" ||
-            event.type === "partner-proof-stamp"),
-      ),
-    [rewardState.events],
+  const proofEvents = rewardState.events.filter(
+    (event) =>
+      Boolean(event.txHash) &&
+      (event.type === "xp-earned" || event.type === "partner-proof-stamp"),
   );
 
-  const currentLevel = useMemo(() => {
-    return (
-      [...levels]
-        .reverse()
-        .find((level) => totalXp >= level.minXp) ?? levels[0]
-    );
-  }, [totalXp]);
-
-  const nextLevel = useMemo(() => {
-    return levels.find((level) => totalXp < level.minXp) ?? null;
-  }, [totalXp]);
-
+  const currentLevel =
+    [...levels].reverse().find((level) => totalXp >= level.minXp) ?? levels[0];
+  const nextLevel = levels.find((level) => totalXp < level.minXp) ?? null;
   const progressToNext = nextLevel
     ? Math.min(100, Math.round((totalXp / nextLevel.minXp) * 100))
     : 100;
-
-  const totalAvailableXp = rewards.reduce(
-    (sum, reward) => sum + reward.xp,
-    0,
-  );
-
+  const totalAvailableXp = rewards.reduce((sum, reward) => sum + reward.xp, 0);
   const totalAvailableCredits = rewards.reduce(
     (sum, reward) => sum + reward.ottCredits,
     0,
@@ -258,8 +241,8 @@ export function RewardLedgerTab({
 
               <p className="font-mono text-sm xl:text-base text-black/60 leading-relaxed max-w-3xl mb-8">
                 {isEnglish
-                  ? "This is the live Make Waves proof ledger for the connected wallet. It shows which SourceTag actions earned XP, which OTT Credits were added, which transaction hashes support the proof, and why future token conversion remains locked."
-                  : "Dit is de live Make Waves proof ledger voor de gekoppelde wallet. Het toont welke SourceTag-acties XP verdienden, welke OTT Credits zijn toegevoegd, welke transaction hashes de proof ondersteunen en waarom toekomstige tokenconversie locked blijft."}
+                  ? "This is the live Make Waves proof ledger for the connected wallet. It shows XP, internal OTT Credits, proof events and the safety rule that future token conversion remains locked."
+                  : "Dit is de live Make Waves proof ledger voor de gekoppelde wallet. Het toont XP, interne OTT Credits, proof-events en de veiligheidsregel dat toekomstige tokenconversie locked blijft."}
               </p>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-4xl">
@@ -283,7 +266,7 @@ export function RewardLedgerTab({
                 />
                 <MetricCard
                   label="SourceTag"
-                  value="2606170002"
+                  value={SOURCE_TAG}
                   text="Make Waves"
                   icon={Fingerprint}
                 />
@@ -307,24 +290,18 @@ export function RewardLedgerTab({
                 </div>
 
                 <div className="mb-4">
-                  <OTTProofBadge sourceTag="2606170002" />
+                  <OTTProofBadge sourceTag={SOURCE_TAG} />
                 </div>
 
                 <div className="space-y-3">
                   <InfoRow
                     label="Wallet"
-                    value={
-                      isGuest
-                        ? "Guest / Free Preview"
-                        : walletAddress
-                    }
+                    value={isGuest ? "Guest / Free Preview" : walletAddress}
                   />
                   <InfoRow
                     label={isEnglish ? "Current Level" : "Huidig Level"}
                     value={`${currentLevel.level} · ${
-                      isEnglish
-                        ? currentLevel.titleEn
-                        : currentLevel.titleNl
+                      isEnglish ? currentLevel.titleEn : currentLevel.titleNl
                     }`}
                   />
                   <InfoRow
@@ -346,8 +323,8 @@ export function RewardLedgerTab({
 
                     <p className="font-mono text-xs text-black/60 leading-relaxed">
                       {isEnglish
-                        ? "V1 uses local browser storage for demo flow. The proof transactions remain verifiable on XRPL through tx hashes and SourceTag 2606170002."
-                        : "V1 gebruikt lokale browseropslag voor de demo-flow. De proof-transacties blijven verifieerbaar op XRPL via tx hashes en SourceTag 2606170002."}
+                        ? "V1 uses local browser storage for the demo flow. Proof transactions remain verifiable on XRPL through tx hashes and SourceTag 2606170002."
+                        : "V1 gebruikt lokale browseropslag voor de demo-flow. Proof-transacties blijven verifieerbaar op XRPL via tx hashes en SourceTag 2606170002."}
                     </p>
                   </div>
                 </div>
@@ -457,42 +434,6 @@ export function RewardLedgerTab({
                   />
                 </div>
               </Panel>
-
-              <Panel
-                title={isEnglish ? "Make Waves Demo Route" : "Make Waves Demo Route"}
-                icon={Fingerprint}
-              >
-                <div className="space-y-3">
-                  <StatusLine
-                    text={
-                      isEnglish
-                        ? "1. Open Daily Check-In and sign a SourceTag proof."
-                        : "1. Open Daily Check-In en teken een SourceTag proof."
-                    }
-                  />
-                  <StatusLine
-                    text={
-                      isEnglish
-                        ? "2. Return here to show XP, Credits and tx proof."
-                        : "2. Kom hier terug om XP, Credits en tx proof te tonen."
-                    }
-                  />
-                  <StatusLine
-                    text={
-                      isEnglish
-                        ? "3. Open SourceTag page to verify the tx hash publicly."
-                        : "3. Open SourceTag pagina om de tx hash publiek te verifiëren."
-                    }
-                  />
-                  <StatusLine
-                    text={
-                      isEnglish
-                        ? "4. Explain that token conversion is locked until legal review."
-                        : "4. Leg uit dat tokenconversie locked blijft tot juridische review."
-                    }
-                  />
-                </div>
-              </Panel>
             </div>
           </div>
         )}
@@ -529,16 +470,11 @@ export function RewardLedgerTab({
 
               <div className="col-span-12 xl:col-span-5">
                 <div className="grid grid-cols-1 gap-3">
-                  <InfoRow
-                    label="OTT Credits"
-                    value={String(ottCredits)}
-                  />
+                  <InfoRow label="OTT Credits" value={String(ottCredits)} />
                   <InfoRow
                     label={isEnglish ? "Current Level" : "Huidig Level"}
                     value={`${currentLevel.level} · ${
-                      isEnglish
-                        ? currentLevel.titleEn
-                        : currentLevel.titleNl
+                      isEnglish ? currentLevel.titleEn : currentLevel.titleNl
                     }`}
                   />
                   <InfoRow
@@ -581,9 +517,7 @@ export function RewardLedgerTab({
             ) : (
               <EmptyState
                 title={
-                  isEnglish
-                    ? "No reward events yet"
-                    : "Nog geen reward-events"
+                  isEnglish ? "No reward events yet" : "Nog geen reward-events"
                 }
                 text={
                   isEnglish
@@ -635,9 +569,7 @@ export function RewardLedgerTab({
                 title={isEnglish ? "Future OTT Token" : "Toekomstige OTT Token"}
                 premium
                 lines={[
-                  isEnglish
-                    ? "Not active in V1."
-                    : "Niet actief in V1.",
+                  isEnglish ? "Not active in V1." : "Niet actief in V1.",
                   isEnglish
                     ? "No automatic XP or credit conversion."
                     : "Geen automatische XP- of creditconversie.",
@@ -687,9 +619,7 @@ function RewardRow({
           <Icon
             size={21}
             className={
-              reward.completed
-                ? "text-[#3898E8]"
-                : "text-[#C83888]"
+              reward.completed ? "text-[#3898E8]" : "text-[#C83888]"
             }
           />
         </div>
@@ -736,7 +666,7 @@ function LevelLine({
   active,
   unlocked,
 }: {
-  level: (typeof levels)[number];
+  level: { level: string; titleNl: string; titleEn: string; minXp: number };
   language: "nl" | "en";
   active: boolean;
   unlocked: boolean;
@@ -747,26 +677,27 @@ function LevelLine({
     <div
       className={`border p-4 ${
         active
-          ? "border-[#C83888] bg-[#C83888]/10"
+          ? "border-[#3898E8]/35 bg-[#3898E8]/10"
           : "border-black/10 bg-[#F7F8FC]"
       }`}
     >
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="font-orbitron text-sm font-black uppercase">
-            {level.level} ·{" "}
-            {isEnglish ? level.titleEn : level.titleNl}
+          <p className="font-orbitron text-xs font-black uppercase text-black mb-1">
+            {level.level} · {isEnglish ? level.titleEn : level.titleNl}
           </p>
-          <p className="font-mono text-[10px] text-black/40 uppercase tracking-widest mt-1">
+          <p className="font-mono text-[10px] uppercase text-black/35">
             {level.minXp} XP
           </p>
         </div>
 
-        {unlocked ? (
-          <CheckCircle2 size={18} className="text-[#3898E8]" />
-        ) : (
-          <LockKeyhole size={18} className="text-black/25" />
-        )}
+        <span
+          className={`font-mono text-[10px] uppercase ${
+            unlocked ? "text-[#3898E8]" : "text-black/35"
+          }`}
+        >
+          {unlocked ? "Unlocked" : "Locked"}
+        </span>
       </div>
     </div>
   );
@@ -780,84 +711,46 @@ function ProofCard({
   language: "nl" | "en";
 }) {
   const isEnglish = language === "en";
-  const isVerifiedReward =
-    event.type === "xp-earned" ||
-    event.type === "partner-proof-stamp";
 
   return (
-    <div
-      className={`border p-5 ${
-        isVerifiedReward
-          ? "border-[#3898E8]/25 bg-[#3898E8]/10"
-          : "border-black/10 bg-[#F7F8FC]"
-      }`}
-    >
-      <div className="flex items-start gap-3 mb-4">
-        <BadgeCheck
-          size={22}
-          className={
-            isVerifiedReward
-              ? "text-[#3898E8]"
-              : "text-[#C83888]"
-          }
-        />
-
+    <div className="border border-black/10 bg-[#F7F8FC] p-5">
+      <div className="flex items-start justify-between gap-3 mb-4">
         <div>
           <p className="font-orbitron text-sm font-black uppercase mb-2">
             {getEventTitle(event, language)}
           </p>
-
-          <p className="font-mono text-xs text-black/55 leading-relaxed">
-            {event.note}
+          <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest">
+            {event.type} · {formatDate(event.createdAt, language)}
           </p>
         </div>
+
+        <BadgeCheck size={18} className="text-[#3898E8] shrink-0" />
       </div>
 
-      <div className="space-y-3">
-        <InfoRow label="XP" value={String(event.xp)} />
-        <InfoRow
-          label="OTT Credits"
-          value={String(event.ottCredits ?? 0)}
-        />
-        <InfoRow
-          label="Status"
-          value={
-            isVerifiedReward
-              ? isEnglish
-                ? "Recorded"
-                : "Opgeslagen"
-              : event.type
-          }
-        />
-        <InfoRow
-          label="TX Hash"
-          value={event.txHash ?? "No TX"}
-        />
-        <InfoRow
-          label={isEnglish ? "Created" : "Aangemaakt"}
-          value={formatDate(event.createdAt, language)}
-        />
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        <InfoRow label="XP" value={`+${event.xp}`} />
+        <InfoRow label="OTT" value={`+${event.ottCredits}`} />
+        <InfoRow label="SourceTag" value={String(event.sourceTag)} />
+        <InfoRow label={isEnglish ? "Token" : "Token"} value="Locked" />
       </div>
+
+      {event.txHash && <InfoRow label="TX Hash" value={event.txHash} />}
+
+      <p className="font-mono text-xs text-black/55 leading-relaxed mt-4">
+        {event.note}
+      </p>
     </div>
   );
 }
 
-function EmptyState({
-  title,
-  text,
-}: {
-  title: string;
-  text: string;
-}) {
+function EmptyState({ title, text }: { title: string; text: string }) {
   return (
-    <div className="border border-black/10 bg-[#F7F8FC] p-6 text-center">
-      <BadgeCheck size={28} className="text-black/25 mx-auto mb-4" />
-
+    <div className="border border-black/10 bg-[#F7F8FC] p-8 text-center">
+      <LockKeyhole size={24} className="text-[#C83888] mx-auto mb-4" />
       <p className="font-orbitron text-sm font-black uppercase mb-3">
         {title}
       </p>
-
-      <p className="font-mono text-xs text-black/50 leading-relaxed max-w-xl mx-auto">
+      <p className="font-mono text-xs text-black/55 leading-relaxed max-w-xl mx-auto">
         {text}
       </p>
     </div>
@@ -878,10 +771,10 @@ function PolicyBox({
       className={`border p-5 ${
         premium
           ? "border-[#C83888]/25 bg-[#C83888]/10"
-          : "border-[#3898E8]/25 bg-[#3898E8]/10"
+          : "border-black/10 bg-[#F7F8FC]"
       }`}
     >
-      <p className="font-orbitron text-lg font-black uppercase mb-5">
+      <p className="font-orbitron text-sm font-black uppercase mb-4">
         {title}
       </p>
 
@@ -896,7 +789,7 @@ function PolicyBox({
 
 function StatusLine({ text }: { text: string }) {
   return (
-    <div className="flex items-start gap-3 border border-black/10 bg-white p-3">
+    <div className="flex items-start gap-2">
       <CheckCircle2
         size={14}
         className="text-[#3898E8] shrink-0 mt-0.5"
@@ -999,10 +892,7 @@ function InfoRow({
   );
 }
 
-function getEventTitle(
-  event: RewardEvent,
-  language: "nl" | "en",
-) {
+function getEventTitle(event: RewardEvent, language: "nl" | "en") {
   const meta = rewardMeta[event.actionId];
 
   if (meta) {
@@ -1010,43 +900,31 @@ function getEventTitle(
   }
 
   if (event.type === "partner-proof-stamp") {
-    return language === "en"
-      ? "Partner Proof Stamp"
-      : "Partner Proof Stamp";
+    return "Partner Proof Stamp";
   }
 
   if (event.type === "mainnet-token-locked") {
-    return language === "en"
-      ? "Future Token Locked"
-      : "Toekomstige Token Geblokkeerd";
+    return language === "en" ? "Future Token Locked" : "Toekomstige Token Geblokkeerd";
   }
 
   if (event.type === "testnet-token-simulated") {
-    return language === "en"
-      ? "Testnet Simulation"
-      : "Testnet Simulatie";
+    return language === "en" ? "Testnet Simulation" : "Testnet Simulatie";
   }
 
   return String(event.actionId);
 }
 
-function formatDate(
-  value: string,
-  language: "nl" | "en",
-) {
+function formatDate(value: string, language: "nl" | "en") {
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
     return value;
   }
 
-  return new Intl.DateTimeFormat(
-    language === "en" ? "en-GB" : "nl-NL",
-    {
-      dateStyle: "short",
-      timeStyle: "short",
-    },
-  ).format(date);
+  return new Intl.DateTimeFormat(language === "en" ? "en-GB" : "nl-NL", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(date);
 }
 
 export default RewardLedgerTab;
