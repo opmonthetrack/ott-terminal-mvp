@@ -1,173 +1,126 @@
 // api/news.js
-// XRPL OnTheTrack Terminal — XRPL Intelligence API
-// Standalone Vercel serverless endpoint. Keep this route separate from api/ott.ts.
-// GET /api/news
+// XRPL OnTheTrack Terminal — XRPL Intelligence API V2
+// Clean feed-only + curated source model. Keep separate from api/ott.ts.
 
 const CURRENT_YEAR = new Date().getFullYear();
 const MIN_YEAR = CURRENT_YEAR - 2;
 const DEFAULT_LIMIT = 36;
 const FETCH_TIMEOUT_MS = 6500;
+const SOURCE_TAG = 2606170002;
 
 const SOURCE_TYPES = {
   OFFICIAL: "official",
   TECHNICAL: "technical",
   INSTITUTIONAL: "institutional",
-  MEDIA: "media",
   FALLBACK: "fallback",
 };
 
 const SOURCES = [
   {
     name: "XRPL Blog",
-    category: "XRPL Core",
+    category: "XRPL Core / Amendments",
     sourceType: SOURCE_TYPES.OFFICIAL,
-    homeUrl: "https://xrpl.org/blog",
     feedUrls: [
       "https://xrpl.org/blog/index.xml",
       "https://xrpl.org/blog/rss.xml",
       "https://xrpl.org/feed.xml",
-      "https://xrpl.org/rss.xml",
     ],
     allowedUrlPatterns: [/^https:\/\/xrpl\.org\/blog\/20\d{2}\//i],
-    relevanceKeywords: ["xrpl", "xrp ledger", "amendment", "rippled", "xls"],
-  },
-  {
-    name: "XRPL Known Amendments",
-    category: "XRPL Amendments",
-    sourceType: SOURCE_TYPES.TECHNICAL,
-    homeUrl: "https://xrpl.org/resources/known-amendments",
-    feedUrls: [],
-    allowedUrlPatterns: [
-      /^https:\/\/xrpl\.org\/resources\/known-amendments/i,
-      /^https:\/\/xrpl\.org\/docs\/.+/i,
-    ],
-    relevanceKeywords: ["amendment", "protocol", "validator", "consensus", "xrpl"],
+    relevanceKeywords: ["xrpl", "xrp ledger", "rippled", "amendment", "validator", "xls"],
   },
   {
     name: "XRPLF Standards",
     category: "XLS Standards",
     sourceType: SOURCE_TYPES.TECHNICAL,
-    homeUrl: "https://github.com/XRPLF/XRPL-Standards",
     feedUrls: [
       "https://github.com/XRPLF/XRPL-Standards/commits/master.atom",
       "https://github.com/XRPLF/XRPL-Standards/commits/main.atom",
     ],
-    allowedUrlPatterns: [
-      /^https:\/\/github\.com\/XRPLF\/XRPL-Standards\/.+/i,
-    ],
-    relevanceKeywords: ["xls", "standard", "xrpl", "specification", "proposal"],
+    allowedUrlPatterns: [/^https:\/\/github\.com\/XRPLF\/XRPL-Standards\/.+/i],
+    relevanceKeywords: ["xls", "standard", "proposal", "specification", "xrpl"],
   },
   {
     name: "XRPLF rippled Releases",
-    category: "XRPL Core",
+    category: "XRPL Core / Amendments",
     sourceType: SOURCE_TYPES.TECHNICAL,
-    homeUrl: "https://github.com/XRPLF/rippled/releases",
     feedUrls: ["https://github.com/XRPLF/rippled/releases.atom"],
-    allowedUrlPatterns: [
-      /^https:\/\/github\.com\/XRPLF\/rippled\/releases\/.+/i,
-    ],
+    allowedUrlPatterns: [/^https:\/\/github\.com\/XRPLF\/rippled\/releases\/.+/i],
     relevanceKeywords: ["rippled", "xrpld", "release", "amendment", "validator"],
   },
   {
     name: "Ripple Insights",
-    category: "Ripple",
+    category: "Ripple / RLUSD / Partnerships",
     sourceType: SOURCE_TYPES.OFFICIAL,
-    homeUrl: "https://ripple.com/insights/",
-    feedUrls: [
-      "https://ripple.com/insights/feed/",
-      "https://ripple.com/feed/",
-      "https://ripple.com/rss.xml",
-    ],
+    feedUrls: ["https://ripple.com/insights/feed/", "https://ripple.com/feed/"],
     allowedUrlPatterns: [/^https:\/\/ripple\.com\/insights\/[a-z0-9-]+\/?$/i],
-    relevanceKeywords: [
-      "ripple",
-      "rlusd",
-      "stablecoin",
-      "tokenization",
-      "payments",
-      "institutional",
-      "custody",
-      "cbdc",
-    ],
+    relevanceKeywords: ["ripple", "rlusd", "stablecoin", "tokenization", "payments", "custody", "institutional"],
   },
   {
     name: "Ripple Press Releases",
-    category: "Ripple",
+    category: "Ripple / RLUSD / Partnerships",
     sourceType: SOURCE_TYPES.OFFICIAL,
-    homeUrl: "https://ripple.com/press-releases/",
-    feedUrls: [
-      "https://ripple.com/press-releases/feed/",
-      "https://ripple.com/feed/",
-    ],
-    allowedUrlPatterns: [
-      /^https:\/\/ripple\.com\/press-releases\/[a-z0-9-]+\/?$/i,
-    ],
-    relevanceKeywords: ["ripple", "partnership", "rlusd", "license", "custody"],
+    feedUrls: ["https://ripple.com/press-releases/feed/"],
+    allowedUrlPatterns: [/^https:\/\/ripple\.com\/press-releases\/[a-z0-9-]+\/?$/i],
+    relevanceKeywords: ["ripple", "partnership", "rlusd", "license", "custody", "payments"],
   },
   {
     name: "Xaman Blog",
-    category: "Xaman",
+    category: "Xaman / XRPL Labs",
     sourceType: SOURCE_TYPES.OFFICIAL,
-    homeUrl: "https://xaman.app/blog",
-    feedUrls: [
-      "https://xaman.app/blog/rss.xml",
-      "https://xaman.app/blog/feed.xml",
-      "https://xaman.app/rss.xml",
-      "https://xaman.app/feed.xml",
-    ],
-    allowedUrlPatterns: [
-      /^https:\/\/xaman\.app\/blog\/[a-z0-9-]+\/?$/i,
-      /^https:\/\/blog\.xaman\.app\/[a-z0-9-]+\/?$/i,
-    ],
-    relevanceKeywords: ["xaman", "xumm", "xrpl", "wallet", "signing"],
+    feedUrls: ["https://xaman.app/blog/rss.xml", "https://xaman.app/blog/feed.xml"],
+    allowedUrlPatterns: [/^https:\/\/xaman\.app\/blog\/[a-z0-9-]+\/?$/i, /^https:\/\/blog\.xaman\.app\/[a-z0-9-]+\/?$/i],
+    relevanceKeywords: ["xaman", "xumm", "xrpl", "wallet", "signing", "xapp"],
   },
   {
     name: "BIS",
     category: "CBDC / Central Banks",
     sourceType: SOURCE_TYPES.INSTITUTIONAL,
-    homeUrl: "https://www.bis.org/",
     feedUrls: [
       "https://www.bis.org/list/press_releases/index.rss",
       "https://www.bis.org/list/cpmi/index.rss",
+      "https://www.bis.org/list/workpap/index.rss",
     ],
-    allowedUrlPatterns: [/^https:\/\/www\.bis\.org\/.+/i],
-    relevanceKeywords: [
-      "cbdc",
-      "tokenisation",
-      "tokenization",
-      "cross-border",
-      "payment",
-      "settlement",
-      "stablecoin",
-      "iso 20022",
-    ],
+    allowedUrlPatterns: [/^https:\/\/www\.bis\.org\/(press|publ|cpmi)\/.+/i],
+    relevanceKeywords: ["cbdc", "central bank", "digital currency", "tokenisation", "tokenization", "cross-border", "settlement", "payment", "stablecoin", "iso 20022"],
+  },
+];
+
+const CURATED_ITEMS = [
+  {
+    title: "XRPL Known Amendments Tracker",
+    link: "https://xrpl.org/resources/known-amendments",
+    source: "XRPL Known Amendments",
+    sourceType: SOURCE_TYPES.TECHNICAL,
+    category: "XRPL Core / Amendments",
+    description: "Official XRPL tracker for amendment status. Use this to monitor protocol changes, validator voting and activation context.",
+    tags: ["xrpl", "amendment", "validator", "consensus"],
   },
   {
-    name: "SWIFT",
+    title: "Atlantic Council CBDC Tracker",
+    link: "https://www.atlanticcouncil.org/cbdctracker/",
+    source: "Atlantic Council CBDC Tracker",
+    sourceType: SOURCE_TYPES.INSTITUTIONAL,
+    category: "CBDC / Central Banks",
+    description: "Institutional tracker for CBDC exploration, pilots and launches. Macro context only; it does not confirm XRPL or XRP usage.",
+    tags: ["cbdc", "central bank", "digital currency", "tracker"],
+  },
+  {
+    title: "SWIFT ISO 20022 Standards Hub",
+    link: "https://www.swift.com/standards/iso-20022",
+    source: "SWIFT ISO 20022",
+    sourceType: SOURCE_TYPES.INSTITUTIONAL,
     category: "ISO 20022 / Payments",
-    sourceType: SOURCE_TYPES.INSTITUTIONAL,
-    homeUrl: "https://www.swift.com/news-events",
-    feedUrls: [],
-    allowedUrlPatterns: [/^https:\/\/www\.swift\.com\/.+/i],
-    relevanceKeywords: ["iso 20022", "cross-border", "payments", "cbdc", "tokenisation", "tokenization"],
+    description: "Institutional reference for ISO 20022 payments messaging. Payments infrastructure context, not XRP/XRPL confirmation.",
+    tags: ["iso 20022", "swift", "payments", "messaging"],
   },
   {
-    name: "Atlantic Council CBDC Tracker",
-    category: "CBDC / Central Banks",
+    title: "IMF Fintech Topic Hub",
+    link: "https://www.imf.org/en/Topics/fintech",
+    source: "IMF Fintech",
     sourceType: SOURCE_TYPES.INSTITUTIONAL,
-    homeUrl: "https://www.atlanticcouncil.org/cbdctracker/",
-    feedUrls: [],
-    allowedUrlPatterns: [/^https:\/\/www\.atlanticcouncil\.org\/.+/i],
-    relevanceKeywords: ["cbdc", "central bank", "digital currency", "pilot", "tracker"],
-  },
-  {
-    name: "IMF Fintech",
     category: "CBDC / Central Banks",
-    sourceType: SOURCE_TYPES.INSTITUTIONAL,
-    homeUrl: "https://www.imf.org/en/Topics/fintech",
-    feedUrls: [],
-    allowedUrlPatterns: [/^https:\/\/www\.imf\.org\/.+/i],
-    relevanceKeywords: ["cbdc", "digital money", "cross-border", "stablecoin", "tokenisation", "tokenization"],
+    description: "IMF fintech and digital money topic hub. Macro policy context around digital money, not trading or adoption claims.",
+    tags: ["cbdc", "digital money", "policy", "stablecoin"],
   },
 ];
 
@@ -175,46 +128,39 @@ const FALLBACK_ITEMS = [
   {
     title: "XRPL OnTheTrack Terminal Daily Brief",
     link: "https://xrpl.org/blog",
-    pubDate: new Date().toISOString(),
-    author: "OTT Terminal",
     source: "OTT Fallback",
     sourceType: SOURCE_TYPES.FALLBACK,
     category: "XRPL Intelligence",
-    description:
-      "De live intelligence feeds konden niet schoon worden opgehaald. De terminal blijft werken met veilige fallback intelligence.",
+    description: "De live intelligence feeds konden niet schoon worden opgehaald. De terminal blijft werken met veilige fallback intelligence.",
   },
   {
     title: "Make Waves Focus: Daily users, mainnet activity and SourceTag proof",
     link: "https://xrpl.org",
-    pubDate: new Date().toISOString(),
-    author: "OTT Terminal",
     source: "OTT Fallback",
     sourceType: SOURCE_TYPES.FALLBACK,
     category: "Make Waves",
-    description:
-      "De belangrijkste productroute blijft: Xaman connect, Mainnet proof, SourceTag 2606170002, XP en Reward Ledger.",
+    description: "De belangrijkste productroute blijft: Xaman connect, Mainnet proof, SourceTag 2606170002, XP en Reward Ledger.",
   },
-  {
-    title: "Macro Watch: CBDC, ISO 20022, RWA, BRICS and institutional payments",
-    link: "https://ripple.com/insights/",
-    pubDate: new Date().toISOString(),
-    author: "OTT Terminal",
-    source: "OTT Fallback",
-    sourceType: SOURCE_TYPES.FALLBACK,
-    category: "Macro / Payments",
-    description:
-      "Macro intelligence moet altijd als signaal worden gelezen: officieel waar mogelijk, bevestigd waar nodig, nooit als trading advies.",
-  },
+];
+
+const BUCKETS = [
+  "XRPL Core / Amendments",
+  "XLS Standards",
+  "Ripple / RLUSD / Partnerships",
+  "Xaman / XRPL Labs",
+  "RWA / Tokenization",
+  "CBDC / Central Banks",
+  "BRICS / Geopolitics",
+  "ISO 20022 / Payments",
+  "DeFi / AMM / Lending",
+  "AI Agents / Agentic Payments",
+  "Security / Scam Alerts",
 ];
 
 const BLOCKED_TITLE_WORDS = [
   "link to home",
   "company logo",
-  "treasury management",
   "customers overview",
-  "customer case studies",
-  "disclosures",
-  "supplier",
   "privacy",
   "terms",
   "cookie",
@@ -228,432 +174,145 @@ const BLOCKED_TITLE_WORDS = [
   "showing all",
   "javascript",
   "skip to content",
+  "copyright and permissions",
+  "see more",
+  "more from",
+  "site map",
 ];
-
-const KEYWORD_BUCKETS = [
-  {
-    bucket: "XRPL Core / Amendments",
-    tags: ["xrpl", "xrp ledger", "rippled", "xrpld", "amendment", "validator", "consensus", "sidechain"],
-  },
-  {
-    bucket: "XLS Standards",
-    tags: ["xls", "standard", "specification", "proposal", "github", "pull request"],
-  },
-  {
-    bucket: "Ripple / RLUSD / Partnerships",
-    tags: ["ripple", "rlusd", "stablecoin", "partnership", "license", "custody", "institutional"],
-  },
-  {
-    bucket: "Xaman / XRPL Labs",
-    tags: ["xaman", "xumm", "xrpl labs", "wallet", "signing", "xapp"],
-  },
-  {
-    bucket: "RWA / Tokenization",
-    tags: ["rwa", "real world asset", "tokenization", "tokenisation", "asset tokenization", "asset tokenisation"],
-  },
-  {
-    bucket: "CBDC / Central Banks",
-    tags: ["cbdc", "central bank", "digital currency", "wholesale cbdc", "retail cbdc", "pilot"],
-  },
-  {
-    bucket: "BRICS / Geopolitics",
-    tags: ["brics", "geopolitics", "multipolar", "de-dollar", "dedollar", "cross-border settlement"],
-  },
-  {
-    bucket: "ISO 20022 / Payments",
-    tags: ["iso 20022", "swift", "payments", "cross-border", "messaging", "settlement"],
-  },
-  {
-    bucket: "DeFi / AMM / Lending",
-    tags: ["defi", "amm", "dex", "lending", "liquidity", "oracle", "permissioned dex"],
-  },
-  {
-    bucket: "AI Agents / Agentic Payments",
-    tags: ["ai agent", "agentic", "mcp", "x402", "automation", "agent wallet"],
-  },
-  {
-    bucket: "Security / Scam Alerts",
-    tags: ["security", "scam", "phishing", "exploit", "vulnerability", "malware", "fraud"],
-  },
-];
-
-const GLOBAL_RELEVANCE_KEYWORDS = [
-  "xrp",
-  "xrpl",
-  "xrp ledger",
-  "ripple",
-  "rlusd",
-  "xaman",
-  "xumm",
-  "xrpl labs",
-  "xls",
-  "amendment",
-  "rippled",
-  "xrpld",
-  "tokenization",
-  "tokenisation",
-  "rwa",
-  "stablecoin",
-  "cbdc",
-  "central bank",
-  "iso 20022",
-  "swift",
-  "brics",
-  "cross-border",
-  "settlement",
-  "defi",
-  "amm",
-  "did",
-  "decentralized identity",
-  "ai agent",
-  "agentic",
-];
-
-const MONTHS = {
-  january: 0,
-  february: 1,
-  march: 2,
-  april: 3,
-  may: 4,
-  june: 5,
-  july: 6,
-  august: 7,
-  september: 8,
-  october: 9,
-  november: 10,
-  december: 11,
-};
 
 function cleanText(value = "") {
   return String(value)
     .replace(/<!\[CDATA\[/g, "")
     .replace(/\]\]>/g, "")
-    .replace(/<script[\s\S]*?<\/script>/gi, "")
-    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
     .replace(/<[^>]*>/g, " ")
     .replace(/\s+/g, " ")
     .replace(/&amp;/g, "&")
     .replace(/&quot;/g, '"')
     .replace(/&#039;/g, "'")
     .replace(/&apos;/g, "'")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/`/g, "'")
     .trim();
 }
 
 function getTagValue(xml, tagName) {
-  const regex = new RegExp(
-    `<${tagName}[^>]*>([\\s\\S]*?)<\\/${tagName}>`,
-    "i"
-  );
-
+  const regex = new RegExp(`<${tagName}[^>]*>([\\s\\S]*?)<\\/${tagName}>`, "i");
   const match = xml.match(regex);
   return match ? cleanText(match[1]) : "";
 }
 
 function getAtomLink(entryXml) {
   const hrefMatch = entryXml.match(/<link[^>]*href=["']([^"']+)["'][^>]*>/i);
-
-  if (hrefMatch?.[1]) {
-    return hrefMatch[1];
-  }
-
-  return getTagValue(entryXml, "link");
+  return hrefMatch?.[1] || getTagValue(entryXml, "link");
 }
 
 function resolveUrl(url, baseUrl) {
   try {
     return new URL(url, baseUrl).toString();
   } catch {
-    return url;
+    return url || baseUrl;
   }
 }
 
 function isAllowedLink(link, source) {
-  if (!link) return false;
-
-  return source.allowedUrlPatterns.some((pattern) => pattern.test(link));
+  return Boolean(link && source.allowedUrlPatterns.some((pattern) => pattern.test(link)));
 }
 
 function isBadTitle(title) {
   const lower = title.toLowerCase();
-
   if (title.length < 14 || title.length > 220) return true;
-
   return BLOCKED_TITLE_WORDS.some((word) => lower.includes(word));
 }
 
-function extractDateFromTitle(title) {
-  const match = title.match(
-    /(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{1,2}),\s+(20\d{2})/i
-  );
-
-  if (!match) return null;
-
-  const month = MONTHS[match[1].toLowerCase()];
-  const day = Number(match[2]);
-  const year = Number(match[3]);
-
-  if (month === undefined || !day || !year) return null;
-
-  return new Date(Date.UTC(year, month, day)).toISOString();
+function getYear(value) {
+  const dateYear = new Date(value || "").getFullYear();
+  return Number.isNaN(dateYear) ? null : dateYear;
 }
 
-function cleanTitle(title) {
-  return cleanText(title).replace(/^\d+\s+/, "").trim();
+function isRecentEnough(item) {
+  const year = getYear(item.pubDate) || Number(item.link.match(/\/(20\d{2})\//)?.[1]);
+  return !year || year >= MIN_YEAR;
 }
 
-function getYearFromItem(item) {
-  const fromDate = new Date(item.pubDate || "").getFullYear();
-
-  if (!Number.isNaN(fromDate)) {
-    return fromDate;
-  }
-
-  const titleYear = item.title.match(/20\d{2}/)?.[0];
-
-  if (titleYear) {
-    return Number(titleYear);
-  }
-
-  const linkYear = item.link.match(/\/(20\d{2})\//)?.[1];
-
-  if (linkYear) {
-    return Number(linkYear);
-  }
-
-  return CURRENT_YEAR;
+function includesAny(text, words) {
+  const lower = text.toLowerCase();
+  return words.some((word) => lower.includes(word.toLowerCase()));
 }
 
-function getCombinedText(item) {
-  return `${item.title || ""} ${item.description || ""} ${item.link || ""} ${item.category || ""}`.toLowerCase();
+function getBucket(item, source) {
+  const category = source?.category || item.category || "XRPL Intelligence";
+  const text = `${item.title} ${item.description || ""}`.toLowerCase();
+  if (category.includes("CBDC")) return "CBDC / Central Banks";
+  if (category.includes("ISO")) return "ISO 20022 / Payments";
+  if (category.includes("XLS")) return "XLS Standards";
+  if (category.includes("Ripple")) return "Ripple / RLUSD / Partnerships";
+  if (category.includes("Xaman")) return "Xaman / XRPL Labs";
+  if (text.includes("tokenization") || text.includes("tokenisation") || text.includes("rwa")) return "RWA / Tokenization";
+  if (text.includes("brics")) return "BRICS / Geopolitics";
+  if (text.includes("defi") || text.includes("amm") || text.includes("dex")) return "DeFi / AMM / Lending";
+  if (text.includes("security") || text.includes("scam") || text.includes("phishing")) return "Security / Scam Alerts";
+  return category;
 }
 
-function includesAny(text, keywords) {
-  return keywords.some((keyword) => text.includes(keyword.toLowerCase()));
+function getTags(item, bucket) {
+  const text = `${item.title} ${item.description || ""}`.toLowerCase();
+  const tags = new Set(item.tags || []);
+  for (const word of ["xrp", "xrpl", "ripple", "rlusd", "xaman", "xls", "amendment", "rippled", "cbdc", "iso 20022", "swift", "brics", "stablecoin", "tokenization", "rwa", "amm", "defi"]) {
+    if (text.includes(word)) tags.add(word);
+  }
+  if (bucket.includes("CBDC")) tags.add("cbdc");
+  if (bucket.includes("ISO")) tags.add("iso 20022");
+  return Array.from(tags).slice(0, 12);
 }
 
-function getMatchedTags(item) {
-  const text = getCombinedText(item);
-  const matched = new Set();
-
-  for (const group of KEYWORD_BUCKETS) {
-    for (const tag of group.tags) {
-      if (text.includes(tag.toLowerCase())) {
-        matched.add(tag);
-      }
-    }
-  }
-
-  for (const keyword of GLOBAL_RELEVANCE_KEYWORDS) {
-    if (text.includes(keyword.toLowerCase())) {
-      matched.add(keyword);
-    }
-  }
-
-  return Array.from(matched).slice(0, 12);
-}
-
-function classifyBucket(item, source) {
-  const text = getCombinedText(item);
-
-  for (const group of KEYWORD_BUCKETS) {
-    if (includesAny(text, group.tags)) {
-      return group.bucket;
-    }
-  }
-
-  return source?.category || item.category || "XRPL Intelligence";
-}
-
-function getSignalType(item, source) {
-  const bucket = classifyBucket(item, source);
-
-  if (bucket.includes("CBDC") || bucket.includes("BRICS") || bucket.includes("ISO")) {
-    return "macro-signal";
-  }
-
-  if (bucket.includes("Amendments") || bucket.includes("XLS") || source?.sourceType === SOURCE_TYPES.TECHNICAL) {
-    return "technical-signal";
-  }
-
-  if (bucket.includes("Ripple") || bucket.includes("RLUSD") || bucket.includes("Tokenization")) {
-    return "institutional-signal";
-  }
-
-  if (bucket.includes("Security")) {
-    return "risk-signal";
-  }
-
-  return "ecosystem-signal";
-}
-
-function getConfidenceScore(item, source) {
-  let score = 55;
-
-  if (source?.sourceType === SOURCE_TYPES.OFFICIAL) score = 92;
-  if (source?.sourceType === SOURCE_TYPES.TECHNICAL) score = 90;
-  if (source?.sourceType === SOURCE_TYPES.INSTITUTIONAL) score = 86;
-  if (source?.sourceType === SOURCE_TYPES.MEDIA) score = 68;
-  if (source?.sourceType === SOURCE_TYPES.FALLBACK) score = 50;
-
-  const tags = getMatchedTags(item);
-  const title = (item.title || "").toLowerCase();
-
-  if (tags.length >= 2) score += 4;
-  if (title.includes("xrp") || title.includes("xrpl") || title.includes("ripple")) score += 3;
-  if (classifyBucket(item, source).includes("BRICS")) score -= 6;
-  if (item.source?.toLowerCase().includes("fallback")) score -= 5;
-
-  return Math.max(35, Math.min(98, score));
-}
-
-function needsConfirmation(item, source) {
-  const bucket = classifyBucket(item, source);
-  const sourceType = source?.sourceType || item.sourceType;
-
-  if (sourceType === SOURCE_TYPES.MEDIA || sourceType === SOURCE_TYPES.FALLBACK) {
-    return true;
-  }
-
-  if (bucket.includes("BRICS")) {
-    return true;
-  }
-
-  if (
-    bucket.includes("CBDC") &&
-    sourceType !== SOURCE_TYPES.INSTITUTIONAL &&
-    sourceType !== SOURCE_TYPES.OFFICIAL
-  ) {
-    return true;
-  }
-
-  return false;
-}
-
-function getWhyItMatters(item, source) {
-  const bucket = classifyBucket(item, source);
-
-  if (bucket.includes("XRPL Core")) {
-    return "Protocol/core update. Relevant voor validators, builders, tooling en long-term XRPL reliability.";
-  }
-
-  if (bucket.includes("XLS")) {
-    return "Standards signal. Relevant omdat XLS-voorstellen kunnen bepalen hoe builders interoperabele XRPL-features ontwerpen.";
-  }
-
-  if (bucket.includes("Ripple")) {
-    return "Ripple ecosystem signal. Relevant voor institutional payments, custody, RLUSD, tokenization of enterprise adoption context.";
-  }
-
-  if (bucket.includes("Xaman")) {
-    return "Wallet/onboarding signal. Relevant omdat Xaman een belangrijke self-custody route is in OTT Terminal.";
-  }
-
-  if (bucket.includes("RWA")) {
-    return "Tokenization/RWA signal. Relevant voor asset issuance, institutional rails en toekomstige XRPL business routes.";
-  }
-
-  if (bucket.includes("CBDC")) {
-    return "Macro payments signal. Relevant voor digital money infrastructure, maar niet automatisch bewijs van XRPL/XRP adoption.";
-  }
-
-  if (bucket.includes("BRICS")) {
-    return "Geopolitical payments signal. Alleen gebruiken als context; claims over XRP/XRPL vereisen extra bevestiging.";
-  }
-
-  if (bucket.includes("ISO")) {
-    return "Payments messaging signal. Relevant voor financial infrastructure, interoperability en settlement narrative.";
-  }
-
-  if (bucket.includes("DeFi")) {
-    return "DeFi/liquidity signal. Relevant voor AMM, DEX, lending en risk-aware XRPL education.";
-  }
-
-  if (bucket.includes("AI Agents")) {
-    return "Agentic payments signal. Relevant voor toekomstige wallet automation, permissions, audit trails en human control.";
-  }
-
-  if (bucket.includes("Security")) {
-    return "Risk signal. Relevant voor wallet safety, user protection en scam awareness.";
-  }
-
+function getWhyItMatters(bucket) {
+  if (bucket.includes("XRPL Core")) return "Protocol/core update. Relevant voor validators, builders, tooling en long-term XRPL reliability.";
+  if (bucket.includes("XLS")) return "Standards signal. Relevant omdat XLS-voorstellen kunnen bepalen hoe builders interoperabele XRPL-features ontwerpen.";
+  if (bucket.includes("Ripple")) return "Ripple ecosystem signal. Relevant voor institutional payments, custody, RLUSD, tokenization of enterprise adoption context.";
+  if (bucket.includes("Xaman")) return "Wallet/onboarding signal. Relevant omdat Xaman een belangrijke self-custody route is in OTT Terminal.";
+  if (bucket.includes("CBDC")) return "Macro payments signal. Relevant voor digital money infrastructure, maar niet automatisch bewijs van XRPL/XRP adoption.";
+  if (bucket.includes("ISO")) return "Payments messaging signal. Relevant voor financial infrastructure, interoperability en settlement narrative.";
+  if (bucket.includes("BRICS")) return "Geopolitical payments signal. Alleen gebruiken als context; claims over XRP/XRPL vereisen extra bevestiging.";
   return "Ecosystem signal. Relevant voor dagelijkse XRPL intelligence en community awareness.";
 }
 
 function normalizeItem(item, source) {
-  const extractedDate = extractDateFromTitle(item.title);
-  const title = cleanTitle(item.title);
-  const normalized = {
-    ...item,
-    title,
-    sourceType: item.sourceType || source?.sourceType || SOURCE_TYPES.MEDIA,
-    pubDate: item.pubDate || extractedDate || new Date().toISOString(),
-    description:
-      item.description && item.description.length > 10
-        ? cleanText(item.description).slice(0, 500)
-        : `Nieuw XRPL Intelligence item via ${item.source}.`,
-  };
-
-  const bucket = classifyBucket(normalized, source);
-  const tags = getMatchedTags(normalized);
-
+  const pubDate = item.pubDate || new Date().toISOString();
+  const bucket = getBucket(item, source);
+  const sourceType = item.sourceType || source?.sourceType || SOURCE_TYPES.FALLBACK;
+  const confidenceBase = sourceType === SOURCE_TYPES.OFFICIAL ? 92 : sourceType === SOURCE_TYPES.TECHNICAL ? 90 : sourceType === SOURCE_TYPES.INSTITUTIONAL ? 86 : 50;
   return {
-    ...normalized,
+    title: cleanText(item.title),
+    link: item.link,
+    pubDate,
+    author: item.author || item.source || source?.name || "OTT Terminal",
+    source: item.source || source?.name || "OTT Terminal",
+    sourceType,
     category: bucket,
     bucket,
-    tags,
-    signalType: getSignalType(normalized, source),
-    officialSource:
-      normalized.sourceType === SOURCE_TYPES.OFFICIAL ||
-      normalized.sourceType === SOURCE_TYPES.TECHNICAL ||
-      normalized.sourceType === SOURCE_TYPES.INSTITUTIONAL,
-    needsConfirmation: needsConfirmation(normalized, source),
-    confidenceScore: getConfidenceScore(normalized, source),
-    whyItMatters: getWhyItMatters(normalized, source),
+    description: cleanText(item.description || `Nieuw item gevonden via ${item.source || source?.name}.`).slice(0, 500),
+    tags: getTags(item, bucket),
+    signalType: bucket.includes("CBDC") || bucket.includes("BRICS") || bucket.includes("ISO") ? "macro-signal" : bucket.includes("XLS") || bucket.includes("XRPL Core") ? "technical-signal" : "ecosystem-signal",
+    officialSource: sourceType !== SOURCE_TYPES.FALLBACK,
+    needsConfirmation: sourceType === SOURCE_TYPES.FALLBACK || bucket.includes("BRICS"),
+    confidenceScore: Math.min(98, confidenceBase + (bucket.includes("Ripple") || bucket.includes("XRPL") ? 4 : 0)),
+    whyItMatters: getWhyItMatters(bucket),
   };
-}
-
-function keepHighQualityItem(item, source) {
-  if (!item.title || isBadTitle(item.title)) return false;
-  if (!isAllowedLink(item.link, source)) return false;
-
-  const year = getYearFromItem(item);
-
-  if (year < MIN_YEAR) return false;
-
-  const text = getCombinedText(item);
-  const sourceKeywords = source.relevanceKeywords || [];
-
-  if (source.sourceType === SOURCE_TYPES.INSTITUTIONAL) {
-    return includesAny(text, sourceKeywords) || includesAny(text, GLOBAL_RELEVANCE_KEYWORDS);
-  }
-
-  return true;
 }
 
 async function fetchText(url) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-
   try {
     const response = await fetch(url, {
       signal: controller.signal,
       headers: {
-        "User-Agent": "XRPL-OnTheTrack-Terminal/1.0 (+https://ott-terminal-mvp.vercel.app)",
-        Accept:
-          "application/rss+xml, application/atom+xml, application/xml, text/xml, text/html, application/json",
+        "User-Agent": "XRPL-OnTheTrack-Terminal/1.0",
+        Accept: "application/rss+xml, application/atom+xml, application/xml, text/xml",
       },
     });
-
-    if (!response.ok) {
-      return null;
-    }
-
-    return await response.text();
-  } catch (error) {
-    console.error("Fetch failed:", url, error?.message || error);
+    return response.ok ? await response.text() : null;
+  } catch {
     return null;
   } finally {
     clearTimeout(timeout);
@@ -662,268 +321,67 @@ async function fetchText(url) {
 
 function parseRssOrAtom(xml, source) {
   const items = [];
-
   const rssItems = xml.match(/<item\b[\s\S]*?<\/item>/gi) || [];
   const atomEntries = xml.match(/<entry\b[\s\S]*?<\/entry>/gi) || [];
 
   for (const itemXml of rssItems) {
     const title = getTagValue(itemXml, "title");
-    const link = getTagValue(itemXml, "link");
-    const pubDate =
-      getTagValue(itemXml, "pubDate") ||
-      getTagValue(itemXml, "published") ||
-      getTagValue(itemXml, "updated");
-
-    const author =
-      getTagValue(itemXml, "dc:creator") ||
-      getTagValue(itemXml, "author") ||
-      source.name;
-
-    const description =
-      getTagValue(itemXml, "description") ||
-      getTagValue(itemXml, "content:encoded") ||
-      "";
-
-    if (title) {
-      items.push({
-        title,
-        link: resolveUrl(link || source.homeUrl, source.homeUrl),
-        pubDate: pubDate || extractDateFromTitle(title),
-        author,
-        source: source.name,
-        sourceType: source.sourceType,
-        category: source.category,
-        description,
-      });
-    }
+    const link = resolveUrl(getTagValue(itemXml, "link"), source.feedUrls[0]);
+    const pubDate = getTagValue(itemXml, "pubDate") || getTagValue(itemXml, "published") || getTagValue(itemXml, "updated");
+    const description = getTagValue(itemXml, "description") || getTagValue(itemXml, "content:encoded");
+    if (title) items.push({ title, link, pubDate, description, source: source.name, sourceType: source.sourceType, category: source.category });
   }
 
   for (const entryXml of atomEntries) {
     const title = getTagValue(entryXml, "title");
-    const link = getAtomLink(entryXml);
-
-    const pubDate =
-      getTagValue(entryXml, "published") || getTagValue(entryXml, "updated");
-
-    const author = getTagValue(entryXml, "name") || source.name;
-
-    const description =
-      getTagValue(entryXml, "summary") || getTagValue(entryXml, "content") || "";
-
-    if (title) {
-      items.push({
-        title,
-        link: resolveUrl(link || source.homeUrl, source.homeUrl),
-        pubDate: pubDate || extractDateFromTitle(title),
-        author,
-        source: source.name,
-        sourceType: source.sourceType,
-        category: source.category,
-        description,
-      });
-    }
-  }
-
-  return items;
-}
-
-function parseJsonLd(html, source) {
-  const items = [];
-  const scripts =
-    html.match(
-      /<script[^>]+type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/gi
-    ) || [];
-
-  for (const script of scripts) {
-    try {
-      const rawJson = script
-        .replace(/<script[^>]*>/i, "")
-        .replace(/<\/script>/i, "")
-        .trim();
-
-      const parsed = JSON.parse(rawJson);
-      const queue = Array.isArray(parsed) ? parsed : [parsed];
-
-      for (const block of queue) {
-        const graph = Array.isArray(block["@graph"]) ? block["@graph"] : [block];
-
-        for (const node of graph) {
-          const type = Array.isArray(node["@type"])
-            ? node["@type"].join(" ")
-            : node["@type"] || "";
-
-          const isArticle =
-            type.includes("Article") ||
-            type.includes("BlogPosting") ||
-            type.includes("NewsArticle") ||
-            type.includes("Report") ||
-            type.includes("TechArticle");
-
-          if (!isArticle) continue;
-
-          const title = node.headline || node.name;
-          const link = node.url || node.mainEntityOfPage?.["@id"];
-          const pubDate = node.datePublished || node.dateModified;
-          const description = node.description || "";
-
-          if (title) {
-            items.push({
-              title: cleanText(title),
-              link: resolveUrl(link || source.homeUrl, source.homeUrl),
-              pubDate: pubDate || extractDateFromTitle(title),
-              author: source.name,
-              source: source.name,
-              sourceType: source.sourceType,
-              category: source.category,
-              description: cleanText(description),
-            });
-          }
-        }
-      }
-    } catch {
-      // JSON-LD kan meerdere formats hebben. Geen probleem.
-    }
-  }
-
-  return items;
-}
-
-function parseHtmlLinks(html, source) {
-  const items = [];
-  const anchorRegex = /<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
-
-  let match;
-
-  while ((match = anchorRegex.exec(html)) !== null) {
-    const href = match[1];
-    const rawText = cleanText(match[2]);
-    const link = resolveUrl(href, source.homeUrl);
-
-    if (!rawText || !isAllowedLink(link, source)) continue;
-
-    const title = cleanTitle(rawText);
-
-    items.push({
-      title,
-      link,
-      pubDate: extractDateFromTitle(title) || new Date().toISOString(),
-      author: source.name,
-      source: source.name,
-      sourceType: source.sourceType,
-      category: source.category,
-      description: `Nieuw XRPL Intelligence item gevonden via ${source.name}.`,
-    });
+    const link = resolveUrl(getAtomLink(entryXml), source.feedUrls[0]);
+    const pubDate = getTagValue(entryXml, "published") || getTagValue(entryXml, "updated");
+    const description = getTagValue(entryXml, "summary") || getTagValue(entryXml, "content");
+    if (title) items.push({ title, link, pubDate, description, source: source.name, sourceType: source.sourceType, category: source.category });
   }
 
   return items;
 }
 
 async function fetchSourceItems(source) {
-  const allItems = [];
-
   for (const feedUrl of source.feedUrls) {
     const xml = await fetchText(feedUrl);
-
     if (!xml) continue;
-
     const parsed = parseRssOrAtom(xml, source)
-      .map((item) => normalizeItem(item, source))
-      .filter((item) => keepHighQualityItem(item, source));
-
-    if (parsed.length > 0) {
-      allItems.push(...parsed);
-      break;
-    }
+      .filter((item) => !isBadTitle(item.title))
+      .filter((item) => isAllowedLink(item.link, source))
+      .filter((item) => isRecentEnough(item))
+      .filter((item) => source.sourceType !== SOURCE_TYPES.INSTITUTIONAL || includesAny(`${item.title} ${item.description || ""}`, source.relevanceKeywords))
+      .map((item) => normalizeItem(item, source));
+    if (parsed.length > 0) return parsed;
   }
-
-  if (allItems.length > 0) {
-    return allItems;
-  }
-
-  const html = await fetchText(source.homeUrl);
-
-  if (!html) {
-    return [];
-  }
-
-  const jsonLdItems = parseJsonLd(html, source)
-    .map((item) => normalizeItem(item, source))
-    .filter((item) => keepHighQualityItem(item, source));
-
-  if (jsonLdItems.length > 0) {
-    return jsonLdItems;
-  }
-
-  return parseHtmlLinks(html, source)
-    .map((item) => normalizeItem(item, source))
-    .filter((item) => keepHighQualityItem(item, source));
+  return [];
 }
 
 function dedupeItems(items) {
   const seen = new Set();
-  const finalItems = [];
-
-  for (const item of items) {
-    const key = `${item.link || item.title || ""}`.toLowerCase();
-
-    if (seen.has(key)) continue;
+  return items.filter((item) => {
+    const key = String(item.link || item.title).toLowerCase();
+    if (seen.has(key)) return false;
     seen.add(key);
-
-    finalItems.push(item);
-  }
-
-  return finalItems;
-}
-
-function sortByDate(items) {
-  return items.sort((a, b) => {
-    const dateA = new Date(a.pubDate || 0).getTime();
-    const dateB = new Date(b.pubDate || 0).getTime();
-
-    return dateB - dateA;
+    return true;
   });
 }
 
-function enrichFallbackItems() {
-  return FALLBACK_ITEMS.map((item) =>
-    normalizeItem(
-      {
-        ...item,
-        sourceType: SOURCE_TYPES.FALLBACK,
-      },
-      {
-        name: item.source,
-        sourceType: SOURCE_TYPES.FALLBACK,
-        category: item.category,
-        allowedUrlPatterns: [/.+/],
-      }
-    )
-  );
+function sortByDate(items) {
+  return items.sort((a, b) => new Date(b.pubDate || 0).getTime() - new Date(a.pubDate || 0).getTime());
 }
 
 function buildBrief(items) {
   const buckets = new Map();
-
-  for (const item of items) {
-    const bucket = item.bucket || item.category || "XRPL Intelligence";
-    buckets.set(bucket, (buckets.get(bucket) || 0) + 1);
-  }
-
-  const topBuckets = Array.from(buckets.entries())
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([bucket, count]) => ({ bucket, count }));
-
+  for (const item of items) buckets.set(item.bucket, (buckets.get(item.bucket) || 0) + 1);
+  const topBuckets = Array.from(buckets.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([bucket, count]) => ({ bucket, count }));
   return {
     title: "XRPL Intelligence Daily Brief",
     generatedAt: new Date().toISOString(),
     topBuckets,
-    summary:
-      items.length > 0
-        ? `Vandaag zijn ${items.length} intelligence items opgehaald en geclassificeerd voor XRPL, Ripple, Xaman, XLS, CBDC, ISO 20022, RWA en macro payments.`
-        : "Geen live intelligence items gevonden. Fallback intelligence is geactiveerd.",
-    legalNote:
-      "Education only. This feed is not financial advice, not trading signals and not confirmation that XRP/XRPL is used by any macro system unless official sources explicitly confirm it.",
+    summary: `Vandaag zijn ${items.length} intelligence items opgehaald en geclassificeerd voor XRPL, Ripple, Xaman, XLS, CBDC, ISO 20022, RWA en macro payments.`,
+    legalNote: "Education only. This feed is not financial advice, not trading signals and not confirmation that XRP/XRPL is used by any macro system unless official sources explicitly confirm it.",
   };
 }
 
@@ -931,12 +389,7 @@ function getLimit(req) {
   const rawLimit = req.query?.limit;
   const value = Array.isArray(rawLimit) ? rawLimit[0] : rawLimit;
   const limit = Number(value);
-
-  if (!Number.isFinite(limit) || limit <= 0) {
-    return DEFAULT_LIMIT;
-  }
-
-  return Math.min(80, Math.max(1, Math.round(limit)));
+  return Number.isFinite(limit) && limit > 0 ? Math.min(80, Math.round(limit)) : DEFAULT_LIMIT;
 }
 
 export default async function handler(req, res) {
@@ -944,45 +397,27 @@ export default async function handler(req, res) {
   res.setHeader("Cache-Control", "s-maxage=900, stale-while-revalidate=1800");
 
   if (req.method !== "GET") {
-    return res.status(405).json({
-      success: false,
-      error: "Method not allowed. Gebruik GET.",
-    });
+    return res.status(405).json({ success: false, error: "Method not allowed. Gebruik GET." });
   }
 
   try {
     const limit = getLimit(req);
-    const sourceResults = await Promise.allSettled(
-      SOURCES.map(async (source) => ({
-        source,
-        items: await fetchSourceItems(source),
-      }))
-    );
-
-    const allItems = [];
+    const sourceResults = await Promise.allSettled(SOURCES.map(async (source) => ({ source, items: await fetchSourceItems(source) })));
     const debug = [];
+    const feedItems = [];
 
     for (const result of sourceResults) {
       if (result.status === "fulfilled") {
-        debug.push({
-          source: result.value.source.name,
-          sourceType: result.value.source.sourceType,
-          category: result.value.source.category,
-          count: result.value.items.length,
-        });
-
-        allItems.push(...result.value.items);
+        debug.push({ source: result.value.source.name, sourceType: result.value.source.sourceType, category: result.value.source.category, count: result.value.items.length });
+        feedItems.push(...result.value.items);
       } else {
-        debug.push({
-          source: "unknown",
-          count: 0,
-          error: result.reason?.message || String(result.reason),
-        });
+        debug.push({ source: "unknown", count: 0, error: String(result.reason) });
       }
     }
 
-    const cleanedItems = sortByDate(dedupeItems(allItems)).slice(0, limit);
-    const finalItems = cleanedItems.length > 0 ? cleanedItems : enrichFallbackItems();
+    const curatedItems = CURATED_ITEMS.map((item) => normalizeItem({ ...item, pubDate: new Date().toISOString() }, { name: item.source, sourceType: item.sourceType, category: item.category }));
+    const cleanedItems = sortByDate(dedupeItems([...feedItems, ...curatedItems])).slice(0, limit);
+    const finalItems = cleanedItems.length > 0 ? cleanedItems : FALLBACK_ITEMS.map((item) => normalizeItem({ ...item, pubDate: new Date().toISOString() }, { name: item.source, sourceType: SOURCE_TYPES.FALLBACK, category: item.category }));
 
     return res.status(200).json({
       success: true,
@@ -990,33 +425,18 @@ export default async function handler(req, res) {
       generatedAt: new Date().toISOString(),
       count: finalItems.length,
       fallback: cleanedItems.length === 0,
-      sourceTag: 2606170002,
-      sources: SOURCES.map((source) => ({
-        name: source.name,
-        category: source.category,
-        sourceType: source.sourceType,
-        homeUrl: source.homeUrl,
-      })),
-      buckets: KEYWORD_BUCKETS.map((group) => group.bucket),
+      sourceTag: SOURCE_TAG,
+      sources: [
+        ...SOURCES.map((source) => ({ name: source.name, category: source.category, sourceType: source.sourceType, homeUrl: source.feedUrls[0] })),
+        ...CURATED_ITEMS.map((item) => ({ name: item.source, category: item.category, sourceType: item.sourceType, homeUrl: item.link })),
+      ],
+      buckets: BUCKETS,
       brief: buildBrief(finalItems),
       debug,
       items: finalItems,
     });
   } catch (error) {
-    console.error("News API crashed:", error);
-
-    const fallbackItems = enrichFallbackItems();
-
-    return res.status(200).json({
-      success: true,
-      mode: "xrpl-intelligence",
-      generatedAt: new Date().toISOString(),
-      count: fallbackItems.length,
-      fallback: true,
-      sourceTag: 2606170002,
-      error: "News API fallback activated.",
-      brief: buildBrief(fallbackItems),
-      items: fallbackItems,
-    });
+    const fallbackItems = FALLBACK_ITEMS.map((item) => normalizeItem({ ...item, pubDate: new Date().toISOString() }, { name: item.source, sourceType: SOURCE_TYPES.FALLBACK, category: item.category }));
+    return res.status(200).json({ success: true, mode: "xrpl-intelligence", generatedAt: new Date().toISOString(), count: fallbackItems.length, fallback: true, sourceTag: SOURCE_TAG, error: "News API fallback activated.", brief: buildBrief(fallbackItems), items: fallbackItems });
   }
 }
