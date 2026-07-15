@@ -232,8 +232,8 @@ export function RewardLedgerTab({
                   size="lg"
                   subtitle={
                     isEnglish
-                      ? "Real XP, internal credits and proof history"
-                      : "Echte XP, interne credits en proofgeschiedenis"
+                      ? "Make Waves proof ledger, XP and internal credits"
+                      : "Make Waves proof ledger, XP en interne credits"
                   }
                 />
               </div>
@@ -243,23 +243,23 @@ export function RewardLedgerTab({
 
                 <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-black/55">
                   {isEnglish
-                    ? "Reward Ledger V1.0"
-                    : "Beloningsoverzicht V1.0"}
+                    ? "Make Waves Reward Ledger V1.0"
+                    : "Make Waves Beloningsoverzicht V1.0"}
                 </p>
               </div>
 
               <h1 className="font-orbitron text-4xl xl:text-6xl font-black uppercase leading-none tracking-tight mb-6">
-                {isEnglish ? "Track XP." : "Track XP."}
+                {isEnglish ? "Proof Earns XP." : "Proof Verdient XP."}
                 <br />
                 <span className="bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] bg-clip-text text-transparent">
-                  {isEnglish ? "Use Credits." : "Gebruik Credits."}
+                  {isEnglish ? "Credits Stay Safe." : "Credits Blijven Veilig."}
                 </span>
               </h1>
 
               <p className="font-mono text-sm xl:text-base text-black/60 leading-relaxed max-w-3xl mb-8">
                 {isEnglish
-                  ? "This ledger reads the actual local reward store for the connected wallet. XP is permanent learning progress. OTT Credits are internal terminal utility points. Neither represents a tradable token."
-                  : "Dit overzicht leest de echte lokale reward store van de gekoppelde wallet. XP is permanente leerprogressie. OTT Credits zijn interne utility-punten voor de terminal. Geen van beide is een verhandelbare token."}
+                  ? "This is the live Make Waves proof ledger for the connected wallet. It shows which SourceTag actions earned XP, which OTT Credits were added, which transaction hashes support the proof, and why future token conversion remains locked."
+                  : "Dit is de live Make Waves proof ledger voor de gekoppelde wallet. Het toont welke SourceTag-acties XP verdienden, welke OTT Credits zijn toegevoegd, welke transaction hashes de proof ondersteunen en waarom toekomstige tokenconversie locked blijft."}
               </p>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-4xl">
@@ -282,10 +282,10 @@ export function RewardLedgerTab({
                   icon={BadgeCheck}
                 />
                 <MetricCard
-                  label="Wallet"
-                  value={isGuest ? "Guest" : "Linked"}
-                  text="Xaman"
-                  icon={Wallet}
+                  label="SourceTag"
+                  value="2606170002"
+                  text="Make Waves"
+                  icon={Fingerprint}
                 />
               </div>
             </div>
@@ -346,8 +346,8 @@ export function RewardLedgerTab({
 
                     <p className="font-mono text-xs text-black/60 leading-relaxed">
                       {isEnglish
-                        ? "V1 uses local browser storage. It is suitable for testing and product flow, but not yet a final server-side balance."
-                        : "V1 gebruikt lokale browseropslag. Dit is geschikt voor testen en productflow, maar nog geen definitief server-side saldo."}
+                        ? "V1 uses local browser storage for demo flow. The proof transactions remain verifiable on XRPL through tx hashes and SourceTag 2606170002."
+                        : "V1 gebruikt lokale browseropslag voor de demo-flow. De proof-transacties blijven verifieerbaar op XRPL via tx hashes en SourceTag 2606170002."}
                     </p>
                   </div>
                 </div>
@@ -457,6 +457,42 @@ export function RewardLedgerTab({
                   />
                 </div>
               </Panel>
+
+              <Panel
+                title={isEnglish ? "Make Waves Demo Route" : "Make Waves Demo Route"}
+                icon={Fingerprint}
+              >
+                <div className="space-y-3">
+                  <StatusLine
+                    text={
+                      isEnglish
+                        ? "1. Open Daily Check-In and sign a SourceTag proof."
+                        : "1. Open Daily Check-In en teken een SourceTag proof."
+                    }
+                  />
+                  <StatusLine
+                    text={
+                      isEnglish
+                        ? "2. Return here to show XP, Credits and tx proof."
+                        : "2. Kom hier terug om XP, Credits en tx proof te tonen."
+                    }
+                  />
+                  <StatusLine
+                    text={
+                      isEnglish
+                        ? "3. Open SourceTag page to verify the tx hash publicly."
+                        : "3. Open SourceTag pagina om de tx hash publiek te verifiëren."
+                    }
+                  />
+                  <StatusLine
+                    text={
+                      isEnglish
+                        ? "4. Explain that token conversion is locked until legal review."
+                        : "4. Leg uit dat tokenconversie locked blijft tot juridische review."
+                    }
+                  />
+                </div>
+              </Panel>
             </div>
           </div>
         )}
@@ -551,8 +587,8 @@ export function RewardLedgerTab({
                 }
                 text={
                   isEnglish
-                    ? "Complete and verify an eligible action. The result will appear here after rewardStore records it."
-                    : "Rond een geschikte actie af en verifieer deze. Het resultaat verschijnt hier nadat rewardStore het heeft opgeslagen."
+                    ? "Complete Daily Check-In or another eligible SourceTag action. The event will appear here with XP, credits and tx proof after verification."
+                    : "Rond Daily Check-In of een andere geschikte SourceTag-actie af. Het event verschijnt hier met XP, credits en tx proof na verificatie."
                 }
               />
             )}
@@ -587,8 +623,8 @@ export function RewardLedgerTab({
                     ? "Internal terminal utility points."
                     : "Interne utility-punten voor de terminal.",
                   isEnglish
-                    ? "Can later unlock eligible services or discounts."
-                    : "Kunnen later geschikte services of kortingen openen.",
+                    ? "Can later unlock eligible services, certificates, events or discounts."
+                    : "Kunnen later geschikte services, certificaten, events of kortingen openen.",
                   isEnglish
                     ? "No cash value and no withdrawal."
                     : "Geen geldwaarde en niet opneembaar.",
@@ -606,8 +642,8 @@ export function RewardLedgerTab({
                     ? "No automatic XP or credit conversion."
                     : "Geen automatische XP- of creditconversie.",
                   isEnglish
-                    ? "Requires proven utility and legal review."
-                    : "Vereist bewezen utility en juridische beoordeling.",
+                    ? "Requires proven utility, profitability and legal review."
+                    : "Vereist bewezen utility, winstgevendheid en juridische beoordeling.",
                 ]}
               />
             </div>
@@ -795,7 +831,7 @@ function ProofCard({
         />
         <InfoRow
           label="TX Hash"
-          value={event.txHash ? shortHash(event.txHash) : "No TX"}
+          value={event.txHash ?? "No TX"}
         />
         <InfoRow
           label={isEnglish ? "Created" : "Aangemaakt"}
@@ -992,14 +1028,6 @@ function getEventTitle(
   }
 
   return String(event.actionId);
-}
-
-function shortHash(value: string) {
-  if (value.length <= 18) {
-    return value;
-  }
-
-  return `${value.slice(0, 9)}...${value.slice(-7)}`;
 }
 
 function formatDate(
