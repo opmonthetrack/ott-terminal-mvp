@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  BarChart3,
   Fingerprint,
   Home,
   KeyRound,
@@ -53,9 +54,7 @@ import {
   clearXamanMobileSession,
   getXamanReturnState,
 } from "./lib/xamanMobileSession";
-import {
-  useTerminalLanguage,
-} from "./lib/useTerminalLanguage";
+import { useTerminalLanguage } from "./lib/useTerminalLanguage";
 import type { TerminalLanguage } from "./lib/terminalCopy";
 
 type ActiveTab =
@@ -108,15 +107,18 @@ const sourceTag = "2606170002";
 
 const FREE_TABS: ActiveTab[] = [
   "home",
+  "dashboard",
   "network",
   "wallet",
   "source",
   "xaman",
   "xrplverify",
+  "checkin",
   "rewardledger",
   "academy",
   "intel",
   "news",
+  "ottintelligence",
   "accessgate",
   "pitchmode",
   "submission",
@@ -135,41 +137,61 @@ function getAccessUnlocked(walletAddress: string) {
   return isAccessVerified(loadAccessState(walletAddress));
 }
 
-function getMenuGroups(language: TerminalLanguage, showLabs: boolean): MenuGroup[] {
+function getCoreMenuGroups(language: TerminalLanguage): MenuGroup[] {
   const isEnglish = language === "en";
 
-  const coreGroups: MenuGroup[] = [
+  return [
     {
       title: isEnglish ? "V1 Terminal" : "V1 Terminal",
       items: [
         { id: "home", label: isEnglish ? "Home" : "Start", status: "V1" },
+        { id: "dashboard", label: isEnglish ? "Daily Snapshot" : "Daily Snapshot", status: "Live" },
         { id: "network", label: isEnglish ? "XRPL Explorer" : "XRPL Verkenner", status: "Live" },
         { id: "wallet", label: isEnglish ? "Wallet Dashboard" : "Wallet Overzicht", status: "Xaman" },
-        { id: "portfolio", label: "Portfolio", status: isEnglish ? "View" : "Bekijk" },
+      ],
+    },
+    {
+      title: isEnglish ? "Intelligence" : "Intelligence",
+      items: [
+        { id: "intel", label: "XRPL Intelligence", status: "Live" },
+        { id: "ottintelligence", label: "OTT Intelligence", status: "AI" },
+        { id: "news", label: isEnglish ? "Newsroom" : "Newsroom", status: "Social" },
       ],
     },
     {
       title: isEnglish ? "Proof / Education" : "Proof / Educatie",
       items: [
         { id: "source", label: "SourceTag", status: sourceTag },
-        { id: "xaman", label: "Xaman Center", status: isEnglish ? "Sign" : "Sign" },
+        { id: "xaman", label: "Xaman Center", status: "Sign" },
         { id: "xrplverify", label: isEnglish ? "XRPL Verify" : "XRPL Verificatie", status: "Proof" },
-        { id: "partners", label: "Partner Hub", status: isEnglish ? "Learn" : "Leer" },
+        { id: "checkin", label: isEnglish ? "Daily Check-In" : "Dagelijkse Check-in", status: "XP" },
         { id: "rewardledger", label: isEnglish ? "Reward Ledger" : "Beloningsoverzicht", status: "XP" },
         { id: "academy", label: isEnglish ? "Academy" : "Academie", status: isEnglish ? "Learn" : "Leer" },
-        { id: "intel", label: isEnglish ? "XRPL Intelligence" : "XRPL Intelligence", status: "Live" },
+      ],
+    },
+    {
+      title: isEnglish ? "Demo / QA" : "Demo / QA",
+      items: [
+        { id: "pitchmode", label: isEnglish ? "Pitch Mode" : "Pitch Modus", status: "Demo" },
+        { id: "submission", label: isEnglish ? "Submission Pack" : "Inzendpakket", status: "Ship" },
+        { id: "smoketest", label: "Smoke Test", status: "QA" },
       ],
     },
     {
       title: isEnglish ? "Services / Access" : "Services / Toegang",
       items: [
-        { id: "truthdesk", label: "Truth Desk", status: isEnglish ? "Pass" : "Pass" },
-        { id: "accessgate", label: isEnglish ? "Access Gate" : "Toegangspoort", status: isEnglish ? "Scan" : "Scan" },
+        { id: "accessgate", label: isEnglish ? "Access Gate" : "Toegangspoort", status: "Scan" },
+        { id: "truthdesk", label: "Truth Desk", status: "Pass" },
         { id: "marketplace", label: isEnglish ? "Marketplace" : "Webshop", status: "Pass" },
         { id: "otttestnet", label: "OTT Testnet", status: "Pass" },
       ],
     },
   ];
+}
+
+function getMenuGroups(language: TerminalLanguage, showLabs: boolean): MenuGroup[] {
+  const isEnglish = language === "en";
+  const coreGroups = getCoreMenuGroups(language);
 
   if (!showLabs) {
     return coreGroups;
@@ -178,18 +200,10 @@ function getMenuGroups(language: TerminalLanguage, showLabs: boolean): MenuGroup
   return [
     ...coreGroups,
     {
-      title: "Demo / QA",
-      items: [
-        { id: "pitchmode", label: isEnglish ? "Pitch Mode" : "Pitch Modus", status: "Demo" },
-        { id: "submission", label: isEnglish ? "Submission Pack" : "Inzendpakket", status: isEnglish ? "Ship" : "Ship" },
-        { id: "smoketest", label: "Smoke Test", status: "QA" },
-      ],
-    },
-    {
       title: isEnglish ? "Labs / Advanced" : "Labs / Geavanceerd",
       items: [
-        { id: "dashboard", label: isEnglish ? "Legacy Dashboard" : "Oud Dashboard", status: isEnglish ? "Old" : "Oud" },
-        { id: "checkin", label: isEnglish ? "Daily Check-In" : "Dagelijkse Check-in", status: "XP" },
+        { id: "portfolio", label: "Portfolio", status: isEnglish ? "View" : "Bekijk" },
+        { id: "partners", label: "Partner Hub", status: isEnglish ? "Learn" : "Leer" },
         { id: "ecosystem", label: isEnglish ? "Ecosystem" : "Ecosysteem", status: isEnglish ? "Map" : "Kaart" },
         { id: "validator", label: "Validators", status: "UNL" },
         { id: "developer", label: "Developer Hub", status: isEnglish ? "Build" : "Bouw" },
@@ -198,14 +212,16 @@ function getMenuGroups(language: TerminalLanguage, showLabs: boolean): MenuGroup
         { id: "profile", label: isEnglish ? "Profile" : "Profiel", status: "User" },
         { id: "token", label: "OTT Token", status: "XP" },
         { id: "rewardpolicy", label: isEnglish ? "Reward Policy" : "Beloningsbeleid", status: "Legal" },
-        { id: "ottintelligence", label: "OTT Intelligence", status: "AI" },
         { id: "launch", label: "Launch Control", status: "Demo" },
         { id: "ai", label: "AI Hub", status: "Tools" },
-        { id: "news", label: isEnglish ? "Newsroom" : "Nieuwsruimte", status: isEnglish ? "News" : "Nieuws" },
         { id: "defi", label: "DeFi", status: "MVP" },
       ],
     },
   ];
+}
+
+function getAllRouteItems(language: TerminalLanguage): MenuItem[] {
+  return getMenuGroups(language, true).flatMap((group) => group.items);
 }
 
 function getMobilePrimaryItems(language: TerminalLanguage): MenuItem[] {
@@ -213,12 +229,11 @@ function getMobilePrimaryItems(language: TerminalLanguage): MenuItem[] {
 
   return [
     { id: "home", label: isEnglish ? "Home" : "Start", status: "V1" },
-    { id: "network", label: isEnglish ? "Explore" : "Verken", status: "Live" },
-    { id: "wallet", label: "Wallet", status: "Xaman" },
+    { id: "intel", label: "Intel", status: "Live" },
+    { id: "news", label: "News", status: "Social" },
     { id: "source", label: "Proof", status: sourceTag },
   ];
 }
-
 
 function MainApp() {
   const [walletAddress, setWalletAddress] = useState<string>("guest");
@@ -237,18 +252,18 @@ function MainApp() {
     [language, showLabs],
   );
 
+  const allRouteItems = useMemo(
+    () => getAllRouteItems(language),
+    [language],
+  );
+
   const mobilePrimaryItems = useMemo(
     () => getMobilePrimaryItems(language),
     [language],
   );
 
-  const allItems = useMemo(
-    () => menuGroups.flatMap((group) => group.items),
-    [menuGroups],
-  );
-
   const activeItem =
-    allItems.find((item) => item.id === activeTab) ?? menuGroups[0].items[0];
+    allRouteItems.find((item) => item.id === activeTab) ?? allRouteItems[0];
 
   const activeTabLocked = !accessUnlocked && !isFreeTab(activeTab);
 
@@ -337,7 +352,7 @@ function MainApp() {
   }
 
   function navigateTo(target: string) {
-    const isValid = allItems.some((item) => item.id === target);
+    const isValid = allRouteItems.some((item) => item.id === target);
 
     if (isValid) {
       goTo(target as ActiveTab);
@@ -371,9 +386,7 @@ function MainApp() {
         onOpenMenu={() => setIsMobileMenuOpen(true)}
       />
 
-      {xamanReturnStatus && (
-        <XamanReturnBanner text={xamanReturnStatus} />
-      )}
+      {xamanReturnStatus && <XamanReturnBanner text={xamanReturnStatus} />}
 
       {isMobileMenuOpen && (
         <MobileMenu
@@ -403,113 +416,49 @@ function MainApp() {
           />
         ) : (
           <>
-        {activeTab === "home" && (
-          <TerminalHomeTab walletAddress={walletAddress} onNavigate={navigateTo} />
-        )}
+            {activeTab === "home" && (
+              <TerminalHomeTab walletAddress={walletAddress} onNavigate={navigateTo} />
+            )}
 
-        {activeTab === "dashboard" && (
-          <DashboardTab walletAddress={walletAddress} />
-        )}
-
-        {activeTab === "checkin" && (
-          <DailyCheckInTab walletAddress={walletAddress} />
-        )}
-
-        {activeTab === "source" && (
-          <SourceTagMonitorTab walletAddress={walletAddress} />
-        )}
-
-        {activeTab === "xaman" && (
-          <XamanCenterTab
-            walletAddress={walletAddress}
-            onWalletConnected={connectWallet}
-          />
-        )}
-
-        {activeTab === "xrplverify" && (
-          <XrplVerifyTab walletAddress={walletAddress} />
-        )}
-
-        {activeTab === "network" && <NetworkState />}
-
-        {activeTab === "wallet" && <WalletTab walletAddress={walletAddress} />}
-
-        {activeTab === "portfolio" && (
-          <PortfolioTab walletAddress={walletAddress} />
-        )}
-
-        {activeTab === "ecosystem" && <EcosystemTab />}
-
-        {activeTab === "validator" && <ValidatorTab />}
-
-        {activeTab === "developer" && <DeveloperHubTab />}
-
-        {activeTab === "tokenization" && <TokenizationTab />}
-
-        {activeTab === "factory" && <TokenFactory />}
-
-        {activeTab === "profile" && <ProfileTab />}
-
-        {activeTab === "token" && <OTTTokenCenterTab />}
-
-        {activeTab === "rewardpolicy" && <OTTRewardPolicyTab />}
-
-        {activeTab === "rewardledger" && (
-          <RewardLedgerTab walletAddress={walletAddress} />
-        )}
-
-        {activeTab === "otttestnet" && (
-          <OTTTestnetTokenTab walletAddress={walletAddress} />
-        )}
-
-        {activeTab === "partners" && (
-          <PartnerHubTab walletAddress={walletAddress} />
-        )}
-
-        {activeTab === "truthdesk" && (
-          <TruthDeskTab walletAddress={walletAddress} />
-        )}
-
-        {activeTab === "accessgate" && (
-          <AccessGateTab walletAddress={walletAddress} />
-        )}
-
-        {activeTab === "pitchmode" && (
-          <PitchModeTab walletAddress={walletAddress} />
-        )}
-
-        {activeTab === "submission" && (
-          <SubmissionPackTab walletAddress={walletAddress} />
-        )}
-
-        {activeTab === "smoketest" && (
-          <SmokeTestTab walletAddress={walletAddress} />
-        )}
-
-        {activeTab === "ottintelligence" && <OTTIntelligence />}
-
-        {activeTab === "launch" && <LaunchControlTab />}
-
-        {activeTab === "ai" && <AIHubTab />}
-
-        {activeTab === "marketplace" && <MarketplaceTab />}
-
-        {activeTab === "news" && <NewsTab />}
-
-        {activeTab === "defi" && <DeFiTab />}
-
-        {activeTab === "academy" && <AcademyTab />}
-
-        {activeTab === "intel" && <LedgerIntelTab />}
+            {activeTab === "dashboard" && <DashboardTab walletAddress={walletAddress} />}
+            {activeTab === "checkin" && <DailyCheckInTab walletAddress={walletAddress} />}
+            {activeTab === "source" && <SourceTagMonitorTab walletAddress={walletAddress} />}
+            {activeTab === "xaman" && (
+              <XamanCenterTab walletAddress={walletAddress} onWalletConnected={connectWallet} />
+            )}
+            {activeTab === "xrplverify" && <XrplVerifyTab walletAddress={walletAddress} />}
+            {activeTab === "network" && <NetworkState />}
+            {activeTab === "wallet" && <WalletTab walletAddress={walletAddress} />}
+            {activeTab === "portfolio" && <PortfolioTab walletAddress={walletAddress} />}
+            {activeTab === "ecosystem" && <EcosystemTab />}
+            {activeTab === "validator" && <ValidatorTab />}
+            {activeTab === "developer" && <DeveloperHubTab />}
+            {activeTab === "tokenization" && <TokenizationTab />}
+            {activeTab === "factory" && <TokenFactory />}
+            {activeTab === "profile" && <ProfileTab />}
+            {activeTab === "token" && <OTTTokenCenterTab />}
+            {activeTab === "rewardpolicy" && <OTTRewardPolicyTab />}
+            {activeTab === "rewardledger" && <RewardLedgerTab walletAddress={walletAddress} />}
+            {activeTab === "otttestnet" && <OTTTestnetTokenTab walletAddress={walletAddress} />}
+            {activeTab === "partners" && <PartnerHubTab walletAddress={walletAddress} />}
+            {activeTab === "truthdesk" && <TruthDeskTab walletAddress={walletAddress} />}
+            {activeTab === "accessgate" && <AccessGateTab walletAddress={walletAddress} />}
+            {activeTab === "pitchmode" && <PitchModeTab walletAddress={walletAddress} />}
+            {activeTab === "submission" && <SubmissionPackTab walletAddress={walletAddress} />}
+            {activeTab === "smoketest" && <SmokeTestTab walletAddress={walletAddress} />}
+            {activeTab === "ottintelligence" && <OTTIntelligence />}
+            {activeTab === "launch" && <LaunchControlTab />}
+            {activeTab === "ai" && <AIHubTab />}
+            {activeTab === "marketplace" && <MarketplaceTab />}
+            {activeTab === "news" && <NewsTab />}
+            {activeTab === "defi" && <DeFiTab />}
+            {activeTab === "academy" && <AcademyTab />}
+            {activeTab === "intel" && <LedgerIntelTab />}
           </>
         )}
       </main>
 
-      <MobileBottomNav
-        activeTab={activeTab}
-        items={mobilePrimaryItems}
-        goTo={goTo}
-      />
+      <MobileBottomNav activeTab={activeTab} items={mobilePrimaryItems} goTo={goTo} />
     </div>
   );
 }
@@ -537,9 +486,7 @@ function DesktopSidebar({
     <aside className="hidden lg:flex w-72 border-r border-black/10 flex-col justify-between bg-white z-10 relative shrink-0 h-screen">
       <div className="p-6 overflow-y-auto flex-1">
         <BrandButton goTo={goTo} />
-
         <IdentityPanel walletAddress={walletAddress} goTo={goTo} language={language} />
-
         <DesktopNav activeTab={activeTab} menuGroups={menuGroups} goTo={goTo} />
       </div>
 
@@ -629,7 +576,6 @@ function MobileMenu({
 
         <div className="p-4 overflow-y-auto flex-1">
           <IdentityPanel walletAddress={walletAddress} goTo={goTo} language={language} />
-
           <DesktopNav activeTab={activeTab} menuGroups={menuGroups} goTo={goTo} />
         </div>
 
@@ -647,10 +593,7 @@ function MobileMenu({
 
 function BrandButton({ goTo }: { goTo: (target: ActiveTab) => void }) {
   return (
-    <button
-      onClick={() => goTo("home")}
-      className="w-full text-left mb-7"
-    >
+    <button onClick={() => goTo("home")} className="w-full text-left mb-7">
       <OTTLogo size="md" />
     </button>
   );
@@ -673,10 +616,7 @@ function IdentityPanel({
 
       <div className="space-y-2">
         <StatusRow label="Wallet" value={walletAddress} />
-        <StatusRow
-          label="Mode"
-          value={language === "en" ? "Education-first" : "Educatie-eerst"}
-        />
+        <StatusRow label="Mode" value={language === "en" ? "Education-first" : "Educatie-eerst"} />
       </div>
 
       <button
@@ -726,11 +666,7 @@ function DesktopNav({
                     <span>{item.label}</span>
 
                     {item.status && (
-                      <span
-                        className={`font-mono text-[8px] uppercase tracking-widest ${
-                          isActive ? "text-white/75" : "text-black/28"
-                        }`}
-                      >
+                      <span className={`font-mono text-[8px] uppercase tracking-widest ${isActive ? "text-white/75" : "text-black/28"}`}>
                         {item.status}
                       </span>
                     )}
@@ -828,7 +764,7 @@ function PageHeader({ activeItem }: { activeItem: MenuItem }) {
       </div>
 
       <div className="pr-28">
-        <OTTLogo size="sm" subtitle="Explorer + Xaman + Proof" />
+        <OTTLogo size="sm" subtitle="Intelligence + Xaman + Proof" />
       </div>
     </>
   );
@@ -857,7 +793,6 @@ function LockedPremiumPreview({
           <div className="col-span-12 xl:col-span-8">
             <div className="inline-flex items-center gap-2 border border-black/10 bg-white/80 shadow-sm px-4 py-2 mb-6">
               <Lock size={15} className="text-[#C83888]" />
-
               <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-black/55">
                 {isEnglish ? "Access Pass Area" : "Access Pass Gebied"}
               </p>
@@ -867,14 +802,14 @@ function LockedPremiumPreview({
               {activeItem.label}
               <br />
               <span className="bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] bg-clip-text text-transparent">
-                {isEnglish ? "Locked Preview" : "Locked Preview"}
+                Locked Preview
               </span>
             </h2>
 
             <p className="font-mono text-sm xl:text-base text-black/60 leading-relaxed max-w-3xl mb-8">
               {isEnglish
-                ? "This part of the terminal is reserved for Access Pass holders. Free preview stays open for learning, proof, wallet connection and Make Waves verification."
-                : "Dit deel van de terminal is gereserveerd voor Access Pass holders. Free preview blijft open voor leren, proof, wallet connectie en Make Waves verificatie."}
+                ? "This part of the terminal is reserved for Access Pass holders. Free preview stays open for learning, proof, wallet connection, intelligence and Make Waves verification."
+                : "Dit deel van de terminal is gereserveerd voor Access Pass holders. Free preview blijft open voor leren, proof, wallet connectie, intelligence en Make Waves verificatie."}
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-3xl">
@@ -883,17 +818,9 @@ function LockedPremiumPreview({
                 className="border border-transparent bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] p-4 text-left text-white hover:brightness-95 transition-all"
               >
                 <KeyRound size={18} className="mb-3" />
-
                 <p className="font-orbitron text-xs font-black uppercase tracking-widest mb-2">
-                  {isGuest
-                    ? isEnglish
-                      ? "Connect Xaman"
-                      : "Connect Xaman"
-                    : isEnglish
-                      ? "Scan Access Pass"
-                      : "Scan Access Pass"}
+                  {isGuest ? "Connect Xaman" : "Scan Access Pass"}
                 </p>
-
                 <p className="font-mono text-[10px] uppercase tracking-widest text-white/75">
                   {isGuest ? "Wallet first" : "Scanner-only"}
                 </p>
@@ -904,11 +831,9 @@ function LockedPremiumPreview({
                 className="border border-black/10 bg-white p-4 text-left hover:bg-[#F7F8FC] transition-all"
               >
                 <ShieldCheck size={18} className="text-[#3898E8] mb-3" />
-
                 <p className="font-orbitron text-xs font-black uppercase tracking-widest mb-2 text-black">
                   {isEnglish ? "Continue Free Preview" : "Ga door met Free Preview"}
                 </p>
-
                 <p className="font-mono text-[10px] uppercase tracking-widest text-black/40">
                   Academy / Proof / XP
                 </p>
@@ -919,12 +844,11 @@ function LockedPremiumPreview({
           <div className="col-span-12 xl:col-span-4">
             <div className="border border-black/10 bg-white/90 p-5 shadow-xl shadow-black/5">
               <p className="font-orbitron text-xs uppercase tracking-widest mb-5">
-                {isEnglish ? "Live Access Model" : "Live Access Model"}
+                Live Access Model
               </p>
-
               <div className="space-y-3">
-                <LockInfoRow label="Free" value="Home, Academy, Proof, XP, Access Gate" />
-                <LockInfoRow label="Premium" value="Truth Desk, Marketplace, Partner Hub, advanced tools" />
+                <LockInfoRow label="Free" value="Home, Intel, Newsroom, Academy, Proof, XP" />
+                <LockInfoRow label="Premium" value="Truth Desk, Marketplace, partner tools" />
                 <LockInfoRow label="Unlock" value="Exact OTT Access Pass NFT match" />
                 <LockInfoRow label="Safety" value="No mint, no payment, scanner-only gate" />
               </div>
@@ -942,7 +866,6 @@ function LockInfoRow({ label, value }: { label: string; value: string }) {
       <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
         {label}
       </p>
-
       <p className="font-orbitron text-xs font-black uppercase break-words text-black">
         {value}
       </p>
@@ -961,8 +884,8 @@ function MobileBottomNav({
 }) {
   const iconMap = {
     home: Home,
-    network: Search,
-    wallet: Wallet,
+    intel: BarChart3,
+    news: Search,
     source: Fingerprint,
   };
 
@@ -984,7 +907,6 @@ function MobileBottomNav({
               }`}
             >
               <Icon size={16} className="mx-auto mb-1" />
-
               <span className="font-mono text-[8px] uppercase tracking-widest">
                 {item.label}
               </span>
@@ -1001,10 +923,7 @@ function MobileBottomNav({
           }`}
         >
           <Wallet size={16} className="mx-auto mb-1" />
-
-          <span className="font-mono text-[8px] uppercase tracking-widest">
-            XAMAN
-          </span>
+          <span className="font-mono text-[8px] uppercase tracking-widest">XAMAN</span>
         </button>
       </div>
     </nav>
@@ -1017,7 +936,6 @@ function XamanReturnBanner({ text }: { text: string }) {
       <p className="font-orbitron text-xs font-black uppercase tracking-widest mb-2">
         Xaman Mobile Return
       </p>
-
       <p className="font-mono text-xs uppercase tracking-widest text-black/60">
         {text}
       </p>
@@ -1031,7 +949,6 @@ function StatusRow({ label, value }: { label: string; value: string }) {
       <p className="font-mono text-[9px] text-black/35 uppercase tracking-widest">
         {label}
       </p>
-
       <p className="font-mono text-[9px] text-black/60 uppercase break-all text-right">
         {value}
       </p>
