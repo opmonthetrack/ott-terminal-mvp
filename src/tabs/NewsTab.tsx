@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
-import type { ElementType } from "react";
+import type { ElementType, ReactNode } from "react";
 import {
   AlertTriangle,
   Bell,
   BookOpen,
-  CheckCircle2,
   Clipboard,
+  FileText,
   FileSearch,
   Globe2,
+  Instagram,
   Linkedin,
   Loader2,
   MessageCircle,
@@ -31,7 +32,15 @@ import {
   type XrplIntelResponse,
 } from "../lib/newsClient";
 
-type OutputMode = "x" | "linkedin" | "tiktok" | "whatsapp" | "youtube";
+type OutputMode =
+  | "x"
+  | "linkedin"
+  | "instagram"
+  | "facebook"
+  | "tiktok"
+  | "whatsapp"
+  | "youtube"
+  | "medium";
 
 type OutputOption = {
   id: OutputMode;
@@ -49,6 +58,9 @@ type Rule = {
 };
 
 const SOURCE_TAG = 2606170002;
+const TERMINAL_URL = "https://ott-terminal-mvp.vercel.app";
+const BUILDER_NAME = "TruthOnTheTrack";
+const BRAND_LINE = "XRPL OnTheTrack Terminal";
 
 const outputOptions: OutputOption[] = [
   {
@@ -64,6 +76,27 @@ const outputOptions: OutputOption[] = [
     status: "Pro",
     icon: Linkedin,
     text: "Zakelijke caption met infrastructuur-context en builder angle.",
+  },
+  {
+    id: "instagram",
+    title: "Instagram",
+    status: "Caption",
+    icon: Instagram,
+    text: "Caption met hook, carousel-slides en hashtags.",
+  },
+  {
+    id: "facebook",
+    title: "Facebook",
+    status: "Community",
+    icon: MessageCircle,
+    text: "Toegankelijke community-post met uitleg en bron.",
+  },
+  {
+    id: "medium",
+    title: "Medium Article",
+    status: "Article",
+    icon: FileText,
+    text: "Outline voor langere educatieve article/post.",
   },
   {
     id: "tiktok",
@@ -100,6 +133,18 @@ const rules: Rule[] = [
     status: "Guard",
     text: "Geen prijsvoorspellingen, koopadvies, gegarandeerde adoptie of winstbelofte.",
     icon: AlertTriangle,
+  },
+  {
+    title: "Public Attribution",
+    status: "OTT",
+    text: "Deze newsroom is voor iedereen bruikbaar, maar standaard met OTT / TruthOnTheTrack attribution en terminal-link.",
+    icon: Sparkles,
+  },
+  {
+    title: "No Auto Posting",
+    status: "OAuth Later",
+    text: "Nu alleen copy-ready drafts. Account koppelen en automatisch posten komt later pas met toestemming en platformregels.",
+    icon: ShieldCheck,
   },
   {
     title: "Macro Context",
@@ -207,7 +252,7 @@ export function NewsTab() {
                 <Radio size={17} />
 
                 <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
-                  Social Newsroom
+                  Public Social Newsroom
                 </p>
               </div>
 
@@ -217,8 +262,9 @@ export function NewsTab() {
 
               <p className="font-mono text-sm text-black/55 max-w-3xl leading-relaxed">
                 Zet XRPL Intelligence om naar X posts, LinkedIn captions,
-                TikTok hooks, WhatsApp updates en YouTube bullets. Altijd met
-                bron, context en no-hype guardrails.
+                Instagram captions, Facebook posts, Medium outlines, TikTok hooks,
+                WhatsApp updates en YouTube bullets. Publiek bruikbaar, maar altijd
+                met bron, context, no-hype guardrails en OTT attribution.
               </p>
 
               <div className="flex flex-wrap gap-3 mt-5">
@@ -274,7 +320,7 @@ export function NewsTab() {
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-12 xl:col-span-3 space-y-4">
             <Panel title="Output Modes" icon={Zap}>
-              <div className="space-y-3">
+              <div className="space-y-3 max-h-[640px] overflow-y-auto pr-1">
                 {outputOptions.map((option) => (
                   <OutputButton
                     key={option.id}
@@ -283,6 +329,14 @@ export function NewsTab() {
                     onClick={() => setSelectedOutput(option.id)}
                   />
                 ))}
+              </div>
+            </Panel>
+
+            <Panel title="Public Model" icon={Globe2}>
+              <div className="space-y-3">
+                <MiniInfo title="Best route" text="Iedereen kan drafts maken. Geen login nodig voor copy output." />
+                <MiniInfo title="OTT visibility" text="Elke output krijgt standaard Powered by OTT + SourceTag + terminal-link." />
+                <MiniInfo title="Later" text="Account koppelen voor auto-posting pas na OAuth, privacy en platform review." />
               </div>
             </Panel>
 
@@ -364,7 +418,7 @@ export function NewsTab() {
 
           <div className="col-span-12 xl:col-span-4 space-y-4">
             <Panel title={`${selectedOutputOption.title} Draft`} icon={selectedOutputOption.icon}>
-              <div className="border border-black/10 bg-[#F7F8FC] p-5 min-h-[360px]">
+              <div className="border border-black/10 bg-[#F7F8FC] p-5 min-h-[460px]">
                 <pre className="font-mono text-xs text-black/65 whitespace-pre-wrap leading-relaxed">
                   {generatedOutput}
                 </pre>
@@ -381,10 +435,10 @@ export function NewsTab() {
           </div>
 
           <div className="col-span-12 grid grid-cols-1 md:grid-cols-4 gap-4">
-            <FeatureBox icon={Newspaper} title="X" text="Short source-first posts" />
-            <FeatureBox icon={Linkedin} title="LinkedIn" text="Professional captions" />
-            <FeatureBox icon={Video} title="TikTok" text="Hooks and talking points" />
-            <FeatureBox icon={MessageCircle} title="WhatsApp" text="Status/community updates" />
+            <FeatureBox icon={Newspaper} title="X / Twitter" text="Short source-first posts" />
+            <FeatureBox icon={Instagram} title="Instagram" text="Captions and carousel ideas" />
+            <FeatureBox icon={FileText} title="Medium" text="Article outlines" />
+            <FeatureBox icon={Globe2} title="Public use" text="OTT attribution included" />
           </div>
         </div>
       </div>
@@ -398,24 +452,41 @@ function buildSocialOutput(item: XrplIntelItem, mode: OutputMode) {
   const safetyLine = item.needsConfirmation
     ? "Needs confirmation before publishing."
     : "Source-weighted signal, still review before publishing.";
+  const attribution = buildAttribution();
 
   if (mode === "linkedin") {
-    return `XRPL Intelligence note\n\n${item.title}\n\n${item.whyItMatters}\n\nContext:\n${item.description}\n\n${sourceLine}\nDate: ${date}\nConfidence: ${item.confidenceScore}%\n\nThis is infrastructure awareness, not financial advice or a trading signal.\n\n#XRPL #Ripple #XRP #Tokenization #DigitalAssets`;
+    return `XRPL Intelligence note\n\n${item.title}\n\n${item.whyItMatters}\n\nContext:\n${item.description}\n\n${sourceLine}\nDate: ${date}\nConfidence: ${item.confidenceScore}%\n\nThis is infrastructure awareness, not financial advice or a trading signal.\n\n${attribution}\n\n#XRPL #Ripple #XRP #Tokenization #DigitalAssets #OnTheTrack`;
+  }
+
+  if (mode === "instagram") {
+    return `CAPTION:\nMost people only see the headline. Builders follow the rails.\n\n${item.title}\n\nWhy it matters:\n${item.whyItMatters}\n\nCarousel idea:\n1. The headline\n2. What the source says\n3. Why builders should care\n4. What NOT to overclaim\n5. Follow the source\n\n${sourceLine}\nConfidence: ${item.confidenceScore}%\n\nEducation only. No hype. No trading signal.\n\n${attribution}\n\n#XRPL #XRP #Ripple #CryptoEducation #DigitalAssets #OnTheTrack`;
+  }
+
+  if (mode === "facebook") {
+    return `XRPL Intelligence update\n\n${item.title}\n\n${item.description}\n\nWhy this matters:\n${item.whyItMatters}\n\n${sourceLine}\nDate: ${date}\nConfidence: ${item.confidenceScore}%\n\nNote: this is education and infrastructure awareness. It is not financial advice, not a trading signal and not confirmation of adoption unless the source explicitly says so.\n\n${attribution}`;
+  }
+
+  if (mode === "medium") {
+    return `Medium article outline\n\nWorking title:\n${item.title}\n\nIntro:\nA short source-first breakdown of an XRPL / digital payments intelligence signal, with no hype and no trading claims.\n\n1. What happened\n${item.description}\n\n2. Why it matters\n${item.whyItMatters}\n\n3. Source context\n${sourceLine}\nDate: ${date}\nConfidence: ${item.confidenceScore}%\n\n4. What this does NOT mean\n- Not financial advice\n- Not a price prediction\n- Not guaranteed adoption\n- Not confirmation of XRP/XRPL use unless the source explicitly says so\n\n5. Builder takeaway\nFollow the rails, verify sources, and learn how infrastructure evolves before the crowd notices.\n\n${attribution}`;
   }
 
   if (mode === "tiktok") {
-    return `HOOK:\nMost people only see crypto headlines. Builders watch infrastructure signals.\n\nTOPIC:\n${item.title}\n\n3 TALKING POINTS:\n1. What happened: ${item.description}\n2. Why it matters: ${item.whyItMatters}\n3. Safety: ${safetyLine}\n\nCTA:\nFollow the sources. Learn the rails. Stay 589 steps ahead.\n\n${sourceLine}`;
+    return `HOOK:\nMost people only see crypto headlines. Builders watch infrastructure signals.\n\nTOPIC:\n${item.title}\n\n3 TALKING POINTS:\n1. What happened: ${item.description}\n2. Why it matters: ${item.whyItMatters}\n3. Safety: ${safetyLine}\n\nCTA:\nFollow the sources. Learn the rails. Stay 589 steps ahead.\n\n${sourceLine}\n${attribution}`;
   }
 
   if (mode === "whatsapp") {
-    return `XRPL Intelligence update\n\n${item.title}\n\n${item.whyItMatters}\n\n${sourceLine}\n${date}\n\nEducation only. No hype, no trading signal.`;
+    return `XRPL Intelligence update\n\n${item.title}\n\n${item.whyItMatters}\n\n${sourceLine}\n${date}\n\nEducation only. No hype, no trading signal.\n\n${attribution}`;
   }
 
   if (mode === "youtube") {
-    return `YouTube / Live bullets\n\nTitle: ${item.title}\n\n- Source: ${item.source}\n- Date: ${date}\n- Bucket: ${item.bucket}\n- Confidence: ${item.confidenceScore}%\n- What happened: ${item.description}\n- Why it matters: ${item.whyItMatters}\n- Safety note: ${safetyLine}\n- Closing: This is awareness and education, not financial advice.`;
+    return `YouTube / Live bullets\n\nTitle: ${item.title}\n\n- Source: ${item.source}\n- Date: ${date}\n- Bucket: ${item.bucket}\n- Confidence: ${item.confidenceScore}%\n- What happened: ${item.description}\n- Why it matters: ${item.whyItMatters}\n- Safety note: ${safetyLine}\n- Closing: This is awareness and education, not financial advice.\n\n${attribution}`;
   }
 
-  return `${item.title}\n\n${item.whyItMatters}\n\n${sourceLine}\nConfidence: ${item.confidenceScore}%\n\nEducation only. Not financial advice. Not a trading signal.\n\n#XRPL #XRP #Ripple #OnTheTrack`;
+  return `${item.title}\n\n${item.whyItMatters}\n\n${sourceLine}\nConfidence: ${item.confidenceScore}%\n\nEducation only. Not financial advice. Not a trading signal.\n\n${attribution}\n\n#XRPL #XRP #Ripple #OnTheTrack`;
+}
+
+function buildAttribution() {
+  return `Powered by ${BRAND_LINE} • SourceTag ${SOURCE_TAG}\nBuilt by ${BUILDER_NAME}\n${TERMINAL_URL}`;
 }
 
 function StatBox({
@@ -449,7 +520,7 @@ function Panel({
 }: {
   title: string;
   icon: ElementType;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <div className="border border-black/10 bg-white p-6">
@@ -565,6 +636,20 @@ function RuleCard({ rule }: { rule: Rule }) {
 
       <p className="font-mono text-[10px] text-black/45 leading-relaxed">
         {rule.text}
+      </p>
+    </div>
+  );
+}
+
+function MiniInfo({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="border border-black/10 bg-[#F7F8FC] p-4">
+      <p className="font-orbitron text-[10px] font-bold uppercase mb-2">
+        {title}
+      </p>
+
+      <p className="font-mono text-[10px] text-black/45 leading-relaxed">
+        {text}
       </p>
     </div>
   );
