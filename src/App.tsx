@@ -9,6 +9,7 @@ import {
   MoreHorizontal,
   Search,
   ShieldCheck,
+  Smartphone,
   Wallet,
   X,
 } from "lucide-react";
@@ -19,6 +20,7 @@ import { DashboardTab } from "./tabs/DashboardTab";
 import { DailyCheckInTab } from "./tabs/DailyCheckInTab";
 import { SourceTagMonitorTab } from "./tabs/SourceTagMonitorTab";
 import { XamanCenterTab } from "./tabs/XamanCenterTab";
+import { XamanActivationTab } from "./tabs/XamanActivationTab";
 import { XrplVerifyTab } from "./tabs/XrplVerifyTab";
 import { NetworkState } from "./tabs/NetworkState";
 import { WalletTab } from "./tabs/WalletTab";
@@ -63,6 +65,7 @@ type ActiveTab =
   | "checkin"
   | "source"
   | "xaman"
+  | "xamanactivation"
   | "xrplverify"
   | "network"
   | "wallet"
@@ -112,6 +115,7 @@ const FREE_TABS: ActiveTab[] = [
   "wallet",
   "source",
   "xaman",
+  "xamanactivation",
   "xrplverify",
   "checkin",
   "rewardledger",
@@ -142,26 +146,27 @@ function getCoreMenuGroups(language: TerminalLanguage): MenuGroup[] {
 
   return [
     {
-      title: isEnglish ? "V1 Terminal" : "V1 Terminal",
+      title: "V1 Terminal",
       items: [
         { id: "home", label: isEnglish ? "Home" : "Start", status: "V1" },
-        { id: "dashboard", label: isEnglish ? "Daily Snapshot" : "Daily Snapshot", status: "Live" },
+        { id: "dashboard", label: "Daily Snapshot", status: "Live" },
         { id: "network", label: isEnglish ? "XRPL Explorer" : "XRPL Verkenner", status: "Live" },
         { id: "wallet", label: isEnglish ? "Wallet Dashboard" : "Wallet Overzicht", status: "Xaman" },
       ],
     },
     {
-      title: isEnglish ? "Intelligence" : "Intelligence",
+      title: "Intelligence",
       items: [
         { id: "intel", label: "XRPL Intelligence", status: "Live" },
         { id: "ottintelligence", label: "OTT Intelligence", status: "AI" },
-        { id: "news", label: isEnglish ? "Newsroom" : "Newsroom", status: "Social" },
+        { id: "news", label: "Newsroom", status: "Social" },
       ],
     },
     {
       title: isEnglish ? "Proof / Education" : "Proof / Educatie",
       items: [
         { id: "source", label: "SourceTag", status: sourceTag },
+        { id: "xamanactivation", label: isEnglish ? "Xaman Activation" : "Xaman Activatie", status: "Guide" },
         { id: "xaman", label: "Xaman Center", status: "Sign" },
         { id: "xrplverify", label: isEnglish ? "XRPL Verify" : "XRPL Verificatie", status: "Proof" },
         { id: "checkin", label: isEnglish ? "Daily Check-In" : "Dagelijkse Check-in", status: "XP" },
@@ -170,7 +175,7 @@ function getCoreMenuGroups(language: TerminalLanguage): MenuGroup[] {
       ],
     },
     {
-      title: isEnglish ? "Demo / QA" : "Demo / QA",
+      title: "Demo / QA",
       items: [
         { id: "pitchmode", label: isEnglish ? "Pitch Mode" : "Pitch Modus", status: "Demo" },
         { id: "submission", label: isEnglish ? "Submission Pack" : "Inzendpakket", status: "Ship" },
@@ -231,7 +236,7 @@ function getMobilePrimaryItems(language: TerminalLanguage): MenuItem[] {
     { id: "home", label: isEnglish ? "Home" : "Start", status: "V1" },
     { id: "intel", label: "Intel", status: "Live" },
     { id: "news", label: "News", status: "Social" },
-    { id: "source", label: "Proof", status: sourceTag },
+    { id: "xamanactivation", label: "Activate", status: "Guide" },
   ];
 }
 
@@ -419,10 +424,10 @@ function MainApp() {
             {activeTab === "home" && (
               <TerminalHomeTab walletAddress={walletAddress} onNavigate={navigateTo} />
             )}
-
             {activeTab === "dashboard" && <DashboardTab walletAddress={walletAddress} />}
             {activeTab === "checkin" && <DailyCheckInTab walletAddress={walletAddress} />}
             {activeTab === "source" && <SourceTagMonitorTab walletAddress={walletAddress} />}
+            {activeTab === "xamanactivation" && <XamanActivationTab />}
             {activeTab === "xaman" && (
               <XamanCenterTab walletAddress={walletAddress} onWalletConnected={connectWallet} />
             )}
@@ -526,7 +531,6 @@ function MobileHeader({
             {walletAddress === "guest" ? "Guest / " : "Connected / "}
             XRPL Terminal
           </p>
-
           <h1 className="font-orbitron text-sm font-black uppercase tracking-widest truncate text-black">
             {activeItem.label}
           </h1>
@@ -564,7 +568,6 @@ function MobileMenu({
       <div className="h-full flex flex-col">
         <div className="border-b border-black/10 px-4 py-3 flex items-center justify-between gap-3 pr-28">
           <OTTLogo size="md" />
-
           <button
             onClick={onClose}
             className="w-11 h-11 border border-black/10 bg-[#F7F8FC] flex items-center justify-center"
@@ -647,11 +650,9 @@ function DesktopNav({
           <p className="font-mono text-[9px] text-black/35 uppercase tracking-[0.35em] mb-2 px-2">
             {group.title}
           </p>
-
           <div className="space-y-1">
             {group.items.map((item) => {
               const isActive = activeTab === item.id;
-
               return (
                 <button
                   key={item.id}
@@ -664,7 +665,6 @@ function DesktopNav({
                 >
                   <div className="flex items-center justify-between gap-3">
                     <span>{item.label}</span>
-
                     {item.status && (
                       <span className={`font-mono text-[8px] uppercase tracking-widest ${isActive ? "text-white/75" : "text-black/28"}`}>
                         {item.status}
@@ -702,7 +702,6 @@ function SidebarFooter({
             language === "nl" ? "left-1" : "left-[calc(50%+2px)]"
           }`}
         />
-
         <button
           onClick={() => setLanguage("nl")}
           className={`flex-1 relative z-10 text-[10px] font-bold uppercase tracking-widest py-2 rounded transition-colors ${
@@ -711,7 +710,6 @@ function SidebarFooter({
         >
           NL
         </button>
-
         <button
           onClick={() => setLanguage("en")}
           className={`flex-1 relative z-10 text-[10px] font-bold uppercase tracking-widest py-2 rounded transition-colors ${
@@ -721,7 +719,6 @@ function SidebarFooter({
           EN
         </button>
       </div>
-
       <button
         onClick={onToggleLabs}
         className={`w-full text-left px-3 py-3 text-[10px] font-mono font-bold uppercase tracking-widest border border-black/10 transition-colors ${
@@ -738,7 +735,6 @@ function SidebarFooter({
             ? "Show Labs / QA"
             : "Toon Labs / QA"}
       </button>
-
       <button
         onClick={onReset}
         className="w-full text-left px-3 py-3 text-[10px] font-mono font-bold text-black/40 uppercase tracking-widest hover:text-black transition-colors"
@@ -757,12 +753,10 @@ function PageHeader({ activeItem }: { activeItem: MenuItem }) {
           {activeItem.status ? `${activeItem.status} / ` : ""}
           XRPL OnTheTrack Terminal
         </p>
-
         <h1 className="font-orbitron text-lg xl:text-xl font-black uppercase tracking-widest text-black">
           {activeItem.label}
         </h1>
       </div>
-
       <div className="pr-28">
         <OTTLogo size="sm" subtitle="Intelligence + Xaman + Proof" />
       </div>
@@ -788,7 +782,6 @@ function LockedPremiumPreview({
     <section className="min-h-screen bg-white p-4 md:p-6 xl:p-10">
       <div className="relative overflow-hidden border border-black/10 bg-[radial-gradient(circle_at_18%_18%,rgba(56,152,232,0.16),transparent_28%),radial-gradient(circle_at_82%_8%,rgba(200,56,136,0.16),transparent_28%),#ffffff] p-6 md:p-8 xl:p-10 shadow-sm">
         <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.22),#ffffff_94%)]" />
-
         <div className="relative z-10 grid grid-cols-12 gap-6 items-center">
           <div className="col-span-12 xl:col-span-8">
             <div className="inline-flex items-center gap-2 border border-black/10 bg-white/80 shadow-sm px-4 py-2 mb-6">
@@ -797,7 +790,6 @@ function LockedPremiumPreview({
                 {isEnglish ? "Access Pass Area" : "Access Pass Gebied"}
               </p>
             </div>
-
             <h2 className="font-orbitron text-4xl xl:text-6xl font-black uppercase leading-none tracking-tight mb-6">
               {activeItem.label}
               <br />
@@ -805,27 +797,24 @@ function LockedPremiumPreview({
                 Locked Preview
               </span>
             </h2>
-
             <p className="font-mono text-sm xl:text-base text-black/60 leading-relaxed max-w-3xl mb-8">
               {isEnglish
                 ? "This part of the terminal is reserved for Access Pass holders. Free preview stays open for learning, proof, wallet connection, intelligence and Make Waves verification."
                 : "Dit deel van de terminal is gereserveerd voor Access Pass holders. Free preview blijft open voor leren, proof, wallet connectie, intelligence en Make Waves verificatie."}
             </p>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-3xl">
               <button
-                onClick={() => goTo(isGuest ? "xaman" : "accessgate")}
+                onClick={() => goTo(isGuest ? "xamanactivation" : "accessgate")}
                 className="border border-transparent bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] p-4 text-left text-white hover:brightness-95 transition-all"
               >
                 <KeyRound size={18} className="mb-3" />
                 <p className="font-orbitron text-xs font-black uppercase tracking-widest mb-2">
-                  {isGuest ? "Connect Xaman" : "Scan Access Pass"}
+                  {isGuest ? "Activate / Connect Xaman" : "Scan Access Pass"}
                 </p>
                 <p className="font-mono text-[10px] uppercase tracking-widest text-white/75">
-                  {isGuest ? "Wallet first" : "Scanner-only"}
+                  {isGuest ? "Wallet onboarding" : "Scanner-only"}
                 </p>
               </button>
-
               <button
                 onClick={() => goTo("academy")}
                 className="border border-black/10 bg-white p-4 text-left hover:bg-[#F7F8FC] transition-all"
@@ -840,14 +829,13 @@ function LockedPremiumPreview({
               </button>
             </div>
           </div>
-
           <div className="col-span-12 xl:col-span-4">
             <div className="border border-black/10 bg-white/90 p-5 shadow-xl shadow-black/5">
               <p className="font-orbitron text-xs uppercase tracking-widest mb-5">
                 Live Access Model
               </p>
               <div className="space-y-3">
-                <LockInfoRow label="Free" value="Home, Intel, Newsroom, Academy, Proof, XP" />
+                <LockInfoRow label="Free" value="Home, Intel, Newsroom, Activation, Academy, Proof" />
                 <LockInfoRow label="Premium" value="Truth Desk, Marketplace, partner tools" />
                 <LockInfoRow label="Unlock" value="Exact OTT Access Pass NFT match" />
                 <LockInfoRow label="Safety" value="No mint, no payment, scanner-only gate" />
@@ -886,7 +874,7 @@ function MobileBottomNav({
     home: Home,
     intel: BarChart3,
     news: Search,
-    source: Fingerprint,
+    xamanactivation: Smartphone,
   };
 
   return (
@@ -895,7 +883,6 @@ function MobileBottomNav({
         {items.map((item) => {
           const isActive = activeTab === item.id;
           const Icon = iconMap[item.id as keyof typeof iconMap] ?? MoreHorizontal;
-
           return (
             <button
               key={item.id}
@@ -913,7 +900,6 @@ function MobileBottomNav({
             </button>
           );
         })}
-
         <button
           onClick={() => goTo("xaman")}
           className={`min-h-14 rounded-sm border px-2 py-2 transition-all ${
