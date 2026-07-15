@@ -4,6 +4,7 @@ import {
   ArrowRight,
   BadgeCheck,
   BookOpen,
+  Brain,
   Fingerprint,
   Gauge,
   HeartHandshake,
@@ -12,6 +13,8 @@ import {
   Link2,
   LockKeyhole,
   MessageSquareText,
+  Newspaper,
+  Radio,
   Search,
   ShieldCheck,
   Sparkles,
@@ -52,30 +55,46 @@ export function TerminalHomeTab({
   onNavigate,
 }: TerminalHomeTabProps) {
   const { language, setLanguage, copy } = useTerminalLanguage();
-  const c = copy.home;
   const common = copy.common;
   const isEnglish = language === "en";
 
   const productLayers: ProductLayer[] = [
     {
-      id: "make-waves-support",
-      title: isEnglish ? "Make Waves Support" : "Make Waves Support",
-      label: isEnglish ? "Social landing" : "Social landing",
+      id: "xrpl-intelligence",
+      title: isEnglish ? "XRPL Intelligence" : "XRPL Intelligence",
+      label: isEnglish ? "Live source layer" : "Live bronlaag",
       description: isEnglish
-        ? "Explain SourceTag proof, transparent future XRP/RLUSD support and memo/comment awareness."
-        : "Leg SourceTag proof, toekomstige transparante XRP/RLUSD support en memo/comment awareness uit.",
+        ? "Follow XRPL, XLS, Ripple, CBDC and ISO 20022 signals from a source-first feed."
+        : "Volg XRPL-, XLS-, Ripple-, CBDC- en ISO 20022-signalen vanuit een source-first feed.",
       bullets: [
-        isEnglish ? "SourceTag 2606170002." : "SourceTag 2606170002.",
-        isEnglish ? "Future XRP/RLUSD support." : "Toekomstige XRP/RLUSD support.",
-        isEnglish ? "Memo/comment education." : "Memo/comment educatie.",
+        isEnglish ? "Live /api/news intelligence queue." : "Live /api/news intelligence queue.",
+        isEnglish ? "Official-source weighting and review flags." : "Official-source weighting en review flags.",
+        isEnglish ? "Macro context without overclaiming XRP usage." : "Macro-context zonder XRP-gebruik te overclaimen.",
       ],
-      icon: HeartHandshake,
-      actionLabel: isEnglish ? "Open Support Page" : "Open Support Page",
-      target: "source",
+      icon: Radio,
+      actionLabel: isEnglish ? "Open XRPL Intelligence" : "Open XRPL Intelligence",
+      target: "intel",
       accent: "blue",
     },
     {
-      id: "academy",
+      id: "social-newsroom",
+      title: isEnglish ? "Social Newsroom" : "Social Newsroom",
+      label: isEnglish ? "Content engine" : "Content engine",
+      description: isEnglish
+        ? "Turn intelligence into source-first drafts for X, LinkedIn, Instagram, Facebook, Medium, TikTok, WhatsApp and YouTube."
+        : "Zet intelligence om naar source-first drafts voor X, LinkedIn, Instagram, Facebook, Medium, TikTok, WhatsApp en YouTube.",
+      bullets: [
+        isEnglish ? "Copy-ready posts with emoji, hashtags and safe mentions." : "Copy-ready posts met emoji, hashtags en veilige mentions.",
+        isEnglish ? "Open source and platform buttons." : "Open source- en platformbuttons.",
+        isEnglish ? "OTT / TruthOnTheTrack attribution stays visible." : "OTT / TruthOnTheTrack attribution blijft zichtbaar.",
+      ],
+      icon: Newspaper,
+      actionLabel: isEnglish ? "Open Newsroom" : "Open Newsroom",
+      target: "news",
+      accent: "magenta",
+    },
+    {
+      id: "academy-proof",
       title: isEnglish ? "Academy + Proof" : "Academy + Proof",
       label: isEnglish ? "Learn to verify" : "Leer verifiëren",
       description: isEnglish
@@ -83,8 +102,8 @@ export function TerminalHomeTab({
         : "Leer walletveiligheid, XRPL-basics en proof-acties voordat je geavanceerde tools gebruikt.",
       bullets: [
         isEnglish ? "Start with free education." : "Start met gratis educatie.",
-        isEnglish ? "Earn XP through verified actions." : "Verdien XP via geverifieerde acties.",
-        isEnglish ? "Understand why 589 keeps returning." : "Begrijp later waarom 589 terugkomt.",
+        isEnglish ? "Earn XP through verified SourceTag actions." : "Verdien XP via geverifieerde SourceTag-acties.",
+        isEnglish ? "SourceTag proof identity: 2606170002." : "SourceTag proof-identiteit: 2606170002.",
       ],
       icon: BookOpen,
       actionLabel: isEnglish ? "Start Academy" : "Start Academy",
@@ -94,7 +113,7 @@ export function TerminalHomeTab({
     {
       id: "access-pass",
       title: isEnglish ? "Access Pass" : "Access Pass",
-      label: isEnglish ? "Premium gate" : "Premium gate",
+      label: isEnglish ? "Utility gate" : "Utility gate",
       description: isEnglish
         ? "Premium areas unlock only when the connected wallet holds the exact OTT Access Pass NFT."
         : "Premiumdelen unlocken alleen wanneer de gekoppelde wallet de exacte OTT Access Pass NFT bezit.",
@@ -114,7 +133,7 @@ export function TerminalHomeTab({
     {
       label: "Product",
       value: "V1 Live",
-      text: "Free preview + Access Pass",
+      text: "Intelligence + proof",
       icon: Layers3,
     },
     {
@@ -156,7 +175,7 @@ export function TerminalHomeTab({
               <div className="mb-8 text-[#080808]">
                 <OTTLogo
                   size="lg"
-                  subtitle="Make Waves + Xaman + Academy + SourceTag Proof"
+                  subtitle="Make Waves + Xaman + XRPL Intelligence + SourceTag Proof"
                 />
               </div>
 
@@ -165,8 +184,8 @@ export function TerminalHomeTab({
 
                 <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-black/55">
                   {isEnglish
-                    ? "Make Waves Builder Terminal"
-                    : "Make Waves Builder Terminal"}
+                    ? "Make Waves Intelligence Terminal"
+                    : "Make Waves Intelligence Terminal"}
                 </p>
               </div>
 
@@ -182,38 +201,38 @@ export function TerminalHomeTab({
 
               <p className="font-mono text-sm xl:text-base text-black/60 leading-relaxed max-w-3xl mb-8">
                 {isEnglish
-                  ? `Built by TruthOnTheTrack with years of XRPL community knowledge, love for education and a clear Make Waves proof identity: SourceTag ${MAKE_WAVES_SOURCE_TAG}. Start free, learn safely, connect Xaman and verify before you trust.`
-                  : `Gebouwd door TruthOnTheTrack met jaren XRPL community-kennis, liefde voor educatie en een duidelijke Make Waves proof-identiteit: SourceTag ${MAKE_WAVES_SOURCE_TAG}. Start gratis, leer veilig, connect Xaman en verifieer voordat je vertrouwt.`}
+                  ? `Built by TruthOnTheTrack with years of XRPL community knowledge, love for education and a clear Make Waves proof identity: SourceTag ${MAKE_WAVES_SOURCE_TAG}. Start free, follow verified intelligence, connect Xaman, learn safely and verify before you trust.`
+                  : `Gebouwd door TruthOnTheTrack met jaren XRPL community-kennis, liefde voor educatie en een duidelijke Make Waves proof-identiteit: SourceTag ${MAKE_WAVES_SOURCE_TAG}. Start gratis, volg geverifieerde intelligence, connect Xaman, leer veilig en verifieer voordat je vertrouwt.`}
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 max-w-5xl">
                 <PrimaryAction
-                  title={isEnglish ? "Connect Xaman" : "Connect Xaman"}
-                  text={isEnglish ? "Wallet first" : "Wallet eerst"}
-                  icon={Wallet}
+                  title={isEnglish ? "XRPL Intel" : "XRPL Intel"}
+                  text={isEnglish ? "Live sources" : "Live bronnen"}
+                  icon={Radio}
+                  accent="blue"
+                  onClick={() => navigate("intel")}
+                />
+                <PrimaryAction
+                  title={isEnglish ? "Newsroom" : "Newsroom"}
+                  text={isEnglish ? "Create posts" : "Maak posts"}
+                  icon={Newspaper}
                   accent="magenta"
-                  onClick={() => navigate("xaman")}
+                  onClick={() => navigate("news")}
                 />
                 <PrimaryAction
                   title={isEnglish ? "Daily Proof" : "Daily Proof"}
                   text={isEnglish ? "Make Waves XP" : "Make Waves XP"}
                   icon={Fingerprint}
                   accent="blue"
-                  onClick={() => navigate("dailycheckin")}
+                  onClick={() => navigate("checkin")}
                 />
                 <PrimaryAction
                   title={isEnglish ? "Start Academy" : "Start Academy"}
                   text={isEnglish ? "Deep XRPL learning" : "Diepe XRPL educatie"}
                   icon={BookOpen}
-                  accent="magenta"
-                  onClick={() => navigate("academy")}
-                />
-                <PrimaryAction
-                  title={isEnglish ? "Support Page" : "Support Page"}
-                  text={isEnglish ? "XRP / RLUSD soon" : "XRP / RLUSD soon"}
-                  icon={HeartHandshake}
                   accent="coral"
-                  onClick={() => navigate("source")}
+                  onClick={() => navigate("academy")}
                 />
               </div>
             </div>
@@ -241,7 +260,7 @@ export function TerminalHomeTab({
                       value={walletAddress === "guest" ? common.guestMode : walletAddress}
                     />
                     <IdentityRow label="Builder" value="TruthOnTheTrack" />
-                    <IdentityRow label="Brand" value="OnTheTrack" />
+                    <IdentityRow label="Live Layer" value="XRPL Intelligence" />
                     <IdentityRow label={common.custody} value={common.never} />
                   </div>
 
@@ -280,28 +299,32 @@ export function TerminalHomeTab({
 
             <h2 className="font-orbitron text-2xl xl:text-3xl font-black uppercase mb-5">
               {isEnglish
-                ? "A terminal built from community history."
-                : "Een terminal gebouwd vanuit community-geschiedenis."}
+                ? "From learning to proof to public intelligence."
+                : "Van leren naar proof naar publieke intelligence."}
             </h2>
 
             <p className="font-mono text-sm text-black/55 leading-relaxed mb-5">
               {isEnglish
-                ? "OTT Terminal is a practical XRPL onboarding layer built for the Make Waves journey and social sharing: visitors can learn, connect Xaman, verify SourceTag proof, earn XP and see why premium routes exist. The goal is not hype, custody or speculation. The goal is to make real XRPL actions understandable, trackable and usable."
-                : "OTT Terminal is een praktische XRPL-onboardinglaag gebouwd voor de Make Waves journey en social sharing: bezoekers kunnen leren, Xaman connecten, SourceTag proof verifiëren, XP verdienen en zien waarom premiumroutes bestaan. Het doel is geen hype, custody of speculatie. Het doel is echte XRPL-acties begrijpelijk, controleerbaar en bruikbaar maken."}
+                ? "OTT Terminal is now a practical XRPL onboarding and intelligence layer: visitors can follow source-first updates, turn them into safe social drafts, learn XRPL basics, connect Xaman, verify SourceTag proof, earn XP and understand why premium routes exist. The goal is not hype, custody or speculation. The goal is to make real XRPL activity understandable, trackable and usable."
+                : "OTT Terminal is nu een praktische XRPL-onboarding- en intelligence-laag: bezoekers kunnen source-first updates volgen, ze omzetten naar veilige social drafts, XRPL-basics leren, Xaman connecten, SourceTag proof verifiëren, XP verdienen en begrijpen waarom premiumroutes bestaan. Het doel is geen hype, custody of speculatie. Het doel is echte XRPL-activiteit begrijpelijk, controleerbaar en bruikbaar maken."}
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <MissionPoint
-                title={isEnglish ? "Learn" : "Leer"}
-                text={isEnglish ? "Education-first onboarding." : "Education-first onboarding."}
+                title={isEnglish ? "Read" : "Lees"}
+                text={isEnglish ? "Source-first intelligence." : "Source-first intelligence."}
+              />
+              <MissionPoint
+                title={isEnglish ? "Create" : "Creëer"}
+                text={isEnglish ? "Safe social drafts." : "Veilige social drafts."}
               />
               <MissionPoint
                 title={isEnglish ? "Prove" : "Bewijs"}
                 text={`SourceTag ${MAKE_WAVES_SOURCE_TAG}.`}
               />
               <MissionPoint
-                title={isEnglish ? "Unlock" : "Unlock"}
-                text={isEnglish ? "Access Pass utility only." : "Access Pass utility only."}
+                title={isEnglish ? "Learn" : "Leer"}
+                text={isEnglish ? "Academy + XP." : "Academy + XP."}
               />
             </div>
           </div>
@@ -321,8 +344,8 @@ export function TerminalHomeTab({
 
             <p className="font-mono text-xs text-black/60 leading-relaxed mb-4">
               {isEnglish
-                ? "A later support area can create voluntary XRP or RLUSD support transactions with SourceTag 2606170002 and an optional memo/comment. The page can show total received and what funds are used for: terminal development, education, community tools and future events. Support stays voluntary, not an investment or guaranteed reward."
-                : "Een latere support-sectie kan vrijwillige XRP- of RLUSD-supporttransacties maken met SourceTag 2606170002 en optionele memo/comment. De pagina kan tonen hoeveel er binnenkomt en waarvoor het gebruikt wordt: terminalontwikkeling, educatie, community tools en toekomstige events. Support blijft vrijwillig, geen investering of gegarandeerde reward."}
+                ? "A later support area can create voluntary XRP or RLUSD support transactions with SourceTag 2606170002 and an optional memo/comment. Support stays voluntary, not an investment or guaranteed reward."
+                : "Een latere support-sectie kan vrijwillige XRP- of RLUSD-supporttransacties maken met SourceTag 2606170002 en optionele memo/comment. Support blijft vrijwillig, geen investering of gegarandeerde reward."}
             </p>
 
             <div className="grid grid-cols-3 gap-2">
@@ -374,18 +397,18 @@ export function TerminalHomeTab({
             </p>
 
             <h2 className="font-orbitron text-2xl xl:text-3xl font-black uppercase">
-              {isEnglish ? "Free preview, proof and access." : "Free preview, proof en access."}
+              {isEnglish ? "Intelligence, proof and access." : "Intelligence, proof en access."}
             </h2>
           </div>
 
           <p className="font-mono text-xs text-black/50 max-w-xl leading-relaxed">
             {isEnglish
-              ? "The terminal is structured so users can learn and verify first. Premium services remain behind the Access Pass scanner."
-              : "De terminal is zo opgebouwd dat gebruikers eerst kunnen leren en verifiëren. Premiumservices blijven achter de Access Pass scanner."}
+              ? "The terminal is structured so users can read sources, understand context and verify first. Premium services remain behind the Access Pass scanner."
+              : "De terminal is zo opgebouwd dat gebruikers eerst bronnen lezen, context begrijpen en verifiëren. Premiumservices blijven achter de Access Pass scanner."}
           </p>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 mb-8">
           {productLayers.map((layer) => (
             <LayerCard
               key={layer.id}
@@ -407,12 +430,12 @@ export function TerminalHomeTab({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-3">
-              <FlowStep number="01" title="Home" text="Social landing" />
-              <FlowStep number="02" title="Connect" text="Xaman wallet" />
-              <FlowStep number="03" title="Learn" text="Academy" />
-              <FlowStep number="04" title="Prove" text="Daily proof" />
-              <FlowStep number="05" title="Ledger" text="XP / Credits" />
-              <FlowStep number="06" title="Support" text="SourceTag page" />
+              <FlowStep number="01" title="Intel" text="Live sources" />
+              <FlowStep number="02" title="Newsroom" text="Social drafts" />
+              <FlowStep number="03" title="Connect" text="Xaman wallet" />
+              <FlowStep number="04" title="Learn" text="Academy" />
+              <FlowStep number="05" title="Prove" text="SourceTag" />
+              <FlowStep number="06" title="Ledger" text="XP / Credits" />
             </div>
           </div>
 
@@ -430,8 +453,8 @@ export function TerminalHomeTab({
               <ReuseItem text={isEnglish ? "No broker." : "Geen broker."} />
               <ReuseItem text={isEnglish ? "No yield promise." : "Geen yield-belofte."} />
               <ReuseItem text={isEnglish ? "No token value promise." : "Geen tokenwaarde-belofte."} />
+              <ReuseItem text={isEnglish ? "No trading signal." : "Geen trading signal."} />
               <ReuseItem text={isEnglish ? "Support is voluntary." : "Support is vrijwillig."} />
-              <ReuseItem text={isEnglish ? "Memo/comment can be readable." : "Memo/comment kan leesbaar zijn."} />
             </div>
           </div>
         </div>
