@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CheckCircle2,
   Copy,
@@ -31,6 +31,7 @@ import {
 import {
   addMainnetLockedEvent,
   addXpRewardEvent,
+  getOttCreditsForAction,
   loadRewardState,
   type RewardState,
 } from "../lib/rewardStore";
@@ -64,8 +65,20 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
   const payloadUuid = getXamanPayloadUuid(payload);
   const payloadUrl = getXamanPayloadUrl(payload);
   const payloadQr = getXamanPayloadQr(payload);
+  const selectedOttCredits = getOttCreditsForAction(selectedActionId);
+
+  useEffect(() => {
+    setRewardState(loadRewardState(walletAddress));
+    setPayload(null);
+    setVerification(null);
+  }, [walletAddress]);
 
   async function createPayload() {
+    if (!walletAddress || walletAddress === "guest") {
+      setStatusMessage("Connect eerst met Xaman voordat je een reward-actie start.");
+      return;
+    }
+
     setBusy(true);
     setVerification(null);
     setStatusMessage("Creating Xaman Make Waves payload...");
@@ -90,6 +103,11 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
   async function verifyPayload() {
     const uuid = payloadUuid;
 
+    if (!walletAddress || walletAddress === "guest") {
+      setStatusMessage("Connect eerst met Xaman voordat je een reward verifieert.");
+      return;
+    }
+
     if (!uuid) {
       setStatusMessage("Geen Xaman payload UUID gevonden.");
       return;
@@ -107,6 +125,8 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
       setVerification(response);
 
       if (isMakeWavesRewardAllowed(response, selectedActionId)) {
+        const beforeReward = loadRewardState(walletAddress);
+
         const xpState = addXpRewardEvent({
           walletAddress,
           actionId: selectedActionId,
@@ -114,21 +134,23 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
           note: `${selectedAction.title} validated on XRPL Mainnet with SourceTag ${MAKE_WAVES_SOURCE_TAG}.`,
         });
 
-        const lockedState = addMainnetLockedEvent({
+        const finalState = addMainnetLockedEvent({
           walletAddress,
           actionId: selectedActionId,
           txHash: response.verified?.txid,
           note: "Future on-chain OTT token conversion stays disabled until utility, profitability and legal review are complete.",
         });
 
-        setRewardState({
-          ...lockedState,
-          totalXp: xpState.totalXp,
-          ottTokenEligibleXp: xpState.ottTokenEligibleXp,
-        });
+        const rewardWasAdded =
+          xpState.totalXp > beforeReward.totalXp ||
+          xpState.ottCredits > beforeReward.ottCredits;
+
+        setRewardState(finalState);
 
         setStatusMessage(
-          `${getMakeWavesVerificationLabel(response)}. Reward Ledger credited +${selectedAction.xp} XP.`
+          rewardWasAdded
+            ? `${getMakeWavesVerificationLabel(response)}. Reward Ledger credited +${selectedAction.xp} XP and +${selectedOttCredits} OTT Credits.`
+            : `${getMakeWavesVerificationLabel(response)}. This transaction was already processed; no duplicate reward was added.`
         );
         return;
       }
@@ -208,9 +230,9 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
             />
 
             <MetricBox
-              label="Mainnet"
-              value="Locked"
-              text="Legal gate"
+              label="OTT Credits"
+              value={String(rewardState.ottCredits)}
+              text="Internal utility"
               icon={<ShieldCheck size={18} />}
             />
           </div>
@@ -244,7 +266,7 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
                   </p>
 
                   <p className="font-mono text-[10px] text-white/35 uppercase">
-                    +{action.xp} XP • SourceTag {MAKE_WAVES_SOURCE_TAG}
+                    +{action.xp} XP • +{getOttCreditsForAction(action.id)} OTT • SourceTag {MAKE_WAVES_SOURCE_TAG}
                   </p>
                 </button>
               ))}
@@ -299,7 +321,7 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
 
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <p className="font-orbitron text-xs uppercase tracking-widest mb-5">
-              Verify + Credit XP
+              Verify + Credit Rewards
             </p>
 
             <button
@@ -320,7 +342,7 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
                   </p>
 
                   <p className="font-mono text-[10px] text-white/35 uppercase">
-                    Validated Mainnet transaction credits XP
+                    Validated Mainnet transaction credits XP + OTT Credits
                   </p>
                 </div>
               </div>
