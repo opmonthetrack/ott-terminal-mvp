@@ -10,6 +10,7 @@ import {
   Loader2,
   QrCode,
   Rocket,
+  SearchCheck,
   ShieldCheck,
   Wallet,
 } from "lucide-react";
@@ -20,8 +21,10 @@ import {
   OTT_ACCESS_PASS_TAXON,
   encodeNftUri,
   isLikelyXrplAddress,
+  shortNftId,
 } from "../lib/accessNftPass";
 import { MAKE_WAVES_SOURCE_TAG } from "../lib/makeWaves";
+
 
 type FounderNftMintConsoleProps = {
   walletAddress?: string;
@@ -75,7 +78,43 @@ type NftPayloadVerificationResponse = {
   details?: unknown;
 };
 
+type VerifiedAccessPassNft = {
+  nftokenId: string;
+  issuer: string;
+  taxon: number;
+  uri: string;
+  decodedUri: string;
+  flags?: number;
+  serial?: number;
+};
+
+type AccessPassMintVerificationResponse = {
+  ok: boolean;
+  mode?: string;
+  txHash?: string;
+  verified?: {
+    accessPassMintVerified: boolean;
+    txValidated: boolean;
+    txSuccess: boolean;
+    transactionResult: string;
+    isNftMint: boolean;
+    issuerMatches: boolean;
+    sourceTagMatches: boolean;
+    taxonMatches: boolean;
+    uriMatches: boolean;
+    flagsMatch: boolean;
+    issuerWallet: string;
+    ledgerIndex: number | null;
+  };
+  mintedNftsFromMeta?: VerifiedAccessPassNft[];
+  matchedIssuerNfts?: VerifiedAccessPassNft[];
+  newestAccessPass?: VerifiedAccessPassNft | null;
+  error?: string;
+  details?: unknown;
+};
+
 const TF_TRANSFERABLE = 8;
+const HASH_PATTERN = /^[A-Fa-f0-9]{64}$/;
 
 function getPayloadUrl(response: MintPayloadResponse | null) {
   return (
@@ -97,8 +136,12 @@ export function FounderNftMintConsole({
   const [payloadResponse, setPayloadResponse] = useState<MintPayloadResponse | null>(null);
   const [verification, setVerification] =
     useState<NftPayloadVerificationResponse | null>(null);
+  const [mintTxHash, setMintTxHash] = useState("");
+  const [mintVerification, setMintVerification] =
+    useState<AccessPassMintVerificationResponse | null>(null);
   const [busy, setBusy] = useState(false);
   const [verifyBusy, setVerifyBusy] = useState(false);
+  const [mintVerifyBusy, setMintVerifyBusy] = useState(false);
   const [statusMessage, setStatusMessage] = useState(
     "Founder-only. Creates a real XRPL NFTokenMint payload through Xaman; no automatic payment or access unlock runs here.",
   );
@@ -110,12 +153,18 @@ export function FounderNftMintConsole({
     [],
   );
   const issuerLooksValid = isLikelyXrplAddress(issuerWallet);
+  const mintTxHashLooksValid = HASH_PATTERN.test(mintTxHash.trim());
   const connectedMatchesIssuer =
     walletAddress !== "guest" && walletAddress === issuerWallet;
+  const verifiedNft =
+    mintVerification?.mintedNftsFromMeta?.[0] ??
+    mintVerification?.newestAccessPass ??
+    null;
 
   async function createMintPayload() {
     setBusy(true);
     setVerification(null);
+    setMintVerification(null);
     setStatusMessage("Creating Xaman NFTokenMint payload...");
 
     try {
@@ -183,7 +232,8 @@ export function FounderNftMintConsole({
       setVerification(data);
 
       if (data.verified?.signed && data.verified.txid) {
-        setStatusMessage("NFT mint signed. Save the tx hash and verify the NFT on the issuer wallet.");
+        setMintTxHash(data.verified.txid);
+        setStatusMessage("NFT mint signed. Now verify minted NFTokenID from XRPL.");
       } else if (data.verified?.resolved) {
         setStatusMessage("Payload resolved but not signed. Create a new payload when ready.");
       } else {
@@ -198,6 +248,53 @@ export function FounderNftMintConsole({
       setStatusMessage(message);
     } finally {
       setVerifyBusy(false);
+    }
+  }
+
+  async function verifyMintedNft() {
+    if (!mintTxHashLooksValid) {
+      setStatusMessage("Paste a valid 64-character mint tx hash first.");
+      return;
+    }
+
+    setMintVerifyBusy(true);
+    setStatusMessage("Checking XRPL mint transaction and issuer NFTs...");
+
+    try {
+      const response = await fetch("/api/nft", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "xrpl.verifyAccessPassMint",
+          txHash: mintTxHash.trim(),
+          issuerWallet,
+        }),
+      });
+
+      const data = (await response.json()) as AccessPassMintVerificationResponse;
+
+      if (!response.ok || !data.ok) {
+        throw data;
+      }
+
+      setMintVerification(data);
+
+      if (data.verified?.accessPassMintVerified) {
+        setStatusMessage("Mint verified. NFTokenID found or issuer wallet has matching OTT Access Pass NFT.");
+      } else {
+        setStatusMessage("Mint lookup completed, but one or more Access Pass checks did not match.");
+      }
+    } catch (error) {
+      const message =
+        error && typeof error === "object" && "error" in error
+          ? String((error as { error?: unknown }).error)
+          : "Could not verify minted NFT.";
+
+      setStatusMessage(message);
+    } finally {
+      setMintVerifyBusy(false);
     }
   }
 
@@ -232,7 +329,7 @@ export function FounderNftMintConsole({
 
           <p className="font-mono text-sm text-black/55 leading-relaxed mb-5">
             Deze console maakt een echte Xaman payload voor NFTokenMint. Jij tekent zelf
-            met de issuer wallet. Dit unlockt nog niets automatisch en verwerkt geen betaling.
+            met de issuer wallet. Daarna verifieert de console de mint tx en zoekt de NFTokenID.
           </p>
 
           <div className="border border-[#C83888]/25 bg-[#C83888]/10 p-4 mb-4">
@@ -251,6 +348,24 @@ export function FounderNftMintConsole({
             <Metric icon={ShieldCheck} label="Flags" value={`${TF_TRANSFERABLE} / Transferable`} />
             <Metric icon={Wallet} label="Connected" value={walletAddress === "guest" ? "Guest" : "Wallet"} />
           </div>
+
+          {mintVerification?.verified && (
+            <div className="border border-black/10 bg-[#F7F8FC] p-4 mt-4">
+              <p className="font-orbitron text-xs font-black uppercase mb-3">
+                Mint Checks
+              </p>
+              <div className="space-y-2">
+                <CheckLine ok={mintVerification.verified.txValidated} text="Transaction validated" />
+                <CheckLine ok={mintVerification.verified.txSuccess} text={mintVerification.verified.transactionResult} />
+                <CheckLine ok={mintVerification.verified.isNftMint} text="TransactionType NFTokenMint" />
+                <CheckLine ok={mintVerification.verified.issuerMatches} text="Issuer wallet matched" />
+                <CheckLine ok={mintVerification.verified.sourceTagMatches} text="SourceTag matched" />
+                <CheckLine ok={mintVerification.verified.taxonMatches} text="Taxon matched" />
+                <CheckLine ok={mintVerification.verified.uriMatches} text="Metadata URI/CID matched" />
+                <CheckLine ok={mintVerification.verified.flagsMatch} text="Transferable flag matched" />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="col-span-12 xl:col-span-4 space-y-4">
@@ -277,6 +392,20 @@ export function FounderNftMintConsole({
             )}
             {connectedMatchesIssuer && <PassLine text="Connected wallet matches issuer wallet." />}
           </div>
+
+          {verifiedNft && (
+            <div className="border border-[#3898E8]/25 bg-[#3898E8]/10 p-4">
+              <p className="font-orbitron text-xs font-black uppercase mb-3">
+                Minted Access Pass
+              </p>
+              <div className="space-y-3">
+                <InfoMini label="NFTokenID" value={verifiedNft.nftokenId} />
+                <InfoMini label="Short ID" value={shortNftId(verifiedNft.nftokenId)} />
+                <InfoMini label="Serial" value={verifiedNft.serial ? String(verifiedNft.serial) : "—"} />
+                <InfoMini label="Issuer" value={verifiedNft.issuer} />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="col-span-12 xl:col-span-3 space-y-4">
@@ -319,6 +448,31 @@ export function FounderNftMintConsole({
             </p>
             <p className="font-mono text-[10px] uppercase tracking-widest text-black/35">
               Get tx hash
+            </p>
+          </button>
+
+          <label className="block border border-black/10 bg-[#F7F8FC] p-4">
+            <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
+              Mint tx hash
+            </p>
+            <textarea
+              value={mintTxHash}
+              onChange={(event) => setMintTxHash(event.target.value.trim())}
+              className="w-full min-h-20 border border-black/10 bg-white px-3 py-3 font-mono text-[10px] text-black/70 outline-none focus:border-[#3898E8]"
+            />
+          </label>
+
+          <button
+            onClick={verifyMintedNft}
+            disabled={mintVerifyBusy || !mintTxHashLooksValid || !issuerLooksValid}
+            className="w-full border border-black/10 bg-[#F7F8FC] p-4 text-left hover:bg-white disabled:opacity-40 transition-all"
+          >
+            {mintVerifyBusy ? <Loader2 size={18} className="animate-spin text-[#3898E8] mb-3" /> : <SearchCheck size={18} className="text-[#3898E8] mb-3" />}
+            <p className="font-orbitron text-xs font-bold uppercase mb-2">
+              Verify Minted NFT
+            </p>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-black/35">
+              Find NFTokenID
             </p>
           </button>
 
@@ -413,6 +567,19 @@ function InfoBox({
   );
 }
 
+function InfoMini({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-black/10 bg-white p-3">
+      <p className="font-mono text-[9px] text-black/35 uppercase tracking-widest mb-1">
+        {label}
+      </p>
+      <p className="font-mono text-[10px] text-black/60 leading-relaxed break-all">
+        {value}
+      </p>
+    </div>
+  );
+}
+
 function Metric({
   icon: Icon,
   label,
@@ -451,4 +618,8 @@ function PassLine({ text }: { text: string }) {
       <p className="font-mono text-xs text-black/55 leading-relaxed">{text}</p>
     </div>
   );
+}
+
+function CheckLine({ ok, text }: { ok: boolean; text: string }) {
+  return ok ? <PassLine text={text} /> : <WarningLine text={text} />;
 }
