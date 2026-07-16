@@ -9,14 +9,11 @@ import {
   ExternalLink,
   Fingerprint,
   ListChecks,
-  Newspaper,
   PlayCircle,
-  Radio,
   RotateCcw,
   ShieldCheck,
   Sparkles,
   XCircle,
-  Zap,
 } from "lucide-react";
 import { MAKE_WAVES_SOURCE_TAG } from "../lib/makeWaves";
 
@@ -42,14 +39,35 @@ type Metric = {
   icon: ElementType;
 };
 
+const TERMINAL_URL = "https://ott-terminal-mvp.vercel.app";
+const NEWS_API_URL = "https://ott-terminal-mvp.vercel.app/api/news";
+
 const smokeTests: TestItem[] = [
+  {
+    id: "guest-flow",
+    area: "Public",
+    title: "Guest flow works without Xaman",
+    expected:
+      "Guest user can open Home, XRPL Intelligence, Newsroom, Xaman Activation, Academy and Access Gate without application errors.",
+    risk: "New users hit a wallet wall before they understand the product.",
+    action: "Open as guest → Home → XRPL Intelligence → Newsroom → Xaman Activation → Academy → Access Gate.",
+  },
+  {
+    id: "home-access-model",
+    area: "Landing",
+    title: "Home explains the access model",
+    expected:
+      "Home clearly shows Free to Learn, Xaman to Prove and Pass to Unlock. Xaman is not required to start learning.",
+    risk: "Users think the app is only for existing crypto users or only for paid access.",
+    action: "Open Home → check the primary CTA cards and product structure copy.",
+  },
   {
     id: "dashboard-intel",
     area: "Dashboard",
     title: "Daily Intelligence Snapshot loads",
     expected:
-      "Dashboard toont top signal, live item count, SourceTag, source health, top buckets en quick actions naar XRPL Intelligence / Newsroom / OTT Intelligence.",
-    risk: "Dashboard fetch of navigation target kapot. Daily snapshot niet klaar voor demo.",
+      "Dashboard shows top signal, live item count, SourceTag, source health, top buckets and quick actions to XRPL Intelligence / Newsroom / OTT Intelligence.",
+    risk: "Dashboard fetch or navigation target is broken. Daily snapshot is not demo-ready.",
     action: "Open Dashboard → refresh snapshot → open top source → test quick actions.",
   },
   {
@@ -57,80 +75,80 @@ const smokeTests: TestItem[] = [
     area: "Intel",
     title: "XRPL Intelligence live feed works",
     expected:
-      "XRPL Intelligence opent, /api/news items verschijnen, buckets werken, selected item toont source, confidence, why it matters en Open Source werkt.",
-    risk: "newsClient/API mismatch, lege feed of rommelige bronnen terug in UI.",
-    action: "Open Proof / Education → XRPL Intelligence → refresh → click bucket → open source.",
+      "XRPL Intelligence opens, /api/news items appear, buckets work, selected item shows source, confidence, why it matters and Open Source works.",
+    risk: "newsClient/API mismatch, empty feed or low-quality sources return to the UI.",
+    action: "Open XRPL Intelligence → refresh → click bucket → open source.",
   },
   {
     id: "newsroom-social",
     area: "Social",
     title: "Newsroom drafts and buttons work",
     expected:
-      "Newsroom toont X, LinkedIn, Instagram, Facebook, Medium, TikTok, WhatsApp en YouTube modes. Copy Output, Open Source en Open Platform werken.",
-    risk: "Mooie UI zonder werkende knoppen; sharing flow niet bruikbaar voor users.",
-    action: "Open Newsroom → select item → select Instagram/Medium/X → copy → open platform.",
+      "Newsroom shows X, LinkedIn, Instagram, Facebook, Medium, TikTok, WhatsApp and YouTube modes. Copy Output, Open Source and Open Platform work.",
+    risk: "Beautiful UI without working sharing flow; user acquisition loses value.",
+    action: "Open Newsroom → select item → select X/LinkedIn/WhatsApp/TikTok → copy → open platform.",
   },
   {
     id: "ott-intelligence",
     area: "AI Studio",
     title: "OTT Intelligence analysis works",
     expected:
-      "OTT Intelligence haalt /api/news op en toont Builder Lens, Beginner Explain, Risk Context, Content Angle en Verify Checklist.",
-    risk: "Analyse-laag leeg of niet gekoppeld aan intelligence feed.",
-    action: "Open OTT Intelligence → select item → test alle analysis modes → copy analysis.",
+      "OTT Intelligence loads /api/news and shows Builder Lens, Beginner Explain, Risk Context, Content Angle and Verify Checklist.",
+    risk: "Analysis layer is empty or not connected to intelligence feed.",
+    action: "Open OTT Intelligence → select item → test all analysis modes → copy analysis.",
   },
   {
-    id: "home",
-    area: "Landing",
-    title: "Home social landing loads",
+    id: "xaman-activation",
+    area: "Onboarding",
+    title: "Xaman Activation guide is clear",
     expected:
-      "Home opent, toont Make Waves, SourceTag 2606170002 en CTA's naar Xaman, Daily Proof, Academy en Support.",
-    risk: "onNavigate target fout of import fout in TerminalHomeTab.",
-    action: "Open Home → test CTA buttons.",
+      "Xaman Activation explains why activation is needed, self activation, existing-user support and OTT assisted activation coming soon without custody or broker claims.",
+    risk: "New Dutch/non-technical users do not understand wallet activation.",
+    action: "Open Xaman Activation → read the activation options and safety checklist.",
   },
   {
     id: "xaman-center",
     area: "Xaman",
-    title: "Xaman Center connects",
+    title: "Xaman Center connects/signs",
     expected:
-      "Xaman Center opent, SourceTag route is zichtbaar, payload/deeplink/QR fallback blijft werken.",
-    risk: "xamanClient of mobile session import fout.",
-    action: "Open Xaman Center → create payload → verify connected wallet route.",
+      "Xaman Center opens, SourceTag route is visible, payload/deeplink/QR fallback works and wallet can return connected.",
+    risk: "xamanClient or mobile session import breaks the proof route.",
+    action: "Open Xaman Center → create payload → sign or verify connected wallet route.",
   },
   {
     id: "daily-checkin",
     area: "Proof",
     title: "Daily Check-In proof works",
     expected:
-      "Create Xaman Proof Payload werkt, signed payload kan worden verified en SourceTag 2606170002 blijft zichtbaar.",
-    risk: "api/ott action, xamanClient of MakeWaves action mismatch.",
-    action: "Open Daily Check-In → create payload → sign → verify.",
+      "Create Xaman Proof Payload works, signed payload returns or verifies, SourceTag 2606170002 stays visible and no duplicate rewards are added.",
+    risk: "api/ott action, xamanClient or MakeWaves action mismatch.",
+    action: "Open Daily Check-In → create payload → sign in Xaman → return/verify.",
   },
   {
-    id: "reward-ledger",
+    id: "xp-credits",
     area: "Rewards",
-    title: "Reward Ledger records proof",
+    title: "XP and OTT Credits are credited",
     expected:
-      "XP, OTT Credits, SourceTag en tx-linked proof events zijn zichtbaar na verified action.",
-    risk: "rewardStore type mismatch of local storage wallet mismatch.",
-    action: "Open Reward Ledger after proof → check XP/credits/proof row.",
+      "After a valid signed proof, Reward Ledger shows +10 XP and +1 OTT Credit for Daily Check-In, or the correct action-specific reward.",
+    risk: "Pitch proof works but retention loop is invisible, making the demo weaker.",
+    action: "After signing Daily Check-In → open Reward Ledger → confirm XP / OTT Credits / proof event.",
   },
   {
     id: "source-tag",
     area: "Proof",
-    title: "SourceTag Support page loads",
+    title: "SourceTag page loads",
     expected:
-      "SourceTag verifier, support coming soon, XRP/RLUSD concept en memo awareness zijn zichtbaar.",
-    risk: "SourceTagMonitorTab import of XRPL websocket verifier fout.",
-    action: "Open SourceTag page → paste tx hash if available → verify source tag.",
+      "SourceTag page explains Make Waves identity, verification, support coming soon and SourceTag 2606170002 without active payment claims.",
+    risk: "Old donation/payment wording or verifier confusion returns.",
+    action: "Open SourceTag page → verify copy and optional tx hash flow if available.",
   },
   {
     id: "academy",
     area: "Education",
     title: "Academy deep catalog loads",
     expected:
-      "Free modules, premium depth, AI agents route en Certificate NFT coming soon zijn zichtbaar.",
-    risk: "Academy state/import fout of te zware component render.",
+      "Free modules, premium depth, AI agents route and Certificate NFT coming soon are visible and legal-safe.",
+    risk: "Academy import/state breaks or premium language overpromises.",
     action: "Open Academy → switch free/premium/certificate views.",
   },
   {
@@ -138,52 +156,59 @@ const smokeTests: TestItem[] = [
     area: "Access",
     title: "Access Gate scanner-only loads",
     expected:
-      "Access Gate opent als scanner-only utility pass check. Geen mint, payment, claim of XRP move actief.",
-    risk: "Oude payment/mint flow teruggekomen of accessStore import fout.",
-    action: "Open Access Gate → scan if wallet connected → confirm scanner-only copy.",
+      "Access Gate shows Free Public Access, Xaman User Access, Web2 Access License coming soon and XRPL Access Pass scanner-only. No mint/payment/claim flow is active.",
+    risk: "Old payment/mint flow returns or non-Xaman users feel blocked.",
+    action: "Open Access Gate as guest and connected wallet → confirm scanner-only copy.",
   },
   {
     id: "pitch-mode",
     area: "Demo",
     title: "Pitch Mode works",
     expected:
-      "2-minute Make Waves demo script opent, steps werken en Copy Full Script werkt.",
-    risk: "PitchModeTab import, icon of clipboard issue.",
-    action: "Open Pitch Mode → run script steps → copy full script.",
+      "2-minute Make Waves demo script opens, steps work and Copy Full Script works.",
+    risk: "PitchModeTab import, icon or clipboard issue.",
+    action: "Show Founder / Labs → Pitch Mode → run script steps → copy full script.",
   },
   {
     id: "submission-pack",
     area: "Submission",
     title: "Submission Pack works",
     expected:
-      "Make Waves checklist, copy blocks, demo order and red flag avoidance zijn zichtbaar.",
-    risk: "SubmissionPackTab import, unused icon or clipboard issue.",
-    action: "Open Submission Pack → copy one-liner + demo order.",
+      "Make Waves checklist, copy blocks, launch X post, LinkedIn post, WhatsApp status, TikTok hook, XRPL invite and red flag avoidance are visible.",
+    risk: "User acquisition copy is not ready for launch week.",
+    action: "Open Submission Pack → copy Launch X Post, LinkedIn Post, WhatsApp Status and XRPL Community Invite.",
+  },
+  {
+    id: "founder-labs",
+    area: "Founder",
+    title: "Founder tools stay behind Labs",
+    expected:
+      "Pitch Mode, Submission Pack and Smoke Test are hidden from normal users and visible after Show Founder / Labs.",
+    risk: "Normal users see internal QA/pitch tools and the app feels unfinished.",
+    action: "Reload app → confirm hidden → click Show Founder / Labs → confirm visible.",
   },
   {
     id: "legal-safe",
     area: "Legal",
-    title: "Coming-soon boundaries are clear",
+    title: "Legal and coming-soon boundaries are clear",
     expected:
-      "Certificate NFT, XRP/RLUSD support, donations and payments staan als future/concept, niet als actieve flow.",
-    risk: "Jury/user denkt dat er actieve payment, mint, yield or token promise is.",
-    action: "Read Home, SourceTag, Academy, Access Gate and Newsroom copy for hype/legal issues.",
+      "Certificate NFT, XRP/RLUSD support, donations, Web2 license and payment flows are clearly future/coming soon or scanner-only, not active investment/payment products.",
+    risk: "Jury/user thinks there is active brokerage, yield, token value promise, paid minting or financial advice.",
+    action: "Read Home, SourceTag, Academy, Access Gate, Submission Pack and Newsroom copy for hype/legal issues.",
   },
 ];
 
 const quickRouteSteps = [
-  "Dashboard → Daily Intelligence Snapshot",
+  "Home → explain Free to Learn / Xaman to Prove / Pass to Unlock",
   "XRPL Intelligence → refresh feed → open source",
   "Newsroom → select item → copy social draft → open platform",
   "OTT Intelligence → analysis mode → copy analysis",
-  "Xaman Center → connect / proof route",
-  "Daily Check-In → create proof → verify",
+  "Xaman Activation → explain wallet onboarding for new users",
+  "Daily Check-In → create proof → sign in Xaman → return/verify",
   "Reward Ledger → confirm XP / OTT Credits",
-  "SourceTag → verify tx hash / support coming soon",
-  "Academy → free modules + certificate NFT coming soon",
-  "Access Gate → scanner-only pass check",
+  "Access Gate → Web2 License coming soon + XRPL Access Pass scanner-only",
   "Pitch Mode → 2-minute demo",
-  "Submission Pack → final copy blocks",
+  "Submission Pack → launch promo copy",
 ];
 
 export function SmokeTestTab({ walletAddress = "guest" }: SmokeTestTabProps) {
@@ -254,13 +279,13 @@ export function SmokeTestTab({ walletAddress = "guest" }: SmokeTestTabProps) {
       `Failed: ${counts.fail}`,
       `Todo: ${counts.todo}`,
       "",
-      "Demo route:",
+      "Final demo route:",
       ...quickRouteSteps.map((step, index) => `${index + 1}. ${step}`),
       "",
       "Checks:",
       ...lines,
       "",
-      "Legal guardrails: education only, no custody, no broker, no yield, no trade execution, no token value promise.",
+      "Launch guardrails: education only, no custody, no broker, no yield, no trade execution, no token value promise, no financial advice, human review before posting.",
     ].join("\n");
   }, [counts, readiness, statuses, walletAddress]);
 
@@ -298,7 +323,7 @@ export function SmokeTestTab({ walletAddress = "guest" }: SmokeTestTabProps) {
               <ListChecks size={18} />
 
               <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
-                Final QA / Demo Readiness
+                Final QA / Pitch / Launch Readiness
               </p>
             </div>
 
@@ -307,8 +332,8 @@ export function SmokeTestTab({ walletAddress = "guest" }: SmokeTestTabProps) {
             </h2>
 
             <p className="font-mono text-sm text-black/55 max-w-3xl leading-relaxed">
-              Gebruik deze tab vlak vóór deploy, demo-opname en social posts. Test de live route:
-              intelligence → social output → AI analysis → Xaman proof → reward ledger → submission.
+              Gebruik deze tab vlak vóór demo-opname, pitch en promotieposts. Test de live route:
+              public onboarding → intelligence → social output → Xaman proof → XP/Credits → access model → submission copy.
               Markeer pass/fail en fix alleen rode punten.
             </p>
           </div>
@@ -392,8 +417,8 @@ export function SmokeTestTab({ walletAddress = "guest" }: SmokeTestTabProps) {
                 {counts.fail > 0
                   ? "No-Go: fix failed items first. Touch only the file causing the red result."
                   : counts.todo > 0
-                    ? "Testing: finish all todo checks before recording or posting."
-                    : "Go: app is ready for deploy, demo recording and social posts."}
+                    ? "Testing: finish all todo checks before recording, pitching or posting."
+                    : "Go: app is ready for demo recording, pitch and launch promotion posts."}
               </p>
             </div>
           </Panel>
@@ -402,16 +427,16 @@ export function SmokeTestTab({ walletAddress = "guest" }: SmokeTestTabProps) {
             <div className="space-y-3">
               <StepLine number="A" text="No custody, no broker, no yield, no trade execution." />
               <StepLine number="B" text="XP and OTT Credits are internal progress/utility signals." />
-              <StepLine number="C" text="No token value, conversion or profit promise." />
-              <StepLine number="D" text="Certificate NFT and XRP/RLUSD support are coming soon only." />
-              <StepLine number="E" text="Newsroom drafts keep OTT attribution and need human review." />
+              <StepLine number="C" text="No token value, conversion, profit or adoption promise." />
+              <StepLine number="D" text="Certificate NFT, Web2 license and XRP/RLUSD support are coming soon only." />
+              <StepLine number="E" text="Newsroom and promo drafts need human review before posting." />
             </div>
           </Panel>
 
           <Panel title="Live URLs" icon={ExternalLink}>
             <div className="space-y-3">
-              <UrlLine label="Terminal" url="https://ott-terminal-mvp.vercel.app" />
-              <UrlLine label="News API" url="https://ott-terminal-mvp.vercel.app/api/news" />
+              <UrlLine label="Terminal" url={TERMINAL_URL} />
+              <UrlLine label="News API" url={NEWS_API_URL} />
             </div>
           </Panel>
         </div>
@@ -550,7 +575,7 @@ function SmallButton({
 function StepLine({ number, text }: { number: string; text: string }) {
   return (
     <div className="flex items-start gap-3 border border-black/10 bg-[#F7F8FC] p-3">
-      <p className="font-orbitron text-xs font-black text-[#C83888]">
+      <p className="font-orbitron text-xs font-black text-[#C83888] shrink-0">
         {number}
       </p>
 
