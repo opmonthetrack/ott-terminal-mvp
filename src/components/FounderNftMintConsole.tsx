@@ -25,7 +25,6 @@ import {
 } from "../lib/accessNftPass";
 import { MAKE_WAVES_SOURCE_TAG } from "../lib/makeWaves";
 
-
 type FounderNftMintConsoleProps = {
   walletAddress?: string;
 };
@@ -128,6 +127,18 @@ function getPayloadUuid(response: MintPayloadResponse | null) {
   return response?.payload?.uuid ?? "";
 }
 
+function hasDiscoveredAccessPass(response: AccessPassMintVerificationResponse | null) {
+  return Boolean(
+    response?.newestAccessPass ||
+      response?.matchedIssuerNfts?.length ||
+      response?.mintedNftsFromMeta?.length,
+  );
+}
+
+function isMintVerified(response: AccessPassMintVerificationResponse | null) {
+  return Boolean(response?.verified?.accessPassMintVerified || hasDiscoveredAccessPass(response));
+}
+
 export function FounderNftMintConsole({
   walletAddress = "guest",
 }: FounderNftMintConsoleProps) {
@@ -148,10 +159,7 @@ export function FounderNftMintConsole({
 
   const payloadUrl = getPayloadUrl(payloadResponse);
   const payloadUuid = getPayloadUuid(payloadResponse);
-  const uriHex = useMemo(
-    () => encodeNftUri(OTT_ACCESS_PASS_METADATA_URI),
-    [],
-  );
+  const uriHex = useMemo(() => encodeNftUri(OTT_ACCESS_PASS_METADATA_URI), []);
   const issuerLooksValid = isLikelyXrplAddress(issuerWallet);
   const mintTxHashLooksValid = HASH_PATTERN.test(mintTxHash.trim());
   const connectedMatchesIssuer =
@@ -159,7 +167,10 @@ export function FounderNftMintConsole({
   const verifiedNft =
     mintVerification?.mintedNftsFromMeta?.[0] ??
     mintVerification?.newestAccessPass ??
+    mintVerification?.matchedIssuerNfts?.[0] ??
     null;
+  const discoveredAccessPass = hasDiscoveredAccessPass(mintVerification);
+  const finalMintVerified = isMintVerified(mintVerification);
 
   async function createMintPayload() {
     setBusy(true);
@@ -281,10 +292,14 @@ export function FounderNftMintConsole({
 
       setMintVerification(data);
 
-      if (data.verified?.accessPassMintVerified) {
-        setStatusMessage("Mint verified. NFTokenID found or issuer wallet has matching OTT Access Pass NFT.");
+      if (isMintVerified(data)) {
+        setStatusMessage(
+          "Mint verified. Matching OTT Access Pass NFT found on issuer wallet. Save the NFTokenID before sending.",
+        );
       } else {
-        setStatusMessage("Mint lookup completed, but one or more Access Pass checks did not match.");
+        setStatusMessage(
+          "Mint lookup completed, but no matching OTT Access Pass NFT was found on the issuer wallet.",
+        );
       }
     } catch (error) {
       const message =
@@ -363,24 +378,16 @@ export function FounderNftMintConsole({
                 <CheckLine ok={mintVerification.verified.taxonMatches} text="Taxon matched" />
                 <CheckLine ok={mintVerification.verified.uriMatches} text="Metadata URI/CID matched" />
                 <CheckLine ok={mintVerification.verified.flagsMatch} text="Transferable flag matched" />
+                <CheckLine ok={discoveredAccessPass} text="Issuer wallet holds matching OTT Access Pass" />
+                <CheckLine ok={finalMintVerified} text="Final mint verification accepted" />
               </div>
             </div>
           )}
         </div>
 
         <div className="col-span-12 xl:col-span-4 space-y-4">
-          <TextInput
-            label="Issuer wallet"
-            value={issuerWallet}
-            onChange={setIssuerWallet}
-          />
-
-          <TextInput
-            label="Access tier memo"
-            value={accessTier}
-            onChange={setAccessTier}
-          />
-
+          <TextInput label="Issuer wallet" value={issuerWallet} onChange={setIssuerWallet} />
+          <TextInput label="Access tier memo" value={accessTier} onChange={setAccessTier} />
           <InfoBox label="Metadata URI" value={OTT_ACCESS_PASS_METADATA_URI} onCopy={() => copyText(OTT_ACCESS_PASS_METADATA_URI)} />
           <InfoBox label="Metadata CID" value={OTT_ACCESS_PASS_METADATA_CID} onCopy={() => copyText(OTT_ACCESS_PASS_METADATA_CID)} />
           <InfoBox label="URI hex" value={uriHex} onCopy={() => copyText(uriHex)} />
@@ -415,12 +422,8 @@ export function FounderNftMintConsole({
             className="w-full bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] text-white p-4 text-left hover:brightness-95 disabled:opacity-40 transition-all"
           >
             {busy ? <Loader2 size={18} className="animate-spin mb-3" /> : <Rocket size={18} className="mb-3" />}
-            <p className="font-orbitron text-xs font-black uppercase mb-2">
-              Create Mint Payload
-            </p>
-            <p className="font-mono text-[10px] uppercase tracking-widest text-white/75">
-              Xaman NFTokenMint
-            </p>
+            <p className="font-orbitron text-xs font-black uppercase mb-2">Create Mint Payload</p>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-white/75">Xaman NFTokenMint</p>
           </button>
 
           <button
@@ -429,12 +432,8 @@ export function FounderNftMintConsole({
             className="w-full border border-black/10 bg-[#F7F8FC] p-4 text-left hover:bg-white disabled:opacity-40 transition-all"
           >
             <ExternalLink size={18} className="text-[#3898E8] mb-3" />
-            <p className="font-orbitron text-xs font-bold uppercase mb-2">
-              Open Xaman
-            </p>
-            <p className="font-mono text-[10px] uppercase tracking-widest text-black/35">
-              Sign manually
-            </p>
+            <p className="font-orbitron text-xs font-bold uppercase mb-2">Open Xaman</p>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-black/35">Sign manually</p>
           </button>
 
           <button
@@ -443,12 +442,8 @@ export function FounderNftMintConsole({
             className="w-full border border-black/10 bg-[#F7F8FC] p-4 text-left hover:bg-white disabled:opacity-40 transition-all"
           >
             {verifyBusy ? <Loader2 size={18} className="animate-spin text-[#3898E8] mb-3" /> : <CheckCircle2 size={18} className="text-[#3898E8] mb-3" />}
-            <p className="font-orbitron text-xs font-bold uppercase mb-2">
-              Verify Payload
-            </p>
-            <p className="font-mono text-[10px] uppercase tracking-widest text-black/35">
-              Get tx hash
-            </p>
+            <p className="font-orbitron text-xs font-bold uppercase mb-2">Verify Payload</p>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-black/35">Get tx hash</p>
           </button>
 
           <label className="block border border-black/10 bg-[#F7F8FC] p-4">
@@ -468,46 +463,30 @@ export function FounderNftMintConsole({
             className="w-full border border-black/10 bg-[#F7F8FC] p-4 text-left hover:bg-white disabled:opacity-40 transition-all"
           >
             {mintVerifyBusy ? <Loader2 size={18} className="animate-spin text-[#3898E8] mb-3" /> : <SearchCheck size={18} className="text-[#3898E8] mb-3" />}
-            <p className="font-orbitron text-xs font-bold uppercase mb-2">
-              Verify Minted NFT
-            </p>
-            <p className="font-mono text-[10px] uppercase tracking-widest text-black/35">
-              Find NFTokenID
-            </p>
+            <p className="font-orbitron text-xs font-bold uppercase mb-2">Verify Minted NFT</p>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-black/35">Find NFTokenID</p>
           </button>
 
           <div className="border border-black/10 bg-[#F7F8FC] p-4">
             <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
               Status
             </p>
-            <p className="font-mono text-xs text-black/60 leading-relaxed">
-              {statusMessage}
-            </p>
+            <p className="font-mono text-xs text-black/60 leading-relaxed">{statusMessage}</p>
           </div>
 
           {payloadResponse?.payload?.refs?.qr_png && (
             <div className="border border-black/10 bg-white p-4">
               <div className="flex items-center gap-2 mb-3">
                 <QrCode size={15} className="text-[#3898E8]" />
-                <p className="font-orbitron text-[10px] font-bold uppercase">
-                  Xaman QR
-                </p>
+                <p className="font-orbitron text-[10px] font-bold uppercase">Xaman QR</p>
               </div>
-              <img
-                src={payloadResponse.payload.refs.qr_png}
-                alt="Xaman NFT mint QR"
-                className="w-full border border-black/10"
-              />
+              <img src={payloadResponse.payload.refs.qr_png} alt="Xaman NFT mint QR" className="w-full border border-black/10" />
             </div>
           )}
 
           {payloadUuid && <InfoBox label="Payload UUID" value={payloadUuid} onCopy={() => copyText(payloadUuid)} />}
           {verification?.verified?.txid && (
-            <InfoBox
-              label="Mint tx hash"
-              value={verification.verified.txid}
-              onCopy={() => copyText(verification.verified?.txid ?? "")}
-            />
+            <InfoBox label="Mint tx hash" value={verification.verified.txid} onCopy={() => copyText(verification.verified?.txid ?? "")} />
           )}
         </div>
       </div>
@@ -515,20 +494,10 @@ export function FounderNftMintConsole({
   );
 }
 
-function TextInput({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-}) {
+function TextInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return (
     <label className="block">
-      <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
-        {label}
-      </p>
+      <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">{label}</p>
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -538,31 +507,16 @@ function TextInput({
   );
 }
 
-function InfoBox({
-  label,
-  value,
-  onCopy,
-}: {
-  label: string;
-  value: string;
-  onCopy: () => void;
-}) {
+function InfoBox({ label, value, onCopy }: { label: string; value: string; onCopy: () => void }) {
   return (
     <div className="border border-black/10 bg-[#F7F8FC] p-4">
       <div className="flex items-center justify-between gap-3 mb-2">
-        <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest">
-          {label}
-        </p>
-        <button
-          onClick={onCopy}
-          className="border border-black/10 bg-white px-2 py-1 text-black/45 hover:text-black transition-all"
-        >
+        <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest">{label}</p>
+        <button onClick={onCopy} className="border border-black/10 bg-white px-2 py-1 text-black/45 hover:text-black transition-all">
           <Copy size={13} />
         </button>
       </div>
-      <p className="font-mono text-[10px] text-black/60 leading-relaxed break-all">
-        {value}
-      </p>
+      <p className="font-mono text-[10px] text-black/60 leading-relaxed break-all">{value}</p>
     </div>
   );
 }
@@ -570,34 +524,18 @@ function InfoBox({
 function InfoMini({ label, value }: { label: string; value: string }) {
   return (
     <div className="border border-black/10 bg-white p-3">
-      <p className="font-mono text-[9px] text-black/35 uppercase tracking-widest mb-1">
-        {label}
-      </p>
-      <p className="font-mono text-[10px] text-black/60 leading-relaxed break-all">
-        {value}
-      </p>
+      <p className="font-mono text-[9px] text-black/35 uppercase tracking-widest mb-1">{label}</p>
+      <p className="font-mono text-[10px] text-black/60 leading-relaxed break-all">{value}</p>
     </div>
   );
 }
 
-function Metric({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: typeof Fingerprint;
-  label: string;
-  value: string;
-}) {
+function Metric({ icon: Icon, label, value }: { icon: typeof Fingerprint; label: string; value: string }) {
   return (
     <div className="border border-black/10 bg-[#F7F8FC] p-4">
       <Icon size={17} className="text-[#3898E8] mb-3" />
-      <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
-        {label}
-      </p>
-      <p className="font-orbitron text-xs font-black uppercase break-all">
-        {value}
-      </p>
+      <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">{label}</p>
+      <p className="font-orbitron text-xs font-black uppercase break-all">{value}</p>
     </div>
   );
 }
