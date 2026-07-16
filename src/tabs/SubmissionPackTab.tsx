@@ -199,7 +199,42 @@ const copyBlocks: CopyBlock[] = [
     title: "Live Demo Route",
     icon: Video,
     text:
-      "Dashboard Snapshot → XRPL Intelligence → OTT Intelligence AI Studio → Newsroom social draft → Xaman Center → Daily Check-In proof → Reward Ledger XP/OTT Credits → SourceTag Support → Academy deep catalog → Access Gate scanner-only. This route shows intelligence, education, proof, retention and legal-safe utility.",
+      "Home → XRPL Intelligence → Newsroom → Xaman Activation → Daily Check-In proof → Reward Ledger XP/OTT Credits → Access Gate scanner-only → Pitch Mode. This route shows free learning, user onboarding, self-custody proof, retention and legal-safe utility.",
+  },
+  {
+    id: "launch-x-post",
+    title: "Launch X Post",
+    icon: Megaphone,
+    text:
+      `🌊 Live now: XRPL OnTheTrack Terminal\n\nA source-first XRPL terminal built for Make Waves.\n\nFree to learn.\nXaman to prove.\nPass to unlock later.\n\nFollow live XRPL intelligence, understand the context, connect Xaman, prove actions with SourceTag ${MAKE_WAVES_SOURCE_TAG}, earn XP and create safe social drafts.\n\n${TERMINAL_URL}\n\nEducation only — no custody, no broker, no yield, no trading signals.\n\n#XRPL #XRP #Ripple #Xaman #MakeWaves #OnTheTrack`,
+  },
+  {
+    id: "linkedin-post",
+    title: "LinkedIn Post",
+    icon: Newspaper,
+    text:
+      `I am building XRPL OnTheTrack Terminal for the XRPL Commons Make Waves challenge.\n\nThe goal is simple: help users understand XRPL before taking action.\n\nThe live MVP combines XRPL Intelligence, beginner-friendly analysis, a Social Newsroom, Xaman self-custody proof, SourceTag ${MAKE_WAVES_SOURCE_TAG}, Reward Ledger XP and a free Academy path.\n\nThe model is:\nFree to Learn\nXaman to Prove\nPass to Unlock later\n\nThis is education-first infrastructure. No custody, no brokerage, no yield, no trading signals and no token value promise.\n\nLive terminal: ${TERMINAL_URL}\n\nFeedback from builders, educators and XRPL community members is welcome.`,
+  },
+  {
+    id: "whatsapp-status",
+    title: "WhatsApp Status",
+    icon: Globe2,
+    text:
+      `I launched a live XRPL learning + intelligence terminal for Make Waves 🌊\n\nFree to learn. Xaman to prove. Pass to unlock later.\n\nCheck it here: ${TERMINAL_URL}\n\nEducation only. No investment advice.`,
+  },
+  {
+    id: "tiktok-hook",
+    title: "TikTok Hook",
+    icon: Video,
+    text:
+      `Most people hear about XRP or XRPL through hype.\n\nI built a terminal that starts with sources, education and proof instead.\n\nFree to learn.\nXaman to prove.\nXP for verified actions.\n\nXRPL OnTheTrack Terminal — built for Make Waves.\n\nLink: ${TERMINAL_URL}`,
+  },
+  {
+    id: "community-invite",
+    title: "XRPL Community Invite",
+    icon: Fingerprint,
+    text:
+      `XRPL builders, educators and community members: I would love feedback on XRPL OnTheTrack Terminal.\n\nIt is a live Make Waves MVP focused on source-first XRPL intelligence, safe onboarding, Xaman proof, SourceTag ${MAKE_WAVES_SOURCE_TAG}, XP/OTT Credits and a public Academy route.\n\nThe terminal is not trying to be a broker, exchange or yield app. It is a guided education/proof layer for users who need context before action.\n\nLive: ${TERMINAL_URL}\nRepo: ${REPO_URL}`,
   },
   {
     id: "social-copy",
@@ -306,9 +341,9 @@ export function SubmissionPackTab({
             </h2>
 
             <p className="font-mono text-sm text-black/55 max-w-3xl leading-relaxed">
-              Alles voor de Make Waves inzending: live route, GitHub, demo video,
-              pitch copy, intelligence story, SourceTag proof, legal-safe wording,
-              social copy en duidelijke coming-soon grenzen.
+              Alles voor de Make Waves inzending en launch: live route, GitHub,
+              demo video, pitch copy, intelligence story, SourceTag proof,
+              legal-safe wording, user promo copy en duidelijke coming-soon grenzen.
             </p>
           </div>
 
@@ -376,15 +411,14 @@ export function SubmissionPackTab({
             </div>
 
             <div className="space-y-3">
-              <StepLine number="01" text="Open Dashboard: Daily Intelligence Snapshot." />
+              <StepLine number="01" text="Open Home: Free to Learn / Xaman to Prove / Pass to Unlock." />
               <StepLine number="02" text="Open XRPL Intelligence: source-first live feed." />
-              <StepLine number="03" text="Open OTT Intelligence: beginner/risk/checklist analysis." />
-              <StepLine number="04" text="Open Newsroom: generate and copy social draft." />
-              <StepLine number="05" text="Open Xaman Center: self-custody connect." />
-              <StepLine number="06" text="Open Daily Check-In: create and verify proof." />
-              <StepLine number="07" text="Open Reward Ledger: XP + OTT Credits." />
-              <StepLine number="08" text="Open SourceTag Support: support/memo coming soon." />
-              <StepLine number="09" text="Open Academy + Access Gate scanner-only." />
+              <StepLine number="03" text="Open Newsroom: generate and copy social draft." />
+              <StepLine number="04" text="Open Xaman Activation: onboarding without pressure." />
+              <StepLine number="05" text="Open Daily Check-In: create and sign proof." />
+              <StepLine number="06" text="Open Reward Ledger: XP + OTT Credits." />
+              <StepLine number="07" text="Open Access Gate: Web2 later / XRPL scanner-only now." />
+              <StepLine number="08" text="Open Pitch Mode: finish with founder story." />
             </div>
           </div>
 
@@ -406,7 +440,7 @@ export function SubmissionPackTab({
               </p>
 
               <p className="font-mono text-[10px] text-white/75 uppercase">
-                Submission text pack
+                Submission + launch copy pack
               </p>
             </button>
           </div>
@@ -513,7 +547,7 @@ function CopyBlockCard({
         </button>
       </div>
 
-      <p className="font-mono text-sm text-black/55 leading-relaxed">
+      <p className="font-mono text-sm text-black/55 leading-relaxed whitespace-pre-line">
         {block.text}
       </p>
     </div>
