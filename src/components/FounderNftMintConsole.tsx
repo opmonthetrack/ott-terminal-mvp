@@ -29,6 +29,19 @@ type FounderNftMintConsoleProps = {
   walletAddress?: string;
 };
 
+type XamanPayloadShape = {
+  uuid?: string;
+  refs?: {
+    qr_png?: string;
+    qr_matrix?: string;
+    websocket_status?: string;
+  };
+  next?: {
+    always?: string;
+    no_push_msg_received?: string;
+  };
+};
+
 type MintPayloadResponse = {
   ok: boolean;
   mode?: string;
@@ -42,18 +55,28 @@ type MintPayloadResponse = {
     flags: number;
     accessTier: string;
   };
-  payload?: {
-    uuid?: string;
-    refs?: {
-      qr_png?: string;
-      qr_matrix?: string;
-      websocket_status?: string;
-    };
-    next?: {
-      always?: string;
-      no_push_msg_received?: string;
-    };
+  payload?: XamanPayloadShape;
+  transactionMeta?: {
+    transactionType: string;
+    sourceTag: number;
+    memoText: string;
   };
+  error?: string;
+  details?: unknown;
+};
+
+type SendOfferPayloadResponse = {
+  ok: boolean;
+  mode?: string;
+  sourceTag?: number;
+  sendOffer?: {
+    issuerWallet: string;
+    destinationWallet: string;
+    nftokenId: string;
+    amountDrops: string;
+    flags: number;
+  };
+  payload?: XamanPayloadShape;
   transactionMeta?: {
     transactionType: string;
     sourceTag: number;
@@ -112,10 +135,39 @@ type AccessPassMintVerificationResponse = {
   details?: unknown;
 };
 
-const TF_TRANSFERABLE = 8;
-const HASH_PATTERN = /^[A-Fa-f0-9]{64}$/;
+type AccessPassSendOfferVerificationResponse = {
+  ok: boolean;
+  mode?: string;
+  txHash?: string;
+  verified?: {
+    accessPassSendOfferVerified: boolean;
+    txValidated: boolean;
+    txSuccess: boolean;
+    transactionResult: string;
+    isCreateOffer: boolean;
+    issuerMatches: boolean;
+    destinationMatches: boolean;
+    nftokenMatches: boolean;
+    amountMatches: boolean;
+    sourceTagMatches: boolean;
+    sellOfferFlagMatches: boolean;
+    issuerWallet: string;
+    destinationWallet: string;
+    nftokenId: string;
+    amountDrops: string | null;
+    flags: number | null;
+    ledgerIndex: number | null;
+  };
+  error?: string;
+  details?: unknown;
+};
 
-function getPayloadUrl(response: MintPayloadResponse | null) {
+const TF_TRANSFERABLE = 8;
+const TF_SELL_NFTOKEN = 1;
+const HASH_PATTERN = /^[A-Fa-f0-9]{64}$/;
+const NFTOKEN_ID_PATTERN = /^[A-Fa-f0-9]{64}$/;
+
+function getPayloadUrl(response: { payload?: XamanPayloadShape } | null) {
   return (
     response?.payload?.next?.always ??
     response?.payload?.next?.no_push_msg_received ??
@@ -123,7 +175,7 @@ function getPayloadUrl(response: MintPayloadResponse | null) {
   );
 }
 
-function getPayloadUuid(response: MintPayloadResponse | null) {
+function getPayloadUuid(response: { payload?: XamanPayloadShape } | null) {
   return response?.payload?.uuid ?? "";
 }
 
@@ -150,18 +202,33 @@ export function FounderNftMintConsole({
   const [mintTxHash, setMintTxHash] = useState("");
   const [mintVerification, setMintVerification] =
     useState<AccessPassMintVerificationResponse | null>(null);
+  const [destinationWallet, setDestinationWallet] = useState("");
+  const [sendNftokenId, setSendNftokenId] = useState("");
+  const [sendOfferPayload, setSendOfferPayload] = useState<SendOfferPayloadResponse | null>(null);
+  const [sendOfferPayloadVerification, setSendOfferPayloadVerification] =
+    useState<NftPayloadVerificationResponse | null>(null);
+  const [sendOfferTxHash, setSendOfferTxHash] = useState("");
+  const [sendOfferVerification, setSendOfferVerification] =
+    useState<AccessPassSendOfferVerificationResponse | null>(null);
   const [busy, setBusy] = useState(false);
   const [verifyBusy, setVerifyBusy] = useState(false);
   const [mintVerifyBusy, setMintVerifyBusy] = useState(false);
+  const [sendOfferBusy, setSendOfferBusy] = useState(false);
+  const [sendVerifyBusy, setSendVerifyBusy] = useState(false);
+  const [sendTxVerifyBusy, setSendTxVerifyBusy] = useState(false);
   const [statusMessage, setStatusMessage] = useState(
-    "Founder-only. Creates a real XRPL NFTokenMint payload through Xaman; no automatic payment or access unlock runs here.",
+    "Founder-only. Creates real XRPL NFT payloads through Xaman; no automatic payment or access unlock runs here.",
   );
 
   const payloadUrl = getPayloadUrl(payloadResponse);
   const payloadUuid = getPayloadUuid(payloadResponse);
+  const sendPayloadUrl = getPayloadUrl(sendOfferPayload);
+  const sendPayloadUuid = getPayloadUuid(sendOfferPayload);
   const uriHex = useMemo(() => encodeNftUri(OTT_ACCESS_PASS_METADATA_URI), []);
   const issuerLooksValid = isLikelyXrplAddress(issuerWallet);
+  const destinationLooksValid = isLikelyXrplAddress(destinationWallet);
   const mintTxHashLooksValid = HASH_PATTERN.test(mintTxHash.trim());
+  const sendOfferTxHashLooksValid = HASH_PATTERN.test(sendOfferTxHash.trim());
   const connectedMatchesIssuer =
     walletAddress !== "guest" && walletAddress === issuerWallet;
   const verifiedNft =
@@ -171,6 +238,8 @@ export function FounderNftMintConsole({
     null;
   const discoveredAccessPass = hasDiscoveredAccessPass(mintVerification);
   const finalMintVerified = isMintVerified(mintVerification);
+  const selectedNftokenId = (sendNftokenId || verifiedNft?.nftokenId || "").trim();
+  const selectedNftokenIdLooksValid = NFTOKEN_ID_PATTERN.test(selectedNftokenId);
 
   async function createMintPayload() {
     setBusy(true);
@@ -202,12 +271,7 @@ export function FounderNftMintConsole({
         "Mint payload created. Open Xaman and sign only if the issuer wallet and metadata are correct.",
       );
     } catch (error) {
-      const message =
-        error && typeof error === "object" && "error" in error
-          ? String((error as { error?: unknown }).error)
-          : "Could not create NFT mint payload.";
-
-      setStatusMessage(message);
+      setStatusMessage(readErrorMessage(error, "Could not create NFT mint payload."));
     } finally {
       setBusy(false);
     }
@@ -251,12 +315,7 @@ export function FounderNftMintConsole({
         setStatusMessage("Payload is still waiting for Xaman signature.");
       }
     } catch (error) {
-      const message =
-        error && typeof error === "object" && "error" in error
-          ? String((error as { error?: unknown }).error)
-          : "Could not verify NFT payload.";
-
-      setStatusMessage(message);
+      setStatusMessage(readErrorMessage(error, "Could not verify NFT payload."));
     } finally {
       setVerifyBusy(false);
     }
@@ -302,14 +361,151 @@ export function FounderNftMintConsole({
         );
       }
     } catch (error) {
-      const message =
-        error && typeof error === "object" && "error" in error
-          ? String((error as { error?: unknown }).error)
-          : "Could not verify minted NFT.";
-
-      setStatusMessage(message);
+      setStatusMessage(readErrorMessage(error, "Could not verify minted NFT."));
     } finally {
       setMintVerifyBusy(false);
+    }
+  }
+
+  async function createSendOfferPayload() {
+    if (!finalMintVerified || !selectedNftokenIdLooksValid) {
+      setStatusMessage("Verify a minted Access Pass and NFTokenID first.");
+      return;
+    }
+
+    if (!destinationLooksValid) {
+      setStatusMessage("Paste a valid destination wallet before creating the send offer.");
+      return;
+    }
+
+    setSendOfferBusy(true);
+    setSendOfferPayload(null);
+    setSendOfferPayloadVerification(null);
+    setSendOfferVerification(null);
+    setStatusMessage("Creating Xaman NFTokenCreateOffer payload...");
+
+    try {
+      const response = await fetch("/api/nft", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "xaman.createAccessPassSendOfferPayload",
+          issuerWallet,
+          destinationWallet,
+          nftokenId: selectedNftokenId,
+        }),
+      });
+
+      const data = (await response.json()) as SendOfferPayloadResponse;
+
+      if (!response.ok || !data.ok) {
+        throw data;
+      }
+
+      setSendOfferPayload(data);
+      setSendNftokenId(selectedNftokenId);
+      setStatusMessage("Send offer payload created. Open Xaman and sign only if Destination and NFTokenID are correct.");
+    } catch (error) {
+      setStatusMessage(readErrorMessage(error, "Could not create NFT send offer payload."));
+    } finally {
+      setSendOfferBusy(false);
+    }
+  }
+
+  async function verifySendOfferPayload() {
+    if (!sendPayloadUuid) {
+      setStatusMessage("Create a send offer payload first.");
+      return;
+    }
+
+    setSendVerifyBusy(true);
+    setStatusMessage("Checking Xaman send offer payload status...");
+
+    try {
+      const response = await fetch("/api/nft", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "xaman.verifyNftPayload",
+          uuid: sendPayloadUuid,
+        }),
+      });
+
+      const data = (await response.json()) as NftPayloadVerificationResponse;
+
+      if (!response.ok || !data.ok) {
+        throw data;
+      }
+
+      setSendOfferPayloadVerification(data);
+
+      if (data.verified?.signed && data.verified.txid) {
+        setSendOfferTxHash(data.verified.txid);
+        setStatusMessage("Send offer signed. Verifying the NFTokenCreateOffer transaction...");
+        await verifySendOfferTx(data.verified.txid);
+      } else if (data.verified?.resolved) {
+        setStatusMessage("Send offer payload resolved but not signed. Create a new payload when ready.");
+      } else {
+        setStatusMessage("Send offer payload is still waiting for Xaman signature.");
+      }
+    } catch (error) {
+      setStatusMessage(readErrorMessage(error, "Could not verify send offer payload."));
+    } finally {
+      setSendVerifyBusy(false);
+    }
+  }
+
+  async function verifySendOfferTx(hashOverride?: string) {
+    const txHash = (hashOverride || sendOfferTxHash).trim();
+
+    if (!HASH_PATTERN.test(txHash)) {
+      setStatusMessage("Paste a valid send offer tx hash first.");
+      return;
+    }
+
+    if (!destinationLooksValid || !selectedNftokenIdLooksValid) {
+      setStatusMessage("Destination wallet and NFTokenID must be valid before verifying the send offer.");
+      return;
+    }
+
+    setSendTxVerifyBusy(true);
+
+    try {
+      const response = await fetch("/api/nft", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "xrpl.verifyAccessPassSendOffer",
+          txHash,
+          issuerWallet,
+          destinationWallet,
+          nftokenId: selectedNftokenId,
+        }),
+      });
+
+      const data = (await response.json()) as AccessPassSendOfferVerificationResponse;
+
+      if (!response.ok || !data.ok) {
+        throw data;
+      }
+
+      setSendOfferVerification(data);
+
+      if (data.verified?.accessPassSendOfferVerified) {
+        setStatusMessage("Send offer verified. The destination wallet can now accept the 0 XRP NFT offer in Xaman.");
+      } else {
+        setStatusMessage("Send offer lookup completed, but one or more checks did not match.");
+      }
+    } catch (error) {
+      setStatusMessage(readErrorMessage(error, "Could not verify send offer transaction."));
+    } finally {
+      setSendTxVerifyBusy(false);
     }
   }
 
@@ -325,6 +521,15 @@ export function FounderNftMintConsole({
     }
 
     window.open(payloadUrl, "_blank", "noopener,noreferrer");
+  }
+
+  function openSendPayload() {
+    if (!sendPayloadUrl) {
+      setStatusMessage("No Xaman send offer URL available yet.");
+      return;
+    }
+
+    window.open(sendPayloadUrl, "_blank", "noopener,noreferrer");
   }
 
   return (
@@ -343,15 +548,15 @@ export function FounderNftMintConsole({
           </h3>
 
           <p className="font-mono text-sm text-black/55 leading-relaxed mb-5">
-            Deze console maakt een echte Xaman payload voor NFTokenMint. Jij tekent zelf
-            met de issuer wallet. Daarna verifieert de console de mint tx en zoekt de NFTokenID.
+            Deze console maakt echte Xaman payloads voor NFTokenMint en NFTokenCreateOffer.
+            Jij tekent zelf met de issuer wallet. Er loopt geen automatische betaling of unlock.
           </p>
 
           <div className="border border-[#C83888]/25 bg-[#C83888]/10 p-4 mb-4">
             <div className="flex items-start gap-3">
               <AlertTriangle size={17} className="text-[#C83888] mt-0.5 shrink-0" />
               <p className="font-mono text-xs text-black/60 leading-relaxed">
-                Real mainnet action. Check issuer, metadata CID, taxon and legal wording before signing.
+                Real mainnet action. Check issuer, metadata CID, taxon, destination wallet and legal wording before signing.
                 No investment, yield, resale value or profit promise.
               </p>
             </div>
@@ -360,7 +565,7 @@ export function FounderNftMintConsole({
           <div className="grid grid-cols-2 gap-3">
             <Metric icon={Fingerprint} label="SourceTag" value={String(MAKE_WAVES_SOURCE_TAG)} />
             <Metric icon={BadgeCheck} label="Taxon" value={String(OTT_ACCESS_PASS_TAXON)} />
-            <Metric icon={ShieldCheck} label="Flags" value={`${TF_TRANSFERABLE} / Transferable`} />
+            <Metric icon={ShieldCheck} label="Mint Flags" value={`${TF_TRANSFERABLE} / Transferable`} />
             <Metric icon={Wallet} label="Connected" value={walletAddress === "guest" ? "Guest" : "Wallet"} />
           </div>
 
@@ -380,6 +585,26 @@ export function FounderNftMintConsole({
                 <CheckLine ok={mintVerification.verified.flagsMatch} text="Transferable flag matched" />
                 <CheckLine ok={discoveredAccessPass} text="Issuer wallet holds matching OTT Access Pass" />
                 <CheckLine ok={finalMintVerified} text="Final mint verification accepted" />
+              </div>
+            </div>
+          )}
+
+          {sendOfferVerification?.verified && (
+            <div className="border border-black/10 bg-[#F7F8FC] p-4 mt-4">
+              <p className="font-orbitron text-xs font-black uppercase mb-3">
+                Send Offer Checks
+              </p>
+              <div className="space-y-2">
+                <CheckLine ok={sendOfferVerification.verified.txValidated} text="Transaction validated" />
+                <CheckLine ok={sendOfferVerification.verified.txSuccess} text={sendOfferVerification.verified.transactionResult} />
+                <CheckLine ok={sendOfferVerification.verified.isCreateOffer} text="TransactionType NFTokenCreateOffer" />
+                <CheckLine ok={sendOfferVerification.verified.issuerMatches} text="Issuer wallet matched" />
+                <CheckLine ok={sendOfferVerification.verified.destinationMatches} text="Destination wallet matched" />
+                <CheckLine ok={sendOfferVerification.verified.nftokenMatches} text="NFTokenID matched" />
+                <CheckLine ok={sendOfferVerification.verified.amountMatches} text="Amount 0 XRP matched" />
+                <CheckLine ok={sendOfferVerification.verified.sourceTagMatches} text="SourceTag matched" />
+                <CheckLine ok={sendOfferVerification.verified.sellOfferFlagMatches} text="Sell offer flag matched" />
+                <CheckLine ok={sendOfferVerification.verified.accessPassSendOfferVerified} text="Final send offer verification accepted" />
               </div>
             </div>
           )}
@@ -433,7 +658,7 @@ export function FounderNftMintConsole({
           >
             <ExternalLink size={18} className="text-[#3898E8] mb-3" />
             <p className="font-orbitron text-xs font-bold uppercase mb-2">Open Xaman</p>
-            <p className="font-mono text-[10px] uppercase tracking-widest text-black/35">Sign manually</p>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-black/35">Sign mint</p>
           </button>
 
           <button
@@ -490,8 +715,135 @@ export function FounderNftMintConsole({
           )}
         </div>
       </div>
+
+      <div className="border-t border-black/10 mt-6 pt-6">
+        <div className="grid grid-cols-12 gap-5 items-start">
+          <div className="col-span-12 xl:col-span-5">
+            <div className="flex items-center gap-2 mb-4 text-black/55">
+              <ExternalLink size={18} className="text-[#3898E8]" />
+              <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
+                Founder NFT Send Offer Console
+              </p>
+            </div>
+
+            <h3 className="font-orbitron text-2xl font-black uppercase mb-4">
+              Send Access Pass To Wallet
+            </h3>
+
+            <p className="font-mono text-sm text-black/55 leading-relaxed mb-5">
+              Maakt een 0 XRP NFTokenCreateOffer met Destination. Jij tekent met de issuer wallet;
+              de destination wallet moet daarna de NFT offer accepteren in Xaman.
+            </p>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Metric icon={ShieldCheck} label="Offer Type" value="Sell / Direct" />
+              <Metric icon={BadgeCheck} label="Amount" value="0 XRP" />
+              <Metric icon={Fingerprint} label="SourceTag" value={String(MAKE_WAVES_SOURCE_TAG)} />
+              <Metric icon={Wallet} label="Offer Flag" value={String(TF_SELL_NFTOKEN)} />
+            </div>
+          </div>
+
+          <div className="col-span-12 xl:col-span-4 space-y-4">
+            <TextInput
+              label="Destination wallet"
+              value={destinationWallet}
+              onChange={setDestinationWallet}
+            />
+            <TextInput
+              label="NFTokenID to send"
+              value={sendNftokenId || verifiedNft?.nftokenId || ""}
+              onChange={setSendNftokenId}
+            />
+            <InfoBox label="Selected short ID" value={selectedNftokenId ? shortNftId(selectedNftokenId) : "—"} onCopy={() => copyText(selectedNftokenId)} />
+            <InfoBox label="Issuer wallet" value={issuerWallet} onCopy={() => copyText(issuerWallet)} />
+
+            <div className="space-y-2">
+              {!finalMintVerified && <WarningLine text="Verify the minted Access Pass before creating a send offer." />}
+              {destinationWallet && !destinationLooksValid && <WarningLine text="Destination wallet format is not valid." />}
+              {selectedNftokenId && !selectedNftokenIdLooksValid && <WarningLine text="NFTokenID format is not valid." />}
+              {finalMintVerified && destinationLooksValid && selectedNftokenIdLooksValid && (
+                <PassLine text="Ready to create a 0 XRP send offer payload." />
+              )}
+            </div>
+          </div>
+
+          <div className="col-span-12 xl:col-span-3 space-y-4">
+            <button
+              onClick={createSendOfferPayload}
+              disabled={sendOfferBusy || !finalMintVerified || !issuerLooksValid || !destinationLooksValid || !selectedNftokenIdLooksValid}
+              className="w-full bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] text-white p-4 text-left hover:brightness-95 disabled:opacity-40 transition-all"
+            >
+              {sendOfferBusy ? <Loader2 size={18} className="animate-spin mb-3" /> : <Rocket size={18} className="mb-3" />}
+              <p className="font-orbitron text-xs font-black uppercase mb-2">Create Send Offer Payload</p>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-white/75">Xaman NFTokenCreateOffer</p>
+            </button>
+
+            <button
+              onClick={openSendPayload}
+              disabled={!sendPayloadUrl}
+              className="w-full border border-black/10 bg-[#F7F8FC] p-4 text-left hover:bg-white disabled:opacity-40 transition-all"
+            >
+              <ExternalLink size={18} className="text-[#3898E8] mb-3" />
+              <p className="font-orbitron text-xs font-bold uppercase mb-2">Open Xaman Send</p>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-black/35">Sign offer</p>
+            </button>
+
+            <button
+              onClick={verifySendOfferPayload}
+              disabled={sendVerifyBusy || !sendPayloadUuid}
+              className="w-full border border-black/10 bg-[#F7F8FC] p-4 text-left hover:bg-white disabled:opacity-40 transition-all"
+            >
+              {sendVerifyBusy ? <Loader2 size={18} className="animate-spin text-[#3898E8] mb-3" /> : <CheckCircle2 size={18} className="text-[#3898E8] mb-3" />}
+              <p className="font-orbitron text-xs font-bold uppercase mb-2">Verify Send Offer</p>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-black/35">Get + verify tx</p>
+            </button>
+
+            <label className="block border border-black/10 bg-[#F7F8FC] p-4">
+              <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
+                Send offer tx hash
+              </p>
+              <textarea
+                value={sendOfferTxHash}
+                onChange={(event) => setSendOfferTxHash(event.target.value.trim())}
+                className="w-full min-h-20 border border-black/10 bg-white px-3 py-3 font-mono text-[10px] text-black/70 outline-none focus:border-[#3898E8]"
+              />
+            </label>
+
+            <button
+              onClick={() => verifySendOfferTx()}
+              disabled={sendTxVerifyBusy || !sendOfferTxHashLooksValid || !destinationLooksValid || !selectedNftokenIdLooksValid}
+              className="w-full border border-black/10 bg-[#F7F8FC] p-4 text-left hover:bg-white disabled:opacity-40 transition-all"
+            >
+              {sendTxVerifyBusy ? <Loader2 size={18} className="animate-spin text-[#3898E8] mb-3" /> : <SearchCheck size={18} className="text-[#3898E8] mb-3" />}
+              <p className="font-orbitron text-xs font-bold uppercase mb-2">Verify Offer Tx</p>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-black/35">Manual check</p>
+            </button>
+
+            {sendOfferPayload?.payload?.refs?.qr_png && (
+              <div className="border border-black/10 bg-white p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <QrCode size={15} className="text-[#3898E8]" />
+                  <p className="font-orbitron text-[10px] font-bold uppercase">Send QR</p>
+                </div>
+                <img src={sendOfferPayload.payload.refs.qr_png} alt="Xaman NFT send offer QR" className="w-full border border-black/10" />
+              </div>
+            )}
+
+            {sendPayloadUuid && <InfoBox label="Send payload UUID" value={sendPayloadUuid} onCopy={() => copyText(sendPayloadUuid)} />}
+            {sendOfferPayloadVerification?.verified?.txid && (
+              <InfoBox label="Send offer tx hash" value={sendOfferPayloadVerification.verified.txid} onCopy={() => copyText(sendOfferPayloadVerification.verified?.txid ?? "")} />
+            )}
+          </div>
+        </div>
+      </div>
     </section>
   );
+}
+
+function readErrorMessage(error: unknown, fallback: string) {
+  return error && typeof error === "object" && "error" in error
+    ? String((error as { error?: unknown }).error)
+    : fallback;
 }
 
 function TextInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
