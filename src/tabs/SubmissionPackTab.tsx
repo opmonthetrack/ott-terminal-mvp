@@ -22,6 +22,7 @@ import {
   Timer,
   Video,
 } from "lucide-react";
+import { FounderNftMintConsole } from "../components/FounderNftMintConsole";
 import { MAKE_WAVES_SOURCE_TAG } from "../lib/makeWaves";
 
 type SubmissionPackTabProps = {
@@ -62,7 +63,7 @@ const deliverables: Deliverable[] = [
     title: "Live Project",
     status: "ready",
     description:
-      "Vercel live link naar XRPL OnTheTrack Terminal. Jury route: Dashboard Snapshot → XRPL Intelligence → OTT Intelligence → Newsroom → Xaman Proof → Reward Ledger.",
+      "Vercel live link naar XRPL OnTheTrack Terminal. Demo route: Home → XRPL Intelligence → Newsroom → Xaman Activation → Daily Check-In → Reward Ledger → Access Gate → Pitch Mode.",
     action: `Use live URL: ${TERMINAL_URL}`,
     icon: Globe2,
   },
@@ -71,7 +72,7 @@ const deliverables: Deliverable[] = [
     title: "Source Code",
     status: "ready",
     description:
-      "GitHub repository met React/Vite frontend, api/ott.ts router, Xaman flows, /api/news intelligence feed, SourceTag proof, reward ledger en social newsroom.",
+      "GitHub repository met React/Vite frontend, api/ott.ts proof router, api/nft.ts founder mint router, Xaman flows, reward ledger en social newsroom.",
     action: `Use repo URL: ${REPO_URL}`,
     icon: Github,
   },
@@ -80,36 +81,18 @@ const deliverables: Deliverable[] = [
     title: "2-Min Demo Video",
     status: "needs-polish",
     description:
-      "Gebruik Pitch Mode: Dashboard Snapshot → XRPL Intelligence → OTT Intelligence AI Studio → Newsroom → Xaman Center → Daily Check-In → Reward Ledger.",
-    action: "Record the screen after final smoke test is all pass.",
+      "Gebruik Pitch Mode: live intelligence, source-first explanation, Newsroom, Xaman proof, XP/OTT Credits, Access Gate and founder story.",
+    action: "Record after final smoke test pass.",
     icon: Film,
   },
   {
-    id: "pitch-deck",
-    title: "Pitch Deck",
-    status: "needs-polish",
-    description:
-      "6 slides: Problem, Live Intelligence Layer, Guided Proof Flow, Retention Loop, Business Model, Roadmap.",
-    action: "Turn Pitch Mode into a concise deck or PDF after final QA.",
-    icon: FileText,
-  },
-  {
-    id: "intelligence",
-    title: "XRPL Intelligence Layer",
+    id: "mint-console",
+    title: "Founder NFT Mint Console",
     status: "ready",
     description:
-      "Dashboard Snapshot, XRPL Intelligence, OTT Intelligence AI Studio and Newsroom now turn live source data into explanation, checklist and social drafts.",
-    action: "Show this early in the demo to prove the terminal is more than a static dashboard.",
-    icon: Brain,
-  },
-  {
-    id: "social-newsroom",
-    title: "Public Social Newsroom",
-    status: "ready",
-    description:
-      "Users can select a source, generate copy-ready drafts for X, LinkedIn, Instagram, Facebook, Medium, TikTok, WhatsApp and YouTube, then open source/platform buttons.",
-    action: "Mention public attribution: Built by TruthOnTheTrack, SourceTag and terminal link stay visible.",
-    icon: Megaphone,
+      "Founder-only NFTokenMint payload creator for OTT Access Pass. It creates a Xaman payload only; no automatic payment or access unlock runs here.",
+    action: "Mint one controlled Access Pass first, then verify it through Access Gate scanner.",
+    icon: BadgeCheck,
   },
   {
     id: "legal",
@@ -117,7 +100,7 @@ const deliverables: Deliverable[] = [
     status: "ready",
     description:
       "Education-first, no custody, no broker, no yield provider, no trade execution, no token value promise and no trading signals.",
-    action: "Use this exact wording in pitch, submission and social copy.",
+    action: "Use this exact wording in pitch, submission, NFT utility copy and social copy.",
     icon: ShieldCheck,
   },
   {
@@ -126,7 +109,7 @@ const deliverables: Deliverable[] = [
     status: "ready",
     description:
       "Make Waves proof identity is SourceTag 2606170002. Daily Proof, Xaman Center, Reward Ledger and SourceTag pages explain the proof loop.",
-    action: "Mention SourceTag during demo and show it on Home, Xaman, Daily Check-In, Reward Ledger and Dashboard.",
+    action: "Mention SourceTag during demo and show it in proof and NFT settings.",
     icon: Fingerprint,
   },
   {
@@ -140,21 +123,12 @@ const deliverables: Deliverable[] = [
   },
   {
     id: "access-gate",
-    title: "Access Gate Scanner-Only",
+    title: "Access Gate Scanner",
     status: "ready",
     description:
-      "Access Gate is live-safe as a scanner-only utility pass check. No mint, payment, claim or XRP movement is active in this V1 flow.",
-    action: "Use as legal-safe roadmap proof, not as active paid minting.",
+      "Access Gate checks account_nfts for exact issuer, taxon and metadata CID. Minting is now founder-controlled, not customer-automatic.",
+    action: "Use scanner after mint to prove the Access Pass can unlock the matching wallet.",
     icon: BadgeCheck,
-  },
-  {
-    id: "coming-soon",
-    title: "Coming Soon Clearly Marked",
-    status: "ready",
-    description:
-      "Certificate NFT, donation/payment and XRP/RLUSD support are future layers only. No active mint/payment flow in V1.",
-    action: "Say coming soon clearly. Do not imply those flows are active today.",
-    icon: Lightbulb,
   },
 ];
 
@@ -164,112 +138,70 @@ const copyBlocks: CopyBlock[] = [
     title: "One-Liner",
     icon: Lightbulb,
     text:
-      "XRPL OnTheTrack Terminal is an education-first Make Waves terminal that turns live XRPL intelligence into learning, source verification, Xaman proof, XP and copy-ready social awareness.",
+      "XRPL OnTheTrack Terminal is an education-first Make Waves terminal that turns live XRPL intelligence into learning, source verification, Xaman proof, XP and utility access through controlled NFT passes.",
   },
   {
     id: "short-description",
     title: "Short Description",
     icon: BookOpen,
     text:
-      "XRPL OnTheTrack Terminal helps users understand XRPL before taking action. The live MVP combines a Daily Intelligence Snapshot, XRPL Intelligence feed, OTT Intelligence AI analysis, Social Newsroom, Xaman self-custody connect, Daily SourceTag proof, Reward Ledger XP/OTT Credits, SourceTag support awareness, XRPL Academy and scanner-only Access Gate. It does not custody funds, does not act as broker, does not provide yield and does not execute trades. SourceTag 2606170002 is used as the public Make Waves proof identity.",
-  },
-  {
-    id: "problem",
-    title: "Problem",
-    icon: ClipboardCheck,
-    text:
-      "XRPL has strong tools, official learning material and constant ecosystem updates, but new users often get lost between news, portals, wallets and technical documentation. They need one guided path that explains what matters, what to verify and how to take safe proof-based actions.",
-  },
-  {
-    id: "solution",
-    title: "Solution",
-    icon: Rocket,
-    text:
-      "The Terminal wraps XRPL learning, live intelligence and proof into an OTT experience: source-first news, AI-assisted explanations, copy-ready social drafts, Xaman signing, SourceTag tracking, XP, OTT Credits and clear next steps. Users learn, verify, prove and return instead of getting lost between separate tools.",
-  },
-  {
-    id: "intelligence-story",
-    title: "Intelligence Story",
-    icon: Brain,
-    text:
-      "The new intelligence layer has three parts: XRPL Intelligence for source-first signals, OTT Intelligence for beginner explanations/risk/checklists, and Newsroom for platform-ready social drafts with public OTT attribution. This makes the terminal useful daily, even before a user takes an on-chain action.",
+      "XRPL OnTheTrack Terminal helps users understand XRPL before taking action. The live MVP combines XRPL Intelligence, OTT Intelligence, Social Newsroom, Xaman self-custody proof, SourceTag proof, Reward Ledger XP/OTT Credits, XRPL Academy, scanner-based Access Gate and founder-controlled OTT Access Pass minting. It does not custody funds, does not act as broker, does not provide yield and does not execute trades.",
   },
   {
     id: "live-demo",
     title: "Live Demo Route",
     icon: Video,
     text:
-      "Home → XRPL Intelligence → Newsroom → Xaman Activation → Daily Check-In proof → Reward Ledger XP/OTT Credits → Access Gate scanner-only → Pitch Mode. This route shows free learning, user onboarding, self-custody proof, retention and legal-safe utility.",
+      "Home → XRPL Intelligence → Newsroom → Xaman Activation → Daily Check-In proof → Reward Ledger XP/OTT Credits → Access Gate scanner → Founder NFT Mint Console → Pitch Mode. This route shows free learning, user onboarding, self-custody proof, controlled utility access and legal-safe boundaries.",
   },
   {
     id: "launch-x-post",
     title: "Launch X Post",
     icon: Megaphone,
     text:
-      `🌊 Live now: XRPL OnTheTrack Terminal\n\nA source-first XRPL terminal built for Make Waves.\n\nFree to learn.\nXaman to prove.\nPass to unlock later.\n\nFollow live XRPL intelligence, understand the context, connect Xaman, prove actions with SourceTag ${MAKE_WAVES_SOURCE_TAG}, earn XP and create safe social drafts.\n\n${TERMINAL_URL}\n\nEducation only — no custody, no broker, no yield, no trading signals.\n\n#XRPL #XRP #Ripple #Xaman #MakeWaves #OnTheTrack`,
+      `🌊 Live now: XRPL OnTheTrack Terminal\n\nA source-first XRPL terminal built for Make Waves.\n\nFree to learn.\nXaman to prove.\nPass to unlock.\n\nFollow live XRPL intelligence, understand the context, connect Xaman, prove actions with SourceTag ${MAKE_WAVES_SOURCE_TAG}, earn XP and use controlled utility access passes.\n\n${TERMINAL_URL}\n\nEducation only — no custody, no broker, no yield, no trading signals.\n\n#XRPL #XRP #Ripple #Xaman #MakeWaves #OnTheTrack`,
   },
   {
     id: "linkedin-post",
     title: "LinkedIn Post",
     icon: Newspaper,
     text:
-      `I am building XRPL OnTheTrack Terminal for the XRPL Commons Make Waves challenge.\n\nThe goal is simple: help users understand XRPL before taking action.\n\nThe live MVP combines XRPL Intelligence, beginner-friendly analysis, a Social Newsroom, Xaman self-custody proof, SourceTag ${MAKE_WAVES_SOURCE_TAG}, Reward Ledger XP and a free Academy path.\n\nThe model is:\nFree to Learn\nXaman to Prove\nPass to Unlock later\n\nThis is education-first infrastructure. No custody, no brokerage, no yield, no trading signals and no token value promise.\n\nLive terminal: ${TERMINAL_URL}\n\nFeedback from builders, educators and XRPL community members is welcome.`,
+      `I am building XRPL OnTheTrack Terminal for the XRPL Commons Make Waves challenge.\n\nThe goal is simple: help users understand XRPL before taking action.\n\nThe live MVP combines XRPL Intelligence, beginner-friendly analysis, a Social Newsroom, Xaman self-custody proof, SourceTag ${MAKE_WAVES_SOURCE_TAG}, Reward Ledger XP, Academy learning routes and controlled OTT Access Pass utility.\n\nThe model is:\nFree to Learn\nXaman to Prove\nPass to Unlock\n\nThis is education-first infrastructure. No custody, no brokerage, no yield, no trading signals and no token value promise.\n\nLive terminal: ${TERMINAL_URL}`,
   },
   {
     id: "whatsapp-status",
     title: "WhatsApp Status",
     icon: Globe2,
     text:
-      `I launched a live XRPL learning + intelligence terminal for Make Waves 🌊\n\nFree to learn. Xaman to prove. Pass to unlock later.\n\nCheck it here: ${TERMINAL_URL}\n\nEducation only. No investment advice.`,
-  },
-  {
-    id: "tiktok-hook",
-    title: "TikTok Hook",
-    icon: Video,
-    text:
-      `Most people hear about XRP or XRPL through hype.\n\nI built a terminal that starts with sources, education and proof instead.\n\nFree to learn.\nXaman to prove.\nXP for verified actions.\n\nXRPL OnTheTrack Terminal — built for Make Waves.\n\nLink: ${TERMINAL_URL}`,
+      `I launched a live XRPL learning + intelligence terminal for Make Waves 🌊\n\nFree to learn. Xaman to prove. Pass to unlock.\n\nCheck it here: ${TERMINAL_URL}\n\nEducation only. No investment advice.`,
   },
   {
     id: "community-invite",
     title: "XRPL Community Invite",
     icon: Fingerprint,
     text:
-      `XRPL builders, educators and community members: I would love feedback on XRPL OnTheTrack Terminal.\n\nIt is a live Make Waves MVP focused on source-first XRPL intelligence, safe onboarding, Xaman proof, SourceTag ${MAKE_WAVES_SOURCE_TAG}, XP/OTT Credits and a public Academy route.\n\nThe terminal is not trying to be a broker, exchange or yield app. It is a guided education/proof layer for users who need context before action.\n\nLive: ${TERMINAL_URL}\nRepo: ${REPO_URL}`,
+      `XRPL builders, educators and community members: I would love feedback on XRPL OnTheTrack Terminal.\n\nIt is a live Make Waves MVP focused on source-first XRPL intelligence, safe onboarding, Xaman proof, SourceTag ${MAKE_WAVES_SOURCE_TAG}, XP/OTT Credits, Academy learning routes and controlled Access Pass utility.\n\nThe terminal is not trying to be a broker, exchange or yield app. It is a guided education/proof layer for users who need context before action.\n\nLive: ${TERMINAL_URL}\nRepo: ${REPO_URL}`,
   },
   {
-    id: "social-copy",
-    title: "Social Caption",
-    icon: Newspaper,
+    id: "nft-utility-line",
+    title: "NFT Utility Line",
+    icon: BadgeCheck,
     text:
-      "🌊 Building XRPL OnTheTrack Terminal for Make Waves. A source-first XRPL terminal where users can follow live intelligence, understand what matters, connect Xaman, prove actions with SourceTag 2606170002 and turn education into XP. Built by TruthOnTheTrack. Education only — no custody, no broker, no yield, no trading signals. #XRPL #XRP #Ripple #Xaman #MakeWaves #OnTheTrack",
-  },
-  {
-    id: "business-model",
-    title: "Business Model",
-    icon: Sparkles,
-    text:
-      "The V1 public layer creates reach through free intelligence, education and social drafts with OTT attribution. Premium routes can later include deeper Academy paths, Access Pass utility, branded outputs, certificate NFTs and event utility — only after payment verification, safeguards and legal review.",
+      "OTT Access Pass is a utility access pass for XRPL OnTheTrack Terminal services. It is not an investment, not a yield product, not a resale value promise and not a token value promise. Access is based on exact issuer, taxon and metadata match.",
   },
   {
     id: "compliance",
     title: "Safe Compliance Line",
     icon: ShieldCheck,
     text:
-      "The Terminal is education-first. It does not custody funds, does not act as broker, does not provide yield and does not execute trades. XP and OTT Credits are internal progress/utility signals, not tradable tokens or value promises. The intelligence layer is awareness only, not financial advice or a trading signal.",
-  },
-  {
-    id: "coming-soon",
-    title: "Coming Soon Clarity",
-    icon: Sparkles,
-    text:
-      "Certificate NFT, XRP/RLUSD support, donation/payment flows and event ticket utility are future layers only. They require payment verification, duplicate protection, clear legal copy and production safeguards before activation.",
+      "The Terminal is education-first. It does not custody funds, does not act as broker, does not provide yield and does not execute trades. XP and OTT Credits are internal progress/utility signals, not tradable tokens or value promises. NFT passes are utility access only.",
   },
   {
     id: "close",
     title: "Closing Line",
-    icon: BadgeCheck,
+    icon: Sparkles,
     text:
-      "This is not another wallet dashboard. It is a guided XRPL intelligence, education, proof and retention layer built by TruthOnTheTrack to help users, builders and partners move safely OnTheTrack.",
+      "This is not another wallet dashboard. It is a guided XRPL intelligence, education, proof and utility access layer built by TruthOnTheTrack to help users, builders and partners move safely OnTheTrack.",
   },
 ];
 
@@ -337,13 +269,13 @@ export function SubmissionPackTab({
             </div>
 
             <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
-              Make Waves Submission Room
+              Make Waves Submission + Founder Mint Room
             </h2>
 
             <p className="font-mono text-sm text-black/55 max-w-3xl leading-relaxed">
-              Alles voor de Make Waves inzending en launch: live route, GitHub,
-              demo video, pitch copy, intelligence story, SourceTag proof,
-              legal-safe wording, user promo copy en duidelijke coming-soon grenzen.
+              Alles voor de Make Waves inzending, launch en gecontroleerde OTT Access Pass minting:
+              live route, GitHub, demo video, pitch copy, SourceTag proof, legal-safe wording,
+              user promo copy en founder-only NFT payloads.
             </p>
           </div>
 
@@ -354,6 +286,8 @@ export function SubmissionPackTab({
           </div>
         </div>
       </div>
+
+      <FounderNftMintConsole walletAddress={walletAddress} />
 
       <div className="grid grid-cols-12 gap-4">
         <div className="col-span-12 xl:col-span-4">
@@ -368,10 +302,7 @@ export function SubmissionPackTab({
 
             <div className="space-y-3">
               {deliverables.map((deliverable) => (
-                <DeliverableCard
-                  key={deliverable.id}
-                  deliverable={deliverable}
-                />
+                <DeliverableCard key={deliverable.id} deliverable={deliverable} />
               ))}
             </div>
           </div>
@@ -401,15 +332,7 @@ export function SubmissionPackTab({
         </div>
 
         <div className="col-span-12 xl:col-span-3 space-y-4">
-          <div className="border border-black/10 bg-white p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Video size={18} className="text-[#3898E8]" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Demo Recording Order
-              </p>
-            </div>
-
+          <Panel title="Demo Recording Order" icon={Video}>
             <div className="space-y-3">
               <StepLine number="01" text="Open Home: Free to Learn / Xaman to Prove / Pass to Unlock." />
               <StepLine number="02" text="Open XRPL Intelligence: source-first live feed." />
@@ -417,20 +340,13 @@ export function SubmissionPackTab({
               <StepLine number="04" text="Open Xaman Activation: onboarding without pressure." />
               <StepLine number="05" text="Open Daily Check-In: create and sign proof." />
               <StepLine number="06" text="Open Reward Ledger: XP + OTT Credits." />
-              <StepLine number="07" text="Open Access Gate: Web2 later / XRPL scanner-only now." />
-              <StepLine number="08" text="Open Pitch Mode: finish with founder story." />
+              <StepLine number="07" text="Open Access Gate: scan exact Access Pass NFT." />
+              <StepLine number="08" text="Show Founder Mint Console: controlled mint payload." />
+              <StepLine number="09" text="Open Pitch Mode: finish with founder story." />
             </div>
-          </div>
+          </Panel>
 
-          <div className="border border-black/10 bg-white p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Copy size={18} className="text-[#3898E8]" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Full Text
-              </p>
-            </div>
-
+          <Panel title="Full Text" icon={Copy}>
             <button
               onClick={() => copyText("full", fullSubmissionText)}
               className="w-full bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] text-white p-4 text-left hover:brightness-95 transition-all"
@@ -443,44 +359,51 @@ export function SubmissionPackTab({
                 Submission + launch copy pack
               </p>
             </button>
-          </div>
+          </Panel>
 
-          <div className="border border-black/10 bg-white p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <ShieldCheck size={18} className="text-[#3898E8]" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Red Flag Avoidance
-              </p>
-            </div>
-
+          <Panel title="Red Flag Avoidance" icon={ShieldCheck}>
             <div className="space-y-3">
               <InfoLine text="Do not say XP or Credits have cash value." />
+              <InfoLine text="Do not say NFT pass has investment, resale or yield value." />
               <InfoLine text="Do not say Newsroom output is financial advice or trading signal." />
-              <InfoLine text="Do not say Certificate NFT or donations are active today." />
-              <InfoLine text="Do not promise yield, profit, token value or guaranteed adoption." />
+              <InfoLine text="Do not promise profit, token value or guaranteed adoption." />
               <InfoLine text="Say education-first, source-first, self-custody and proof before trust." />
-              <InfoLine text="Say support is voluntary and transparent, not an investment." />
             </div>
-          </div>
+          </Panel>
 
-          <div className="border border-black/10 bg-white p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Globe2 size={18} className="text-[#C83888]" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Final Links
-              </p>
-            </div>
-
+          <Panel title="Final Links" icon={Globe2}>
             <div className="space-y-3">
               <StepLine number="APP" text={TERMINAL_URL} />
               <StepLine number="GIT" text={REPO_URL} />
               <StepLine number="TAG" text={String(MAKE_WAVES_SOURCE_TAG)} />
             </div>
-          </div>
+          </Panel>
         </div>
       </div>
+    </div>
+  );
+}
+
+function Panel({
+  title,
+  icon: Icon,
+  children,
+}: {
+  title: string;
+  icon: ElementType;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="border border-black/10 bg-white p-6">
+      <div className="flex items-center gap-2 mb-5">
+        <Icon size={18} className="text-[#3898E8]" />
+
+        <p className="font-orbitron text-xs uppercase tracking-widest">
+          {title}
+        </p>
+      </div>
+
+      {children}
     </div>
   );
 }
