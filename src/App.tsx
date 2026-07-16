@@ -175,14 +175,6 @@ function getCoreMenuGroups(language: TerminalLanguage): MenuGroup[] {
       ],
     },
     {
-      title: "Demo / QA",
-      items: [
-        { id: "pitchmode", label: isEnglish ? "Pitch Mode" : "Pitch Modus", status: "Demo" },
-        { id: "submission", label: isEnglish ? "Submission Pack" : "Inzendpakket", status: "Ship" },
-        { id: "smoketest", label: "Smoke Test", status: "QA" },
-      ],
-    },
-    {
       title: isEnglish ? "Services / Access" : "Services / Toegang",
       items: [
         { id: "accessgate", label: isEnglish ? "Access Gate" : "Toegangspoort", status: "Scan" },
@@ -194,8 +186,43 @@ function getCoreMenuGroups(language: TerminalLanguage): MenuGroup[] {
   ];
 }
 
-function getMenuGroups(language: TerminalLanguage, showLabs: boolean): MenuGroup[] {
+function getFounderMenuGroup(language: TerminalLanguage): MenuGroup {
   const isEnglish = language === "en";
+
+  return {
+    title: isEnglish ? "Founder / Demo / QA" : "Founder / Demo / QA",
+    items: [
+      { id: "pitchmode", label: isEnglish ? "Pitch Mode" : "Pitch Modus", status: "Demo" },
+      { id: "submission", label: isEnglish ? "Submission Pack" : "Inzendpakket", status: "Ship" },
+      { id: "smoketest", label: "Smoke Test", status: "QA" },
+    ],
+  };
+}
+
+function getLabsMenuGroup(language: TerminalLanguage): MenuGroup {
+  const isEnglish = language === "en";
+
+  return {
+    title: isEnglish ? "Labs / Advanced" : "Labs / Geavanceerd",
+    items: [
+      { id: "portfolio", label: "Portfolio", status: isEnglish ? "View" : "Bekijk" },
+      { id: "partners", label: "Partner Hub", status: isEnglish ? "Learn" : "Leer" },
+      { id: "ecosystem", label: isEnglish ? "Ecosystem" : "Ecosysteem", status: isEnglish ? "Map" : "Kaart" },
+      { id: "validator", label: "Validators", status: "UNL" },
+      { id: "developer", label: "Developer Hub", status: isEnglish ? "Build" : "Bouw" },
+      { id: "tokenization", label: isEnglish ? "Tokenization" : "Tokenisatie", status: "RWA" },
+      { id: "factory", label: isEnglish ? "Token Factory" : "Token Fabriek", status: isEnglish ? "Create" : "Maak" },
+      { id: "profile", label: isEnglish ? "Profile" : "Profiel", status: "User" },
+      { id: "token", label: "OTT Token", status: "XP" },
+      { id: "rewardpolicy", label: isEnglish ? "Reward Policy" : "Beloningsbeleid", status: "Legal" },
+      { id: "launch", label: "Launch Control", status: "Demo" },
+      { id: "ai", label: "AI Hub", status: "Tools" },
+      { id: "defi", label: "DeFi", status: "MVP" },
+    ],
+  };
+}
+
+function getMenuGroups(language: TerminalLanguage, showLabs: boolean): MenuGroup[] {
   const coreGroups = getCoreMenuGroups(language);
 
   if (!showLabs) {
@@ -204,29 +231,17 @@ function getMenuGroups(language: TerminalLanguage, showLabs: boolean): MenuGroup
 
   return [
     ...coreGroups,
-    {
-      title: isEnglish ? "Labs / Advanced" : "Labs / Geavanceerd",
-      items: [
-        { id: "portfolio", label: "Portfolio", status: isEnglish ? "View" : "Bekijk" },
-        { id: "partners", label: "Partner Hub", status: isEnglish ? "Learn" : "Leer" },
-        { id: "ecosystem", label: isEnglish ? "Ecosystem" : "Ecosysteem", status: isEnglish ? "Map" : "Kaart" },
-        { id: "validator", label: "Validators", status: "UNL" },
-        { id: "developer", label: "Developer Hub", status: isEnglish ? "Build" : "Bouw" },
-        { id: "tokenization", label: isEnglish ? "Tokenization" : "Tokenisatie", status: "RWA" },
-        { id: "factory", label: isEnglish ? "Token Factory" : "Token Fabriek", status: isEnglish ? "Create" : "Maak" },
-        { id: "profile", label: isEnglish ? "Profile" : "Profiel", status: "User" },
-        { id: "token", label: "OTT Token", status: "XP" },
-        { id: "rewardpolicy", label: isEnglish ? "Reward Policy" : "Beloningsbeleid", status: "Legal" },
-        { id: "launch", label: "Launch Control", status: "Demo" },
-        { id: "ai", label: "AI Hub", status: "Tools" },
-        { id: "defi", label: "DeFi", status: "MVP" },
-      ],
-    },
+    getFounderMenuGroup(language),
+    getLabsMenuGroup(language),
   ];
 }
 
 function getAllRouteItems(language: TerminalLanguage): MenuItem[] {
-  return getMenuGroups(language, true).flatMap((group) => group.items);
+  return [
+    ...getCoreMenuGroups(language),
+    getFounderMenuGroup(language),
+    getLabsMenuGroup(language),
+  ].flatMap((group) => group.items);
 }
 
 function getMobilePrimaryItems(language: TerminalLanguage): MenuItem[] {
@@ -729,11 +744,11 @@ function SidebarFooter({
       >
         {showLabs
           ? language === "en"
-            ? "Hide Labs / QA"
-            : "Verberg Labs / QA"
+            ? "Hide Founder / Labs"
+            : "Verberg Founder / Labs"
           : language === "en"
-            ? "Show Labs / QA"
-            : "Toon Labs / QA"}
+            ? "Show Founder / Labs"
+            : "Toon Founder / Labs"}
       </button>
       <button
         onClick={onReset}
@@ -799,8 +814,8 @@ function LockedPremiumPreview({
             </h2>
             <p className="font-mono text-sm xl:text-base text-black/60 leading-relaxed max-w-3xl mb-8">
               {isEnglish
-                ? "This part of the terminal is reserved for Access Pass holders. Free preview stays open for learning, proof, wallet connection, intelligence and Make Waves verification."
-                : "Dit deel van de terminal is gereserveerd voor Access Pass holders. Free preview blijft open voor leren, proof, wallet connectie, intelligence en Make Waves verificatie."}
+                ? "This part of the terminal is reserved for Access Pass holders. Free preview stays open for learning, proof, wallet activation, intelligence and Make Waves verification."
+                : "Dit deel van de terminal is gereserveerd voor Access Pass holders. Free preview blijft open voor leren, proof, walletactivatie, intelligence en Make Waves verificatie."}
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-3xl">
               <button
