@@ -32,6 +32,9 @@ const OTT_ACCESS_PASS_METADATA_URI =
   `ipfs://${OTT_ACCESS_PASS_METADATA_CID}`;
 
 const TF_TRANSFERABLE = 8;
+const TF_SELL_NFTOKEN = 1;
+
+const ZERO_DROPS = "0";
 
 type RequestBody = Record<string, unknown> & {
   action?: string;
@@ -53,6 +56,9 @@ type XrplTxJson = {
   TransactionType?: string;
   URI?: string;
   NFTokenTaxon?: number;
+  NFTokenID?: string;
+  Amount?: string;
+  Destination?: string;
   Flags?: number;
   SourceTag?: number;
 };
@@ -156,6 +162,10 @@ function isValidXrplAddress(value: string) {
 }
 
 function isValidTxHash(value: string) {
+  return /^[A-Fa-f0-9]{64}$/.test(value);
+}
+
+function isValidNftokenId(value: string) {
   return /^[A-Fa-f0-9]{64}$/.test(value);
 }
 
@@ -470,7 +480,7 @@ async function handleVerifyNftPayload(body: RequestBody) {
     status: 200,
     body: {
       ok: true,
-      mode: "founder-access-pass-mint-verification",
+      mode: "founder-nft-payload-verification",
       sourceTag: MAKE_WAVES_SOURCE_TAG,
       verified: {
         signed: Boolean(payload.meta?.signed),
@@ -572,6 +582,181 @@ async function handleVerifyAccessPassMint(body: RequestBody) {
   };
 }
 
+async function handleCreateAccessPassSendOfferPayload(body: RequestBody) {
+  const issuerWallet = getString(body, "issuerWallet") || OTT_ACCESS_PASS_ISSUER;
+  const destinationWallet = getString(body, "destinationWallet");
+  const nftokenId = getString(body, "nftokenId");
+
+  if (!isValidXrplAddress(issuerWallet)) {
+    return { status: 400, body: { ok: false, error: "Missing or invalid issuerWallet." } };
+  }
+
+  if (!destinationWallet || !isValidXrplAddress(destinationWallet)) {
+    return { status: 400, body: { ok: false, error: "Missing or invalid destinationWallet." } };
+  }
+
+  if (!nftokenId || !isValidNftokenId(nftokenId)) {
+    return { status: 400, body: { ok: false, error: "Missing or invalid NFTokenID." } };
+  }
+
+  const memoText = `OTT_ACCESS_PASS_SEND | destination ${destinationWallet} | utility access only | SourceTag ${MAKE_WAVES_SOURCE_TAG}`;
+  const txjson = {
+    TransactionType: "NFTokenCreateOffer",
+    Account: issuerWallet,
+    NFTokenID: nftokenId,
+    Amount: ZERO_DROPS,
+    Destination: destinationWallet,
+    Flags: TF_SELL_NFTOKEN,
+    SourceTag: MAKE_WAVES_SOURCE_TAG,
+    Memos: [
+      {
+        Memo: {
+          MemoType: textToHex("OTT_ACCESS_PASS_SEND"),
+          MemoData: textToHex(memoText),
+        },
+      },
+    ],
+  };
+
+  const result = await createXamanPayload({
+    txjson,
+    options: {
+      submit: true,
+      return_url: {
+        app: `${OTT_PUBLIC_APP_URL}/?nft_send_offer_return=1&payload={id}`,
+        web: `${OTT_PUBLIC_APP_URL}/?nft_send_offer_return=1&payload={id}`,
+      },
+    },
+    custom_meta: {
+      identifier: "ott-access-pass-send-offer",
+      instruction: "OnTheTrack — Create 0 XRP NFT send offer for a destination wallet. Utility access only; no investment or resale value promise.",
+      blob: {
+        mode: "founder-access-pass-send-offer",
+        sourceTag: MAKE_WAVES_SOURCE_TAG,
+        issuerWallet,
+        destinationWallet,
+        nftokenId,
+        amountDrops: ZERO_DROPS,
+        flags: TF_SELL_NFTOKEN,
+        memoText,
+      },
+    },
+  });
+
+  if (result.status !== 200) {
+    return result;
+  }
+
+  return {
+    status: 200,
+    body: {
+      ok: true,
+      mode: "founder-access-pass-send-offer",
+      sourceTag: MAKE_WAVES_SOURCE_TAG,
+      sendOffer: {
+        issuerWallet,
+        destinationWallet,
+        nftokenId,
+        amountDrops: ZERO_DROPS,
+        flags: TF_SELL_NFTOKEN,
+      },
+      payload: result.body,
+      transactionMeta: {
+        transactionType: "NFTokenCreateOffer",
+        sourceTag: MAKE_WAVES_SOURCE_TAG,
+        memoText,
+      },
+    },
+  };
+}
+
+async function handleVerifyAccessPassSendOffer(body: RequestBody) {
+  const txHash = getString(body, "txHash");
+  const issuerWallet = getString(body, "issuerWallet") || OTT_ACCESS_PASS_ISSUER;
+  const destinationWallet = getString(body, "destinationWallet");
+  const nftokenId = getString(body, "nftokenId");
+
+  if (!txHash || !isValidTxHash(txHash)) {
+    return { status: 400, body: { ok: false, error: "Missing or invalid txHash." } };
+  }
+
+  if (!isValidXrplAddress(issuerWallet)) {
+    return { status: 400, body: { ok: false, error: "Missing or invalid issuerWallet." } };
+  }
+
+  if (!destinationWallet || !isValidXrplAddress(destinationWallet)) {
+    return { status: 400, body: { ok: false, error: "Missing or invalid destinationWallet." } };
+  }
+
+  if (!nftokenId || !isValidNftokenId(nftokenId)) {
+    return { status: 400, body: { ok: false, error: "Missing or invalid NFTokenID." } };
+  }
+
+  const txResult = await xrplRpc("tx", {
+    transaction: txHash,
+    binary: false,
+  });
+
+  if (txResult.status !== 200) {
+    return txResult;
+  }
+
+  const txData = txResult.body as XrplRpcResponse;
+  const xrplResult = txData.result as XrplTxResult;
+  const txJson = readTxJson(xrplResult);
+  const meta = xrplResult.meta ?? {};
+
+  const txValidated = Boolean(xrplResult.validated);
+  const txSuccess = meta.TransactionResult === "tesSUCCESS";
+  const isCreateOffer = txJson.TransactionType === "NFTokenCreateOffer";
+  const issuerMatches = txJson.Account === issuerWallet;
+  const destinationMatches = txJson.Destination === destinationWallet;
+  const nftokenMatches = txJson.NFTokenID === nftokenId;
+  const amountMatches = txJson.Amount === ZERO_DROPS;
+  const sourceTagMatches = txJson.SourceTag === MAKE_WAVES_SOURCE_TAG;
+  const sellOfferFlagMatches = txJson.Flags === TF_SELL_NFTOKEN;
+
+  return {
+    status: 200,
+    body: {
+      ok: true,
+      mode: "access-pass-send-offer-verification",
+      sourceTag: MAKE_WAVES_SOURCE_TAG,
+      txHash,
+      verified: {
+        accessPassSendOfferVerified: Boolean(
+          txValidated &&
+            txSuccess &&
+            isCreateOffer &&
+            issuerMatches &&
+            destinationMatches &&
+            nftokenMatches &&
+            amountMatches &&
+            sourceTagMatches &&
+            sellOfferFlagMatches,
+        ),
+        txValidated,
+        txSuccess,
+        transactionResult: meta.TransactionResult ?? "unknown",
+        isCreateOffer,
+        issuerMatches,
+        destinationMatches,
+        nftokenMatches,
+        amountMatches,
+        sourceTagMatches,
+        sellOfferFlagMatches,
+        issuerWallet,
+        destinationWallet,
+        nftokenId,
+        amountDrops: txJson.Amount ?? null,
+        flags: txJson.Flags ?? null,
+        ledgerIndex: xrplResult.ledger_index ?? null,
+      },
+      xrpl: txData.result,
+    },
+  };
+}
+
 export default async function handler(req: RequestLike, res: ResponseLike) {
   if (req.method !== "POST") {
     return res.status(405).json({
@@ -601,6 +786,14 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
 
     if (action === "xrpl.verifyAccessPassMint") {
       result = await handleVerifyAccessPassMint(body);
+    }
+
+    if (action === "xaman.createAccessPassSendOfferPayload") {
+      result = await handleCreateAccessPassSendOfferPayload(body);
+    }
+
+    if (action === "xrpl.verifyAccessPassSendOffer") {
+      result = await handleVerifyAccessPassSendOffer(body);
     }
 
     if (!result) {
