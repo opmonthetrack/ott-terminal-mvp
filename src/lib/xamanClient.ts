@@ -3,6 +3,7 @@ import {
   getMakeWavesAction,
   type MakeWavesActionId,
 } from "./makeWaves";
+import { addMainnetLockedEvent, addXpRewardEvent } from "./rewardStore";
 
 export { MAKE_WAVES_SOURCE_TAG };
 
@@ -86,6 +87,52 @@ async function postOtt<TResponse, TBody extends Record<string, unknown>>(
   return data;
 }
 
+function hasXamanReturnFlag() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+
+  return (
+    params.get("xaman_return") === "1" ||
+    params.get("ott_xaman_return") === "1"
+  );
+}
+
+function creditXamanReturnReward(
+  response: XamanPayloadVerificationResponse,
+  actionId: MakeWavesActionId,
+) {
+  if (!hasXamanReturnFlag()) {
+    return;
+  }
+
+  if (!isMakeWavesRewardAllowed(response, actionId)) {
+    return;
+  }
+
+  const walletAddress = response.verified?.account;
+
+  if (!walletAddress) {
+    return;
+  }
+
+  addXpRewardEvent({
+    walletAddress,
+    actionId,
+    txHash: response.verified?.txid,
+    note: `${getMakeWavesAction(actionId).title} validated from Xaman mobile return with SourceTag ${MAKE_WAVES_SOURCE_TAG}.`,
+  });
+
+  addMainnetLockedEvent({
+    walletAddress,
+    actionId,
+    txHash: response.verified?.txid,
+    note: "Future on-chain OTT token conversion stays disabled until utility, profitability and legal review are complete.",
+  });
+}
+
 export async function createMakeWavesPayload(
   input: CreateMakeWavesPayloadInput
 ): Promise<XamanPayloadResponse> {
@@ -117,13 +164,17 @@ export async function verifyMakeWavesPayload(
   uuid: string,
   actionId: MakeWavesActionId = "daily-checkin"
 ): Promise<XamanPayloadVerificationResponse> {
-  return postOtt<
+  const response = await postOtt<
     XamanPayloadVerificationResponse,
     { uuid: string; actionId: MakeWavesActionId }
   >("xaman.verifyMakeWavesPayload", {
     uuid,
     actionId,
   });
+
+  creditXamanReturnReward(response, actionId);
+
+  return response;
 }
 
 export function getXamanPayloadUuid(
