@@ -25,6 +25,7 @@ export type CreateMakeWavesPayloadInput = {
   walletAddress?: string;
   destinationWallet?: string;
   amountDrops?: string;
+  voteId?: string;
 };
 
 export type XamanPayloadResponse = {

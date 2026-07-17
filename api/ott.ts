@@ -9,6 +9,7 @@ type MakeWavesActionId =
   | "wallet-safety"
   | "academy-lesson"
   | "xrpl-verify"
+  | "roadmap-vote"
   | "ott-token-eligibility";
 
 type MakeWavesAction = {
@@ -48,6 +49,12 @@ const MAKE_WAVES_ACTIONS: Record<MakeWavesActionId, MakeWavesAction> = {
     title: "XRPL Verify",
     xp: 20,
     memo: "OTT_MAKE_WAVES | XRPL Verify | SourceTag 2606170002",
+  },
+  "roadmap-vote": {
+    id: "roadmap-vote",
+    title: "Roadmap Vote",
+    xp: 0,
+    memo: "OTT Make Waves Roadmap Vote",
   },
   "ott-token-eligibility": {
     id: "ott-token-eligibility",
@@ -503,6 +510,8 @@ async function handleCreateMakeWavesPayload(body: RequestBody) {
     process.env.OTT_TRUTH_DESK_WALLET?.trim() ||
     "";
   const amountDrops = cleanAmountDrops(getString(body, "amountDrops"), "1");
+  const voteId = getString(body, "voteId");
+  const allowedVoteIds = ["academy-path", "wallet-insights", "community-tools"];
 
   if (walletAddress && !isValidXrplAddress(walletAddress)) {
     return { status: 400, body: { ok: false, error: "Invalid walletAddress." } };
@@ -519,8 +528,14 @@ async function handleCreateMakeWavesPayload(body: RequestBody) {
     };
   }
 
+  if (actionId === "roadmap-vote" && !allowedVoteIds.includes(voteId)) {
+    return { status: 400, body: { ok: false, error: "Invalid roadmap vote option." } };
+  }
+
   const action = getMakeWavesAction(actionId);
-  const memoText = getMakeWavesMemo(actionId);
+  const memoText = actionId === "roadmap-vote"
+    ? `${getMakeWavesMemo(actionId)} | Cycle 1 | ${voteId}`
+    : getMakeWavesMemo(actionId);
   const txjson = makePaymentTx({
     account: walletAddress || undefined,
     destination: destinationWallet,
@@ -546,6 +561,7 @@ async function handleCreateMakeWavesPayload(body: RequestBody) {
         actionId,
         xp: action.xp,
         memoText,
+        voteId: actionId === "roadmap-vote" ? voteId : null,
       },
     },
   });

@@ -49,6 +49,7 @@ import { NewsTab } from "./tabs/NewsTab";
 import { DeFiTab } from "./tabs/DeFiTab";
 import { AcademyTab } from "./tabs/AcademyTab";
 import { LedgerIntelTab } from "./tabs/LedgerIntelTab";
+import { RoadmapTab } from "./tabs/RoadmapTab";
 import { isAccessVerified, loadAccessState } from "./lib/accessStore";
 import { verifyMakeWavesPayload } from "./lib/xamanClient";
 import {
@@ -64,6 +65,7 @@ type ActiveTab =
   | "dashboard"
   | "checkin"
   | "source"
+  | "roadmap"
   | "xaman"
   | "xamanactivation"
   | "xrplverify"
@@ -114,6 +116,7 @@ const FREE_TABS: ActiveTab[] = [
   "network",
   "wallet",
   "source",
+  "roadmap",
   "xaman",
   "xamanactivation",
   "xrplverify",
@@ -166,6 +169,7 @@ function getCoreMenuGroups(language: TerminalLanguage): MenuGroup[] {
       title: isEnglish ? "Proof / Education" : "Proof / Educatie",
       items: [
         { id: "source", label: "SourceTag", status: sourceTag },
+        { id: "roadmap", label: isEnglish ? "Roadmap & Vote" : "Roadmap & Stem", status: "Vote" },
         { id: "xamanactivation", label: isEnglish ? "Xaman Activation" : "Xaman Activatie", status: "Guide" },
         { id: "xaman", label: "Xaman Center", status: "Sign" },
         { id: "xrplverify", label: isEnglish ? "XRPL Verify" : "XRPL Verificatie", status: "Proof" },
@@ -251,7 +255,7 @@ function getMobilePrimaryItems(language: TerminalLanguage): MenuItem[] {
     { id: "home", label: isEnglish ? "Home" : "Start", status: "V1" },
     { id: "intel", label: "Intel", status: "Live" },
     { id: "news", label: "News", status: "Social" },
-    { id: "xamanactivation", label: "Activate", status: "Guide" },
+    { id: "roadmap", label: "Vote", status: "Pass" },
   ];
 }
 
@@ -301,6 +305,28 @@ function MainApp() {
       window.removeEventListener("storage", refreshAccess);
     };
   }, [walletAddress]);
+
+  useEffect(() => {
+    if (!isMobileMenuOpen) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [isMobileMenuOpen]);
 
   useEffect(() => {
     const returnState = getXamanReturnState();
@@ -442,6 +468,7 @@ function MainApp() {
             {activeTab === "dashboard" && <DashboardTab walletAddress={walletAddress} />}
             {activeTab === "checkin" && <DailyCheckInTab walletAddress={walletAddress} />}
             {activeTab === "source" && <SourceTagMonitorTab walletAddress={walletAddress} />}
+            {activeTab === "roadmap" && <RoadmapTab walletAddress={walletAddress} onNavigate={navigateTo} />}
             {activeTab === "xamanactivation" && <XamanActivationTab />}
             {activeTab === "xaman" && (
               <XamanCenterTab walletAddress={walletAddress} onWalletConnected={connectWallet} />
@@ -532,7 +559,7 @@ function MobileHeader({
 }) {
   return (
     <header className="lg:hidden sticky top-0 z-40 border-b border-black/10 bg-white/95 backdrop-blur">
-      <div className="px-4 py-3 flex items-center justify-between gap-3 pr-28">
+      <div className="px-4 py-3 flex items-center justify-between gap-3">
         <button
           onClick={onOpenMenu}
           className="w-11 h-11 border border-black/10 bg-[#F7F8FC] flex items-center justify-center text-black"
@@ -579,9 +606,14 @@ function MobileMenu({
   onClose: () => void;
 }) {
   return (
-    <div className="lg:hidden fixed inset-0 z-50 bg-white text-black">
+    <div
+      className="lg:hidden fixed inset-0 z-[90] bg-white text-black"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Terminal navigation"
+    >
       <div className="h-full flex flex-col">
-        <div className="border-b border-black/10 px-4 py-3 flex items-center justify-between gap-3 pr-28">
+        <div className="border-b border-black/10 px-4 py-3 flex items-center justify-between gap-3">
           <OTTLogo size="md" />
           <button
             onClick={onClose}

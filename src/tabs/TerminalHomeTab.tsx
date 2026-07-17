@@ -224,7 +224,7 @@ export function TerminalHomeTab({
                 </p>
               </div>
 
-              <h1 className="font-orbitron text-4xl md:text-5xl xl:text-7xl font-black uppercase leading-none tracking-tight mb-6">
+              <h1 className="font-orbitron text-[1.85rem] sm:text-4xl md:text-5xl xl:text-7xl font-black uppercase leading-none tracking-tight mb-6">
                 Free to Learn.
                 <br />
                 <span className="bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] bg-clip-text text-transparent">
