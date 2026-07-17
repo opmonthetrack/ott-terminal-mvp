@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OTT Access Pass Payment</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #080808;
+        --muted: rgba(8, 8, 8, 0.58);
+        --line: rgba(8, 8, 8, 0.12);
+        --soft: #f7f8fc;
+        --blue: #3898e8;
+        --pink: #c83888;
+        --red: #d84858;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          radial-gradient(circle at top right, rgba(56, 152, 232, 0.16), transparent 35%),
+          radial-gradient(circle at bottom left, rgba(200, 56, 136, 0.14), transparent 38%),
+          #ffffff;
+        color: var(--ink);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      }
+
+      main {
+        width: min(1080px, calc(100vw - 28px));
+        margin: 0 auto;
+        padding: 28px 0 44px;
+      }
+
+      .shell {
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(12px);
+      }
+
+      .hero {
+        padding: 28px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .eyebrow {
+        margin: 0 0 12px;
+        color: var(--muted);
+        font-size: 10px;
+        letter-spacing: 0.38em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0 0 14px;
+        font-size: clamp(30px, 6vw, 64px);
+        line-height: 0.95;
+        letter-spacing: -0.06em;
+        text-transform: uppercase;
+        font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+      }
+
+      .hero p {
+        max-width: 780px;
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.8;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 18px;
+        padding: 18px;
+      }
+
+      @media (max-width: 760px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        background: white;
+        padding: 20px;
+      }
+
+      .panel h2 {
+        margin: 0 0 14px;
+        font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+        letter-spacing: -0.04em;
+        text-transform: uppercase;
+        font-size: 28px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 14px;
+      }
+
+      label span,
+      .label {
+        display: block;
+        margin-bottom: 8px;
+        color: rgba(8, 8, 8, 0.42);
+        font-size: 10px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+      }
+
+      input {
+        width: 100%;
+        border: 1px solid var(--line);
+        background: var(--soft);
+        padding: 14px;
+        font: inherit;
+        color: var(--ink);
+        outline: none;
+      }
+
+      input:focus {
+        border-color: var(--blue);
+      }
+
+      button,
+      a.button {
+        display: block;
+        width: 100%;
+        border: 1px solid var(--line);
+        padding: 16px;
+        margin-top: 12px;
+        text-align: left;
+        font: inherit;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        cursor: pointer;
+        text-decoration: none;
+      }
+
+      button.primary {
+        border: 0;
+        color: white;
+        background: linear-gradient(135deg, var(--blue), #8f49d8 42%, var(--pink) 68%, var(--red));
+      }
+
+      button.secondary,
+      a.button {
+        color: var(--ink);
+        background: var(--soft);
+      }
+
+      button:disabled,
+      a.disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        pointer-events: none;
+      }
+
+      .metric-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin: 16px 0;
+      }
+
+      .metric {
+        border: 1px solid var(--line);
+        background: var(--soft);
+        padding: 14px;
+      }
+
+      .metric strong {
+        display: block;
+        margin-top: 8px;
+        word-break: break-all;
+      }
+
+      .warning {
+        border: 1px solid rgba(200, 56, 136, 0.25);
+        background: rgba(200, 56, 136, 0.08);
+        padding: 14px;
+        color: rgba(8, 8, 8, 0.68);
+        font-size: 12px;
+        line-height: 1.7;
+      }
+
+      .status {
+        min-height: 78px;
+        border: 1px solid var(--line);
+        background: var(--soft);
+        padding: 14px;
+        color: rgba(8, 8, 8, 0.68);
+        font-size: 12px;
+        line-height: 1.7;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .qr {
+        width: 100%;
+        max-width: 280px;
+        border: 1px solid var(--line);
+        margin-top: 12px;
+      }
+
+      .small {
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.7;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="shell">
+        <div class="hero">
+          <p class="eyebrow">OnTheTrack / XRPL Terminal / Access</p>
+          <h1>OTT Access Pass Payment</h1>
+          <p>
+            Pay 1.589 XRP for OTT Terminal Access Pass onboarding. After payment is verified, the founder mints and sends the utility access pass to the customer wallet. Utility access only — no investment, yield, profit or resale value promise.
+          </p>
+        </div>
+
+        <div class="grid">
+          <div class="panel">
+            <h2>Create Payment Link</h2>
+            <div class="warning">
+              This payment does not automatically mint or unlock access. It creates a verified service payment record. The Access Pass is minted and sent after manual founder verification.
+            </div>
+
+            <div class="metric-grid">
+              <div class="metric">
+                <span class="label">Price</span>
+                <strong>1.589 XRP</strong>
+              </div>
+              <div class="metric">
+                <span class="label">SourceTag</span>
+                <strong>2606170002</strong>
+              </div>
+              <div class="metric">
+                <span class="label">Payment Wallet</span>
+                <strong>rsEHpJiExneayjkrQdeQEveUwabmmPbksq</strong>
+              </div>
+              <div class="metric">
+                <span class="label">Access Type</span>
+                <strong>Terminal Access</strong>
+              </div>
+            </div>
+
+            <label>
+              <span>Customer wallet receiving the NFT later</span>
+              <input id="customerWallet" placeholder="r..." autocomplete="off" />
+            </label>
+
+            <label>
+              <span>Access tier memo</span>
+              <input id="accessTier" value="Founder Access Pass" autocomplete="off" />
+            </label>
+
+            <button id="createBtn" class="primary">Create 1.589 XRP Payment Link</button>
+            <a id="openBtn" class="button disabled" href="#" target="_blank" rel="noreferrer">Open Xaman Payment</a>
+            <button id="verifyBtn" class="secondary" disabled>Verify Payment</button>
+          </div>
+
+          <div class="panel">
+            <h2>Status</h2>
+            <div id="status" class="status">Ready. Enter the customer wallet and create a Xaman payment payload.</div>
+            <div id="qrBox"></div>
+            <p class="small">
+              Workflow: customer pays 1.589 XRP → payment verified → founder mints production Access Pass → founder sends NFT → customer scans Access Gate.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const createBtn = document.getElementById("createBtn");
+      const openBtn = document.getElementById("openBtn");
+      const verifyBtn = document.getElementById("verifyBtn");
+      const statusEl = document.getElementById("status");
+      const qrBox = document.getElementById("qrBox");
+      const customerWalletEl = document.getElementById("customerWallet");
+      const accessTierEl = document.getElementById("accessTier");
+
+      let payloadUuid = "";
+      let payloadUrl = "";
+
+      function setStatus(message) {
+        statusEl.textContent = message;
+      }
+
+      function isLikelyXrplAddress(value) {
+        return /^r[1-9A-HJ-NP-Za-km-z]{24,34}$/.test(String(value || "").trim());
+      }
+
+      async function postPayment(action, body) {
+        const response = await fetch("/api/access-payment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action, ...body }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+          throw data;
+        }
+
+        return data;
+      }
+
+      createBtn.addEventListener("click", async () => {
+        const customerWallet = customerWalletEl.value.trim();
+        const accessTier = accessTierEl.value.trim() || "Founder Access Pass";
+
+        if (!isLikelyXrplAddress(customerWallet)) {
+          setStatus("Paste a valid XRPL customer wallet starting with r...");
+          return;
+        }
+
+        createBtn.disabled = true;
+        setStatus("Creating Xaman payment payload...");
+        qrBox.innerHTML = "";
+
+        try {
+          const data = await postPayment("xaman.createAccessPaymentPayload", {
+            customerWallet,
+            accessTier,
+          });
+
+          payloadUuid = data.payload?.uuid || "";
+          payloadUrl = data.payload?.next?.always || data.payload?.next?.no_push_msg_received || "";
+
+          openBtn.href = payloadUrl || "#";
+          openBtn.classList.toggle("disabled", !payloadUrl);
+          verifyBtn.disabled = !payloadUuid;
+
+          if (data.payload?.refs?.qr_png) {
+            qrBox.innerHTML = `<img class="qr" src="${data.payload.refs.qr_png}" alt="Xaman payment QR" />`;
+          }
+
+          setStatus(`Payment payload created.\n\nPrice: ${data.payment.priceXrp} XRP\nDestination: ${data.payment.destinationWallet}\nCustomer wallet: ${data.payment.customerWallet}\nPayload UUID: ${payloadUuid}`);
+        } catch (error) {
+          setStatus(error?.error || "Could not create payment payload.");
+        } finally {
+          createBtn.disabled = false;
+        }
+      });
+
+      verifyBtn.addEventListener("click", async () => {
+        if (!payloadUuid) {
+          setStatus("Create a payment payload first.");
+          return;
+        }
+
+        verifyBtn.disabled = true;
+        setStatus("Checking Xaman payment payload status...");
+
+        try {
+          const data = await postPayment("xaman.verifyAccessPaymentPayload", {
+            uuid: payloadUuid,
+          });
+
+          if (data.verified?.signed && data.verified?.txid) {
+            setStatus(`Payment signed.\n\nPayer: ${data.verified.payerAccount}\nPayment tx hash: ${data.verified.txid}\n\nNext: founder mints and sends the Access Pass to the customer wallet.`);
+          } else if (data.verified?.resolved) {
+            setStatus("Payment payload resolved but was not signed. Create a new payment link when ready.");
+          } else {
+            setStatus("Payment is still waiting for Xaman signature.");
+          }
+        } catch (error) {
+          setStatus(error?.error || "Could not verify payment payload.");
+        } finally {
+          verifyBtn.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>
