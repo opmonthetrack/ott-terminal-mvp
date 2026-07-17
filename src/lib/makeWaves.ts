@@ -6,6 +6,7 @@ export type MakeWavesActionId =
   | "wallet-safety"
   | "academy-lesson"
   | "xrpl-verify"
+  | "roadmap-vote"
   | "ott-token-eligibility";
 
 export type MakeWavesAction = {
@@ -56,6 +57,13 @@ export const MAKE_WAVES_ACTIONS: MakeWavesAction[] = [
     memo: "OTT Make Waves XRPL Verify",
     description:
       "User verified a live XRPL transaction with the correct SourceTag.",
+  },
+  {
+    id: "roadmap-vote",
+    title: "Roadmap Vote",
+    xp: 0,
+    memo: "OTT Make Waves Roadmap Vote",
+    description: "Access Pass holder voted for the next public roadmap phase.",
   },
   {
     id: "ott-token-eligibility",

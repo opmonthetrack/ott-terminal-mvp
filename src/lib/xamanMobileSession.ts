@@ -7,6 +7,7 @@ export type XamanReturnTarget =
   | "wallet"
   | "xaman"
   | "source"
+  | "roadmap"
   | "partners"
   | "truthdesk"
   | "accessgate";
@@ -36,6 +37,7 @@ const MAKE_WAVES_ACTION_IDS: MakeWavesActionId[] = [
   "wallet-safety",
   "academy-lesson",
   "xrpl-verify",
+  "roadmap-vote",
   "ott-token-eligibility",
 ];
 
@@ -180,6 +182,7 @@ function parseReturnTarget(value: string | null): XamanReturnTarget | null {
     value === "wallet" ||
     value === "xaman" ||
     value === "source" ||
+    value === "roadmap" ||
     value === "partners" ||
     value === "truthdesk" ||
     value === "accessgate"
