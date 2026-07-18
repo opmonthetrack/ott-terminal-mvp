@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   CircleDot,
   Compass,
+  ExternalLink,
   Lock,
   Radio,
   ShieldCheck,
@@ -31,6 +32,7 @@ type PhaseOption = {
 
 const VOTE_STORAGE_KEY = "ott-terminal-roadmap-vote-v1";
 const VOTE_COUNTS_STORAGE_KEY = "ott-terminal-roadmap-vote-counts-v1";
+const SUPPORT_DONATION_URL = "/support-donation.html";
 
 const phaseOptions: PhaseOption[] = [
   {
@@ -350,6 +352,40 @@ export function RoadmapTab({ walletAddress = "guest", onNavigate }: RoadmapTabPr
               <div className="border border-black/10 bg-[#F7F8FC] p-4">
                 <p className="font-mono text-xs text-black/60 leading-relaxed">{status}</p>
               </div>
+            </Panel>
+
+            <Panel>
+              <div className="flex items-center gap-2 mb-5">
+                <ExternalLink size={18} className="text-[#C83888]" />
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  {isEnglish ? "Support Phase 1" : "Support Fase 1"}
+                </p>
+              </div>
+
+              <p className="font-mono text-xs text-black/60 leading-relaxed mb-4">
+                {isEnglish
+                  ? "Voluntary support helps fund XRPL education, onboarding, Make Waves delivery, content and continued product development. It does not create investment rights, yield, token rights or guaranteed access."
+                  : "Vrijwillige support helpt XRPL-educatie, onboarding, Make Waves delivery, content en verdere productontwikkeling. Het geeft geen investeringsrechten, yield, tokenrechten of gegarandeerde toegang."}
+              </p>
+
+              <a
+                href={SUPPORT_DONATION_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="block w-full bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] p-4 text-left text-white hover:brightness-95 transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  <ExternalLink size={17} />
+                  <div>
+                    <p className="font-orbitron text-xs font-black uppercase">
+                      {isEnglish ? "Open Support Page" : "Open Supportpagina"}
+                    </p>
+                    <p className="font-mono text-[10px] uppercase tracking-widest text-white/75">
+                      {isEnglish ? "Voluntary donation info" : "Vrijwillige donatie-info"}
+                    </p>
+                  </div>
+                </div>
+              </a>
             </Panel>
 
             <Panel>
