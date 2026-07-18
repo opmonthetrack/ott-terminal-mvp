@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Support OTT Terminal</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #080808;
+        --muted: rgba(8, 8, 8, 0.58);
+        --line: rgba(8, 8, 8, 0.12);
+        --soft: #f7f8fc;
+        --blue: #3898e8;
+        --purple: #8f49d8;
+        --pink: #c83888;
+        --red: #d84858;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          radial-gradient(circle at top right, rgba(56, 152, 232, 0.16), transparent 35%),
+          radial-gradient(circle at bottom left, rgba(200, 56, 136, 0.14), transparent 38%),
+          #ffffff;
+        color: var(--ink);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      }
+
+      main {
+        width: min(1080px, calc(100vw - 28px));
+        margin: 0 auto;
+        padding: 28px 0 44px;
+      }
+
+      .shell {
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(12px);
+      }
+
+      .hero {
+        padding: 28px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .eyebrow {
+        margin: 0 0 12px;
+        color: var(--muted);
+        font-size: 10px;
+        letter-spacing: 0.38em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0 0 14px;
+        font-size: clamp(30px, 6vw, 64px);
+        line-height: 0.95;
+        letter-spacing: -0.06em;
+        text-transform: uppercase;
+        font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+      }
+
+      h2 {
+        margin: 0 0 14px;
+        font-size: 28px;
+        letter-spacing: -0.04em;
+        text-transform: uppercase;
+        font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+      }
+
+      p {
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.8;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 18px;
+        padding: 18px;
+      }
+
+      @media (max-width: 760px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        background: white;
+        padding: 20px;
+      }
+
+      .metric-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin: 16px 0;
+      }
+
+      .metric {
+        border: 1px solid var(--line);
+        background: var(--soft);
+        padding: 14px;
+      }
+
+      .label {
+        display: block;
+        margin-bottom: 8px;
+        color: rgba(8, 8, 8, 0.42);
+        font-size: 10px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+      }
+
+      .metric strong,
+      .wallet {
+        display: block;
+        margin-top: 8px;
+        word-break: break-all;
+      }
+
+      .warning {
+        border: 1px solid rgba(200, 56, 136, 0.25);
+        background: rgba(200, 56, 136, 0.08);
+        padding: 14px;
+        color: rgba(8, 8, 8, 0.68);
+        font-size: 12px;
+        line-height: 1.7;
+      }
+
+      .safe {
+        border: 1px solid rgba(56, 152, 232, 0.25);
+        background: rgba(56, 152, 232, 0.08);
+        padding: 14px;
+        color: rgba(8, 8, 8, 0.68);
+        font-size: 12px;
+        line-height: 1.7;
+      }
+
+      .button {
+        display: block;
+        width: 100%;
+        border: 0;
+        margin-top: 12px;
+        padding: 16px;
+        text-align: left;
+        color: white;
+        background: linear-gradient(135deg, var(--blue), var(--purple) 42%, var(--pink) 68%, var(--red));
+        font: inherit;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        text-decoration: none;
+      }
+
+      .list {
+        display: grid;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .item {
+        border: 1px solid var(--line);
+        background: var(--soft);
+        padding: 14px;
+        color: rgba(8, 8, 8, 0.68);
+        font-size: 12px;
+        line-height: 1.7;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="shell">
+        <div class="hero">
+          <p class="eyebrow">OnTheTrack / XRPL Terminal / Support</p>
+          <h1>Support OTT Terminal</h1>
+          <p>
+            Support donations help fund XRPL education, community onboarding, Make Waves delivery, content creation and continued product development. Donations are voluntary support only.
+          </p>
+        </div>
+
+        <div class="grid">
+          <div class="panel">
+            <h2>Voluntary Support</h2>
+            <div class="warning">
+              Donations are not investments. They do not create yield, profit rights, token rights, governance rights, equity, guaranteed access, or a guaranteed Access Pass NFT.
+            </div>
+
+            <div class="metric-grid">
+              <div class="metric">
+                <span class="label">Support Wallet</span>
+                <strong class="wallet">rsEHpJiExneayjkrQdeQEveUwabmmPbksq</strong>
+              </div>
+              <div class="metric">
+                <span class="label">SourceTag</span>
+                <strong>2606170002</strong>
+              </div>
+              <div class="metric">
+                <span class="label">Purpose</span>
+                <strong>Education + onboarding</strong>
+              </div>
+              <div class="metric">
+                <span class="label">Rights</span>
+                <strong>No financial rights</strong>
+              </div>
+            </div>
+
+            <a class="button" href="/">Back to OTT Terminal</a>
+          </div>
+
+          <div class="panel">
+            <h2>What support helps build</h2>
+            <div class="list">
+              <div class="item">XRPL beginner education and onboarding content.</div>
+              <div class="item">Xaman wallet activation guidance and SourceTag proof flows.</div>
+              <div class="item">Community roadmap voting and phase-by-phase product delivery.</div>
+              <div class="item">Access Pass utility tooling, verification and customer support.</div>
+            </div>
+
+            <p class="safe">
+              Future Xaman donation payloads may be added later. For now, this page is a clear support information page with the official OTT support wallet and SourceTag.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
