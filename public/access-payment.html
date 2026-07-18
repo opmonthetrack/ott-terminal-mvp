@@ -302,6 +302,26 @@
         return /^r[1-9A-HJ-NP-Za-km-z]{24,34}$/.test(String(value || "").trim());
       }
 
+      function applyUrlPrefill() {
+        const params = new URLSearchParams(window.location.search);
+        const walletFromUrl = (params.get("customerWallet") || params.get("wallet") || "").trim();
+        const tierFromUrl = (params.get("accessTier") || params.get("tier") || "").trim();
+
+        if (tierFromUrl) {
+          accessTierEl.value = tierFromUrl.slice(0, 80);
+        }
+
+        if (walletFromUrl && isLikelyXrplAddress(walletFromUrl)) {
+          customerWalletEl.value = walletFromUrl;
+          setStatus(`Wallet prefilled from OTT Terminal.\n\nCustomer wallet: ${walletFromUrl}\n\nCreate the 1.589 XRP Xaman payment link when ready.`);
+          return;
+        }
+
+        if (walletFromUrl) {
+          setStatus("Wallet parameter was detected, but it is not a valid XRPL address. Paste a valid customer wallet starting with r...");
+        }
+      }
+
       async function postPayment(action, body) {
         const response = await fetch("/api/access-payment", {
           method: "POST",
@@ -383,6 +403,8 @@
           verifyBtn.disabled = false;
         }
       });
+
+      applyUrlPrefill();
     </script>
   </body>
 </html>
