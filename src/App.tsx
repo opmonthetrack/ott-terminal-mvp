@@ -50,6 +50,7 @@ import { DeFiTab } from "./tabs/DeFiTab";
 import { AcademyTab } from "./tabs/AcademyTab";
 import { LedgerIntelTab } from "./tabs/LedgerIntelTab";
 import { RoadmapTab } from "./tabs/RoadmapTab";
+import { SupportDonationTab } from "./tabs/SupportDonationTab";
 import { isAccessVerified, loadAccessState } from "./lib/accessStore";
 import { verifyMakeWavesPayload } from "./lib/xamanClient";
 import {
@@ -95,6 +96,7 @@ type ActiveTab =
   | "news"
   | "defi"
   | "academy"
+  | "support"
   | "intel";
 
 type MenuItem = {
@@ -127,6 +129,7 @@ const FREE_TABS: ActiveTab[] = [
   "news",
   "ottintelligence",
   "accessgate",
+  "support",
   "pitchmode",
   "submission",
   "smoketest",
@@ -182,6 +185,7 @@ function getCoreMenuGroups(language: TerminalLanguage): MenuGroup[] {
       title: isEnglish ? "Services / Access" : "Services / Toegang",
       items: [
         { id: "accessgate", label: isEnglish ? "Access Gate" : "Toegangspoort", status: "Scan" },
+        { id: "support", label: isEnglish ? "Support / Donation" : "Support / Donatie", status: "Phase 1" },
         { id: "truthdesk", label: "Truth Desk", status: "Pass" },
         { id: "marketplace", label: isEnglish ? "Marketplace" : "Webshop", status: "Pass" },
         { id: "otttestnet", label: "OTT Testnet", status: "Pass" },
@@ -469,6 +473,7 @@ function MainApp() {
             {activeTab === "checkin" && <DailyCheckInTab walletAddress={walletAddress} />}
             {activeTab === "source" && <SourceTagMonitorTab walletAddress={walletAddress} />}
             {activeTab === "roadmap" && <RoadmapTab walletAddress={walletAddress} onNavigate={navigateTo} />}
+            {activeTab === "support" && <SupportDonationTab />}
             {activeTab === "xamanactivation" && <XamanActivationTab />}
             {activeTab === "xaman" && (
               <XamanCenterTab walletAddress={walletAddress} onWalletConnected={connectWallet} />
