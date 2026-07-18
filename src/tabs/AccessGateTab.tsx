@@ -4,6 +4,7 @@ import {
   BadgeCheck,
   Banknote,
   CheckCircle2,
+  ExternalLink,
   Fingerprint,
   KeyRound,
   Loader2,
@@ -58,6 +59,9 @@ type RouteCardData = {
   lines: string[];
 };
 
+const ACCESS_PAYMENT_URL = "/access-payment.html";
+const ACCESS_PRICE_XRP = "1.589 XRP";
+
 export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
   const { language, setLanguage } = useTerminalLanguage();
   const isEnglish = language === "en";
@@ -67,8 +71,8 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
   );
   const [statusMessage, setStatusMessage] = useState(
     isEnglish
-      ? "Access Gate V1 is scanner-only. Fiat/Web2 access is explained as coming soon; no payment or crypto conversion runs here."
-      : "Access Gate V1 is scanner-only. Fiat/Web2 access wordt uitgelegd als coming soon; er loopt hier geen betaling of crypto-conversie.",
+      ? "Access Gate loaded. Connect Xaman once, buy an Access Pass when ready, then scan the same wallet to unlock premium areas."
+      : "Access Gate geladen. Connect Xaman eenmalig, koop een Access Pass wanneer je klaar bent en scan daarna dezelfde wallet om premiumdelen te unlocken.",
   );
   const [accessPassCheck, setAccessPassCheck] =
     useState<AccessPassOwnershipResult | null>(null);
@@ -78,14 +82,15 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
   const summary = getAccessSummary(accessState);
   const verified =
     isAccessVerified(accessState) || Boolean(accessPassCheck?.hasAccessPass);
+  const activeCustomerWallet = isGuest ? "Connect Xaman first" : walletAddress;
 
   useEffect(() => {
     setAccessState(loadAccessState(walletAddress));
     setAccessPassCheck(null);
     setStatusMessage(
       isEnglish
-        ? "Access Gate loaded. Guests can read the access model; connected Xaman users can scan for the XRPL Access Pass."
-        : "Access Gate geladen. Guests kunnen het toegangsmodel lezen; gekoppelde Xaman users kunnen scannen op de XRPL Access Pass.",
+        ? "Access Gate loaded. Guests can read the access model; connected Xaman users can buy, receive and scan the XRPL Access Pass."
+        : "Access Gate geladen. Guests kunnen het toegangsmodel lezen; gekoppelde Xaman users kunnen de XRPL Access Pass kopen, ontvangen en scannen.",
     );
 
     if (!isGuest) {
@@ -101,15 +106,15 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
       icon: verified ? ShieldCheck : Lock,
     },
     {
-      label: "Fiat Route",
-      value: "Coming Soon",
-      text: "Web2 license, no swap.",
+      label: "Pass Price",
+      value: ACCESS_PRICE_XRP,
+      text: "Utility access only.",
       icon: Banknote,
     },
     {
       label: "Wallet",
       value: isGuest ? "Optional" : "Linked",
-      text: isGuest ? "No Xaman required to learn." : "Xaman scan ready.",
+      text: isGuest ? "Learn without login." : "One login active.",
       icon: Wallet,
     },
     {
@@ -129,41 +134,73 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
         ? "People can use the education and intelligence layer without Xaman."
         : "Mensen kunnen de educatie- en intelligence-laag gebruiken zonder Xaman.",
       lines: isEnglish
-        ? ["Home, XRPL Intelligence, Newsroom preview", "Academy preview and SourceTag explanation", "No wallet required for reading and learning"]
-        : ["Home, XRPL Intelligence, Newsroom preview", "Academy preview en SourceTag uitleg", "Geen wallet nodig voor lezen en leren"],
+        ? [
+            "Home, XRPL Intelligence and Newsroom preview",
+            "Academy preview and SourceTag explanation",
+            "No wallet required for reading and learning",
+          ]
+        : [
+            "Home, XRPL Intelligence en Newsroom preview",
+            "Academy preview en SourceTag uitleg",
+            "Geen wallet nodig voor lezen en leren",
+          ],
     },
     {
       icon: Smartphone,
       title: isEnglish ? "Xaman User Access" : "Xaman User Toegang",
       status: "Proof",
       text: isEnglish
-        ? "Users who activate and connect Xaman can create proof, XP and wallet-native actions."
-        : "Users die Xaman activeren en koppelen kunnen proof, XP en wallet-native acties gebruiken.",
+        ? "Users connect Xaman once and reuse the same wallet across proof, XP and access checks."
+        : "Users connecten Xaman eenmalig en gebruiken dezelfde wallet voor proof, XP en access checks.",
       lines: isEnglish
-        ? ["Xaman Activation guide", "Daily Check-In and Reward Ledger", "XRPL Verify and SourceTag proof"]
-        : ["Xaman Activatie guide", "Daily Check-In en Reward Ledger", "XRPL Verify en SourceTag proof"],
+        ? [
+            "One Xaman connection for the terminal session",
+            "Daily Check-In and Reward Ledger",
+            "XRPL Verify and SourceTag proof",
+          ]
+        : [
+            "Een Xaman-connectie voor de terminalsessie",
+            "Daily Check-In en Reward Ledger",
+            "XRPL Verify en SourceTag proof",
+          ],
     },
     {
       icon: Banknote,
-      title: isEnglish ? "Web2 Access License" : "Web2 Access Licentie",
-      status: "Coming Soon",
+      title: isEnglish ? "Buy Access Pass" : "Access Pass Kopen",
+      status: ACCESS_PRICE_XRP,
       text: isEnglish
-        ? "For users without Xaman who want paid access through fiat later."
-        : "Voor users zonder Xaman die later via fiat betaalde toegang willen.",
+        ? "Pay for utility access with Xaman. After verified payment, the founder sends the Access Pass NFT to your wallet."
+        : "Betaal voor utility access met Xaman. Na verified payment stuurt de founder de Access Pass NFT naar je wallet.",
       lines: isEnglish
-        ? ["Payment to business account / PSP later", "Access as software/service license", "No automatic fiat-to-crypto conversion"]
-        : ["Betaling naar zakelijke rekening / PSP later", "Toegang als software/service licentie", "Geen automatische fiat-naar-crypto conversie"],
+        ? [
+            "Payment: 1.589 XRP to OTT Access wallet",
+            "No investment, yield or profit promise",
+            "Founder-controlled mint and send after payment verification",
+          ]
+        : [
+            "Betaling: 1.589 XRP naar OTT Access wallet",
+            "Geen investering, yield of winstbelofte",
+            "Founder-controlled mint en send na payment verification",
+          ],
     },
     {
       icon: KeyRound,
-      title: isEnglish ? "XRPL Access Pass" : "XRPL Access Pass",
+      title: "XRPL Access Pass",
       status: "Scanner",
       text: isEnglish
-        ? "For crypto-native users who hold the exact OTT Access Pass NFT."
-        : "Voor crypto-native users die de exacte OTT Access Pass NFT houden.",
+        ? "Access unlocks only when the connected wallet holds the exact OTT Access Pass NFT."
+        : "Access unlockt alleen wanneer de connected wallet de exacte OTT Access Pass NFT houdt.",
       lines: isEnglish
-        ? ["Connect Xaman", "Scan account_nfts", "Unlock only after exact issuer, taxon and CID match"]
-        : ["Connect Xaman", "Scan account_nfts", "Unlock alleen na exacte issuer, taxon en CID match"],
+        ? [
+            "Connect Xaman once",
+            "Scan account_nfts",
+            "Unlock only after exact issuer, taxon and CID match",
+          ]
+        : [
+            "Connect Xaman eenmalig",
+            "Scan account_nfts",
+            "Unlock alleen na exacte issuer, taxon en CID match",
+          ],
     },
   ];
 
@@ -174,8 +211,8 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
       if (!options?.automatic) {
         setStatusMessage(
           isEnglish
-            ? "Connect Xaman first to scan for an XRPL Access Pass. Without Xaman you can still use public education, intelligence and the activation guide."
-            : "Connect eerst Xaman om te scannen op een XRPL Access Pass. Zonder Xaman kun je nog steeds publieke educatie, intelligence en de activatieguide gebruiken.",
+            ? "Connect Xaman first to scan for an XRPL Access Pass. You can still use public education, intelligence and the activation guide without a wallet."
+            : "Connect eerst Xaman om te scannen op een XRPL Access Pass. Zonder wallet kun je nog steeds publieke educatie, intelligence en de activatieguide gebruiken.",
         );
       }
 
@@ -187,8 +224,8 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
     if (!options?.automatic) {
       setStatusMessage(
         isEnglish
-          ? "Scanning this wallet for the exact OTT Access Pass NFT..."
-          : "Deze wallet wordt gescand op de exacte OTT Access Pass NFT...",
+          ? "Scanning this connected wallet for the exact OTT Access Pass NFT..."
+          : "Deze connected wallet wordt gescand op de exacte OTT Access Pass NFT...",
       );
     }
 
@@ -265,8 +302,8 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
                   size="lg"
                   subtitle={
                     isEnglish
-                      ? "Access model: public, Xaman, fiat license and XRPL pass"
-                      : "Access model: public, Xaman, fiat licentie en XRPL pass"
+                      ? "One Xaman login: learn, prove, pay, scan and unlock"
+                      : "Een Xaman-login: leren, proof, betalen, scannen en unlocken"
                   }
                 />
               </div>
@@ -275,7 +312,7 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
                 <KeyRound size={15} className="text-[#C83888]" />
 
                 <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-black/55">
-                  ACCESS MODEL V1
+                  ACCESS GATE V1
                 </p>
               </div>
 
@@ -291,8 +328,8 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
 
               <p className="font-mono text-sm xl:text-base text-black/60 max-w-3xl leading-relaxed">
                 {isEnglish
-                  ? "OTT Terminal does not force every user into crypto first. Public users can learn and use intelligence without Xaman. Xaman users can create proof and XP. Access Pass holders can unlock premium areas. A Web2 fiat license route is planned later without automatic fiat-to-crypto conversion."
-                  : "OTT Terminal dwingt niet iedere user eerst crypto in. Publieke users kunnen leren en intelligence gebruiken zonder Xaman. Xaman users kunnen proof en XP maken. Access Pass holders kunnen premiumdelen unlocken. Een Web2 fiat licentieroute komt later zonder automatische fiat-naar-crypto conversie."}
+                  ? "OTT Terminal keeps the customer journey simple: users learn for free, connect Xaman once, prove activity, buy the Access Pass when ready, receive the NFT manually from the founder, then scan the same wallet to unlock premium utility areas."
+                  : "OTT Terminal houdt de klantreis simpel: users leren gratis, connecten Xaman eenmalig, doen proof-acties, kopen de Access Pass wanneer ze klaar zijn, ontvangen de NFT handmatig van de founder en scannen daarna dezelfde wallet om premium utility-delen te unlocken."}
               </p>
             </div>
 
@@ -321,10 +358,10 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mt-8">
-            <FlowCard number="01" title="Public" text="Learn + intelligence" />
-            <FlowCard number="02" title="Activate" text="Xaman guide" />
-            <FlowCard number="03" title="Prove" text="XP + SourceTag" />
-            <FlowCard number="04" title="Unlock" text="License or NFT pass" />
+            <FlowCard number="01" title="Learn" text="Public education" />
+            <FlowCard number="02" title="Connect" text="One Xaman login" />
+            <FlowCard number="03" title="Pay" text="1.589 XRP pass" />
+            <FlowCard number="04" title="Unlock" text="NFT scan" />
           </div>
         </div>
       </section>
@@ -340,6 +377,55 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
           </div>
 
           <div className="col-span-12 xl:col-span-4 space-y-4">
+            <Panel>
+              <div className="flex items-center gap-2 mb-5">
+                <Banknote size={18} className="text-[#C83888]" />
+
+                <p className="font-orbitron text-xs uppercase tracking-widest">
+                  {isEnglish ? "Buy Access Pass" : "Access Pass Kopen"}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 mb-5">
+                <MiniStatus label="Price" value={ACCESS_PRICE_XRP} />
+                <MiniStatus label="Customer Wallet" value={activeCustomerWallet} />
+                <MiniStatus label="Payment" value="Xaman Payment" />
+                <MiniStatus label="Delivery" value="Founder sends NFT" />
+              </div>
+
+              <div className="border border-[#C83888]/25 bg-[#C83888]/10 p-4 mb-5">
+                <p className="font-mono text-xs text-black/60 leading-relaxed">
+                  {isEnglish
+                    ? "Payment creates a verified service payment record. It does not automatically mint or unlock access. After verification, the founder mints and sends the utility Access Pass NFT to the customer wallet."
+                    : "Betaling maakt een verified service payment record. Het mint of unlockt niet automatisch. Na verificatie mint en verstuurt de founder de utility Access Pass NFT naar de customer wallet."}
+                </p>
+              </div>
+
+              <a
+                href={ACCESS_PAYMENT_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="block w-full bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] p-4 text-left text-white hover:brightness-95 transition-all mb-4"
+              >
+                <div className="flex items-center gap-3">
+                  <ExternalLink size={17} />
+                  <div>
+                    <p className="font-orbitron text-xs font-black uppercase">
+                      {isEnglish ? "Open Payment Page" : "Open Betaalpagina"}
+                    </p>
+                    <p className="font-mono text-[10px] uppercase tracking-widest text-white/75">
+                      {isEnglish ? "Pay 1.589 XRP with Xaman" : "Betaal 1.589 XRP met Xaman"}
+                    </p>
+                  </div>
+                </div>
+              </a>
+
+              <div className="space-y-2">
+                <InfoLine text={isEnglish ? "Use the same Xaman wallet that should receive the Access Pass NFT." : "Gebruik dezelfde Xaman wallet die de Access Pass NFT moet ontvangen."} />
+                <InfoLine text={isEnglish ? "Utility access only; no investment, yield or resale value promise." : "Alleen utility access; geen investering, yield of resale value belofte."} />
+              </div>
+            </Panel>
+
             <Panel>
               <div className="flex items-center gap-2 mb-5">
                 <SearchCheck size={18} className="text-[#3898E8]" />
@@ -376,9 +462,7 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
                         ? isEnglish
                           ? "Scanning NFT Pass"
                           : "NFT Pass scannen"
-                        : isEnglish
-                          ? "Scan XRPL Access Pass"
-                          : "Scan XRPL Access Pass"}
+                        : "Scan XRPL Access Pass"}
                     </p>
 
                     <p className="font-mono text-[10px] text-black/40 uppercase">
@@ -415,23 +499,6 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
                   </p>
                 </div>
               )}
-            </Panel>
-
-            <Panel>
-              <div className="flex items-center gap-2 mb-5">
-                <ShieldCheck size={18} className="text-[#3898E8]" />
-
-                <p className="font-orbitron text-xs uppercase tracking-widest">
-                  {isEnglish ? "Safe V1 Scope" : "Veilige V1-scope"}
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <InfoLine text={isEnglish ? "No mint function is active." : "Geen mintfunctie actief."} />
-                <InfoLine text={isEnglish ? "No Access payment is created from this screen." : "Geen Access-betaling vanuit dit scherm."} />
-                <InfoLine text={isEnglish ? "No automatic fiat-to-crypto conversion." : "Geen automatische fiat-naar-crypto conversie."} />
-                <InfoLine text={isEnglish ? "No custody, no broker service and no investment promise." : "Geen custody, geen brokerdienst en geen investeringsbelofte."} />
-              </div>
             </Panel>
           </div>
 
@@ -476,8 +543,8 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
                         ? "XRPL Access Pass verified. Premium terminal areas may now unlock for this wallet."
                         : "XRPL Access Pass geverifieerd. Premium terminaldelen kunnen nu unlocken voor deze wallet."
                       : isEnglish
-                        ? "No matching Access Pass found. Free public areas remain open; Web2 license access is planned later."
-                        : "Geen matchende Access Pass gevonden. Gratis publieke onderdelen blijven open; Web2 licentie toegang komt later."}
+                        ? "No matching Access Pass found yet. Learn for free, connect Xaman once, pay for the pass when ready, then scan again after the founder sends the NFT."
+                        : "Nog geen matchende Access Pass gevonden. Leer gratis, connect Xaman eenmalig, betaal voor de pass wanneer je klaar bent en scan opnieuw nadat de founder de NFT heeft gestuurd."}
                   </p>
                 </div>
               </div>
@@ -485,17 +552,19 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
 
             <Panel>
               <div className="flex items-center gap-2 mb-5">
-                <Banknote size={18} className="text-[#C83888]" />
+                <Sparkles size={18} className="text-[#C83888]" />
 
                 <p className="font-orbitron text-xs uppercase tracking-widest">
-                  {isEnglish ? "Fiat Access Direction" : "Fiat Access Richting"}
+                  {isEnglish ? "Customer Flow" : "Klantflow"}
                 </p>
               </div>
 
               <div className="space-y-3">
-                <InfoLine text={isEnglish ? "Fiat payment should unlock software/service access, not crypto exposure." : "Fiat betaling moet software/service toegang unlocken, geen crypto exposure."} />
-                <InfoLine text={isEnglish ? "Money route later: business account / payment provider / invoice." : "Geldroute later: zakelijke rekening / payment provider / factuur."} />
-                <InfoLine text={isEnglish ? "Users may connect Xaman later if they want proof or wallet-native features." : "Users kunnen later Xaman koppelen als ze proof of wallet-native functies willen."} />
+                <StepLine number="01" text={isEnglish ? "Learn for free inside the public terminal." : "Leer gratis in de publieke terminal."} />
+                <StepLine number="02" text={isEnglish ? "Connect Xaman once for proof, XP and wallet-native features." : "Connect Xaman eenmalig voor proof, XP en wallet-native functies."} />
+                <StepLine number="03" text={isEnglish ? "Pay 1.589 XRP for the Access Pass service." : "Betaal 1.589 XRP voor de Access Pass service."} />
+                <StepLine number="04" text={isEnglish ? "Founder verifies payment, then mints and sends the Access Pass NFT." : "Founder verifieert betaling en mint/verstuurt daarna de Access Pass NFT."} />
+                <StepLine number="05" text={isEnglish ? "Scan the same wallet to unlock premium utility areas." : "Scan dezelfde wallet om premium utility-delen te unlocken."} />
               </div>
             </Panel>
 
@@ -536,60 +605,52 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
 
             <Panel>
               <div className="flex items-center gap-2 mb-5">
-                <Fingerprint size={18} className="text-[#C83888]" />
+                <ShieldCheck size={18} className="text-[#3898E8]" />
 
                 <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Last Event
+                  {isEnglish ? "Safe V1 Scope" : "Veilige V1-scope"}
                 </p>
               </div>
 
-              {summary.lastEvent ? (
-                <div className="border border-black/10 bg-[#F7F8FC] p-4">
-                  <p className="font-orbitron text-xs font-bold uppercase mb-2">
-                    {summary.lastEvent.status}
-                  </p>
+              <div className="space-y-3">
+                <InfoLine text={isEnglish ? "Payment page creates a Xaman payment payload only." : "Betaalpagina maakt alleen een Xaman payment payload."} />
+                <InfoLine text={isEnglish ? "No automatic mint runs after payment." : "Geen automatische mint na betaling."} />
+                <InfoLine text={isEnglish ? "Founder-controlled NFT mint and send." : "Founder-controlled NFT mint en send."} />
+                <InfoLine text={isEnglish ? "No custody, no broker service and no investment promise." : "Geen custody, geen brokerdienst en geen investeringsbelofte."} />
+              </div>
+            </Panel>
 
-                  <p className="font-mono text-[10px] text-black/40 uppercase mb-3">
-                    {summary.lastEvent.routeId}
-                  </p>
+            {verified && (
+              <Panel>
+                <div className="flex items-center gap-2 mb-5">
+                  <Sparkles size={18} className="text-[#C83888]" />
 
-                  <p className="font-mono text-xs text-black/55 leading-relaxed">
-                    {summary.lastEvent.note}
+                  <p className="font-orbitron text-xs uppercase tracking-widest">
+                    Premium Ready
                   </p>
                 </div>
-              ) : (
-                <MiniStatus label="Event" value="None" />
-              )}
 
+                <p className="font-mono text-xs text-black/55 leading-relaxed">
+                  {isEnglish
+                    ? "This wallet can now access premium utility areas where enabled by the terminal."
+                    : "Deze wallet kan nu premium utility-delen openen waar dat in de terminal actief is."}
+                </p>
+              </Panel>
+            )}
+
+            {!isGuest && (
               <button
                 onClick={resetAccess}
-                className="w-full border border-black/10 bg-white p-4 mt-4 text-left hover:bg-[#F7F8FC] transition-all"
+                className="w-full border border-black/10 bg-white p-4 text-left hover:bg-[#F7F8FC] transition-all"
               >
-                <p className="font-orbitron text-xs font-bold uppercase mb-2 text-black">
-                  Reset Access
+                <p className="font-orbitron text-xs font-bold uppercase text-black">
+                  Reset Local Access
                 </p>
-
-                <p className="font-mono text-[10px] text-black/40 uppercase">
-                  Local state only
+                <p className="font-mono text-[10px] text-black/40 uppercase mt-1">
+                  Does not change NFT ownership
                 </p>
               </button>
-            </Panel>
-
-            <Panel>
-              <div className="flex items-center gap-2 mb-5">
-                <Sparkles size={18} className="text-[#C83888]" />
-
-                <p className="font-orbitron text-xs uppercase tracking-widest">
-                  {isEnglish ? "Giveaway Ready" : "Giveaway Ready"}
-                </p>
-              </div>
-
-              <p className="font-mono text-xs text-black/55 leading-relaxed">
-                {isEnglish
-                  ? "When Access Pass NFTs are manually distributed later, this scanner can recognize holders without activating mint or payment functions."
-                  : "Wanneer Access Pass NFT's later handmatig worden uitgedeeld, kan deze scanner holders herkennen zonder mint- of paymentfunctie te activeren."}
-              </p>
-            </Panel>
+            )}
           </div>
         </div>
       </section>
@@ -598,28 +659,20 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
 }
 
 function Panel({ children }: { children: ReactNode }) {
-  return (
-    <div className="border border-black/10 bg-white p-5 md:p-6 shadow-sm shadow-black/5">
-      {children}
-    </div>
-  );
+  return <div className="border border-black/10 bg-white p-5 shadow-sm shadow-black/5">{children}</div>;
 }
 
 function MetricBox({ metric }: { metric: Metric }) {
   const Icon = metric.icon;
 
   return (
-    <div className="border border-black/10 bg-white/90 p-4 shadow-sm">
-      <Icon size={18} className="text-[#C83888] mb-3" />
+    <div className="border border-black/10 bg-[#F7F8FC] p-4">
+      <Icon size={17} className="text-[#3898E8] mb-3" />
       <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
         {metric.label}
       </p>
-      <p className="font-orbitron text-sm font-black uppercase mb-1 break-all text-black">
-        {metric.value}
-      </p>
-      <p className="font-mono text-[10px] text-black/35 uppercase">
-        {metric.text}
-      </p>
+      <p className="font-orbitron text-xs font-black uppercase break-all">{metric.value}</p>
+      <p className="font-mono text-[10px] text-black/45 leading-relaxed mt-2">{metric.text}</p>
     </div>
   );
 }
@@ -628,24 +681,43 @@ function RouteCard({ route }: { route: RouteCardData }) {
   const Icon = route.icon;
 
   return (
-    <div className="border border-black/10 bg-white p-5 shadow-sm">
-      <div className="flex items-start justify-between gap-3 mb-4">
-        <Icon size={19} className="text-[#3898E8]" />
-        <span className="font-mono text-[9px] uppercase tracking-widest text-black/35">
+    <div className="border border-black/10 bg-[#F7F8FC] p-5 min-h-[260px]">
+      <div className="flex items-start justify-between gap-3 mb-5">
+        <Icon size={20} className="text-[#3898E8]" />
+        <span className="font-mono text-[10px] uppercase tracking-widest text-black/40">
           {route.status}
         </span>
       </div>
-      <p className="font-orbitron text-sm font-black uppercase mb-3">
-        {route.title}
-      </p>
-      <p className="font-mono text-xs text-black/55 leading-relaxed mb-4">
-        {route.text}
-      </p>
+
+      <h3 className="font-orbitron text-lg font-black uppercase mb-3">{route.title}</h3>
+      <p className="font-mono text-xs text-black/55 leading-relaxed mb-4">{route.text}</p>
+
       <div className="space-y-2">
         {route.lines.map((line) => (
           <InfoLine key={line} text={line} />
         ))}
       </div>
+    </div>
+  );
+}
+
+function FlowCard({ number, title, text }: { number: string; title: string; text: string }) {
+  return (
+    <div className="border border-black/10 bg-white/80 p-4 shadow-sm shadow-black/5">
+      <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">{number}</p>
+      <p className="font-orbitron text-sm font-black uppercase mb-1">{title}</p>
+      <p className="font-mono text-xs text-black/55">{text}</p>
+    </div>
+  );
+}
+
+function MiniStatus({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-black/10 bg-[#F7F8FC] p-4">
+      <p className="font-mono text-[10px] uppercase tracking-widest text-black/35 mb-2">
+        {label}
+      </p>
+      <p className="font-mono text-xs text-black/65 leading-relaxed break-all">{value}</p>
     </div>
   );
 }
@@ -659,52 +731,29 @@ function InfoLine({ text }: { text: string }) {
   );
 }
 
+function StepLine({ number, text }: { number: string; text: string }) {
+  return (
+    <div className="border border-black/10 bg-[#F7F8FC] p-4 flex items-start gap-3">
+      <span className="font-orbitron text-xs font-black text-[#C83888] shrink-0">{number}</span>
+      <p className="font-mono text-xs text-black/60 leading-relaxed">{text}</p>
+    </div>
+  );
+}
+
 function AccessPassCard({ nft }: { nft: OttAccessPassNft }) {
   return (
     <div className="border border-[#3898E8]/25 bg-[#3898E8]/10 p-4">
-      <div className="flex items-start gap-3 mb-3">
-        <BadgeCheck size={18} className="text-[#3898E8] shrink-0 mt-0.5" />
-        <div>
-          <p className="font-orbitron text-xs font-bold uppercase mb-2 text-black">
-            Access Pass Found
-          </p>
-          <p className="font-mono text-xs text-black/55 leading-relaxed">
-            {buildOttAccessPassLabel(nft)}
-          </p>
-        </div>
+      <div className="flex items-center gap-2 mb-4">
+        <BadgeCheck size={17} className="text-[#3898E8]" />
+        <p className="font-orbitron text-xs font-black uppercase">Access Pass Found</p>
       </div>
-      <MiniStatus label="NFTokenID" value={shortNftId(nft.nftokenId)} />
+
+      <div className="space-y-3">
+        <MiniStatus label="NFTokenID" value={nft.nftokenId} />
+        <MiniStatus label="Short ID" value={shortNftId(nft.nftokenId)} />
+        <MiniStatus label="Issuer" value={nft.issuer} />
+        <MiniStatus label="Taxon" value={String(nft.taxon)} />
+      </div>
     </div>
   );
 }
-
-function MiniStatus({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="border border-black/10 bg-[#F7F8FC] p-3">
-      <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
-        {label}
-      </p>
-      <p className="font-orbitron text-xs font-black uppercase break-all text-black">
-        {value}
-      </p>
-    </div>
-  );
-}
-
-function FlowCard({ number, title, text }: { number: string; title: string; text: string }) {
-  return (
-    <div className="border border-black/10 bg-white/90 p-4 shadow-sm">
-      <p className="font-mono text-[10px] text-black/30 uppercase tracking-widest mb-3">
-        {number}
-      </p>
-      <p className="font-orbitron text-sm font-black uppercase mb-2 text-black">
-        {title}
-      </p>
-      <p className="font-mono text-xs text-black/45 uppercase tracking-widest">
-        {text}
-      </p>
-    </div>
-  );
-}
-
-export default AccessGateTab;
