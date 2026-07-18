@@ -186,9 +186,6 @@ function getCoreMenuGroups(language: TerminalLanguage): MenuGroup[] {
       items: [
         { id: "accessgate", label: isEnglish ? "Access Gate" : "Toegangspoort", status: "Scan" },
         { id: "support", label: isEnglish ? "Support / Donation" : "Support / Donatie", status: "Phase 1" },
-        { id: "truthdesk", label: "Truth Desk", status: "Pass" },
-        { id: "marketplace", label: isEnglish ? "Marketplace" : "Webshop", status: "Pass" },
-        { id: "otttestnet", label: "OTT Testnet", status: "Pass" },
       ],
     },
   ];
@@ -213,6 +210,9 @@ function getLabsMenuGroup(language: TerminalLanguage): MenuGroup {
   return {
     title: isEnglish ? "Labs / Advanced" : "Labs / Geavanceerd",
     items: [
+      { id: "truthdesk", label: "Truth Desk", status: "Pass" },
+      { id: "marketplace", label: isEnglish ? "Marketplace" : "Webshop", status: "Pass" },
+      { id: "otttestnet", label: "OTT Testnet", status: "Pass" },
       { id: "portfolio", label: "Portfolio", status: isEnglish ? "View" : "Bekijk" },
       { id: "partners", label: "Partner Hub", status: isEnglish ? "Learn" : "Leer" },
       { id: "ecosystem", label: isEnglish ? "Ecosystem" : "Ecosysteem", status: isEnglish ? "Map" : "Kaart" },
