@@ -4,10 +4,83 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>XRPL OTT Terminal</title>
+    <script>
+      (() => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("founder") === "1") {
+          document.documentElement.dataset.founder = "1";
+        }
+      })();
+    </script>
+    <style>
+      html:not([data-founder="1"]) aside > div:last-child > button:first-of-type,
+      html:not([data-founder="1"]) div[role="dialog"] > div > div:last-child > button:first-of-type {
+        display: none !important;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      (() => {
+        const replacements = new Map([
+          ["Free Preview", "Open Learning"],
+          ["Continue Free Preview", "Back to Learning"],
+          ["Ga door met Free Preview", "Terug naar leren"],
+          ["Locked Preview", "Access Pass Required"],
+          [
+            "This part of the terminal is reserved for Access Pass holders. Free preview stays open for learning, proof, wallet activation, intelligence and Make Waves verification.",
+            "This paid area stays locked until the connected wallet holds a valid OTT Access Pass. Open learning remains available from the main menu.",
+          ],
+          [
+            "Dit deel van de terminal is gereserveerd voor Access Pass holders. Free preview blijft open voor leren, proof, walletactivatie, intelligence en Make Waves verificatie.",
+            "Dit betaalde onderdeel blijft op slot totdat de verbonden wallet een geldige OTT Access Pass heeft. Open leren blijft beschikbaar via het hoofdmenu.",
+          ],
+          ["Free", "Open"],
+          ["Premium", "Locked"],
+        ]);
+
+        function cleanTextNode(node) {
+          const current = node.nodeValue;
+          if (!current) return;
+
+          let next = current;
+          replacements.forEach((replacement, needle) => {
+            next = next.replaceAll(needle, replacement);
+          });
+
+          if (next !== current) {
+            node.nodeValue = next;
+          }
+        }
+
+        function walk(root) {
+          const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+          let node = walker.nextNode();
+          while (node) {
+            cleanTextNode(node);
+            node = walker.nextNode();
+          }
+        }
+
+        const observer = new MutationObserver((mutations) => {
+          for (const mutation of mutations) {
+            for (const node of mutation.addedNodes) {
+              if (node.nodeType === Node.TEXT_NODE) {
+                cleanTextNode(node);
+              } else if (node.nodeType === Node.ELEMENT_NODE) {
+                walk(node);
+              }
+            }
+          }
+        });
+
+        window.addEventListener("DOMContentLoaded", () => {
+          walk(document.body);
+          observer.observe(document.body, { childList: true, subtree: true });
+        });
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-
