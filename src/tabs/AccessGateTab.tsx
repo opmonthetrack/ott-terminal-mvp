@@ -83,6 +83,9 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
   const verified =
     isAccessVerified(accessState) || Boolean(accessPassCheck?.hasAccessPass);
   const activeCustomerWallet = isGuest ? "Connect Xaman first" : walletAddress;
+  const accessPaymentUrl = isGuest
+    ? ACCESS_PAYMENT_URL
+    : `${ACCESS_PAYMENT_URL}?wallet=${encodeURIComponent(walletAddress)}`;
 
   useEffect(() => {
     setAccessState(loadAccessState(walletAddress));
@@ -402,7 +405,7 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
               </div>
 
               <a
-                href={ACCESS_PAYMENT_URL}
+                href={accessPaymentUrl}
                 target="_blank"
                 rel="noreferrer"
                 className="block w-full bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] p-4 text-left text-white hover:brightness-95 transition-all mb-4"
@@ -414,7 +417,13 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
                       {isEnglish ? "Open Payment Page" : "Open Betaalpagina"}
                     </p>
                     <p className="font-mono text-[10px] uppercase tracking-widest text-white/75">
-                      {isEnglish ? "Pay 1.589 XRP with Xaman" : "Betaal 1.589 XRP met Xaman"}
+                      {isGuest
+                        ? isEnglish
+                          ? "Connect Xaman first for wallet prefill"
+                          : "Connect eerst Xaman voor wallet prefill"
+                        : isEnglish
+                          ? "Wallet prefilled from this session"
+                          : "Wallet vooraf ingevuld vanuit deze sessie"}
                     </p>
                   </div>
                 </div>
