@@ -179,7 +179,7 @@ export function XamanActivationTab() {
               <p className="font-mono text-sm xl:text-base text-black/60 leading-relaxed max-w-3xl mb-8">
                 {isEnglish
                   ? "New XRPL addresses are not active on-ledger until they receive enough XRP for the account reserve. This page explains the safe routes for Dutch beginners, non-crypto users and future OTT assisted onboarding."
-                  : "Nieuwe XRPL-adressen zijn nog niet actief op-ledger totdat ze genoeg XRP ontvangen voor de account reserve. Deze pagina legt veilige routes uit voor Nederlandse beginners, non-crypto users en toekomstige OTT assisted onboarding."}
+                  : "Nieuwe XRPL-adressen zijn nog niet actief op de ledger totdat ze genoeg XRP ontvangen voor de accountreserve. Deze pagina legt veilige routes uit voor Nederlandse beginners, gebruikers zonder crypto-ervaring en toekomstige begeleide OTT-onboarding."}
               </p>
 
               <div className="flex flex-wrap gap-3">
@@ -292,7 +292,7 @@ export function XamanActivationTab() {
               <p className="font-mono text-xs text-black/55 leading-relaxed mb-4">
                 {isEnglish
                   ? "For non-crypto users, fiat payment should pay for onboarding/support through a business bank or payment provider. Automatic fiat-to-crypto conversion is not part of V1."
-                  : "Voor non-crypto users moet fiatbetaling betalen voor onboarding/support via zakelijke bank of payment provider. Automatische fiat-naar-crypto conversie hoort niet bij V1."}
+                  : "Gebruikers zonder crypto-ervaring kunnen later voor onboarding of ondersteuning betalen via een zakelijke bankrekening of betaalprovider. Automatische conversie van euro's naar crypto hoort niet bij V1."}
               </p>
 
               <StatusPill text={isEnglish ? "Coming soon · Manual support" : "Coming soon · Handmatige support"} />

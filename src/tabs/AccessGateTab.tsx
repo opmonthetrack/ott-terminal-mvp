@@ -93,7 +93,7 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
     setStatusMessage(
       isEnglish
         ? "Access Gate loaded. Guests can read the access model; connected Xaman users can buy, receive and scan the XRPL Access Pass."
-        : "Access Gate geladen. Guests kunnen het toegangsmodel lezen; gekoppelde Xaman users kunnen de XRPL Access Pass kopen, ontvangen en scannen.",
+        : "Access Gate geladen. Gasten kunnen het toegangsmodel lezen; gebruikers met een gekoppelde Xaman-wallet kunnen de XRPL Access Pass kopen, ontvangen en scannen.",
     );
 
     if (!isGuest) {
@@ -332,7 +332,7 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
               <p className="font-mono text-sm xl:text-base text-black/60 max-w-3xl leading-relaxed">
                 {isEnglish
                   ? "OTT Terminal keeps the customer journey simple: users learn for free, connect Xaman once, prove activity, buy the Access Pass when ready, receive the NFT manually from the founder, then scan the same wallet to unlock premium utility areas."
-                  : "OTT Terminal houdt de klantreis simpel: users leren gratis, connecten Xaman eenmalig, doen proof-acties, kopen de Access Pass wanneer ze klaar zijn, ontvangen de NFT handmatig van de founder en scannen daarna dezelfde wallet om premium utility-delen te unlocken."}
+                  : "OTT Terminal houdt de klantreis eenvoudig: gebruikers leren gratis, koppelen Xaman eenmalig, voeren bewijsacties uit, kopen de Access Pass wanneer ze klaar zijn, ontvangen de NFT handmatig van de founder en scannen daarna dezelfde wallet om premiumfuncties te ontgrendelen."}
               </p>
             </div>
 

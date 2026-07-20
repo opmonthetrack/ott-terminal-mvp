@@ -13,7 +13,6 @@ import {
   Wallet,
   X,
 } from "lucide-react";
-import { GlobalLanguageBar } from "./components/GlobalLanguageBar";
 import { OTTLogo, OTTLogoMark, OTTProofBadge } from "./components/OTTLogo";
 import { TerminalHomeTab } from "./tabs/TerminalHomeTab";
 import { DashboardTab } from "./tabs/DashboardTab";
@@ -417,8 +416,6 @@ function MainApp() {
 
   return (
     <div className="min-h-screen bg-white text-[#080808] selection:bg-[#C83888]/20 lg:flex">
-      <GlobalLanguageBar />
-
       <DesktopSidebar
         activeTab={activeTab}
         walletAddress={walletAddress}
@@ -469,7 +466,7 @@ function MainApp() {
             {activeTab === "home" && (
               <TerminalHomeTab walletAddress={walletAddress} onNavigate={navigateTo} />
             )}
-            {activeTab === "dashboard" && <DashboardTab walletAddress={walletAddress} />}
+            {activeTab === "dashboard" && <DashboardTab onNavigate={navigateTo} />}
             {activeTab === "checkin" && <DailyCheckInTab walletAddress={walletAddress} />}
             {activeTab === "source" && <SourceTagMonitorTab walletAddress={walletAddress} />}
             {activeTab === "roadmap" && <RoadmapTab walletAddress={walletAddress} onNavigate={navigateTo} />}
@@ -510,7 +507,12 @@ function MainApp() {
         )}
       </main>
 
-      <MobileBottomNav activeTab={activeTab} items={mobilePrimaryItems} goTo={goTo} />
+      <MobileBottomNav
+        activeTab={activeTab}
+        walletAddress={walletAddress}
+        items={mobilePrimaryItems}
+        goTo={goTo}
+      />
     </div>
   );
 }
@@ -809,7 +811,7 @@ function PageHeader({ activeItem }: { activeItem: MenuItem }) {
           {activeItem.label}
         </h1>
       </div>
-      <div className="pr-28">
+      <div>
         <OTTLogo size="sm" subtitle="Intelligence + Xaman + Proof" />
       </div>
     </>
@@ -852,7 +854,7 @@ function LockedPremiumPreview({
             <p className="font-mono text-sm xl:text-base text-black/60 leading-relaxed max-w-3xl mb-8">
               {isEnglish
                 ? "This part of the terminal is reserved for Access Pass holders. Free preview stays open for learning, proof, wallet activation, intelligence and Make Waves verification."
-                : "Dit deel van de terminal is gereserveerd voor Access Pass holders. Free preview blijft open voor leren, proof, walletactivatie, intelligence en Make Waves verificatie."}
+                : "Dit deel van de terminal is gereserveerd voor houders van een Access Pass. De gratis omgeving blijft open voor leren, bewijs, walletactivatie, intelligence en Make Waves-verificatie."}
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-3xl">
               <button
@@ -861,7 +863,9 @@ function LockedPremiumPreview({
               >
                 <KeyRound size={18} className="mb-3" />
                 <p className="font-orbitron text-xs font-black uppercase tracking-widest mb-2">
-                  {isGuest ? "Activate / Connect Xaman" : "Scan Access Pass"}
+                  {isGuest
+                    ? isEnglish ? "Activate / Connect Xaman" : "Activeer / Koppel Xaman"
+                    : isEnglish ? "Scan Access Pass" : "Scan Access Pass"}
                 </p>
                 <p className="font-mono text-[10px] uppercase tracking-widest text-white/75">
                   {isGuest ? "Wallet onboarding" : "Scanner-only"}
@@ -873,7 +877,7 @@ function LockedPremiumPreview({
               >
                 <ShieldCheck size={18} className="text-[#3898E8] mb-3" />
                 <p className="font-orbitron text-xs font-black uppercase tracking-widest mb-2 text-black">
-                  {isEnglish ? "Continue Free Preview" : "Ga door met Free Preview"}
+                  {isEnglish ? "Continue Free Preview" : "Ga door met de gratis omgeving"}
                 </p>
                 <p className="font-mono text-[10px] uppercase tracking-widest text-black/40">
                   Academy / Proof / XP
@@ -915,13 +919,16 @@ function LockInfoRow({ label, value }: { label: string; value: string }) {
 
 function MobileBottomNav({
   activeTab,
+  walletAddress,
   items,
   goTo,
 }: {
   activeTab: ActiveTab;
+  walletAddress: string;
   items: MenuItem[];
   goTo: (target: ActiveTab) => void;
 }) {
+  const isGuest = !walletAddress || walletAddress === "guest";
   const iconMap = {
     home: Home,
     intel: BarChart3,
@@ -953,9 +960,9 @@ function MobileBottomNav({
           );
         })}
         <button
-          onClick={() => goTo("xaman")}
+          onClick={() => goTo(isGuest ? "xamanactivation" : "xaman")}
           className={`min-h-14 rounded-sm border px-2 py-2 transition-all ${
-            activeTab === "xaman"
+            activeTab === (isGuest ? "xamanactivation" : "xaman")
               ? "border-transparent bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] text-white"
               : "border-black/10 bg-[#F7F8FC] text-black/45"
           }`}

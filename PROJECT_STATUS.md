@@ -75,16 +75,19 @@ Ledger Intel
 
 ## Backend Status
 
-The project uses one API router:
+The project uses four active Vercel API functions:
 
 ```txt
 api/ott.ts
+api/news.js
+api/nft.ts
+api/access-payment.ts
 ```
 
-Reason:
+Responsibilities:
 
 ```txt
-Vercel Hobby plan has a serverless function limit.
+`api/ott.ts` handles the shared Xaman and XRPL proof actions. The other three functions serve the live intelligence feed, founder-controlled NFT administration and the standalone access-payment page. Old unused API functions have been removed to keep the deployment below Vercel limits.
 ```
 
 This router handles:

@@ -73,7 +73,7 @@ const quickRoutes: QuickRoute[] = [
     status: "AI Studio",
     text: "Analyseer elk item met builder lens, risico-context en verify checklist.",
     icon: Sparkles,
-    tabId: "ottintel",
+    tabId: "ottintelligence",
   },
   {
     title: "Reward Ledger",

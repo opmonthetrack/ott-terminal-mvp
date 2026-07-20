@@ -131,7 +131,6 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
       const response = await verifyMakeWavesPayload(
         uuid,
         selectedActionId,
-        walletAddress,
       );
       setVerification(response);
 
@@ -417,16 +416,16 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
               {verification?.verified ? (
                 <div className="space-y-3">
                   <MiniStatus
-                    label="Mainnet verified"
-                    value={verification.verified.makeWavesVerified ? "Yes" : "No"}
+                    label="Signed in Xaman"
+                    value={verification.verified.signed ? "Yes" : "No"}
                   />
                   <MiniStatus
-                    label="Ledger status"
-                    value={verification.verified.ledgerStatus}
+                    label="Payload resolved"
+                    value={verification.verified.resolved ? "Yes" : "No"}
                   />
                   <MiniStatus
-                    label="Result"
-                    value={verification.verified.transactionResult ?? "Pending"}
+                    label="SourceTag"
+                    value={String(verification.verified.sourceTag)}
                   />
                   <MiniStatus
                     label="Account"
