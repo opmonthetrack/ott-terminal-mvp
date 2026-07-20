@@ -11,7 +11,7 @@ Check:
 - no unused imports
 - no unresolved files
 - no more than 12 serverless functions
-- only one API router is active: `api/ott.ts`
+- only four intentional API functions are active: `api/ott.ts`, `api/news.js`, `api/nft.ts` and `api/access-payment.ts`
 
 ## 2. Required Files
 

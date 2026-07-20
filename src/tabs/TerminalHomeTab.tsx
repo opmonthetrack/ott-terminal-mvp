@@ -16,7 +16,6 @@ import {
   Sparkles,
   Wallet,
 } from "lucide-react";
-import { LanguageToggle } from "../components/LanguageToggle";
 import { OTTLogo, OTTLogoMark, OTTProofBadge } from "../components/OTTLogo";
 import { MAKE_WAVES_SOURCE_TAG } from "../lib/makeWaves";
 import { useTerminalLanguage } from "../lib/useTerminalLanguage";
@@ -58,7 +57,7 @@ export function TerminalHomeTab({
   walletAddress = "guest",
   onNavigate,
 }: TerminalHomeTabProps) {
-  const { language, setLanguage, copy } = useTerminalLanguage();
+  const { language, copy } = useTerminalLanguage();
   const common = copy.common;
   const isEnglish = language === "en";
   const isGuest = !walletAddress || walletAddress === "guest";
@@ -79,17 +78,17 @@ export function TerminalHomeTab({
       label: isEnglish ? "Wallet optional until proof" : "Wallet pas nodig bij proof",
       text: isEnglish
         ? "When users are ready, Xaman unlocks SourceTag proof, XP and Reward Ledger activity."
-        : "Wanneer users klaar zijn, unlockt Xaman SourceTag proof, XP en Reward Ledger-activiteit.",
+        : "Wanneer gebruikers klaar zijn, activeert Xaman SourceTag-bewijs, XP en activiteit in het beloningsoverzicht.",
       icon: Wallet,
       target: isGuest ? "xamanactivation" : "xaman",
       accent: "magenta",
     },
     {
-      title: isEnglish ? "Pass to unlock" : "Pass voor unlock",
+      title: isEnglish ? "Pass to unlock" : "Ontgrendel met toegangspas",
       label: isEnglish ? "Premium later" : "Premium later",
       text: isEnglish
         ? "Paid users can later unlock through a Web2 Access License or XRPL Access Pass scan."
-        : "Betaalde users kunnen later unlocken via Web2 Access License of XRPL Access Pass scan.",
+        : "Gebruikers kunnen later premiumfuncties ontgrendelen via een Web2-toegangslicentie of een scan van de XRPL Access Pass.",
       icon: KeyRound,
       target: "accessgate",
       accent: "coral",
@@ -137,7 +136,7 @@ export function TerminalHomeTab({
       label: isEnglish ? "Beginner onboarding" : "Beginner onboarding",
       description: isEnglish
         ? "Explain why a new XRPL wallet needs activation and guide users safely before they use proof actions."
-        : "Leg uit waarom een nieuwe XRPL-wallet activatie nodig heeft en begeleid users veilig vóór proof-acties.",
+        : "Leg uit waarom een nieuwe XRPL-wallet activatie nodig heeft en begeleid gebruikers veilig vóór bewijsacties.",
       bullets: [
         isEnglish ? "No seed phrase sharing." : "Nooit seed phrase delen.",
         isEnglish ? "Self activation or assisted support later." : "Zelf activeren of assisted support later.",
@@ -154,11 +153,11 @@ export function TerminalHomeTab({
       label: isEnglish ? "Web2 + XRPL routes" : "Web2 + XRPL routes",
       description: isEnglish
         ? "Premium access is separated into a future fiat Web2 license and the current XRPL Access Pass scanner."
-        : "Premium access is gesplitst in een toekomstige fiat Web2-license en de huidige XRPL Access Pass scanner.",
+        : "Premiumtoegang is verdeeld over een toekomstige Web2-licentie in euro's en de huidige XRPL Access Pass-scanner.",
       bullets: [
-        isEnglish ? "Free users are not blocked by wallet setup." : "Free users worden niet geblokkeerd door wallet setup.",
-        isEnglish ? "Fiat payment flow is coming later, not active now." : "Fiat payment flow komt later, is nu niet actief.",
-        isEnglish ? "XRPL Access Pass remains scanner-only in V1." : "XRPL Access Pass blijft scanner-only in V1.",
+        isEnglish ? "Free users are not blocked by wallet setup." : "Gratis gebruikers worden niet tegengehouden door walletinstellingen.",
+        isEnglish ? "Fiat payment flow is coming later, not active now." : "Betalen in euro's komt later en is nu niet actief.",
+        isEnglish ? "XRPL Access Pass remains scanner-only in V1." : "De XRPL Access Pass kan in V1 alleen worden gescand.",
       ],
       icon: KeyRound,
       actionLabel: isEnglish ? "Open Access Gate" : "Open Access Gate",
@@ -204,10 +203,6 @@ export function TerminalHomeTab({
         <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.15),#ffffff_92%)]" />
 
         <div className="relative z-10 p-4 md:p-6 xl:p-10">
-          <div className="flex justify-end mb-4">
-            <LanguageToggle language={language} onChange={setLanguage} />
-          </div>
-
           <div className="grid grid-cols-12 gap-6 items-center">
             <div className="col-span-12 xl:col-span-7">
               <div className="mb-8 text-[#080808]">
@@ -294,9 +289,18 @@ export function TerminalHomeTab({
                       label={common.connectedWallet}
                       value={walletAddress === "guest" ? common.guestMode : walletAddress}
                     />
-                    <IdentityRow label="Public Mode" value="Free Learning" />
-                    <IdentityRow label="Proof Mode" value="Xaman Optional" />
-                    <IdentityRow label="Premium Mode" value="License / Pass" />
+                    <IdentityRow
+                      label={isEnglish ? "Public Mode" : "Open modus"}
+                      value={isEnglish ? "Free Learning" : "Gratis leren"}
+                    />
+                    <IdentityRow
+                      label={isEnglish ? "Proof Mode" : "Bewijsmodus"}
+                      value={isEnglish ? "Xaman Optional" : "Xaman optioneel"}
+                    />
+                    <IdentityRow
+                      label={isEnglish ? "Premium Mode" : "Premiummodus"}
+                      value={isEnglish ? "License / Pass" : "Licentie / Toegangspas"}
+                    />
                   </div>
 
                   <div className="border border-black/10 bg-[#F7F8FC] p-4 mt-5">
@@ -345,7 +349,7 @@ export function TerminalHomeTab({
             <p className="font-mono text-sm text-black/55 leading-relaxed mb-5">
               {isEnglish
                 ? "OTT Terminal is no longer a wallet-first wall. Guests can read sources, use the Academy preview and understand XRPL before connecting Xaman. Xaman is used for proof, XP and ledger activity. Premium access is separated into a future Web2 Access License and the current scanner-only XRPL Access Pass route."
-                : "OTT Terminal is geen wallet-first muur meer. Guests kunnen bronnen lezen, Academy preview gebruiken en XRPL begrijpen voordat ze Xaman connecten. Xaman is voor proof, XP en ledger-activiteit. Premium access is gescheiden in een toekomstige Web2 Access License en de huidige scanner-only XRPL Access Pass route."}
+                : "OTT Terminal begint niet langer met een walletdrempel. Gasten kunnen bronnen lezen, de Academy-preview gebruiken en XRPL begrijpen voordat ze Xaman koppelen. Xaman wordt gebruikt voor bewijs, XP en ledgeractiviteit. Premiumtoegang is gescheiden in een toekomstige Web2-toegangslicentie en de huidige scanroute voor de XRPL Access Pass."}
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-3">
@@ -354,7 +358,11 @@ export function TerminalHomeTab({
               <FlowStep number="03" title="Activate" text="Xaman guide" />
               <FlowStep number="04" title="Prove" text="SourceTag" />
               <FlowStep number="05" title="Ledger" text="XP / Credits" />
-              <FlowStep number="06" title="Unlock" text="License / Pass" />
+              <FlowStep
+                number="06"
+                title={isEnglish ? "Unlock" : "Ontgrendel"}
+                text={isEnglish ? "License / Pass" : "Licentie / Pas"}
+              />
             </div>
           </div>
 
@@ -367,15 +375,15 @@ export function TerminalHomeTab({
             </div>
 
             <h3 className="font-orbitron text-xl font-black uppercase mb-4">
-              {isEnglish ? "Clear for users, safe for V1." : "Duidelijk voor users, veilig voor V1."}
+              {isEnglish ? "Clear for users, safe for V1." : "Duidelijk voor gebruikers, veilig voor V1."}
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <ReuseItem text={isEnglish ? "Free learning stays open." : "Gratis leren blijft open."} />
               <ReuseItem text={isEnglish ? "Xaman is optional until proof." : "Xaman is pas nodig bij proof."} />
               <ReuseItem text={isEnglish ? "Web2 Access License is coming later." : "Web2 Access License komt later."} />
-              <ReuseItem text={isEnglish ? "XRPL Access Pass is scanner-only." : "XRPL Access Pass is scanner-only."} />
-              <ReuseItem text={isEnglish ? "No mint or payment flow active." : "Geen mint- of paymentflow actief."} />
+              <ReuseItem text={isEnglish ? "XRPL Access Pass is scanner-only." : "De XRPL Access Pass kan alleen worden gescand."} />
+              <ReuseItem text={isEnglish ? "No mint or payment flow active." : "Er is geen actieve mint- of betaalroute."} />
               <ReuseItem text={isEnglish ? "No custody, broker or yield promise." : "Geen custody, broker of yield-belofte."} />
             </div>
           </div>
@@ -394,7 +402,7 @@ export function TerminalHomeTab({
           <p className="font-mono text-xs text-black/50 max-w-xl leading-relaxed">
             {isEnglish
               ? "Founder demo and QA tools are hidden behind Labs. The public landing now focuses on normal users, non-Xaman starters and safe XRPL onboarding."
-              : "Founder demo en QA-tools zitten achter Labs. De publieke landing focust nu op normale users, non-Xaman starters en veilige XRPL-onboarding."}
+              : "Founder-demo en QA-tools zitten achter Labs. De publieke startpagina richt zich op gewone gebruikers, starters zonder Xaman en veilige XRPL-onboarding."}
           </p>
         </div>
 
