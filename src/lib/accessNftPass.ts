@@ -55,21 +55,27 @@ export const OTT_ACCESS_PASS_TAXON = Number(
 
 export const OTT_ACCESS_PASS_METADATA_CID =
   import.meta.env.VITE_OTT_ACCESS_PASS_METADATA_CID ||
-  "bafkreifw47mopkw7qq4fppxkhgcthyrjvger5uyrqybyj52aunqhsz2cbm";
+  "bafkreiea77su5l5jntnaw3mzbmjdy5odsut2lxqvtfiarwk5usp3wq34py";
+
+export const OTT_ACCESS_PASS_LEGACY_METADATA_CIDS = [
+  "bafkreifw47mopkw7qq4fppxkhgcthyrjvger5uyrqybyj52aunqhsz2cbm",
+] as const;
+
+export const OTT_ACCESS_PASS_ACCEPTED_METADATA_CIDS = Array.from(
+  new Set([OTT_ACCESS_PASS_METADATA_CID, ...OTT_ACCESS_PASS_LEGACY_METADATA_CIDS]),
+);
 
 export const OTT_ACCESS_PASS_METADATA_URI =
   import.meta.env.VITE_OTT_ACCESS_PASS_METADATA_URI ||
   `ipfs://${OTT_ACCESS_PASS_METADATA_CID}`;
 
 export const OTT_ACCESS_PASS_URI_KEYWORDS = [
-  OTT_ACCESS_PASS_METADATA_CID,
-  OTT_ACCESS_PASS_METADATA_URI,
-  `https://ipfs.io/ipfs/${OTT_ACCESS_PASS_METADATA_CID}`,
-  `https://gateway.pinata.cloud/ipfs/${OTT_ACCESS_PASS_METADATA_CID}`,
-  "OTT_ACCESS_PASS",
-  "ONTHETRACK_ACCESS_PASS",
-  "XRPL_OTT_TERMINAL_ACCESS",
-  "OnTheTrack",
+  ...OTT_ACCESS_PASS_ACCEPTED_METADATA_CIDS,
+  ...OTT_ACCESS_PASS_ACCEPTED_METADATA_CIDS.map((cid) => `ipfs://${cid}`),
+  ...OTT_ACCESS_PASS_ACCEPTED_METADATA_CIDS.map((cid) => `https://ipfs.io/ipfs/${cid}`),
+  ...OTT_ACCESS_PASS_ACCEPTED_METADATA_CIDS.map(
+    (cid) => `https://gateway.pinata.cloud/ipfs/${cid}`,
+  ),
 ];
 
 export function isLikelyXrplAddress(value: string) {
@@ -270,13 +276,17 @@ export function shortNftId(nftokenId?: string) {
 }
 
 export function getAcceptedAccessPassUris() {
-  return [
-    OTT_ACCESS_PASS_METADATA_URI,
-    `ipfs://${OTT_ACCESS_PASS_METADATA_CID}`,
-    OTT_ACCESS_PASS_METADATA_CID,
-    `https://ipfs.io/ipfs/${OTT_ACCESS_PASS_METADATA_CID}`,
-    `https://gateway.pinata.cloud/ipfs/${OTT_ACCESS_PASS_METADATA_CID}`,
-  ];
+  return Array.from(
+    new Set([
+      OTT_ACCESS_PASS_METADATA_URI,
+      ...OTT_ACCESS_PASS_ACCEPTED_METADATA_CIDS.flatMap((cid) => [
+        cid,
+        `ipfs://${cid}`,
+        `https://ipfs.io/ipfs/${cid}`,
+        `https://gateway.pinata.cloud/ipfs/${cid}`,
+      ]),
+    ]),
+  );
 }
 
 function nftUriMatchesAccessPass(rawUri: string, decodedUri: string) {
@@ -291,11 +301,15 @@ function nftUriMatchesAccessPass(rawUri: string, decodedUri: string) {
     return true;
   }
 
-  if (
-    normalizedDecoded.includes(normalizeText(OTT_ACCESS_PASS_METADATA_CID)) ||
-    normalizedRaw.includes(normalizeText(encodeNftUri(OTT_ACCESS_PASS_METADATA_URI))) ||
-    normalizedRaw.includes(normalizeText(encodeNftUri(OTT_ACCESS_PASS_METADATA_CID)))
-  ) {
+  if (OTT_ACCESS_PASS_ACCEPTED_METADATA_CIDS.some((cid) => {
+    const metadataUri = `ipfs://${cid}`;
+
+    return (
+      normalizedDecoded.includes(normalizeText(cid)) ||
+      normalizedRaw.includes(normalizeText(encodeNftUri(metadataUri))) ||
+      normalizedRaw.includes(normalizeText(encodeNftUri(cid)))
+    );
+  })) {
     return true;
   }
 

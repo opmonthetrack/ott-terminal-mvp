@@ -154,11 +154,11 @@ const smokeTests: TestItem[] = [
   {
     id: "access-gate",
     area: "Access",
-    title: "Access Gate scanner-only loads",
+    title: "Access Gate payment and scanner flow loads",
     expected:
-      "Access Gate shows Free Public Access, Xaman User Access, Web2 Access License coming soon and XRPL Access Pass scanner-only. No mint/payment/claim flow is active.",
-    risk: "Old payment/mint flow returns or non-Xaman users feel blocked.",
-    action: "Open Access Gate as guest and connected wallet → confirm scanner-only copy.",
+      "Access Gate shows free public access, Xaman onboarding, the active 1.589 XRP service-payment page, manual founder delivery and the NFT scanner. No automatic mint or unlock runs after payment.",
+    risk: "Payment, manual NFT delivery and scanner copy become inconsistent or non-Xaman users feel blocked.",
+    action: "Open Access Gate as guest and connected wallet → confirm payment, delivery and scanner copy.",
   },
   {
     id: "pitch-mode",
@@ -192,7 +192,7 @@ const smokeTests: TestItem[] = [
     area: "Legal",
     title: "Legal and coming-soon boundaries are clear",
     expected:
-      "Certificate NFT, XRP/RLUSD support, donations, Web2 license and payment flows are clearly future/coming soon or scanner-only, not active investment/payment products.",
+      "Certificate NFT, XRP/RLUSD support, donations and Web2 license are clearly future/coming soon. The active Access Pass payment is presented only as a utility service payment with manual NFT delivery, never as an investment product.",
     risk: "Jury/user thinks there is active brokerage, yield, token value promise, paid minting or financial advice.",
     action: "Read Home, SourceTag, Academy, Access Gate, Submission Pack and Newsroom copy for hype/legal issues.",
   },
@@ -206,7 +206,7 @@ const quickRouteSteps = [
   "Xaman Activation → explain wallet onboarding for new users",
   "Daily Check-In → create proof → sign in Xaman → return/verify",
   "Reward Ledger → confirm XP / OTT Credits",
-  "Access Gate → Web2 License coming soon + XRPL Access Pass scanner-only",
+  "Access Gate → 1.589 XRP service payment + manual NFT delivery + scanner unlock",
   "Pitch Mode → 2-minute demo",
   "Submission Pack → launch promo copy",
 ];

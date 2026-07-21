@@ -167,6 +167,15 @@ const TF_SELL_NFTOKEN = 1;
 const HASH_PATTERN = /^[A-Fa-f0-9]{64}$/;
 const NFTOKEN_ID_PATTERN = /^[A-Fa-f0-9]{64}$/;
 
+function getFounderHeaders(founderToken: string) {
+  return {
+    "Content-Type": "application/json",
+    ...(founderToken.trim()
+      ? { Authorization: `Bearer ${founderToken.trim()}` }
+      : {}),
+  };
+}
+
 function getPayloadUrl(response: { payload?: XamanPayloadShape } | null) {
   return (
     response?.payload?.next?.always ??
@@ -195,6 +204,7 @@ export function FounderNftMintConsole({
   walletAddress = "guest",
 }: FounderNftMintConsoleProps) {
   const [issuerWallet, setIssuerWallet] = useState(OTT_ACCESS_PASS_ISSUER);
+  const [founderToken, setFounderToken] = useState("");
   const [accessTier, setAccessTier] = useState("Terminal Services");
   const [payloadResponse, setPayloadResponse] = useState<MintPayloadResponse | null>(null);
   const [verification, setVerification] =
@@ -250,9 +260,7 @@ export function FounderNftMintConsole({
     try {
       const response = await fetch("/api/nft", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getFounderHeaders(founderToken),
         body: JSON.stringify({
           action: "xaman.createAccessPassMintPayload",
           issuerWallet,
@@ -289,9 +297,7 @@ export function FounderNftMintConsole({
     try {
       const response = await fetch("/api/nft", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getFounderHeaders(founderToken),
         body: JSON.stringify({
           action: "xaman.verifyNftPayload",
           uuid: payloadUuid,
@@ -333,9 +339,7 @@ export function FounderNftMintConsole({
     try {
       const response = await fetch("/api/nft", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getFounderHeaders(founderToken),
         body: JSON.stringify({
           action: "xrpl.verifyAccessPassMint",
           txHash: mintTxHash.trim(),
@@ -387,9 +391,7 @@ export function FounderNftMintConsole({
     try {
       const response = await fetch("/api/nft", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getFounderHeaders(founderToken),
         body: JSON.stringify({
           action: "xaman.createAccessPassSendOfferPayload",
           issuerWallet,
@@ -426,9 +428,7 @@ export function FounderNftMintConsole({
     try {
       const response = await fetch("/api/nft", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getFounderHeaders(founderToken),
         body: JSON.stringify({
           action: "xaman.verifyNftPayload",
           uuid: sendPayloadUuid,
@@ -477,9 +477,7 @@ export function FounderNftMintConsole({
     try {
       const response = await fetch("/api/nft", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getFounderHeaders(founderToken),
         body: JSON.stringify({
           action: "xrpl.verifyAccessPassSendOffer",
           txHash,
@@ -611,6 +609,12 @@ export function FounderNftMintConsole({
         </div>
 
         <div className="col-span-12 xl:col-span-4 space-y-4">
+          <TextInput
+            label="Founder API token (kept in this tab only)"
+            value={founderToken}
+            onChange={setFounderToken}
+            type="password"
+          />
           <TextInput label="Issuer wallet" value={issuerWallet} onChange={setIssuerWallet} />
           <TextInput label="Access tier memo" value={accessTier} onChange={setAccessTier} />
           <InfoBox label="Metadata URI" value={OTT_ACCESS_PASS_METADATA_URI} onCopy={() => copyText(OTT_ACCESS_PASS_METADATA_URI)} />
@@ -643,7 +647,7 @@ export function FounderNftMintConsole({
         <div className="col-span-12 xl:col-span-3 space-y-4">
           <button
             onClick={createMintPayload}
-            disabled={busy || !issuerLooksValid}
+            disabled={busy || !issuerLooksValid || !founderToken.trim()}
             className="w-full bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] text-white p-4 text-left hover:brightness-95 disabled:opacity-40 transition-all"
           >
             {busy ? <Loader2 size={18} className="animate-spin mb-3" /> : <Rocket size={18} className="mb-3" />}
@@ -846,11 +850,22 @@ function readErrorMessage(error: unknown, fallback: string) {
     : fallback;
 }
 
-function TextInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+function TextInput({
+  label,
+  value,
+  onChange,
+  type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  type?: "text" | "password";
+}) {
   return (
     <label className="block">
       <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">{label}</p>
       <input
+        type={type}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         className="w-full border border-black/10 bg-[#F7F8FC] px-4 py-4 font-mono text-xs text-black/70 outline-none focus:border-[#3898E8]"

@@ -55,9 +55,17 @@ export type XamanPayloadVerificationResponse = {
     resolved: boolean;
     account: string | null;
     txid: string | null;
-    sourceTag: number;
+    sourceTag: number | null;
     actionId: MakeWavesActionId;
     xp: number;
+    makeWavesVerified: boolean;
+    ledgerValidated: boolean;
+    transactionResult: string;
+    sourceTagMatches: boolean;
+    accountMatches: boolean;
+    actionMemoMatches: boolean;
+    isPayment: boolean;
+    ledgerIndex: number | null;
   };
   payload?: unknown;
   error?: string;
@@ -218,8 +226,12 @@ export function isMakeWavesRewardAllowed(
   const action = getMakeWavesAction(actionId);
 
   return Boolean(
-    response?.verified?.signed &&
-      response.verified.sourceTag === MAKE_WAVES_SOURCE_TAG &&
+    response?.verified?.makeWavesVerified &&
+      response.verified.ledgerValidated &&
+      response.verified.transactionResult === "tesSUCCESS" &&
+      response.verified.sourceTagMatches &&
+      response.verified.accountMatches &&
+      response.verified.actionMemoMatches &&
       response.verified.xp === action.xp
   );
 }
@@ -231,8 +243,16 @@ export function getMakeWavesVerificationLabel(
     return "No Xaman payload verified yet";
   }
 
+  if (response.verified.makeWavesVerified) {
+    return `XRPL Mainnet transaction validated with SourceTag ${MAKE_WAVES_SOURCE_TAG}`;
+  }
+
+  if (response.verified.signed && !response.verified.ledgerValidated) {
+    return "Xaman payload signed; XRPL validation is still pending. Try again shortly";
+  }
+
   if (response.verified.signed) {
-    return `Xaman payload signed with SourceTag ${MAKE_WAVES_SOURCE_TAG}`;
+    return "Xaman payload signed, but the XRPL transaction did not pass every proof check";
   }
 
   return "Xaman payload not signed yet";

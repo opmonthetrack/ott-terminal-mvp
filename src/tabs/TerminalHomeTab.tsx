@@ -157,7 +157,7 @@ export function TerminalHomeTab({
       bullets: [
         isEnglish ? "Free users are not blocked by wallet setup." : "Gratis gebruikers worden niet tegengehouden door walletinstellingen.",
         isEnglish ? "Fiat payment flow is coming later, not active now." : "Betalen in euro's komt later en is nu niet actief.",
-        isEnglish ? "XRPL Access Pass remains scanner-only in V1." : "De XRPL Access Pass kan in V1 alleen worden gescand.",
+        isEnglish ? "XRPL Access Pass uses Xaman payment, manual delivery and scanner-based unlock." : "De XRPL Access Pass gebruikt Xaman-betaling, handmatige levering en scanner-unlock.",
       ],
       icon: KeyRound,
       actionLabel: isEnglish ? "Open Access Gate" : "Open Access Gate",
@@ -348,8 +348,8 @@ export function TerminalHomeTab({
 
             <p className="font-mono text-sm text-black/55 leading-relaxed mb-5">
               {isEnglish
-                ? "OTT Terminal is no longer a wallet-first wall. Guests can read sources, use the Academy preview and understand XRPL before connecting Xaman. Xaman is used for proof, XP and ledger activity. Premium access is separated into a future Web2 Access License and the current scanner-only XRPL Access Pass route."
-                : "OTT Terminal begint niet langer met een walletdrempel. Gasten kunnen bronnen lezen, de Academy-preview gebruiken en XRPL begrijpen voordat ze Xaman koppelen. Xaman wordt gebruikt voor bewijs, XP en ledgeractiviteit. Premiumtoegang is gescheiden in een toekomstige Web2-toegangslicentie en de huidige scanroute voor de XRPL Access Pass."}
+                ? "OTT Terminal is no longer a wallet-first wall. Guests can read sources, use the Academy preview and understand XRPL before connecting Xaman. Xaman is used for proof, XP and ledger activity. Premium access uses a 1.589 XRP service payment, manual founder delivery and an NFT scanner; Web2 access remains a future option."
+                : "OTT Terminal begint niet langer met een walletdrempel. Gasten kunnen bronnen lezen, de Academy-preview gebruiken en XRPL begrijpen voordat ze Xaman koppelen. Xaman wordt gebruikt voor bewijs, XP en ledgeractiviteit. Premiumtoegang gebruikt een servicebetaling van 1,589 XRP, handmatige founder-levering en een NFT-scanner; Web2-toegang blijft een toekomstige optie."}
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-3">
@@ -382,8 +382,8 @@ export function TerminalHomeTab({
               <ReuseItem text={isEnglish ? "Free learning stays open." : "Gratis leren blijft open."} />
               <ReuseItem text={isEnglish ? "Xaman is optional until proof." : "Xaman is pas nodig bij proof."} />
               <ReuseItem text={isEnglish ? "Web2 Access License is coming later." : "Web2 Access License komt later."} />
-              <ReuseItem text={isEnglish ? "XRPL Access Pass is scanner-only." : "De XRPL Access Pass kan alleen worden gescand."} />
-              <ReuseItem text={isEnglish ? "No mint or payment flow active." : "Er is geen actieve mint- of betaalroute."} />
+              <ReuseItem text={isEnglish ? "XRPL Access Pass unlocks after payment, manual delivery and NFT scan." : "De XRPL Access Pass ontgrendelt na betaling, handmatige levering en NFT-scan."} />
+              <ReuseItem text={isEnglish ? "No automatic mint or automatic unlock runs after payment." : "Na betaling draait geen automatische mint of automatische unlock."} />
               <ReuseItem text={isEnglish ? "No custody, broker or yield promise." : "Geen custody, broker of yield-belofte."} />
             </div>
           </div>

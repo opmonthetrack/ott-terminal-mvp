@@ -112,7 +112,7 @@ Premium access has two planned routes:
    For crypto-native users who unlock through a wallet-held utility NFT.
 ```
 
-The V1 Access Gate is scanner-only. It does not mint NFTs, create payments, claim tokens or move XRP.
+The V1 Access Gate combines a 1.589 XRP Xaman service-payment page with manual founder-controlled mint and delivery. Payment never auto-mints or auto-unlocks; the customer scans the delivered NFT from the same wallet.
 
 ### Founder / Labs
 
@@ -361,9 +361,9 @@ Access Gate explains the access model and scans connected wallets for an OTT Acc
 The current V1 Access Gate is live-safe:
 
 ```txt
-scanner-only
-no mint
-no payment
+scanner unlock after delivery
+manual founder-controlled mint and delivery
+1.589 XRP Xaman service payment
 no claim
 no XRP movement
 no RLUSD movement
@@ -383,7 +383,7 @@ Web2 Access License
 → coming soon for fiat users through a business/payment route
 
 XRPL Access Pass
-→ scanner-only utility NFT access route for crypto-native users
+→ Xaman service payment, manual NFT delivery and scanner unlock for crypto-native users
 ```
 
 Access Pass positioning:
@@ -450,7 +450,7 @@ It checks whether the Make Waves demo route is ready:
 - Reward Ledger
 - SourceTag
 - Academy
-- Access Gate scanner-only
+- Access Gate payment + manual delivery + scanner unlock
 - Pitch Mode
 - Submission Pack
 
@@ -579,7 +579,7 @@ Two-minute version:
 7. Open Xaman Center or Daily Check-In.
 8. Sign/verify a SourceTag proof payload.
 9. Open Reward Ledger and show XP / OTT Credits.
-10. Open Access Gate and explain Web2 license later + XRPL Access Pass scanner-only.
+10. Open Access Gate and explain the 1.589 XRP payment, manual founder delivery and XRPL Access Pass scanner unlock.
 11. Open Founder / Labs only for Pitch Mode or Submission Pack if needed.
 
 Core sentence:

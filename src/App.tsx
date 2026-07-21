@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import {
   BarChart3,
   Fingerprint,
@@ -15,41 +15,6 @@ import {
 } from "lucide-react";
 import { OTTLogo, OTTLogoMark, OTTProofBadge } from "./components/OTTLogo";
 import { TerminalHomeTab } from "./tabs/TerminalHomeTab";
-import { DashboardTab } from "./tabs/DashboardTab";
-import { DailyCheckInTab } from "./tabs/DailyCheckInTab";
-import { SourceTagMonitorTab } from "./tabs/SourceTagMonitorTab";
-import { XamanCenterTab } from "./tabs/XamanCenterTab";
-import { XamanActivationTab } from "./tabs/XamanActivationTab";
-import { XrplVerifyTab } from "./tabs/XrplVerifyTab";
-import { NetworkState } from "./tabs/NetworkState";
-import { WalletTab } from "./tabs/WalletTab";
-import { PortfolioTab } from "./tabs/PortfolioTab";
-import { EcosystemTab } from "./tabs/EcosystemTab";
-import { ValidatorTab } from "./tabs/ValidatorTab";
-import { DeveloperHubTab } from "./tabs/DeveloperHubTab";
-import { TokenizationTab } from "./tabs/TokenizationTab";
-import { TokenFactory } from "./tabs/TokenFactory";
-import { ProfileTab } from "./tabs/ProfileTab";
-import { OTTTokenCenterTab } from "./tabs/OTTTokenCenterTab";
-import { OTTRewardPolicyTab } from "./tabs/OTTRewardPolicyTab";
-import { RewardLedgerTab } from "./tabs/RewardLedgerTab";
-import { OTTTestnetTokenTab } from "./tabs/OTTTestnetTokenTab";
-import { PartnerHubTab } from "./tabs/PartnerHubTab";
-import { TruthDeskTab } from "./tabs/TruthDeskTab";
-import { AccessGateTab } from "./tabs/AccessGateTab";
-import { PitchModeTab } from "./tabs/PitchModeTab";
-import { SubmissionPackTab } from "./tabs/SubmissionPackTab";
-import { SmokeTestTab } from "./tabs/SmokeTestTab";
-import { OTTIntelligence } from "./tabs/OTTIntelligence";
-import { LaunchControlTab } from "./tabs/LaunchControlTab";
-import { AIHubTab } from "./tabs/AIHubTab";
-import { MarketplaceTab } from "./tabs/MarketplaceTab";
-import { NewsTab } from "./tabs/NewsTab";
-import { DeFiTab } from "./tabs/DeFiTab";
-import { AcademyTab } from "./tabs/AcademyTab";
-import { LedgerIntelTab } from "./tabs/LedgerIntelTab";
-import { RoadmapTab } from "./tabs/RoadmapTab";
-import { SupportDonationTab } from "./tabs/SupportDonationTab";
 import { isAccessVerified, loadAccessState } from "./lib/accessStore";
 import { verifyMakeWavesPayload } from "./lib/xamanClient";
 import {
@@ -59,6 +24,42 @@ import {
 } from "./lib/xamanMobileSession";
 import { useTerminalLanguage } from "./lib/useTerminalLanguage";
 import type { TerminalLanguage } from "./lib/terminalCopy";
+
+const DashboardTab = lazy(() => import("./tabs/DashboardTab").then((module) => ({ default: module.DashboardTab })));
+const DailyCheckInTab = lazy(() => import("./tabs/DailyCheckInTab").then((module) => ({ default: module.DailyCheckInTab })));
+const SourceTagMonitorTab = lazy(() => import("./tabs/SourceTagMonitorTab").then((module) => ({ default: module.SourceTagMonitorTab })));
+const XamanCenterTab = lazy(() => import("./tabs/XamanCenterTab").then((module) => ({ default: module.XamanCenterTab })));
+const XamanActivationTab = lazy(() => import("./tabs/XamanActivationTab").then((module) => ({ default: module.XamanActivationTab })));
+const XrplVerifyTab = lazy(() => import("./tabs/XrplVerifyTab").then((module) => ({ default: module.XrplVerifyTab })));
+const NetworkState = lazy(() => import("./tabs/NetworkState").then((module) => ({ default: module.NetworkState })));
+const WalletTab = lazy(() => import("./tabs/WalletTab").then((module) => ({ default: module.WalletTab })));
+const PortfolioTab = lazy(() => import("./tabs/PortfolioTab").then((module) => ({ default: module.PortfolioTab })));
+const EcosystemTab = lazy(() => import("./tabs/EcosystemTab").then((module) => ({ default: module.EcosystemTab })));
+const ValidatorTab = lazy(() => import("./tabs/ValidatorTab").then((module) => ({ default: module.ValidatorTab })));
+const DeveloperHubTab = lazy(() => import("./tabs/DeveloperHubTab").then((module) => ({ default: module.DeveloperHubTab })));
+const TokenizationTab = lazy(() => import("./tabs/TokenizationTab").then((module) => ({ default: module.TokenizationTab })));
+const TokenFactory = lazy(() => import("./tabs/TokenFactory").then((module) => ({ default: module.TokenFactory })));
+const ProfileTab = lazy(() => import("./tabs/ProfileTab").then((module) => ({ default: module.ProfileTab })));
+const OTTTokenCenterTab = lazy(() => import("./tabs/OTTTokenCenterTab").then((module) => ({ default: module.OTTTokenCenterTab })));
+const OTTRewardPolicyTab = lazy(() => import("./tabs/OTTRewardPolicyTab").then((module) => ({ default: module.OTTRewardPolicyTab })));
+const RewardLedgerTab = lazy(() => import("./tabs/RewardLedgerTab").then((module) => ({ default: module.RewardLedgerTab })));
+const OTTTestnetTokenTab = lazy(() => import("./tabs/OTTTestnetTokenTab").then((module) => ({ default: module.OTTTestnetTokenTab })));
+const PartnerHubTab = lazy(() => import("./tabs/PartnerHubTab").then((module) => ({ default: module.PartnerHubTab })));
+const TruthDeskTab = lazy(() => import("./tabs/TruthDeskTab").then((module) => ({ default: module.TruthDeskTab })));
+const AccessGateTab = lazy(() => import("./tabs/AccessGateTab").then((module) => ({ default: module.AccessGateTab })));
+const PitchModeTab = lazy(() => import("./tabs/PitchModeTab").then((module) => ({ default: module.PitchModeTab })));
+const SubmissionPackTab = lazy(() => import("./tabs/SubmissionPackTab").then((module) => ({ default: module.SubmissionPackTab })));
+const SmokeTestTab = lazy(() => import("./tabs/SmokeTestTab").then((module) => ({ default: module.SmokeTestTab })));
+const OTTIntelligence = lazy(() => import("./tabs/OTTIntelligence").then((module) => ({ default: module.OTTIntelligence })));
+const LaunchControlTab = lazy(() => import("./tabs/LaunchControlTab").then((module) => ({ default: module.LaunchControlTab })));
+const AIHubTab = lazy(() => import("./tabs/AIHubTab").then((module) => ({ default: module.AIHubTab })));
+const MarketplaceTab = lazy(() => import("./tabs/MarketplaceTab").then((module) => ({ default: module.MarketplaceTab })));
+const NewsTab = lazy(() => import("./tabs/NewsTab").then((module) => ({ default: module.NewsTab })));
+const DeFiTab = lazy(() => import("./tabs/DeFiTab").then((module) => ({ default: module.DeFiTab })));
+const AcademyTab = lazy(() => import("./tabs/AcademyTab").then((module) => ({ default: module.AcademyTab })));
+const LedgerIntelTab = lazy(() => import("./tabs/LedgerIntelTab").then((module) => ({ default: module.LedgerIntelTab })));
+const RoadmapTab = lazy(() => import("./tabs/RoadmapTab").then((module) => ({ default: module.RoadmapTab })));
+const SupportDonationTab = lazy(() => import("./tabs/SupportDonationTab").then((module) => ({ default: module.SupportDonationTab })));
 
 type ActiveTab =
   | "home"
@@ -107,6 +108,7 @@ type MenuItem = {
 type MenuGroup = {
   title: string;
   items: MenuItem[];
+  collapsedByDefault?: boolean;
 };
 
 const sourceTag = "2606170002";
@@ -169,6 +171,7 @@ function getCoreMenuGroups(language: TerminalLanguage): MenuGroup[] {
     },
     {
       title: isEnglish ? "Proof / Education" : "Proof / Educatie",
+      collapsedByDefault: true,
       items: [
         { id: "source", label: "SourceTag", status: sourceTag },
         { id: "roadmap", label: isEnglish ? "Roadmap & Vote" : "Roadmap & Stem", status: "Vote" },
@@ -462,7 +465,7 @@ function MainApp() {
             goTo={goTo}
           />
         ) : (
-          <>
+          <Suspense fallback={<RouteLoadingState />}>
             {activeTab === "home" && (
               <TerminalHomeTab walletAddress={walletAddress} onNavigate={navigateTo} />
             )}
@@ -503,7 +506,7 @@ function MainApp() {
             {activeTab === "defi" && <DeFiTab />}
             {activeTab === "academy" && <AcademyTab />}
             {activeTab === "intel" && <LedgerIntelTab />}
-          </>
+          </Suspense>
         )}
       </main>
 
@@ -513,6 +516,18 @@ function MainApp() {
         items={mobilePrimaryItems}
         goTo={goTo}
       />
+    </div>
+  );
+}
+
+function RouteLoadingState() {
+  return (
+    <div className="min-h-[60vh] flex items-center justify-center p-6">
+      <div className="border border-black/10 bg-[#F7F8FC] px-6 py-5 text-center">
+        <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-black/40">
+          Loading terminal module…
+        </p>
+      </div>
     </div>
   );
 }
@@ -700,10 +715,11 @@ function DesktopNav({
   return (
     <nav className="space-y-6">
       {menuGroups.map((group) => (
-        <div key={group.title}>
-          <p className="font-mono text-[9px] text-black/35 uppercase tracking-[0.35em] mb-2 px-2">
-            {group.title}
-          </p>
+        <details key={group.title} open={!group.collapsedByDefault ? true : undefined}>
+          <summary className="cursor-pointer list-none font-mono text-[9px] text-black/45 hover:text-black uppercase tracking-[0.28em] mb-2 px-2 py-1 flex items-center justify-between gap-2">
+            <span>{group.title}</span>
+            <span aria-hidden="true">＋</span>
+          </summary>
           <div className="space-y-1">
             {group.items.map((item) => {
               const isActive = activeTab === item.id;
@@ -729,7 +745,7 @@ function DesktopNav({
               );
             })}
           </div>
-        </div>
+        </details>
       ))}
     </nav>
   );
@@ -868,7 +884,7 @@ function LockedPremiumPreview({
                     : isEnglish ? "Scan Access Pass" : "Scan Access Pass"}
                 </p>
                 <p className="font-mono text-[10px] uppercase tracking-widest text-white/75">
-                  {isGuest ? "Wallet onboarding" : "Scanner-only"}
+                  {isGuest ? "Wallet onboarding" : "Scan delivered pass"}
                 </p>
               </button>
               <button
@@ -894,7 +910,7 @@ function LockedPremiumPreview({
                 <LockInfoRow label="Free" value="Home, Intel, Newsroom, Activation, Academy, Proof" />
                 <LockInfoRow label="Premium" value="Truth Desk, Marketplace, partner tools" />
                 <LockInfoRow label="Unlock" value="Exact OTT Access Pass NFT match" />
-                <LockInfoRow label="Safety" value="No mint, no payment, scanner-only gate" />
+                <LockInfoRow label="Safety" value="Payment verified; manual mint/delivery; NFT scanner unlock" />
               </div>
             </div>
           </div>
