@@ -1,4 +1,4 @@
-import type { ElementType } from "react";
+import { useEffect, useState, type ElementType } from "react";
 import {
   ArrowRight,
   BookOpen,
@@ -6,9 +6,13 @@ import {
   Compass,
   FileSearch,
   ShieldCheck,
+  UserCircle,
   Wallet,
+  X,
 } from "lucide-react";
 import { OTTLogoMark } from "../components/OTTLogo";
+import { getOttAccountName } from "../lib/ottAuth";
+import { useOttAuthSession } from "../lib/useOttAuthSession";
 import { useTerminalLanguage } from "../lib/useTerminalLanguage";
 
 type TerminalHomeTabProps = {
@@ -24,13 +28,27 @@ type JourneyCard = {
   target: string;
 };
 
+const WELCOME_CHOICE_KEY = "ott-account-welcome-choice-v1";
+
 export function TerminalHomeTab({
   walletAddress = "guest",
   onNavigate,
 }: TerminalHomeTabProps) {
   const { language } = useTerminalLanguage();
+  const { user, signedIn, loading: authLoading } = useOttAuthSession();
+  const [welcomeOpen, setWelcomeOpen] = useState(false);
   const isEnglish = language === "en";
-  const isGuest = !walletAddress || walletAddress === "guest";
+  const isGuestWallet = !walletAddress || walletAddress === "guest";
+  const accountName = getOttAccountName(user);
+
+  useEffect(() => {
+    if (authLoading || signedIn || typeof window === "undefined") {
+      setWelcomeOpen(false);
+      return;
+    }
+
+    setWelcomeOpen(window.localStorage.getItem(WELCOME_CHOICE_KEY) !== "done");
+  }, [authLoading, signedIn]);
 
   const journey: JourneyCard[] = [
     {
@@ -66,11 +84,36 @@ export function TerminalHomeTab({
     onNavigate?.(target);
   }
 
+  function rememberWelcomeChoice() {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(WELCOME_CHOICE_KEY, "done");
+    }
+    setWelcomeOpen(false);
+  }
+
+  function openAccount() {
+    rememberWelcomeChoice();
+    navigate("wallet");
+  }
+
+  function continueAsGuest() {
+    rememberWelcomeChoice();
+  }
+
   return (
     <div className="min-h-screen bg-white text-slate-950">
+      {welcomeOpen && (
+        <WelcomeChoice
+          isEnglish={isEnglish}
+          onCreateAccount={openAccount}
+          onContinueGuest={continueAsGuest}
+          onClose={continueAsGuest}
+        />
+      )}
+
       <section className="border-b border-slate-200">
-        <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-24 lg:py-28">
-          <div className="grid items-center gap-14 lg:grid-cols-[1.15fr_0.85fr]">
+        <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-20 lg:py-24">
+          <div className="grid items-center gap-12 lg:grid-cols-[1.12fr_0.88fr]">
             <div className="max-w-3xl">
               <div className="mb-7 flex items-center gap-3">
                 <OTTLogoMark size={42} />
@@ -86,23 +129,25 @@ export function TerminalHomeTab({
 
               <h1 className="max-w-3xl text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">
                 {isEnglish
-                  ? "Understand the XRP Ledger with more clarity and less noise."
-                  : "Begrijp de XRP Ledger met meer duidelijkheid en minder ruis."}
+                  ? "Learn XRPL. Verify your progress. Connect a wallet when you are ready."
+                  : "Leer XRPL. Verifieer je voortgang. Koppel een wallet wanneer je er klaar voor bent."}
               </h1>
 
               <p className="mt-7 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
                 {isEnglish
-                  ? "Learn the basics, examine evidence and understand wallet risks. Connect a wallet only when an action truly requires it."
-                  : "Leer de basis, onderzoek bewijs en begrijp walletrisico’s. Koppel pas een wallet wanneer een actie dat echt vereist."}
+                  ? "Start with a normal OTT account or explore as a guest. A wallet is never required just to learn."
+                  : "Start met een normaal OTT-account of ontdek als gast. Een wallet is nooit nodig om alleen te leren."}
               </p>
 
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
                 <button
                   type="button"
-                  onClick={() => navigate("academy")}
+                  onClick={() => signedIn ? navigate("academy") : openAccount()}
                   className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-slate-800"
                 >
-                  {isEnglish ? "Start learning" : "Start met leren"}
+                  {signedIn
+                    ? isEnglish ? "Continue learning" : "Ga verder met leren"
+                    : isEnglish ? "Create free account" : "Maak gratis account"}
                   <ArrowRight size={17} />
                 </button>
                 <button
@@ -110,52 +155,28 @@ export function TerminalHomeTab({
                   onClick={() => navigate("intel")}
                   className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3.5 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
                 >
-                  {isEnglish ? "Explore the ecosystem" : "Ontdek het ecosysteem"}
+                  {isEnglish ? "Explore as guest" : "Ontdek als gast"}
                   <Compass size={17} />
                 </button>
               </div>
-            </div>
 
-            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 sm:p-8">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                {isEnglish ? "Your starting point" : "Jouw startpunt"}
+              <p className="mt-4 text-xs text-slate-500">
+                {isEnglish
+                  ? "No wallet, seed phrase or payment required to create an account."
+                  : "Geen wallet, seed phrase of betaling nodig om een account te maken."}
               </p>
-              <div className="mt-6 space-y-5">
-                <StartPoint
-                  number="01"
-                  title={isEnglish ? "Learn without a wallet" : "Leer zonder wallet"}
-                  text={isEnglish ? "Courses and research are available first." : "Cursussen en onderzoek zijn eerst beschikbaar."}
-                />
-                <StartPoint
-                  number="02"
-                  title={isEnglish ? "Prove what you understand" : "Bewijs wat je begrijpt"}
-                  text={isEnglish ? "Complete questions and knowledge checks." : "Voltooi vragen en kennistoetsen."}
-                />
-                <StartPoint
-                  number="03"
-                  title={isEnglish ? "Connect only when needed" : "Koppel alleen wanneer nodig"}
-                  text={isEnglish ? "Use a supported wallet for signing or on-chain proof." : "Gebruik een ondersteunde wallet voor ondertekening of on-chain bewijs."}
-                />
-              </div>
-
-              <div className="mt-7 rounded-2xl border border-slate-200 bg-white p-5">
-                <div className="flex items-center gap-3">
-                  <Wallet size={20} className="text-blue-700" />
-                  <div>
-                    <p className="text-sm font-semibold">
-                      {isGuest
-                        ? isEnglish ? "No wallet connected" : "Geen wallet gekoppeld"
-                        : isEnglish ? "Wallet connected" : "Wallet gekoppeld"}
-                    </p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      {isGuest
-                        ? isEnglish ? "You can continue learning as a guest." : "Je kunt als gast blijven leren."
-                        : isEnglish ? "Your wallet is available for verified actions." : "Je wallet is beschikbaar voor geverifieerde acties."}
-                    </p>
-                  </div>
-                </div>
-              </div>
             </div>
+
+            <AccountStartingPoint
+              isEnglish={isEnglish}
+              authLoading={authLoading}
+              signedIn={signedIn}
+              accountName={accountName}
+              userEmail={user?.email ?? ""}
+              walletConnected={!isGuestWallet}
+              onAccount={openAccount}
+              onAcademy={() => navigate("academy")}
+            />
           </div>
         </div>
       </section>
@@ -202,6 +223,181 @@ export function TerminalHomeTab({
           />
         </div>
       </section>
+    </div>
+  );
+}
+
+function WelcomeChoice({
+  isEnglish,
+  onCreateAccount,
+  onContinueGuest,
+  onClose,
+}: {
+  isEnglish: boolean;
+  onCreateAccount: () => void;
+  onContinueGuest: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+      <button type="button" className="absolute inset-0" onClick={onClose} aria-label="Close" />
+      <section className="relative w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl sm:p-8">
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+          aria-label={isEnglish ? "Close welcome" : "Sluit welkom"}
+        >
+          <X size={18} />
+        </button>
+
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-white">
+          <UserCircle size={24} />
+        </div>
+        <p className="mt-6 text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
+          {isEnglish ? "Welcome to OTT" : "Welkom bij OTT"}
+        </p>
+        <h2 className="mt-3 text-3xl font-semibold tracking-tight">
+          {isEnglish ? "How would you like to begin?" : "Hoe wil je beginnen?"}
+        </h2>
+        <p className="mt-4 text-sm leading-6 text-slate-600">
+          {isEnglish
+            ? "Create a free account to save learning progress across devices, or look around first as a guest."
+            : "Maak een gratis account om leervoortgang op meerdere apparaten te bewaren, of kijk eerst rond als gast."}
+        </p>
+
+        <button
+          type="button"
+          onClick={onCreateAccount}
+          className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3.5 text-sm font-semibold text-white hover:bg-slate-800"
+        >
+          {isEnglish ? "Create free account" : "Maak gratis account"}
+          <ArrowRight size={17} />
+        </button>
+        <button
+          type="button"
+          onClick={onContinueGuest}
+          className="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-slate-200 px-5 py-3.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+        >
+          {isEnglish ? "Continue as guest" : "Ga verder als gast"}
+        </button>
+        <p className="mt-5 text-center text-xs text-slate-500">
+          {isEnglish
+            ? "A wallet is optional and remains separate from your OTT account."
+            : "Een wallet is optioneel en blijft apart van je OTT-account."}
+        </p>
+      </section>
+    </div>
+  );
+}
+
+function AccountStartingPoint({
+  isEnglish,
+  authLoading,
+  signedIn,
+  accountName,
+  userEmail,
+  walletConnected,
+  onAccount,
+  onAcademy,
+}: {
+  isEnglish: boolean;
+  authLoading: boolean;
+  signedIn: boolean;
+  accountName: string;
+  userEmail: string;
+  walletConnected: boolean;
+  onAccount: () => void;
+  onAcademy: () => void;
+}) {
+  return (
+    <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 sm:p-8">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+        {isEnglish ? "Your starting point" : "Jouw startpunt"}
+      </p>
+
+      {authLoading ? (
+        <div className="mt-8 h-48 animate-pulse rounded-2xl bg-white" />
+      ) : signedIn ? (
+        <>
+          <div className="mt-6 flex items-start gap-4 rounded-2xl border border-slate-200 bg-white p-5">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+              <CheckCircle2 size={21} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold">
+                {isEnglish ? "Welcome back" : "Welkom terug"}{accountName ? `, ${accountName}` : ""}
+              </p>
+              {userEmail && <p className="mt-1 truncate text-xs text-slate-500">{userEmail}</p>}
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                {isEnglish
+                  ? "Your learning progress follows your OTT account."
+                  : "Je leervoortgang volgt je OTT-account."}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onAcademy}
+            className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800"
+          >
+            {isEnglish ? "Continue Academy" : "Ga verder in Academy"}
+            <ArrowRight size={17} />
+          </button>
+          <button
+            type="button"
+            onClick={onAccount}
+            className="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            {isEnglish ? "Open my profile" : "Open mijn profiel"}
+          </button>
+        </>
+      ) : (
+        <>
+          <h2 className="mt-5 text-2xl font-semibold tracking-tight">
+            {isEnglish ? "Create your free OTT account" : "Maak je gratis OTT-account"}
+          </h2>
+          <div className="mt-6 space-y-4">
+            <StartPoint
+              number="01"
+              title={isEnglish ? "Save your progress" : "Bewaar je voortgang"}
+              text={isEnglish ? "Continue on another device." : "Ga verder op een ander apparaat."}
+            />
+            <StartPoint
+              number="02"
+              title={isEnglish ? "Earn verified completion" : "Verdien geverifieerde afronding"}
+              text={isEnglish ? "AI-checked course results belong to your account." : "AI-gecontroleerde cursusresultaten horen bij je account."}
+            />
+            <StartPoint
+              number="03"
+              title={isEnglish ? "Prepare for certificates" : "Bereid je voor op certificaten"}
+              text={isEnglish ? "Connect a wallet only when on-chain proof is needed." : "Koppel pas een wallet wanneer on-chain bewijs nodig is."}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={onAccount}
+            className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800"
+          >
+            {isEnglish ? "Create account or sign in" : "Account maken of inloggen"}
+            <ArrowRight size={17} />
+          </button>
+        </>
+      )}
+
+      <div className="mt-5 flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+        <Wallet size={19} className={walletConnected ? "text-emerald-700" : "text-slate-400"} />
+        <div>
+          <p className="text-sm font-semibold">
+            {walletConnected
+              ? isEnglish ? "Optional wallet connected" : "Optionele wallet gekoppeld"
+              : isEnglish ? "Wallet not required" : "Wallet niet verplicht"}
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            {isEnglish ? "Use it later for signing and NFTs." : "Gebruik deze later voor ondertekening en NFT’s."}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
