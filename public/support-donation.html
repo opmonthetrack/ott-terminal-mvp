@@ -33,14 +33,14 @@
       }
 
       main {
-        width: min(1080px, calc(100vw - 28px));
+        width: min(1120px, calc(100vw - 28px));
         margin: 0 auto;
         padding: 28px 0 44px;
       }
 
       .shell {
         border: 1px solid var(--line);
-        background: rgba(255, 255, 255, 0.92);
+        background: rgba(255, 255, 255, 0.94);
         backdrop-filter: blur(12px);
       }
 
@@ -58,8 +58,9 @@
       }
 
       h1,
-      h2 {
-        margin: 0 0 14px;
+      h2,
+      h3 {
+        margin: 0;
         color: var(--ink);
         text-transform: uppercase;
         font-family: Arial, Helvetica, sans-serif;
@@ -68,13 +69,20 @@
       }
 
       h1 {
-        font-size: clamp(32px, 5.6vw, 68px);
+        margin-bottom: 14px;
+        font-size: clamp(34px, 5.6vw, 68px);
         line-height: 0.98;
       }
 
       h2 {
-        font-size: clamp(22px, 3vw, 32px);
+        margin-bottom: 14px;
+        font-size: clamp(24px, 3vw, 34px);
         line-height: 1.05;
+      }
+
+      h3 {
+        font-size: 18px;
+        line-height: 1.1;
       }
 
       p {
@@ -83,14 +91,19 @@
         line-height: 1.8;
       }
 
+      .hero p {
+        max-width: 900px;
+        margin-bottom: 0;
+      }
+
       .grid {
         display: grid;
-        grid-template-columns: 1.1fr 0.9fr;
+        grid-template-columns: 1.15fr 0.85fr;
         gap: 18px;
         padding: 18px;
       }
 
-      @media (max-width: 760px) {
+      @media (max-width: 820px) {
         .grid {
           grid-template-columns: 1fr;
         }
@@ -100,6 +113,89 @@
         border: 1px solid var(--line);
         background: white;
         padding: 20px;
+      }
+
+      .warning {
+        border: 1px solid rgba(200, 56, 136, 0.25);
+        background: rgba(200, 56, 136, 0.08);
+        padding: 14px;
+        color: rgba(8, 8, 8, 0.68);
+        font-size: 12px;
+        line-height: 1.7;
+      }
+
+      .amount-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin: 18px 0;
+      }
+
+      @media (max-width: 600px) {
+        .amount-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      .support-button {
+        min-height: 78px;
+        border: 1px solid var(--line);
+        background: var(--soft);
+        padding: 14px;
+        color: var(--ink);
+        text-align: left;
+        font: inherit;
+        cursor: pointer;
+        transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+      }
+
+      .support-button:hover {
+        transform: translateY(-2px);
+        border-color: var(--purple);
+        background: white;
+      }
+
+      .support-button:disabled {
+        opacity: 0.45;
+        cursor: wait;
+        transform: none;
+      }
+
+      .support-button strong {
+        display: block;
+        margin-bottom: 8px;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 22px;
+        font-weight: 900;
+      }
+
+      .support-button span {
+        color: rgba(8, 8, 8, 0.48);
+        font-size: 9px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .support-button.featured {
+        border: 0;
+        color: white;
+        background: linear-gradient(135deg, var(--blue), var(--purple) 42%, var(--pink) 68%, var(--red));
+      }
+
+      .support-button.featured span {
+        color: rgba(255, 255, 255, 0.78);
+      }
+
+      .status {
+        min-height: 92px;
+        border: 1px solid rgba(56, 152, 232, 0.25);
+        background: rgba(56, 152, 232, 0.08);
+        padding: 14px;
+        color: rgba(8, 8, 8, 0.7);
+        font-size: 12px;
+        line-height: 1.7;
+        white-space: pre-wrap;
+        word-break: break-word;
       }
 
       .metric-grid {
@@ -127,42 +223,7 @@
       .metric strong,
       .wallet {
         display: block;
-        margin-top: 8px;
         word-break: break-all;
-      }
-
-      .warning {
-        border: 1px solid rgba(200, 56, 136, 0.25);
-        background: rgba(200, 56, 136, 0.08);
-        padding: 14px;
-        color: rgba(8, 8, 8, 0.68);
-        font-size: 12px;
-        line-height: 1.7;
-      }
-
-      .safe {
-        border: 1px solid rgba(56, 152, 232, 0.25);
-        background: rgba(56, 152, 232, 0.08);
-        padding: 14px;
-        color: rgba(8, 8, 8, 0.68);
-        font-size: 12px;
-        line-height: 1.7;
-      }
-
-      .button {
-        display: block;
-        width: 100%;
-        border: 0;
-        margin-top: 12px;
-        padding: 16px;
-        text-align: left;
-        color: white;
-        background: linear-gradient(135deg, var(--blue), var(--purple) 42%, var(--pink) 68%, var(--red));
-        font: inherit;
-        font-weight: 800;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        text-decoration: none;
       }
 
       .list {
@@ -179,6 +240,25 @@
         font-size: 12px;
         line-height: 1.7;
       }
+
+      .secondary-link {
+        display: block;
+        width: 100%;
+        margin-top: 12px;
+        border: 1px solid var(--line);
+        background: white;
+        padding: 14px;
+        color: var(--ink);
+        text-decoration: none;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .small {
+        margin-bottom: 0;
+        font-size: 11px;
+      }
     </style>
   </head>
   <body>
@@ -188,20 +268,40 @@
           <p class="eyebrow">OnTheTrack / XRPL Terminal / Support</p>
           <h1>Support OTT Terminal</h1>
           <p>
-            Support donations help fund XRPL education, community onboarding, Make Waves delivery, content creation and continued product development. Donations are voluntary support only.
+            Choose a voluntary XRP support amount. After selecting an amount, a Xaman payment request opens. After signing and payment, Xaman returns you directly to OTT Terminal.
           </p>
         </div>
 
         <div class="grid">
           <div class="panel">
-            <h2>Voluntary Support</h2>
+            <h2>Choose support amount</h2>
             <div class="warning">
-              Donations are not investments. They do not create yield, profit rights, token rights, governance rights, equity, guaranteed access, or a guaranteed Access Pass NFT.
+              Support payments are voluntary donations. They are not investments and do not create yield, profit rights, token rights, governance rights, equity, guaranteed access, or a guaranteed NFT.
             </div>
 
+            <div class="amount-grid" id="amountGrid">
+              <button class="support-button" data-amount="0.589"><strong>0.589 XRP</strong><span>Open Xaman</span></button>
+              <button class="support-button" data-amount="1.00"><strong>1.00 XRP</strong><span>Open Xaman</span></button>
+              <button class="support-button featured" data-amount="1.589"><strong>1.589 XRP</strong><span>Featured support</span></button>
+              <button class="support-button" data-amount="2.00"><strong>2.00 XRP</strong><span>Open Xaman</span></button>
+              <button class="support-button" data-amount="2.589"><strong>2.589 XRP</strong><span>Open Xaman</span></button>
+              <button class="support-button" data-amount="3.00"><strong>3.00 XRP</strong><span>Open Xaman</span></button>
+              <button class="support-button" data-amount="3.589"><strong>3.589 XRP</strong><span>Open Xaman</span></button>
+              <button class="support-button" data-amount="4.00"><strong>4.00 XRP</strong><span>Open Xaman</span></button>
+              <button class="support-button" data-amount="4.589"><strong>4.589 XRP</strong><span>Open Xaman</span></button>
+              <button class="support-button" data-amount="5.00"><strong>5.00 XRP</strong><span>Open Xaman</span></button>
+              <button class="support-button featured" data-amount="5.89"><strong>5.89 XRP</strong><span>Maximum preset</span></button>
+            </div>
+
+            <div id="status" class="status">Ready. Select an XRP amount to create a secure Xaman support payment.</div>
+            <a class="secondary-link" href="/">Return to OTT Terminal without payment</a>
+          </div>
+
+          <div class="panel">
+            <h2>Payment details</h2>
             <div class="metric-grid">
               <div class="metric">
-                <span class="label">Support Wallet</span>
+                <span class="label">Support wallet</span>
                 <strong class="wallet">rsEHpJiExneayjkrQdeQEveUwabmmPbksq</strong>
               </div>
               <div class="metric">
@@ -209,8 +309,8 @@
                 <strong>2606170002</strong>
               </div>
               <div class="metric">
-                <span class="label">Purpose</span>
-                <strong>Education + onboarding</strong>
+                <span class="label">Payment route</span>
+                <strong>Xaman / XRPL</strong>
               </div>
               <div class="metric">
                 <span class="label">Rights</span>
@@ -218,24 +318,82 @@
               </div>
             </div>
 
-            <a class="button" href="/">Back to OTT Terminal</a>
-          </div>
-
-          <div class="panel">
-            <h2>What support helps build</h2>
+            <h3>What support helps build</h3>
             <div class="list">
-              <div class="item">XRPL beginner education and onboarding content.</div>
-              <div class="item">Xaman wallet activation guidance and SourceTag proof flows.</div>
-              <div class="item">Community roadmap voting and phase-by-phase product delivery.</div>
-              <div class="item">Access Pass utility tooling, verification and customer support.</div>
+              <div class="item">XRPL beginner education and community onboarding.</div>
+              <div class="item">Xaman guidance and SourceTag proof flows.</div>
+              <div class="item">Promotion, advertising, content creation and Make Waves delivery.</div>
+              <div class="item">Access Pass tooling, verification and customer support.</div>
             </div>
 
-            <p class="safe">
-              Future Xaman donation payloads may be added later. For now, this page is a clear support information page with the official OTT support wallet and SourceTag.
+            <p class="small">
+              Every preset amount is validated on the server. The destination wallet and SourceTag cannot be changed by the browser.
             </p>
           </div>
         </div>
       </section>
     </main>
+
+    <script>
+      const statusEl = document.getElementById("status");
+      const supportButtons = Array.from(document.querySelectorAll("[data-amount]"));
+
+      function setStatus(message) {
+        statusEl.textContent = message;
+      }
+
+      function setButtonsDisabled(disabled) {
+        supportButtons.forEach((button) => {
+          button.disabled = disabled;
+        });
+      }
+
+      async function createSupportPayment(amountXrp) {
+        setButtonsDisabled(true);
+        setStatus(`Creating ${amountXrp} XRP Xaman support payment...`);
+
+        try {
+          const response = await fetch("/api/support-payment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "xaman.createSupportPaymentPayload",
+              amountXrp,
+            }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok || !data.ok) {
+            throw data;
+          }
+
+          const payloadUrl =
+            data.payload?.next?.always ||
+            data.payload?.next?.no_push_msg_received ||
+            "";
+
+          if (!payloadUrl) {
+            throw new Error("Xaman returned no payment URL.");
+          }
+
+          setStatus(`Opening Xaman for ${amountXrp} XRP. After signing, you will return to OTT Terminal.`);
+          window.location.assign(payloadUrl);
+        } catch (error) {
+          setStatus(error?.error || error?.message || "Could not create the Xaman support payment.");
+          setButtonsDisabled(false);
+        }
+      }
+
+      supportButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          const amountXrp = button.dataset.amount;
+
+          if (amountXrp) {
+            void createSupportPayment(amountXrp);
+          }
+        });
+      });
+    </script>
   </body>
 </html>
