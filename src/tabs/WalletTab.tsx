@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ElementType } from "react";
 import {
   Apple,
+  Award,
   BadgeCheck,
   BookOpen,
   Building2,
@@ -8,6 +9,7 @@ import {
   Chrome,
   Copy,
   Github,
+  KeyRound,
   Loader2,
   LockKeyhole,
   LogIn,
@@ -21,6 +23,8 @@ import {
 } from "lucide-react";
 import { getAcademyProgressSummary } from "../lib/academyProgressStore";
 import {
+  getEnabledOttAuthProviders,
+  getFriendlyOttAuthError,
   getOttAccountName,
   isOttAuthConfigured,
   resetOttPassword,
@@ -31,15 +35,21 @@ import {
   updateOttDisplayName,
   type OttAuthProvider,
 } from "../lib/ottAuth";
+import {
+  formatNftSerial,
+  getNftIssuanceSummary,
+  NFT_ISSUANCE_LIMITS,
+} from "../lib/nftIssuanceStore";
 import { useOttAuthSession } from "../lib/useOttAuthSession";
 import { useTerminalLanguage } from "../lib/useTerminalLanguage";
 
- type WalletTabProps = {
+type WalletTabProps = {
   walletAddress?: string;
   onDisconnect?: () => void;
 };
 
 type AuthMode = "sign-in" | "create";
+
 type WalletSnapshot = {
   balanceXrp: string;
   sequence: number;
@@ -62,6 +72,13 @@ type XrplResponse = {
 
 const XRPL_ENDPOINT = "wss://xrplcluster.com/";
 
+const providerIcons: Record<OttAuthProvider, ElementType> = {
+  google: Chrome,
+  apple: Apple,
+  azure: Building2,
+  github: Github,
+};
+
 function isLikelyXrplAddress(value: string) {
   return /^r[1-9A-HJ-NP-Za-km-z]{25,34}$/.test(value);
 }
@@ -75,21 +92,6 @@ function dropsToXrp(value: string) {
   return Number.isFinite(drops)
     ? (drops / 1_000_000).toLocaleString(undefined, { maximumFractionDigits: 6 })
     : "0";
-}
-
-function getErrorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  if (typeof error === "object" && error !== null && "message" in error) {
-    const message = (error as { message?: unknown }).message;
-    if (typeof message === "string") {
-      return message;
-    }
-  }
-
-  return fallback;
 }
 
 function loadWalletSnapshot(walletAddress: string) {
@@ -119,8 +121,8 @@ function loadWalletSnapshot(walletAddress: string) {
 
         window.clearTimeout(timeout);
         socket.close();
-
         const account = response.result?.account_data;
+
         if (response.result?.error || !account) {
           reject(new Error(response.result?.error || "No validated wallet data found."));
           return;
@@ -152,6 +154,11 @@ export function WalletTab({ walletAddress = "guest", onDisconnect }: WalletTabPr
   const isEnglish = language === "en";
   const { user, loading: authLoading, signedIn } = useOttAuthSession();
   const hasWallet = isLikelyXrplAddress(walletAddress);
+  const enabledProviders = useMemo(() => getEnabledOttAuthProviders(), []);
+  const academy = useMemo(() => getAcademyProgressSummary(walletAddress), [walletAddress]);
+  const accessPass = useMemo(() => getNftIssuanceSummary("access-pass"), []);
+  const certificate = useMemo(() => getNftIssuanceSummary("foundation-certificate"), []);
+
   const [authMode, setAuthMode] = useState<AuthMode>("sign-in");
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
@@ -163,11 +170,6 @@ export function WalletTab({ walletAddress = "guest", onDisconnect }: WalletTabPr
   const [walletSnapshot, setWalletSnapshot] = useState<WalletSnapshot | null>(null);
   const [walletBusy, setWalletBusy] = useState(false);
   const [walletError, setWalletError] = useState("");
-
-  const academy = useMemo(
-    () => getAcademyProgressSummary(walletAddress),
-    [walletAddress],
-  );
 
   useEffect(() => {
     setProfileName(getOttAccountName(user));
@@ -194,12 +196,7 @@ export function WalletTab({ walletAddress = "guest", onDisconnect }: WalletTabPr
     try {
       setWalletSnapshot(await loadWalletSnapshot(walletAddress));
     } catch (error) {
-      setWalletError(
-        getErrorMessage(
-          error,
-          isEnglish ? "Wallet data could not be loaded." : "Walletdata kon niet worden geladen.",
-        ),
-      );
+      setWalletError(getFriendlyOttAuthError(error, language));
     } finally {
       setWalletBusy(false);
     }
@@ -233,9 +230,7 @@ export function WalletTab({ walletAddress = "guest", onDisconnect }: WalletTabPr
         setAuthStatus(isEnglish ? "Signed in successfully." : "Je bent ingelogd.");
       }
     } catch (error) {
-      setAuthStatus(
-        getErrorMessage(error, isEnglish ? "Account action failed." : "Accountactie is mislukt."),
-      );
+      setAuthStatus(getFriendlyOttAuthError(error, language));
     } finally {
       setAuthBusy(false);
     }
@@ -248,9 +243,7 @@ export function WalletTab({ walletAddress = "guest", onDisconnect }: WalletTabPr
     try {
       await signInOttProvider(provider);
     } catch (error) {
-      setAuthStatus(
-        getErrorMessage(error, isEnglish ? "Provider login failed." : "Inloggen via provider is mislukt."),
-      );
+      setAuthStatus(getFriendlyOttAuthError(error, language));
       setAuthBusy(false);
     }
   }
@@ -270,9 +263,7 @@ export function WalletTab({ walletAddress = "guest", onDisconnect }: WalletTabPr
           : "Instructies voor wachtwoordherstel zijn verzonden wanneer het account bestaat.",
       );
     } catch (error) {
-      setAuthStatus(
-        getErrorMessage(error, isEnglish ? "Reset email failed." : "Herstelmail is mislukt."),
-      );
+      setAuthStatus(getFriendlyOttAuthError(error, language));
     } finally {
       setAuthBusy(false);
     }
@@ -289,9 +280,7 @@ export function WalletTab({ walletAddress = "guest", onDisconnect }: WalletTabPr
       await updateOttDisplayName(profileName);
       setAuthStatus(isEnglish ? "Profile name saved." : "Profielnaam opgeslagen.");
     } catch (error) {
-      setAuthStatus(
-        getErrorMessage(error, isEnglish ? "Could not save the profile." : "Profiel kon niet worden opgeslagen."),
-      );
+      setAuthStatus(getFriendlyOttAuthError(error, language));
     } finally {
       setProfileBusy(false);
     }
@@ -305,9 +294,7 @@ export function WalletTab({ walletAddress = "guest", onDisconnect }: WalletTabPr
       setPassword("");
       setAuthStatus(isEnglish ? "Signed out." : "Uitgelogd.");
     } catch (error) {
-      setAuthStatus(
-        getErrorMessage(error, isEnglish ? "Sign out failed." : "Uitloggen is mislukt."),
-      );
+      setAuthStatus(getFriendlyOttAuthError(error, language));
     } finally {
       setAuthBusy(false);
     }
@@ -316,6 +303,7 @@ export function WalletTab({ walletAddress = "guest", onDisconnect }: WalletTabPr
   function copyWallet() {
     if (hasWallet) {
       void navigator.clipboard?.writeText(walletAddress);
+      setAuthStatus(isEnglish ? "Wallet address copied." : "Walletadres gekopieerd.");
     }
   }
 
@@ -328,29 +316,29 @@ export function WalletTab({ walletAddress = "guest", onDisconnect }: WalletTabPr
           </p>
           <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl">
             {isEnglish
-              ? "One normal account. Add a wallet only when you need it."
-              : "Eén normaal account. Voeg alleen een wallet toe wanneer je die nodig hebt."}
+              ? "One normal account. A wallet only when an on-chain action needs it."
+              : "Eén normaal account. Alleen een wallet wanneer een on-chain actie die nodig heeft."}
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-7 text-slate-600">
             {isEnglish
-              ? "Your OTT account holds your profile and learning journey. A connected wallet remains separate and is used for signing, access proofs and NFTs."
-              : "Je OTT-account bewaart je profiel en leertraject. Een gekoppelde wallet blijft apart en wordt gebruikt voor ondertekening, toegangsbewijs en NFT’s."}
+              ? "Your account stores your profile and learning journey. Your wallet remains self-custodied and is used for signatures, access proofs and achievement NFTs."
+              : "Je account bewaart je profiel en leertraject. Je wallet blijft self-custody en wordt gebruikt voor handtekeningen, toegangsbewijs en achievement-NFT’s."}
           </p>
         </div>
       </section>
 
       <main className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
         {authStatus && (
-          <div className="mb-6 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+          <div className="mb-6 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-950">
             {authStatus}
           </div>
         )}
 
-        <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="grid gap-8 lg:grid-cols-[1.08fr_0.92fr]">
           <section className="rounded-3xl border border-slate-200 p-6 sm:p-8">
             {authLoading ? (
-              <div className="flex min-h-72 items-center justify-center">
-                <Loader2 className="animate-spin text-slate-500" size={24} />
+              <div className="flex min-h-80 items-center justify-center">
+                <Loader2 className="animate-spin text-slate-500" size={26} />
               </div>
             ) : signedIn && user ? (
               <SignedInAccount
@@ -367,6 +355,7 @@ export function WalletTab({ walletAddress = "guest", onDisconnect }: WalletTabPr
             ) : (
               <AccountAccess
                 configured={isOttAuthConfigured}
+                enabledProviders={enabledProviders}
                 mode={authMode}
                 setMode={setAuthMode}
                 displayName={displayName}
@@ -385,73 +374,17 @@ export function WalletTab({ walletAddress = "guest", onDisconnect }: WalletTabPr
           </section>
 
           <div className="space-y-6">
-            <section className="rounded-3xl border border-slate-200 p-6 sm:p-7">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
-                    {isEnglish ? "Optional wallet" : "Optionele wallet"}
-                  </p>
-                  <h2 className="mt-3 text-2xl font-semibold">
-                    {hasWallet
-                      ? (isEnglish ? "Wallet connected" : "Wallet gekoppeld")
-                      : (isEnglish ? "No wallet connected" : "Geen wallet gekoppeld")}
-                  </h2>
-                </div>
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100">
-                  <Wallet size={21} />
-                </div>
-              </div>
-
-              {hasWallet ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={copyWallet}
-                    className="mt-5 flex w-full items-center justify-between rounded-xl bg-slate-50 px-4 py-3 text-left"
-                  >
-                    <span className="font-mono text-xs text-slate-700">{shortWallet(walletAddress)}</span>
-                    <Copy size={16} className="text-slate-400" />
-                  </button>
-
-                  <div className="mt-5 grid grid-cols-2 gap-3">
-                    <Metric label="XRP" value={walletSnapshot?.balanceXrp ?? (walletBusy ? "…" : "—")} />
-                    <Metric label={isEnglish ? "Objects" : "Objecten"} value={walletSnapshot ? String(walletSnapshot.ownerCount) : "—"} />
-                    <Metric label="Sequence" value={walletSnapshot ? String(walletSnapshot.sequence) : "—"} />
-                    <Metric label="Ledger" value={walletSnapshot ? String(walletSnapshot.ledgerIndex) : "—"} />
-                  </div>
-
-                  {walletError && <p className="mt-4 text-sm text-amber-700">{walletError}</p>}
-
-                  <div className="mt-5 flex flex-wrap gap-3">
-                    <button
-                      type="button"
-                      onClick={() => void refreshWallet()}
-                      disabled={walletBusy}
-                      className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-                    >
-                      <RefreshCcw className={walletBusy ? "animate-spin" : ""} size={16} />
-                      {isEnglish ? "Refresh" : "Vernieuwen"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={onDisconnect}
-                      className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-500 hover:bg-slate-50"
-                    >
-                      <LogOut size={16} />
-                      {isEnglish ? "Disconnect" : "Loskoppelen"}
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div className="mt-5 rounded-2xl bg-slate-50 p-5">
-                  <p className="text-sm leading-6 text-slate-600">
-                    {isEnglish
-                      ? "You can use the Academy and research tools without a wallet. Open the wallet button in the top navigation only when you need to sign or receive an NFT."
-                      : "Je kunt de Academy en onderzoekstools zonder wallet gebruiken. Open de walletknop bovenin pas wanneer je wilt ondertekenen of een NFT wilt ontvangen."}
-                  </p>
-                </div>
-              )}
-            </section>
+            <WalletConnectionCard
+              walletAddress={walletAddress}
+              hasWallet={hasWallet}
+              snapshot={walletSnapshot}
+              busy={walletBusy}
+              error={walletError}
+              onRefresh={() => void refreshWallet()}
+              onCopy={copyWallet}
+              onDisconnect={onDisconnect}
+              isEnglish={isEnglish}
+            />
 
             <section className="rounded-3xl border border-slate-200 p-6 sm:p-7">
               <div className="flex items-center gap-3">
@@ -468,31 +401,70 @@ export function WalletTab({ walletAddress = "guest", onDisconnect }: WalletTabPr
               <p className="mt-4 text-xs leading-5 text-slate-500">
                 {signedIn
                   ? (isEnglish
-                      ? "Account-based Academy storage is prepared in the new data layer; existing wallet progress remains visible during migration."
-                      : "Accountgebaseerde Academy-opslag is voorbereid in de nieuwe datalaag; bestaande walletvoortgang blijft tijdens de migratie zichtbaar.")
+                      ? "Verified progress is linked to the OTT account. Legacy wallet progress remains visible during migration."
+                      : "Geverifieerde voortgang wordt aan het OTT-account gekoppeld. Oude walletvoortgang blijft tijdens migratie zichtbaar.")
                   : (isEnglish
-                      ? "Create an OTT account so future learning progress can follow you across devices."
-                      : "Maak een OTT-account zodat toekomstige leervoortgang je op verschillende apparaten kan volgen.")}
+                      ? "Create an OTT account so verified progress can follow you across devices."
+                      : "Maak een OTT-account zodat geverifieerde voortgang je op meerdere apparaten kan volgen.")}
               </p>
             </section>
           </div>
         </div>
 
+        <section className="mt-8 rounded-3xl border border-slate-200 p-6 sm:p-8">
+          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
+                {isEnglish ? "NFT issuance foundation" : "NFT-uitgiftefundament"}
+              </p>
+              <h2 className="mt-3 text-2xl font-semibold">
+                {isEnglish ? "Separate editions, controlled status and no duplicate serials." : "Gescheiden edities, gecontroleerde status en geen dubbele nummers."}
+              </h2>
+            </div>
+            <p className="max-w-xl text-sm leading-6 text-slate-500">
+              {isEnglish
+                ? "An NFT is never created merely by pressing a UI button. Eligibility, wallet ownership, metadata and the validated mint transaction must agree."
+                : "Een NFT ontstaat nooit alleen door op een knop te drukken. Geschiktheid, walletbezit, metadata en de gevalideerde minttransactie moeten overeenkomen."}
+            </p>
+          </div>
+
+          <div className="mt-7 grid gap-5 md:grid-cols-2">
+            <EditionCard
+              title={NFT_ISSUANCE_LIMITS["access-pass"].label}
+              range="#001–#500"
+              nextSerial={accessPass.nextSerial ? formatNftSerial("access-pass", accessPass.nextSerial) : "Full"}
+              issued={accessPass.issued}
+              reserved={accessPass.reserved}
+              available={accessPass.available}
+              isEnglish={isEnglish}
+            />
+            <EditionCard
+              title={NFT_ISSUANCE_LIMITS["foundation-certificate"].label}
+              range="#0001–#5000"
+              nextSerial={certificate.nextSerial ? formatNftSerial("foundation-certificate", certificate.nextSerial) : "Full"}
+              issued={certificate.issued}
+              reserved={certificate.reserved}
+              available={certificate.available}
+              isEnglish={isEnglish}
+            />
+          </div>
+        </section>
+
         <section className="mt-8 grid gap-4 md:grid-cols-3">
           <TrustCard
             icon={ShieldCheck}
             title={isEnglish ? "Account is not a wallet" : "Account is geen wallet"}
-            text={isEnglish ? "Your login does not give OTT control over funds." : "Je login geeft OTT geen controle over je geld."}
+            text={isEnglish ? "Your login never gives OTT control over funds." : "Je login geeft OTT nooit controle over je geld."}
           />
           <TrustCard
             icon={LockKeyhole}
             title={isEnglish ? "No recovery secrets" : "Geen herstelgeheimen"}
-            text={isEnglish ? "OTT never asks for seed phrases or private keys." : "OTT vraagt nooit om seed phrases of private keys."}
+            text={isEnglish ? "OTT never asks for a seed phrase or private key." : "OTT vraagt nooit om een seed phrase of private key."}
           />
           <TrustCard
             icon={BadgeCheck}
-            title={isEnglish ? "Proof when needed" : "Bewijs wanneer nodig"}
-            text={isEnglish ? "Wallet ownership is proven only for on-chain actions." : "Walletbezit wordt alleen bewezen voor on-chain acties."}
+            title={isEnglish ? "Proof when required" : "Bewijs wanneer nodig"}
+            text={isEnglish ? "Wallet ownership is proven only for a specific on-chain action." : "Walletbezit wordt alleen bewezen voor een specifieke on-chain actie."}
           />
         </section>
       </main>
@@ -502,6 +474,7 @@ export function WalletTab({ walletAddress = "guest", onDisconnect }: WalletTabPr
 
 function AccountAccess({
   configured,
+  enabledProviders,
   mode,
   setMode,
   displayName,
@@ -517,6 +490,7 @@ function AccountAccess({
   isEnglish,
 }: {
   configured: boolean;
+  enabledProviders: ReturnType<typeof getEnabledOttAuthProviders>;
   mode: AuthMode;
   setMode: (mode: AuthMode) => void;
   displayName: string;
@@ -548,27 +522,49 @@ function AccountAccess({
       </div>
 
       {!configured && (
-        <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+        <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
           {isEnglish
-            ? "The login interface is ready, but the Supabase project keys still need to be added to Vercel before accounts can be used."
-            : "De logininterface is klaar, maar de Supabase-projectsleutels moeten nog aan Vercel worden toegevoegd voordat accounts werken."}
+            ? "The account UI is ready. Add the Supabase browser keys in Vercel before login can be used."
+            : "De accountinterface is klaar. Voeg de Supabase-browsersleutels toe in Vercel voordat inloggen werkt."}
         </div>
       )}
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-2">
-        <ProviderButton icon={Chrome} label="Google" onClick={() => onProvider("google")} disabled={!configured || busy} />
-        <ProviderButton icon={Apple} label="Apple" onClick={() => onProvider("apple")} disabled={!configured || busy} />
-        <ProviderButton icon={Building2} label="Microsoft" onClick={() => onProvider("azure")} disabled={!configured || busy} />
-        <ProviderButton icon={Github} label="GitHub" onClick={() => onProvider("github")} disabled={!configured || busy} />
-      </div>
+      {enabledProviders.length > 0 && (
+        <>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            {enabledProviders.map((provider) => {
+              const Icon = providerIcons[provider.id];
+              return (
+                <button
+                  key={provider.id}
+                  type="button"
+                  onClick={() => onProvider(provider.id)}
+                  disabled={busy}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  <Icon size={18} />
+                  {provider.label}
+                </button>
+              );
+            })}
+          </div>
+          <div className="my-6 flex items-center gap-3">
+            <div className="h-px flex-1 bg-slate-200" />
+            <span className="text-xs text-slate-400">{isEnglish ? "or use email" : "of gebruik e-mail"}</span>
+            <div className="h-px flex-1 bg-slate-200" />
+          </div>
+        </>
+      )}
 
-      <div className="my-6 flex items-center gap-3">
-        <div className="h-px flex-1 bg-slate-200" />
-        <span className="text-xs text-slate-400">{isEnglish ? "or use email" : "of gebruik e-mail"}</span>
-        <div className="h-px flex-1 bg-slate-200" />
-      </div>
+      {enabledProviders.length === 0 && (
+        <div className="mt-6 rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+          {isEnglish
+            ? "Only providers explicitly activated in Vercel are shown. Email remains the reliable default."
+            : "Alleen providers die expliciet in Vercel zijn geactiveerd worden getoond. E-mail blijft de betrouwbare standaard."}
+        </div>
+      )}
 
-      <div className="space-y-4">
+      <div className="mt-6 space-y-4">
         {mode === "create" && (
           <label className="block">
             <span className="text-xs font-medium text-slate-600">{isEnglish ? "Display name" : "Weergavenaam"}</span>
@@ -576,6 +572,7 @@ function AccountAccess({
               value={displayName}
               onChange={(event) => setDisplayName(event.target.value)}
               autoComplete="name"
+              maxLength={60}
               className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-500"
             />
           </label>
@@ -595,13 +592,16 @@ function AccountAccess({
         </label>
         <label className="block">
           <span className="text-xs font-medium text-slate-600">{isEnglish ? "Password" : "Wachtwoord"}</span>
-          <input
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            autoComplete={mode === "create" ? "new-password" : "current-password"}
-            className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-500"
-          />
+          <div className="relative mt-2">
+            <KeyRound className="absolute left-4 top-3.5 text-slate-400" size={17} />
+            <input
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              autoComplete={mode === "create" ? "new-password" : "current-password"}
+              className="w-full rounded-xl border border-slate-200 py-3 pl-11 pr-4 text-sm outline-none focus:border-blue-500"
+            />
+          </div>
         </label>
       </div>
 
@@ -684,80 +684,168 @@ function SignedInAccount({
         <input
           value={profileName}
           onChange={(event) => setProfileName(event.target.value)}
+          maxLength={60}
           className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-500"
         />
       </label>
 
-      <button
-        type="button"
-        onClick={onSaveName}
-        disabled={profileBusy}
-        className="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
-      >
-        {profileBusy ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-        {isEnglish ? "Save profile" : "Profiel opslaan"}
-      </button>
-
-      <div className="mt-8 border-t border-slate-200 pt-5">
+      <div className="mt-5 flex flex-wrap gap-3">
+        <button
+          type="button"
+          onClick={onSaveName}
+          disabled={profileBusy}
+          className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
+        >
+          {profileBusy ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+          {isEnglish ? "Save profile" : "Profiel opslaan"}
+        </button>
         <button
           type="button"
           onClick={onSignOut}
           disabled={authBusy}
-          className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-950 disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50"
         >
           <LogOut size={16} />
-          {isEnglish ? "Sign out of OTT" : "Uitloggen bij OTT"}
+          {isEnglish ? "Sign out" : "Uitloggen"}
         </button>
       </div>
     </>
   );
 }
 
-function ProviderButton({
-  icon: Icon,
-  label,
-  onClick,
-  disabled,
+function WalletConnectionCard({
+  walletAddress,
+  hasWallet,
+  snapshot,
+  busy,
+  error,
+  onRefresh,
+  onCopy,
+  onDisconnect,
+  isEnglish,
 }: {
-  icon: typeof Chrome;
-  label: string;
-  onClick: () => void;
-  disabled: boolean;
+  walletAddress: string;
+  hasWallet: boolean;
+  snapshot: WalletSnapshot | null;
+  busy: boolean;
+  error: string;
+  onRefresh: () => void;
+  onCopy: () => void;
+  onDisconnect?: () => void;
+  isEnglish: boolean;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-    >
-      <Icon size={18} />
-      {label}
-    </button>
+    <section className="rounded-3xl border border-slate-200 p-6 sm:p-7">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <Wallet className="text-blue-700" size={21} />
+          <h2 className="text-lg font-semibold">{isEnglish ? "XRPL wallet" : "XRPL-wallet"}</h2>
+        </div>
+        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${hasWallet ? "bg-emerald-50 text-emerald-800" : "bg-slate-100 text-slate-500"}`}>
+          {hasWallet ? (isEnglish ? "Connected" : "Gekoppeld") : (isEnglish ? "Optional" : "Optioneel")}
+        </span>
+      </div>
+
+      {hasWallet ? (
+        <>
+          <button type="button" onClick={onCopy} className="mt-5 flex items-center gap-2 text-left text-sm font-medium text-slate-700 hover:text-blue-700">
+            <span className="break-all">{shortWallet(walletAddress)}</span>
+            <Copy size={15} />
+          </button>
+
+          {error && <p className="mt-4 rounded-xl bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
+
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <Metric label="XRP" value={snapshot?.balanceXrp ?? (busy ? "…" : "—")} />
+            <Metric label={isEnglish ? "Objects" : "Objecten"} value={snapshot ? String(snapshot.ownerCount) : (busy ? "…" : "—")} />
+            <Metric label="Sequence" value={snapshot ? String(snapshot.sequence) : (busy ? "…" : "—")} />
+            <Metric label="Ledger" value={snapshot ? String(snapshot.ledgerIndex) : (busy ? "…" : "—")} />
+          </div>
+
+          <div className="mt-5 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={onRefresh}
+              disabled={busy}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            >
+              <RefreshCcw className={busy ? "animate-spin" : ""} size={16} />
+              {isEnglish ? "Refresh" : "Vernieuwen"}
+            </button>
+            {onDisconnect && (
+              <button
+                type="button"
+                onClick={onDisconnect}
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-500 hover:bg-slate-50"
+              >
+                <LogOut size={16} />
+                {isEnglish ? "Disconnect" : "Loskoppelen"}
+              </button>
+            )}
+          </div>
+        </>
+      ) : (
+        <div className="mt-5 rounded-2xl bg-slate-50 p-5">
+          <p className="text-sm leading-6 text-slate-600">
+            {isEnglish
+              ? "Learning and research work without a wallet. Connect one only when you need to sign, vote, prove access or receive an NFT."
+              : "Leren en onderzoeken werkt zonder wallet. Koppel er alleen één wanneer je wilt ondertekenen, stemmen, toegang bewijzen of een NFT ontvangen."}
+          </p>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function EditionCard({
+  title,
+  range,
+  nextSerial,
+  issued,
+  reserved,
+  available,
+  isEnglish,
+}: {
+  title: string;
+  range: string;
+  nextSerial: string;
+  issued: number;
+  reserved: number;
+  available: number;
+  isEnglish: boolean;
+}) {
+  return (
+    <article className="rounded-2xl bg-slate-50 p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-sm font-semibold">{title}</p>
+          <p className="mt-1 text-xs text-slate-500">{range}</p>
+        </div>
+        <Award className="text-blue-700" size={22} />
+      </div>
+      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Metric label={isEnglish ? "Next" : "Volgende"} value={nextSerial} />
+        <Metric label={isEnglish ? "Issued" : "Uitgegeven"} value={String(issued)} />
+        <Metric label={isEnglish ? "Reserved" : "Gereserveerd"} value={String(reserved)} />
+        <Metric label={isEnglish ? "Available" : "Beschikbaar"} value={String(available)} />
+      </div>
+    </article>
   );
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-slate-50 p-4">
-      <p className="text-xs text-slate-500">{label}</p>
-      <p className="mt-2 break-all text-sm font-semibold text-slate-900">{value}</p>
+    <div className="rounded-xl border border-slate-200 bg-white p-3">
+      <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">{label}</p>
+      <p className="mt-1 truncate text-sm font-semibold text-slate-900">{value}</p>
     </div>
   );
 }
 
-function TrustCard({
-  icon: Icon,
-  title,
-  text,
-}: {
-  icon: typeof ShieldCheck;
-  title: string;
-  text: string;
-}) {
+function TrustCard({ icon: Icon, title, text }: { icon: ElementType; title: string; text: string }) {
   return (
     <article className="rounded-2xl border border-slate-200 p-5">
-      <Icon className="text-blue-700" size={20} />
+      <Icon size={20} className="text-blue-700" />
       <h3 className="mt-4 text-sm font-semibold">{title}</h3>
       <p className="mt-2 text-sm leading-6 text-slate-500">{text}</p>
     </article>
