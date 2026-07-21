@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - qa/live-production-smoke
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
