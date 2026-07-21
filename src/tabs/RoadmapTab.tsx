@@ -457,8 +457,16 @@ export function RoadmapTab({ walletAddress = "guest", onNavigate }: RoadmapTabPr
           <MetricCard
             icon={Trophy}
             label={isEnglish ? "Current Leader" : "Huidige Koploper"}
-            value={leader?.title ?? "No votes"}
-            text={leader ? `${leader.votes} verified vote${leader.votes === 1 ? "" : "s"}.` : "Waiting for the first vote."}
+            value={leader
+              ? localizeVoteTitle(leader.id, leader.title)
+              : isEnglish ? "No votes" : "Geen stemmen"}
+            text={leader
+              ? isEnglish
+                ? `${leader.votes} verified vote${leader.votes === 1 ? "" : "s"}.`
+                : `${leader.votes} geverifieerde stem${leader.votes === 1 ? "" : "men"}.`
+              : isEnglish
+                ? "Waiting for the first vote."
+                : "Wachten op de eerste stem."}
           />
           <MetricCard
             icon={Wallet}
@@ -468,7 +476,11 @@ export function RoadmapTab({ walletAddress = "guest", onNavigate }: RoadmapTabPr
               : pendingVote
                 ? isEnglish ? "Pending Xaman" : "Wachten op Xaman"
                 : isEnglish ? "Not voted" : "Nog niet gestemd"}
-            text={isGuest ? "Xaman identifies the signing wallet." : shortWallet(walletAddress)}
+            text={isGuest
+              ? isEnglish
+                ? "Xaman identifies the signing wallet."
+                : "Xaman identificeert de ondertekenende wallet."
+              : shortWallet(walletAddress)}
           />
         </div>
 
@@ -629,10 +641,10 @@ export function RoadmapTab({ walletAddress = "guest", onNavigate }: RoadmapTabPr
                       </span>
                       <div className="flex-1 min-w-0">
                         <p className="font-orbitron text-[10px] font-black uppercase truncate">
-                          {item.title}
+                          {localizeVoteTitle(item.id, item.title)}
                         </p>
                         <p className="font-mono text-[9px] uppercase tracking-widest text-black/35 mt-1">
-                          {item.votes} votes · {percent}%
+                          {item.votes} {isEnglish ? "votes" : "stemmen"} · {percent}%
                         </p>
                       </div>
                     </div>
@@ -643,11 +655,15 @@ export function RoadmapTab({ walletAddress = "guest", onNavigate }: RoadmapTabPr
               <div className="grid grid-cols-2 gap-2 mt-4">
                 <MiniStatus
                   label={isEnglish ? "Most" : "Meeste"}
-                  value={leader ? `${leader.title} · ${leader.votes}` : "No votes"}
+                  value={leader
+                    ? `${localizeVoteTitle(leader.id, leader.title)} · ${leader.votes}`
+                    : isEnglish ? "No votes" : "Geen stemmen"}
                 />
                 <MiniStatus
                   label={isEnglish ? "Least" : "Minste"}
-                  value={leastVoted ? `${leastVoted.title} · ${leastVoted.votes}` : "No votes"}
+                  value={leastVoted
+                    ? `${localizeVoteTitle(leastVoted.id, leastVoted.title)} · ${leastVoted.votes}`
+                    : isEnglish ? "No votes" : "Geen stemmen"}
                 />
               </div>
             </Panel>
@@ -670,7 +686,10 @@ export function RoadmapTab({ walletAddress = "guest", onNavigate }: RoadmapTabPr
 
               <div className="grid grid-cols-1 gap-2 mt-4">
                 <MiniStatus label="SourceTag" value={String(MAKE_WAVES_SOURCE_TAG)} />
-                <MiniStatus label={isEnglish ? "Proof Wallet" : "Proofwallet"} value={voteStats?.proof?.destinationWallet ?? "Loading from XRPL"} />
+                <MiniStatus
+                  label={isEnglish ? "Proof Wallet" : "Proofwallet"}
+                  value={voteStats?.proof?.destinationWallet ?? (isEnglish ? "Loading from XRPL" : "Laden vanaf XRPL")}
+                />
                 <MiniStatus label={isEnglish ? "Proof Amount" : "Proofbedrag"} value="1 drop" />
               </div>
             </Panel>
@@ -700,7 +719,7 @@ export function RoadmapTab({ walletAddress = "guest", onNavigate }: RoadmapTabPr
                   <div key={`${voteRecord.account}-${voteRecord.ledgerIndex}`} className="border border-black/10 bg-[#F7F8FC] p-3">
                     <div className="flex items-center justify-between gap-3">
                       <p className="font-orbitron text-[10px] font-black uppercase">
-                        {voteRecord.title}
+                        {localizeVoteTitle(voteRecord.voteId, voteRecord.title)}
                       </p>
                       <span className="font-mono text-[9px] text-black/35">
                         {formatVoteTime(voteRecord.timestamp)}

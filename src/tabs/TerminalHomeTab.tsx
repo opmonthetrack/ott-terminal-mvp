@@ -85,7 +85,7 @@ export function TerminalHomeTab({
     },
     {
       title: isEnglish ? "Pass to unlock" : "Ontgrendel met toegangspas",
-      label: isEnglish ? "Premium later" : "Premium later",
+      label: isEnglish ? "Premium later" : "Later premium",
       text: isEnglish
         ? "Paid users can later unlock through a Web2 Access License or XRPL Access Pass scan."
         : "Gebruikers kunnen later premiumfuncties ontgrendelen via een Web2-toegangslicentie of een scan van de XRPL Access Pass.",
@@ -104,9 +104,9 @@ export function TerminalHomeTab({
         ? "Follow XRPL, XLS, Ripple, CBDC and ISO 20022 signals from a source-first feed."
         : "Volg XRPL-, XLS-, Ripple-, CBDC- en ISO 20022-signalen vanuit een source-first feed.",
       bullets: [
-        isEnglish ? "Live /api/news intelligence queue." : "Live /api/news intelligence queue.",
-        isEnglish ? "Official-source weighting and review flags." : "Official-source weighting en review flags.",
-        isEnglish ? "Macro context without overclaiming XRP usage." : "Macro-context zonder XRP-gebruik te overclaimen.",
+        isEnglish ? "Live /api/news intelligence queue." : "Live intelligencewachtrij via /api/news.",
+        isEnglish ? "Official-source weighting and review flags." : "Weging van officiële bronnen en controlevlaggen.",
+        isEnglish ? "Macro context without overclaiming XRP usage." : "Macrocontext zonder XRP-gebruik te overdrijven.",
       ],
       icon: Radio,
       actionLabel: "Open XRPL Intelligence",
@@ -116,13 +116,13 @@ export function TerminalHomeTab({
     {
       id: "social-newsroom",
       title: "Social Newsroom",
-      label: isEnglish ? "Content engine" : "Content engine",
+      label: isEnglish ? "Content engine" : "Contentmotor",
       description: isEnglish
         ? "Turn intelligence into source-first drafts for X, LinkedIn, Instagram, Facebook, Medium, TikTok, WhatsApp and YouTube."
-        : "Zet intelligence om naar source-first drafts voor X, LinkedIn, Instagram, Facebook, Medium, TikTok, WhatsApp en YouTube.",
+        : "Zet intelligentie om in brongebaseerde concepten voor X, LinkedIn, Instagram, Facebook, Medium, TikTok, WhatsApp en YouTube.",
       bullets: [
-        isEnglish ? "Copy-ready posts with emoji, hashtags and safe mentions." : "Copy-ready posts met emoji, hashtags en veilige mentions.",
-        isEnglish ? "Open source and platform buttons." : "Open source- en platformbuttons.",
+        isEnglish ? "Copy-ready posts with emoji, hashtags and safe mentions." : "Direct bruikbare berichten met emoji, hashtags en veilige vermeldingen.",
+        isEnglish ? "Open source and platform buttons." : "Knoppen naar de bron en het platform.",
         isEnglish ? "OTT / TruthOnTheTrack attribution stays visible." : "OTT / TruthOnTheTrack attribution blijft zichtbaar.",
       ],
       icon: Newspaper,
@@ -133,13 +133,13 @@ export function TerminalHomeTab({
     {
       id: "xaman-activation",
       title: isEnglish ? "Xaman Activation" : "Xaman Activatie",
-      label: isEnglish ? "Beginner onboarding" : "Beginner onboarding",
+      label: isEnglish ? "Beginner onboarding" : "Begeleiding voor beginners",
       description: isEnglish
         ? "Explain why a new XRPL wallet needs activation and guide users safely before they use proof actions."
         : "Leg uit waarom een nieuwe XRPL-wallet activatie nodig heeft en begeleid gebruikers veilig vóór bewijsacties.",
       bullets: [
         isEnglish ? "No seed phrase sharing." : "Nooit seed phrase delen.",
-        isEnglish ? "Self activation or assisted support later." : "Zelf activeren of assisted support later.",
+        isEnglish ? "Self activation or assisted support later." : "Zelf activeren of later begeleide ondersteuning gebruiken.",
         isEnglish ? "No custody, no brokerage, no investment promise." : "Geen custody, geen broker, geen investeringsbelofte.",
       ],
       icon: Wallet,
@@ -149,8 +149,8 @@ export function TerminalHomeTab({
     },
     {
       id: "access-model",
-      title: isEnglish ? "Access Model" : "Access Model",
-      label: isEnglish ? "Web2 + XRPL routes" : "Web2 + XRPL routes",
+      title: isEnglish ? "Access Model" : "Toegangsmodel",
+      label: isEnglish ? "Web2 + XRPL routes" : "Web2- en XRPL-routes",
       description: isEnglish
         ? "Premium access is separated into a future fiat Web2 license and the current XRPL Access Pass scanner."
         : "Premiumtoegang is verdeeld over een toekomstige Web2-licentie in euro's en de huidige XRPL Access Pass-scanner.",
@@ -160,7 +160,7 @@ export function TerminalHomeTab({
         isEnglish ? "XRPL Access Pass uses Xaman payment, manual delivery and scanner-based unlock." : "De XRPL Access Pass gebruikt Xaman-betaling, handmatige levering en scanner-unlock.",
       ],
       icon: KeyRound,
-      actionLabel: isEnglish ? "Open Access Gate" : "Open Access Gate",
+      actionLabel: isEnglish ? "Open Access Gate" : "Open Toegangspoort",
       target: "accessgate",
       accent: "coral",
     },
@@ -169,26 +169,30 @@ export function TerminalHomeTab({
   const metrics: Metric[] = [
     {
       label: "Start",
-      value: "Free",
-      text: "No wallet required",
+      value: isEnglish ? "Free" : "Gratis",
+      text: isEnglish ? "No wallet required" : "Geen wallet nodig",
       icon: Layers3,
     },
     {
       label: common.sourceTag,
       value: String(MAKE_WAVES_SOURCE_TAG),
-      text: "Make Waves identity",
+      text: isEnglish ? "Make Waves identity" : "Make Waves-identiteit",
       icon: Fingerprint,
     },
     {
       label: common.wallet,
-      value: isGuest ? "Optional" : "Linked",
-      text: isGuest ? "Activate when ready" : "Xaman connected",
+      value: isGuest
+        ? isEnglish ? "Optional" : "Optioneel"
+        : isEnglish ? "Linked" : "Gekoppeld",
+      text: isGuest
+        ? isEnglish ? "Activate when ready" : "Activeer wanneer je klaar bent"
+        : isEnglish ? "Xaman connected" : "Xaman gekoppeld",
       icon: Wallet,
     },
     {
-      label: "Position",
-      value: "Safe",
-      text: "No custody / no broker",
+      label: isEnglish ? "Position" : "Positie",
+      value: isEnglish ? "Safe" : "Veilig",
+      text: isEnglish ? "No custody / no broker" : "Geen custody / geen broker",
       icon: ShieldCheck,
     },
   ];
@@ -208,25 +212,27 @@ export function TerminalHomeTab({
               <div className="mb-8 text-[#080808]">
                 <OTTLogo
                   size="lg"
-                  subtitle="Free Learning + Xaman Proof + Access Pass Unlock"
+                  subtitle={isEnglish
+                    ? "Free Learning + Xaman Proof + Access Pass Unlock"
+                    : "Gratis Leren + Xaman-Bewijs + Ontgrendelen Met Toegangspas"}
                 />
               </div>
 
               <div className="inline-flex items-center gap-2 border border-black/10 bg-white/80 shadow-sm px-4 py-2 mb-6">
                 <Activity size={15} className="text-[#3898E8]" />
                 <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-black/55">
-                  {isEnglish ? "Education-first XRPL Terminal" : "Education-first XRPL Terminal"}
+                  {isEnglish ? "Education-first XRPL Terminal" : "Educatiegerichte XRPL Terminal"}
                 </p>
               </div>
 
               <h1 className="font-orbitron text-[1.85rem] sm:text-4xl md:text-5xl xl:text-7xl font-black uppercase leading-none tracking-tight mb-6">
-                Free to Learn.
+                {isEnglish ? "Free to Learn." : "Gratis Leren."}
                 <br />
                 <span className="bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] bg-clip-text text-transparent">
-                  Xaman to Prove.
+                  {isEnglish ? "Xaman to Prove." : "Xaman Voor Bewijs."}
                 </span>
                 <br />
-                Pass to Unlock.
+                {isEnglish ? "Pass to Unlock." : "Pas Voor Toegang."}
               </h1>
 
               <p className="font-mono text-sm xl:text-base text-black/60 leading-relaxed max-w-3xl mb-8">
@@ -238,7 +244,7 @@ export function TerminalHomeTab({
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 max-w-5xl">
                 <PrimaryAction
                   title={isEnglish ? "Start Free" : "Start Gratis"}
-                  text={isEnglish ? "Academy + intel" : "Academy + intel"}
+                  text={isEnglish ? "Academy + intel" : "Academie + intelligentie"}
                   icon={BookOpen}
                   accent="blue"
                   onClick={() => navigate("academy")}
@@ -251,15 +257,15 @@ export function TerminalHomeTab({
                   onClick={() => navigate("xamanactivation")}
                 />
                 <PrimaryAction
-                  title={isEnglish ? "Daily Proof" : "Daily Proof"}
+                  title={isEnglish ? "Daily Proof" : "Dagelijks Bewijs"}
                   text={isEnglish ? "Xaman + XP" : "Xaman + XP"}
                   icon={Fingerprint}
                   accent="blue"
                   onClick={() => navigate("checkin")}
                 />
                 <PrimaryAction
-                  title={isEnglish ? "Access" : "Access"}
-                  text={isEnglish ? "License / pass" : "License / pass"}
+                  title={isEnglish ? "Access" : "Toegang"}
+                  text={isEnglish ? "License / pass" : "Licentie / pas"}
                   icon={KeyRound}
                   accent="coral"
                   onClick={() => navigate("accessgate")}
@@ -336,14 +342,14 @@ export function TerminalHomeTab({
             <div className="flex items-center gap-2 mb-5">
               <Gauge size={18} className="text-[#3898E8]" />
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                {isEnglish ? "User Flow" : "User Flow"}
+                {isEnglish ? "User Flow" : "Gebruikersroute"}
               </p>
             </div>
 
             <h2 className="font-orbitron text-2xl xl:text-3xl font-black uppercase mb-5">
               {isEnglish
                 ? "Start open. Prove when ready. Unlock with access."
-                : "Start open. Bewijs wanneer klaar. Unlock met access."}
+                : "Start vrij. Lever bewijs wanneer je klaar bent. Ontgrendel met toegang."}
             </h2>
 
             <p className="font-mono text-sm text-black/55 leading-relaxed mb-5">
@@ -353,11 +359,11 @@ export function TerminalHomeTab({
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-3">
-              <FlowStep number="01" title="Learn" text="Free" />
-              <FlowStep number="02" title="Intel" text="Sources" />
-              <FlowStep number="03" title="Activate" text="Xaman guide" />
-              <FlowStep number="04" title="Prove" text="SourceTag" />
-              <FlowStep number="05" title="Ledger" text="XP / Credits" />
+              <FlowStep number="01" title={isEnglish ? "Learn" : "Leer"} text={isEnglish ? "Free" : "Gratis"} />
+              <FlowStep number="02" title={isEnglish ? "Intel" : "Inzicht"} text={isEnglish ? "Sources" : "Bronnen"} />
+              <FlowStep number="03" title={isEnglish ? "Activate" : "Activeer"} text={isEnglish ? "Xaman guide" : "Xaman-gids"} />
+              <FlowStep number="04" title={isEnglish ? "Prove" : "Bewijs"} text="SourceTag" />
+              <FlowStep number="05" title={isEnglish ? "Ledger" : "Overzicht"} text="XP / Credits" />
               <FlowStep
                 number="06"
                 title={isEnglish ? "Unlock" : "Ontgrendel"}
@@ -370,7 +376,7 @@ export function TerminalHomeTab({
             <div className="flex items-center gap-2 mb-5">
               <BadgeCheck size={18} className="text-[#C83888]" />
               <p className="font-orbitron text-xs uppercase tracking-widest">
-                {isEnglish ? "Access Boundaries" : "Access Grenzen"}
+                {isEnglish ? "Access Boundaries" : "Toegangsgrenzen"}
               </p>
             </div>
 
@@ -380,11 +386,11 @@ export function TerminalHomeTab({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <ReuseItem text={isEnglish ? "Free learning stays open." : "Gratis leren blijft open."} />
-              <ReuseItem text={isEnglish ? "Xaman is optional until proof." : "Xaman is pas nodig bij proof."} />
-              <ReuseItem text={isEnglish ? "Web2 Access License is coming later." : "Web2 Access License komt later."} />
+              <ReuseItem text={isEnglish ? "Xaman is optional until proof." : "Xaman is optioneel totdat bewijs nodig is."} />
+              <ReuseItem text={isEnglish ? "Web2 Access License is coming later." : "De Web2-toegangslicentie komt later."} />
               <ReuseItem text={isEnglish ? "XRPL Access Pass unlocks after payment, manual delivery and NFT scan." : "De XRPL Access Pass ontgrendelt na betaling, handmatige levering en NFT-scan."} />
-              <ReuseItem text={isEnglish ? "No automatic mint or automatic unlock runs after payment." : "Na betaling draait geen automatische mint of automatische unlock."} />
-              <ReuseItem text={isEnglish ? "No custody, broker or yield promise." : "Geen custody, broker of yield-belofte."} />
+              <ReuseItem text={isEnglish ? "No automatic mint or automatic unlock runs after payment." : "Na betaling vindt geen automatische mint of ontgrendeling plaats."} />
+              <ReuseItem text={isEnglish ? "No custody, broker or yield promise." : "Geen custody, broker of rendementsbelofte."} />
             </div>
           </div>
         </div>
@@ -395,7 +401,7 @@ export function TerminalHomeTab({
               {isEnglish ? "Live Product Structure" : "Live Productstructuur"}
             </p>
             <h2 className="font-orbitron text-2xl xl:text-3xl font-black uppercase">
-              {isEnglish ? "Intelligence, activation, proof and access." : "Intelligence, activatie, proof en access."}
+              {isEnglish ? "Intelligence, activation, proof and access." : "Intelligentie, activatie, bewijs en toegang."}
             </h2>
           </div>
 

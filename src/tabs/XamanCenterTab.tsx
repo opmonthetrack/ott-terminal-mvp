@@ -69,23 +69,23 @@ function getConnectRoutes(language: string): RouteCard[] {
   return [
     {
       id: "source-tag-proof",
-      title: "SourceTag Proof Connect",
+      title: language === "en" ? "SourceTag Proof Connect" : "SourceTag-Bewijs Koppelen",
       label: language === "en" ? "Recommended" : "Aanbevolen",
       text:
         language === "en"
           ? "Best first step for the Make Waves demo: connect, sign and prove the OTT SourceTag."
-          : "Beste eerste stap voor de Make Waves demo: connect, teken en bewijs de OTT SourceTag.",
+          : "Beste eerste stap voor de Make Waves-demo: koppel, onderteken en bewijs de OTT SourceTag.",
       xp: "+15 XP",
       icon: Fingerprint,
     },
     {
       id: "daily-checkin",
-      title: "Daily Check-In",
+      title: language === "en" ? "Daily Check-In" : "Dagelijkse Check-in",
       label: language === "en" ? "Activity" : "Activiteit",
       text:
         language === "en"
           ? "After connecting, use this route to create daily Mainnet proof and earn XP."
-          : "Na connect gebruik je deze route voor dagelijkse Mainnet proof en XP.",
+          : "Na het koppelen gebruik je deze route voor dagelijks Mainnet-bewijs en XP.",
       xp: "+10 XP",
       icon: Activity,
     },
@@ -100,7 +100,7 @@ function getConnectSteps(language: string): ConnectStep[] {
       text:
         language === "en"
           ? "Terminal creates a safe Xaman request with the OTT Make Waves SourceTag."
-          : "Terminal maakt een veilige Xaman request met de OTT Make Waves SourceTag.",
+          : "De terminal maakt een veilig Xaman-verzoek met de OTT Make Waves SourceTag.",
       icon: QrCode,
     },
     {
@@ -109,7 +109,7 @@ function getConnectSteps(language: string): ConnectStep[] {
       text:
         language === "en"
           ? "Mobile opens the Xaman app directly through a deeplink."
-          : "Mobiel opent direct de Xaman app via deeplink.",
+          : "Op mobiel wordt de Xaman-app rechtstreeks via een deeplink geopend.",
       icon: Smartphone,
     },
     {
@@ -123,11 +123,11 @@ function getConnectSteps(language: string): ConnectStep[] {
     },
     {
       number: "04",
-      title: language === "en" ? "Return + Verify" : "Terug + Verify",
+      title: language === "en" ? "Return + Verify" : "Terug + Verifiëren",
       text:
         language === "en"
           ? "After returning, Terminal verifies the account, signature and proof route."
-          : "Na terugkeer verifieert Terminal account, signature en proof-route.",
+          : "Na terugkeer verifieert de terminal het account, de ondertekening en de bewijsroute.",
       icon: BadgeCheck,
     },
   ];
@@ -153,7 +153,9 @@ export function XamanCenterTab({
   const [isCreating, setIsCreating] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState("");
-  const [lastVerifiedAt, setLastVerifiedAt] = useState("not verified");
+  const [lastVerifiedAt, setLastVerifiedAt] = useState(
+    language === "en" ? "Not verified" : "Niet geverifieerd",
+  );
   const [mobileStatus, setMobileStatus] = useState(
     isMobileDevice()
       ? xamanCopy.mobileStatusReady
@@ -222,14 +224,20 @@ export function XamanCenterTab({
       setMobileStatus(
         isMobileDevice()
           ? xamanCopy.openingXaman
-          : "Payload created. Scan QR or open Xaman link.",
+          : language === "en"
+            ? "Payload created. Scan the QR code or open the Xaman link."
+            : "Payload gemaakt. Scan de QR-code of open de Xaman-link.",
       );
 
       if (options?.openAfterCreate) {
         const opened = openXamanMobileDeepLink(url);
 
         if (!opened) {
-          setMobileStatus("Payload created, but no Xaman link was found.");
+          setMobileStatus(
+            language === "en"
+              ? "Payload created, but no Xaman link was found."
+              : "Payload gemaakt, maar er is geen Xaman-link gevonden.",
+          );
         }
       }
     } catch (createError) {
@@ -294,7 +302,7 @@ export function XamanCenterTab({
     setPayloadResponse(null);
     setVerificationResponse(null);
     setError("");
-    setLastVerifiedAt("not verified");
+    setLastVerifiedAt(language === "en" ? "Not verified" : "Niet geverifieerd");
     setMobileStatus(
       isMobileDevice()
         ? xamanCopy.mobileStatusReady
@@ -355,7 +363,7 @@ export function XamanCenterTab({
               </div>
 
               <h1 className="font-orbitron text-4xl xl:text-6xl font-black uppercase leading-none tracking-tight mb-6">
-                {language === "en" ? "Connect" : "Connect"}
+                {language === "en" ? "Connect" : "Koppel"}
                 <br />
                 <span className="bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] bg-clip-text text-transparent">
                   Xaman.
@@ -389,10 +397,14 @@ export function XamanCenterTab({
               <div className="border border-black/10 bg-white/90 backdrop-blur p-5 shadow-xl shadow-black/5">
                 <div className="flex items-center justify-between gap-3 mb-5">
                   <p className="font-orbitron text-xs uppercase tracking-widest">
-                    Connect Status
+                    {language === "en" ? "Connect Status" : "Koppelstatus"}
                   </p>
 
-                  <StatusPill isSigned={isSigned} isCreating={isCreating} />
+                  <StatusPill
+                    isSigned={isSigned}
+                    isCreating={isCreating}
+                    language={language}
+                  />
                 </div>
 
                 <div className="mb-4 text-[#080808]">
@@ -401,15 +413,15 @@ export function XamanCenterTab({
 
                 <div className="space-y-3">
                   <InfoRow
-                    label="Current Wallet"
+                    label={language === "en" ? "Current Wallet" : "Huidige Wallet"}
                     value={walletAddress === "guest" ? common.guestMode : walletAddress}
                   />
                   <InfoRow
-                    label="Signed Account"
-                    value={verifiedAccount ?? "Not connected"}
+                    label={language === "en" ? "Signed Account" : "Ondertekend Account"}
+                    value={verifiedAccount ?? (language === "en" ? "Not connected" : "Niet gekoppeld")}
                   />
-                  <InfoRow label="Mobile Flow" value={mobileStatus} />
-                  <InfoRow label="Verified At" value={lastVerifiedAt} />
+                  <InfoRow label={language === "en" ? "Mobile Flow" : "Mobiele Flow"} value={mobileStatus} />
+                  <InfoRow label={language === "en" ? "Verified At" : "Geverifieerd Om"} value={lastVerifiedAt} />
                 </div>
 
                 <div className="border border-black/10 bg-[#F7F8FC] p-4 mt-5">
@@ -430,26 +442,32 @@ export function XamanCenterTab({
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mt-8">
             <MetricCard
               label="Payload"
-              value={payloadUuid ? "Created" : "None"}
-              text="Stored for mobile return"
+              value={payloadUuid
+                ? language === "en" ? "Created" : "Aangemaakt"
+                : language === "en" ? "None" : "Geen"}
+              text={language === "en" ? "Stored for mobile return" : "Opgeslagen voor mobiele terugkeer"}
               icon={QrCode}
             />
             <MetricCard
               label="Xaman"
-              value={isSigned ? "Signed" : "Waiting"}
+              value={isSigned
+                ? language === "en" ? "Signed" : "Ondertekend"
+                : language === "en" ? "Waiting" : "Wachten"}
               text="Self-custody"
               icon={Wallet}
             />
             <MetricCard
               label={common.sourceTag}
               value={String(MAKE_WAVES_SOURCE_TAG)}
-              text="OTT proof"
+              text={language === "en" ? "OTT proof" : "OTT-bewijs"}
               icon={Fingerprint}
             />
             <MetricCard
-              label="Next"
-              value={verifiedAccount ? "Check-In" : "Connect"}
-              text="Demo route"
+              label={language === "en" ? "Next" : "Volgende"}
+              value={verifiedAccount
+                ? language === "en" ? "Check-In" : "Check-in"
+                : language === "en" ? "Connect" : "Koppel"}
+              text={language === "en" ? "Demo route" : "Demoroute"}
               icon={Zap}
             />
           </div>
@@ -462,11 +480,11 @@ export function XamanCenterTab({
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
               <div>
                 <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-black/35 mb-3">
-                  Xaman Flow
+                  {language === "en" ? "Xaman Flow" : "Xaman-Flow"}
                 </p>
 
                 <h2 className="font-orbitron text-2xl font-black uppercase">
-                  Mobile-First Sign Request
+                  {language === "en" ? "Mobile-First Sign Request" : "Mobiel Ondertekenverzoek"}
                 </h2>
               </div>
 
@@ -496,15 +514,15 @@ export function XamanCenterTab({
               <TrustBox
                 icon={Fingerprint}
                 title="SourceTag"
-                text={`2606170002 · ${language === "en" ? "Make Waves proof identity" : "Make Waves proof identity"}`}
+                text={`2606170002 · ${language === "en" ? "Make Waves proof identity" : "Make Waves-bewijsidentiteit"}`}
               />
               <TrustBox
                 icon={GraduationCap}
-                title={language === "en" ? "Education First" : "Education First"}
+                title={language === "en" ? "Education First" : "Educatie Eerst"}
                 text={
                   language === "en"
                     ? "Connect first, learn the action, then prove it."
-                    : "Eerst connecten, actie begrijpen, daarna bewijzen."
+                    : "Eerst koppelen, de actie begrijpen en daarna bewijzen."
                 }
               />
             </div>
@@ -536,7 +554,7 @@ export function XamanCenterTab({
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <ActionButton
                   title={isCreating ? common.loading : xamanCopy.createOnly}
-                  text="Generate QR fallback"
+                  text={language === "en" ? "Generate QR fallback" : "Maak QR-terugvaloptie"}
                   icon={isCreating ? Loader2 : QrCode}
                   disabled={isCreating}
                   onClick={() => void createPayload()}
@@ -544,7 +562,7 @@ export function XamanCenterTab({
 
                 <ActionButton
                   title={xamanCopy.openXaman}
-                  text="Open saved deeplink"
+                  text={language === "en" ? "Open saved deeplink" : "Open opgeslagen deeplink"}
                   icon={ExternalLink}
                   disabled={!payloadUrl}
                   onClick={openPayload}
@@ -552,7 +570,7 @@ export function XamanCenterTab({
 
                 <ActionButton
                   title={isVerifying ? common.loading : xamanCopy.verify}
-                  text="Check signed payload"
+                  text={language === "en" ? "Check signed payload" : "Controleer ondertekende payload"}
                   icon={isVerifying ? Loader2 : RefreshCcw}
                   disabled={!payloadUuid || isVerifying}
                   onClick={() => void verifyPayload(true)}
@@ -577,7 +595,7 @@ export function XamanCenterTab({
                 <div className="border border-black/10 bg-white p-5 shadow-sm">
                   <div className="flex items-center justify-between gap-3 mb-4">
                     <p className="font-orbitron text-xs font-black uppercase">
-                      Payload Details
+                      {language === "en" ? "Payload Details" : "Payloadgegevens"}
                     </p>
 
                     <button
@@ -589,9 +607,9 @@ export function XamanCenterTab({
                   </div>
 
                   <DetailRow label="UUID" value={payloadUuid ?? "—"} />
-                  <DetailRow label="Route" value={selectedRoute} />
+                  <DetailRow label={language === "en" ? "Route" : "Route"} value={selectedRoute} />
                   <DetailRow
-                    label="Transaction Type"
+                    label={language === "en" ? "Transaction Type" : "Transactietype"}
                     value={payloadResponse.transactionMeta?.transactionType ?? "—"}
                   />
                   <DetailRow
@@ -613,7 +631,7 @@ export function XamanCenterTab({
                     <div className="bg-white border border-black/10 p-4 inline-block">
                       <img
                         src={payloadQr}
-                        alt="Xaman payload QR"
+                        alt={language === "en" ? "Xaman payload QR" : "QR-code van Xaman-payload"}
                         className="w-48 h-48 object-contain"
                       />
                     </div>
@@ -624,7 +642,7 @@ export function XamanCenterTab({
                       <p className="font-mono text-xs text-black/35">
                         {language === "en"
                           ? "QR not found in payload response."
-                          : "QR niet gevonden in payload response."}
+                          : "QR niet gevonden in de payloadreactie."}
                       </p>
                     </div>
                   )}
@@ -635,10 +653,12 @@ export function XamanCenterTab({
                       className="w-full border border-black/10 bg-[#F7F8FC] p-4 text-left hover:bg-white transition-all mt-4"
                     >
                       <p className="font-orbitron text-xs font-black uppercase mb-2">
-                        Copy Xaman Link
+                        {language === "en" ? "Copy Xaman Link" : "Kopieer Xaman-Link"}
                       </p>
                       <p className="font-mono text-[10px] uppercase text-black/40">
-                        Fallback if app does not open
+                        {language === "en"
+                          ? "Fallback if app does not open"
+                          : "Terugvaloptie als de app niet opent"}
                       </p>
                     </button>
                   )}
@@ -657,7 +677,7 @@ export function XamanCenterTab({
                 )}
 
                 <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Verification Result
+                  {language === "en" ? "Verification Result" : "Verificatieresultaat"}
                 </p>
               </div>
 
@@ -669,16 +689,20 @@ export function XamanCenterTab({
 
               <div className="space-y-3">
                 <InfoRow
-                  label="Signed"
-                  value={isSigned ? "Yes" : "No / waiting"}
+                  label={language === "en" ? "Signed" : "Ondertekend"}
+                  value={isSigned
+                    ? language === "en" ? "Yes" : "Ja"
+                    : language === "en" ? "No / waiting" : "Nee / wachten"}
                 />
                 <InfoRow
-                  label="Resolved"
+                  label={language === "en" ? "Resolved" : "Afgehandeld"}
                   value={
-                    verificationResponse?.verified?.resolved ? "Yes" : "No / waiting"
+                    verificationResponse?.verified?.resolved
+                      ? language === "en" ? "Yes" : "Ja"
+                      : language === "en" ? "No / waiting" : "Nee / wachten"
                   }
                 />
-                <InfoRow label="Account" value={verifiedAccount ?? "—"} />
+                <InfoRow label={language === "en" ? "Account" : "Account"} value={verifiedAccount ?? "—"} />
                 <InfoRow
                   label="TXID"
                   value={verificationResponse?.verified?.txid ?? "—"}
@@ -693,10 +717,12 @@ export function XamanCenterTab({
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="font-orbitron text-xs font-black uppercase mb-2">
-                        Copy Connected Wallet
+                        {language === "en" ? "Copy Connected Wallet" : "Kopieer Gekoppelde Wallet"}
                       </p>
                       <p className="font-mono text-[10px] uppercase text-white/75">
-                        Wallet Dashboard opens automatically
+                        {language === "en"
+                          ? "Wallet Dashboard opens automatically"
+                          : "Walletdashboard opent automatisch"}
                       </p>
                     </div>
 
@@ -727,7 +753,7 @@ export function XamanCenterTab({
                 <Trophy size={18} className="text-[#C83888]" />
 
                 <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Make Waves Demo Route
+                  {language === "en" ? "Make Waves Demo Route" : "Make Waves-Demoroute"}
                 </p>
               </div>
 
@@ -736,28 +762,28 @@ export function XamanCenterTab({
                   text={
                     language === "en"
                       ? "1. Connect Xaman with SourceTag proof"
-                      : "1. Connect Xaman met SourceTag proof"
+                      : "1. Koppel Xaman met SourceTag-bewijs"
                   }
                 />
                 <SafeLine
                   text={
                     language === "en"
                       ? "2. Go to Daily Check-In for Mainnet proof"
-                      : "2. Ga naar Daily Check-In voor Mainnet proof"
+                      : "2. Ga naar Dagelijkse Check-in voor Mainnet-bewijs"
                   }
                 />
                 <SafeLine
                   text={
                     language === "en"
                       ? "3. Show XP and OTT Credits in Reward Ledger"
-                      : "3. Toon XP en OTT Credits in Reward Ledger"
+                      : "3. Toon XP en OTT Credits in het Beloningsoverzicht"
                   }
                 />
                 <SafeLine
                   text={
                     language === "en"
                       ? "4. Verify tx hash on the SourceTag page"
-                      : "4. Verifieer tx hash op de SourceTag pagina"
+                      : "4. Verifieer de transactiehash op de SourceTag-pagina"
                   }
                 />
               </div>
@@ -826,11 +852,17 @@ function RouteButton({
 function StatusPill({
   isSigned,
   isCreating,
+  language,
 }: {
   isSigned: boolean;
   isCreating: boolean;
+  language: "nl" | "en";
 }) {
-  const label = isSigned ? "Connected" : isCreating ? "Creating" : "Waiting";
+  const label = isSigned
+    ? language === "en" ? "Connected" : "Gekoppeld"
+    : isCreating
+      ? language === "en" ? "Creating" : "Aanmaken"
+      : language === "en" ? "Waiting" : "Wachten";
 
   return (
     <div className="border border-black/10 bg-[#F7F8FC] px-3 py-2">
