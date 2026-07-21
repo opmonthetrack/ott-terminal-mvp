@@ -13,10 +13,10 @@ type SupportMetric = {
 };
 
 const supportItems = [
-  "XRPL beginner education and onboarding content.",
-  "Xaman wallet activation guidance and SourceTag proof flows.",
-  "Community roadmap voting and phase-by-phase product delivery.",
-  "Access Pass utility tooling, verification and customer support.",
+  "Promotion and advertising to bring new users to OTT Terminal and XRPL.",
+  "Public source-code distribution and Make Waves SourceTag awareness.",
+  "XRPL education, Xaman onboarding and wallet-safety content.",
+  "Terminal development, testing, hosting and customer support.",
 ];
 
 export function SupportDonationTab() {
@@ -25,19 +25,21 @@ export function SupportDonationTab() {
 
   const metrics: SupportMetric[] = [
     {
-      label: isEnglish ? "Support Wallet" : "Support Wallet",
+      label: "Support Wallet",
       value: SUPPORT_WALLET,
       text: isEnglish ? "Official OTT support wallet." : "Officiele OTT support wallet.",
     },
     {
       label: "SourceTag",
       value: String(MAKE_WAVES_SOURCE_TAG),
-      text: isEnglish ? "Make Waves tracking tag." : "Make Waves tracking tag.",
+      text: "Make Waves tracking tag.",
     },
     {
       label: isEnglish ? "Purpose" : "Doel",
-      value: isEnglish ? "Education + onboarding" : "Educatie + onboarding",
-      text: isEnglish ? "Funds content and delivery." : "Support voor content en delivery.",
+      value: isEnglish ? "Promotion + onboarding" : "Promotie + onboarding",
+      text: isEnglish
+        ? "Funds reach, content and delivery."
+        : "Support voor bereik, content en delivery.",
     },
     {
       label: isEnglish ? "Rights" : "Rechten",
@@ -56,8 +58,8 @@ export function SupportDonationTab() {
                 size="lg"
                 subtitle={
                   isEnglish
-                    ? "Voluntary support for XRPL education and OTT Terminal delivery"
-                    : "Vrijwillige support voor XRPL educatie en OTT Terminal delivery"
+                    ? "Voluntary support for promotion, XRPL onboarding and OTT Terminal delivery"
+                    : "Vrijwillige support voor promotie, XRPL onboarding en OTT Terminal delivery"
                 }
               />
             </div>
@@ -73,14 +75,14 @@ export function SupportDonationTab() {
               {isEnglish ? "Support the terminal." : "Support de terminal."}
               <br />
               <span className="bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] bg-clip-text text-transparent">
-                {isEnglish ? "Build XRPL onboarding." : "Bouw XRPL onboarding."}
+                {isEnglish ? "Grow XRPL reach." : "Vergroot XRPL bereik."}
               </span>
             </h1>
 
             <p className="font-mono text-sm xl:text-base text-black/60 max-w-3xl leading-relaxed">
               {isEnglish
-                ? "Support donations help fund XRPL education, community onboarding, Make Waves delivery, content creation and continued product development. Donations are voluntary support only."
-                : "Supportdonaties helpen XRPL educatie, community onboarding, Make Waves delivery, contentcreatie en verdere productontwikkeling. Donaties zijn alleen vrijwillige support."}
+                ? "Support donations help fund promotion, advertising, public source-code distribution, XRPL education, community onboarding and continued terminal development. Donations are voluntary support only."
+                : "Supportdonaties helpen promotie, advertenties, verspreiding van de publieke sourcecode, XRPL educatie, community onboarding en verdere terminalontwikkeling. Donaties zijn alleen vrijwillige support."}
             </p>
           </div>
 
@@ -120,24 +122,22 @@ export function SupportDonationTab() {
                 <InfoLine text={isEnglish ? "Voluntary support only." : "Alleen vrijwillige support."} />
                 <InfoLine text={isEnglish ? "No investment, yield or profit promise." : "Geen investering, yield of winstbelofte."} />
                 <InfoLine text={isEnglish ? "No guaranteed Access Pass or token rights." : "Geen gegarandeerde Access Pass of tokenrechten."} />
-                <InfoLine text={isEnglish ? "Founder remains responsible for build order and delivery." : "Founder blijft verantwoordelijk voor bouwvolgorde en delivery."} />
+                <InfoLine text={isEnglish ? "Every payment uses the official wallet and SourceTag." : "Elke betaling gebruikt de officiele wallet en SourceTag."} />
               </div>
             </Panel>
 
             <a
               href={SUPPORT_PAGE_URL}
-              target="_blank"
-              rel="noreferrer"
               className="block w-full bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] p-4 text-left text-white hover:brightness-95 transition-all"
             >
               <div className="flex items-center gap-3">
                 <ExternalLink size={17} />
                 <div>
                   <p className="font-orbitron text-xs font-black uppercase">
-                    {isEnglish ? "Open Support Page" : "Open Supportpagina"}
+                    {isEnglish ? "Choose XRP Support Amount" : "Kies XRP Supportbedrag"}
                   </p>
                   <p className="font-mono text-[10px] uppercase tracking-widest text-white/75">
-                    {isEnglish ? "Wallet + SourceTag details" : "Wallet + SourceTag details"}
+                    {isEnglish ? "Live Xaman payment buttons" : "Live Xaman betaalbuttons"}
                   </p>
                 </div>
               </div>
@@ -174,7 +174,7 @@ export function SupportDonationTab() {
                 <MiniStatus label="Support Wallet" value={SUPPORT_WALLET} />
                 <MiniStatus label="SourceTag" value={String(MAKE_WAVES_SOURCE_TAG)} />
                 <MiniStatus label="Mode" value="Voluntary support" />
-                <MiniStatus label="Next" value="Xaman donation payload later" />
+                <MiniStatus label="Payment" value="Live Xaman fixed amounts" />
               </div>
             </Panel>
           </div>
