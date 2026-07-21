@@ -613,6 +613,47 @@ async function handleVerifyMakeWavesPayload(body: RequestBody) {
   const signed = Boolean(payload.meta?.signed);
   const account = payload.response?.account ?? null;
   const txid = payload.response?.txid ?? null;
+  let ledgerValidated = false;
+  let transactionResult = "not-checked";
+  let sourceTag: number | null = null;
+  let sourceTagMatches = false;
+  let accountMatches = false;
+  let actionMemoMatches = false;
+  let isPayment = false;
+  let ledgerIndex: number | null = null;
+
+  if (signed && txid && isValidTxHash(txid)) {
+    const ledgerResult = await fetchXrplTransaction(txid);
+
+    if (ledgerResult.status === 200) {
+      const data = ledgerResult.body as XrplRpcResponse;
+      const txResult = data.result as XrplTxResult;
+      const txJson = readTxJson(txResult);
+      const meta = readMeta(txResult);
+      const memoData = extractMemoText(txJson.Memos).map((memo) => memo.data);
+
+      ledgerValidated = Boolean(txResult.validated);
+      transactionResult = meta.TransactionResult ?? "unknown";
+      sourceTag = txJson.SourceTag ?? null;
+      sourceTagMatches = isMakeWavesSourceTag(sourceTag);
+      accountMatches = Boolean(account && txJson.Account === account);
+      actionMemoMatches = memoContainsExpected(action.memo, memoData);
+      isPayment = txJson.TransactionType === "Payment";
+      ledgerIndex = txResult.ledger_index ?? null;
+    } else {
+      transactionResult = "pending-or-not-found";
+    }
+  }
+
+  const makeWavesVerified = Boolean(
+    signed &&
+      ledgerValidated &&
+      transactionResult === "tesSUCCESS" &&
+      sourceTagMatches &&
+      accountMatches &&
+      actionMemoMatches &&
+      isPayment,
+  );
 
   return {
     status: 200,
@@ -624,9 +665,17 @@ async function handleVerifyMakeWavesPayload(body: RequestBody) {
         resolved: Boolean(payload.meta?.resolved),
         account,
         txid,
-        sourceTag: MAKE_WAVES_SOURCE_TAG,
+        sourceTag,
         actionId,
-        xp: signed ? action.xp : 0,
+        xp: makeWavesVerified ? action.xp : 0,
+        makeWavesVerified,
+        ledgerValidated,
+        transactionResult,
+        sourceTagMatches,
+        accountMatches,
+        actionMemoMatches,
+        isPayment,
+        ledgerIndex,
       },
       payload,
     },

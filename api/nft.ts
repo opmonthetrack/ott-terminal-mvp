@@ -24,7 +24,15 @@ const OTT_ACCESS_PASS_TAXON = Number(
 const OTT_ACCESS_PASS_METADATA_CID =
   process.env.OTT_ACCESS_PASS_METADATA_CID?.trim() ||
   process.env.VITE_OTT_ACCESS_PASS_METADATA_CID?.trim() ||
-  "bafkreifw47mopkw7qq4fppxkhgcthyrjvger5uyrqybyj52aunqhsz2cbm";
+  "bafkreiea77su5l5jntnaw3mzbmjdy5odsut2lxqvtfiarwk5usp3wq34py";
+
+const OTT_ACCESS_PASS_LEGACY_METADATA_CIDS = [
+  "bafkreifw47mopkw7qq4fppxkhgcthyrjvger5uyrqybyj52aunqhsz2cbm",
+];
+
+const OTT_ACCESS_PASS_ACCEPTED_METADATA_CIDS = Array.from(
+  new Set([OTT_ACCESS_PASS_METADATA_CID, ...OTT_ACCESS_PASS_LEGACY_METADATA_CIDS]),
+);
 
 const OTT_ACCESS_PASS_METADATA_URI =
   process.env.OTT_ACCESS_PASS_METADATA_URI?.trim() ||
@@ -43,6 +51,7 @@ type RequestBody = Record<string, unknown> & {
 type RequestLike = {
   method?: string;
   body?: RequestBody;
+  headers?: Record<string, string | string[] | undefined>;
 };
 
 type ResponseLike = {
@@ -155,6 +164,21 @@ function getString(body: RequestBody, key: string) {
   const value = body[key];
 
   return typeof value === "string" ? value.trim() : "";
+}
+
+function hasValidFounderToken(req: RequestLike) {
+  const configuredToken = process.env.OTT_FOUNDER_API_TOKEN?.trim();
+
+  if (!configuredToken) {
+    return false;
+  }
+
+  const rawAuthorization = req.headers?.authorization;
+  const authorization = Array.isArray(rawAuthorization)
+    ? rawAuthorization[0]
+    : rawAuthorization;
+
+  return authorization === `Bearer ${configuredToken}`;
 }
 
 function isValidXrplAddress(value: string) {
@@ -287,26 +311,33 @@ function normalizeNft(input: RawNft): NormalizedNft {
 }
 
 function nftUriMatchesAccessPass(rawUri: string, decodedUri: string) {
-  const acceptedUris = [
-    OTT_ACCESS_PASS_METADATA_URI,
-    `ipfs://${OTT_ACCESS_PASS_METADATA_CID}`,
-    OTT_ACCESS_PASS_METADATA_CID,
-    `https://ipfs.io/ipfs/${OTT_ACCESS_PASS_METADATA_CID}`,
-    `https://gateway.pinata.cloud/ipfs/${OTT_ACCESS_PASS_METADATA_CID}`,
-  ].map(normalizeText);
+  const acceptedUris = Array.from(
+    new Set([
+      OTT_ACCESS_PASS_METADATA_URI,
+      ...OTT_ACCESS_PASS_ACCEPTED_METADATA_CIDS.flatMap((cid) => [
+        cid,
+        `ipfs://${cid}`,
+        `https://ipfs.io/ipfs/${cid}`,
+        `https://gateway.pinata.cloud/ipfs/${cid}`,
+      ]),
+    ]),
+  ).map(normalizeText);
 
   const normalizedRaw = normalizeText(rawUri);
   const normalizedDecoded = normalizeText(decodedUri);
-  const encodedMetadataUri = normalizeText(textToHex(OTT_ACCESS_PASS_METADATA_URI));
-  const encodedMetadataCid = normalizeText(textToHex(OTT_ACCESS_PASS_METADATA_CID));
+  if (acceptedUris.includes(normalizedRaw) || acceptedUris.includes(normalizedDecoded)) {
+    return true;
+  }
 
-  return (
-    acceptedUris.includes(normalizedRaw) ||
-    acceptedUris.includes(normalizedDecoded) ||
-    normalizedRaw.includes(encodedMetadataUri) ||
-    normalizedRaw.includes(encodedMetadataCid) ||
-    normalizedDecoded.includes(normalizeText(OTT_ACCESS_PASS_METADATA_CID))
-  );
+  return OTT_ACCESS_PASS_ACCEPTED_METADATA_CIDS.some((cid) => {
+    const metadataUri = `ipfs://${cid}`;
+
+    return (
+      normalizedRaw.includes(normalizeText(textToHex(metadataUri))) ||
+      normalizedRaw.includes(normalizeText(textToHex(cid))) ||
+      normalizedDecoded.includes(normalizeText(cid))
+    );
+  });
 }
 
 function isAccessPassNft(nft: NormalizedNft) {
@@ -768,6 +799,22 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
   try {
     const body = req.body ?? {};
     const action = body.action;
+
+    if (typeof action === "string" && action.startsWith("xaman.")) {
+      if (!process.env.OTT_FOUNDER_API_TOKEN?.trim()) {
+        return res.status(503).json({
+          ok: false,
+          error: "Founder NFT actions are locked until OTT_FOUNDER_API_TOKEN is configured.",
+        });
+      }
+
+      if (!hasValidFounderToken(req)) {
+        return res.status(401).json({
+          ok: false,
+          error: "Valid founder API token required.",
+        });
+      }
+    }
 
     let result:
       | {

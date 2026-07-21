@@ -112,7 +112,7 @@ const pitchSteps: PitchStep[] = [
       "The public layer brings users in with intelligence, education, Xaman activation guidance and social drafts with OTT attribution. Later premium routes can include deeper Academy paths, Web2 Access Licenses, XRPL Access Pass utility, certificate NFTs and branded output — only after payment verification, safeguards and legal review.",
     proof: [
       "Submission Pack contains launch posts for X, LinkedIn, WhatsApp, TikTok and XRPL community invite",
-      "Access Gate is scanner-only in V1, with Web2 Access License coming soon",
+      "Access Gate uses a 1.589 XRP Xaman service payment, manual founder NFT delivery and scanner-based unlock",
       "Certificate NFT, donations and XRP/RLUSD support remain clearly marked as future layers",
     ],
     icon: KeyRound,

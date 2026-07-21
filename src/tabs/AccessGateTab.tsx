@@ -16,7 +16,6 @@ import {
   Sparkles,
   Wallet,
 } from "lucide-react";
-import { LanguageToggle } from "../components/LanguageToggle";
 import { OTTLogo, OTTLogoMark, OTTProofBadge } from "../components/OTTLogo";
 import {
   ACCESS_SOURCE_TAG,
@@ -28,6 +27,7 @@ import {
   type AccessState,
 } from "../lib/accessStore";
 import {
+  OTT_ACCESS_PASS_ACCEPTED_METADATA_CIDS,
   OTT_ACCESS_PASS_METADATA_CID,
   OTT_ACCESS_PASS_METADATA_URI,
   OTT_ACCESS_PASS_TAXON,
@@ -63,7 +63,7 @@ const ACCESS_PAYMENT_URL = "/access-payment.html";
 const ACCESS_PRICE_XRP = "1.589 XRP";
 
 export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
-  const { language, setLanguage } = useTerminalLanguage();
+  const { language } = useTerminalLanguage();
   const isEnglish = language === "en";
 
   const [accessState, setAccessState] = useState<AccessState>(() =>
@@ -295,7 +295,6 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
 
         <div className="relative z-10 p-4 md:p-6 xl:p-10">
           <div className="flex justify-end mb-4">
-            <LanguageToggle language={language} onChange={setLanguage} />
           </div>
 
           <div className="grid grid-cols-12 gap-6 items-center">
@@ -450,7 +449,7 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
                   value={isGuest ? "Connect Xaman first" : walletAddress}
                 />
                 <MiniStatus label="Taxon" value={String(OTT_ACCESS_PASS_TAXON)} />
-                <MiniStatus label="Metadata CID" value={OTT_ACCESS_PASS_METADATA_CID} />
+                <MiniStatus label="Current Founder CID" value={OTT_ACCESS_PASS_METADATA_CID} />
               </div>
 
               <button
@@ -590,7 +589,27 @@ export function AccessGateTab({ walletAddress = "guest" }: AccessGateTabProps) {
                 <MiniStatus label="SourceTag" value={String(ACCESS_SOURCE_TAG)} />
                 <MiniStatus label="Taxon" value={String(OTT_ACCESS_PASS_TAXON)} />
                 <MiniStatus label="Metadata URI" value={OTT_ACCESS_PASS_METADATA_URI} />
-                <MiniStatus label="Metadata CID" value={OTT_ACCESS_PASS_METADATA_CID} />
+                {OTT_ACCESS_PASS_ACCEPTED_METADATA_CIDS.map((cid, index) => (
+                  <a
+                    key={cid}
+                    href={`https://ipfs.io/ipfs/${cid}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block hover:brightness-95 transition-all"
+                  >
+                    <MiniStatus
+                      label={index === 0 ? "Founder CID (on-chain)" : "Legacy CID (on-chain)"}
+                      value={cid}
+                    />
+                  </a>
+                ))}
+                <div className="border border-[#D84858]/25 bg-[#D84858]/10 p-4">
+                  <p className="font-mono text-xs text-black/60 leading-relaxed">
+                    {isEnglish
+                      ? "Existing NFTs from both on-chain series remain scannable. The Founder metadata file contains an RTF prefix, so correct and pin fresh JSON before minting the next edition. Existing NFT URIs cannot be changed."
+                      : "Bestaande NFT's uit beide on-chain series blijven scanbaar. De Founder-metadatafile bevat een RTF-prefix; corrigeer en pin daarom verse JSON vóór de volgende mint. De URI van bestaande NFT's kan niet worden gewijzigd."}
+                  </p>
+                </div>
               </div>
             </Panel>
           </div>

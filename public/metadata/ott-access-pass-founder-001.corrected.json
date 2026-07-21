@@ -1,0 +1,48 @@
+{
+  "name": "OTT Terminal Access Pass — Founder #001",
+  "description": "A founder-tier utility access pass for XRPL OnTheTrack Terminal. This NFT can be used to verify access inside the terminal. It is not an investment, does not provide yield, and does not promise resale value.",
+  "image": "ipfs://bafybeihx6tf3p7q6m5l4k7crhzxomk4mcj4p5g3k4kq5qzzppige",
+  "external_url": "https://ott-terminal-mvp.vercel.app",
+  "attributes": [
+    {
+      "trait_type": "Project",
+      "value": "XRPL OnTheTrack Terminal"
+    },
+    {
+      "trait_type": "Access Type",
+      "value": "Terminal Access"
+    },
+    {
+      "trait_type": "Tier",
+      "value": "Founder"
+    },
+    {
+      "trait_type": "Edition",
+      "value": "001"
+    },
+    {
+      "trait_type": "Network",
+      "value": "XRPL Mainnet"
+    },
+    {
+      "trait_type": "SourceTag",
+      "value": "2606170002"
+    },
+    {
+      "trait_type": "Issuer Wallet",
+      "value": "rPCF1f9pi91B7ad7FydnxFPKiF7cdycV5q"
+    },
+    {
+      "trait_type": "NFTokenTaxon",
+      "value": "2606170002"
+    },
+    {
+      "trait_type": "Utility",
+      "value": "Terminal services access"
+    },
+    {
+      "trait_type": "Legal Position",
+      "value": "Utility access only — no investment, no yield, no resale value promise"
+    }
+  ]
+}
