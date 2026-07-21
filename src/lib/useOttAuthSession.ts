@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
+import { hydrateAccountAcademyCache } from "./accountAcademyStore";
+import { setActiveAcademyAccount } from "./academyProgressStore";
 import {
   getOttSession,
   isOttAuthConfigured,
@@ -13,28 +15,39 @@ export function useOttAuthSession() {
   useEffect(() => {
     let mounted = true;
 
+    async function applySession(nextSession: Session | null) {
+      if (!mounted) {
+        return;
+      }
+
+      setSession(nextSession);
+      setActiveAcademyAccount(nextSession?.user.id ?? null);
+
+      if (nextSession?.user.id) {
+        try {
+          await hydrateAccountAcademyCache(nextSession.user.id);
+        } catch {
+          // The account session remains valid when remote Academy hydration is temporarily unavailable.
+        }
+      }
+
+      if (mounted) {
+        setLoading(false);
+      }
+    }
+
     if (!isOttAuthConfigured) {
+      setActiveAcademyAccount(null);
       setLoading(false);
       return;
     }
 
     void getOttSession()
-      .then((nextSession) => {
-        if (mounted) {
-          setSession(nextSession);
-        }
-      })
-      .finally(() => {
-        if (mounted) {
-          setLoading(false);
-        }
-      });
+      .then((nextSession) => applySession(nextSession))
+      .catch(() => applySession(null));
 
     const unsubscribe = subscribeToOttAuth((_event, nextSession) => {
-      if (mounted) {
-        setSession(nextSession);
-        setLoading(false);
-      }
+      void applySession(nextSession);
     });
 
     return () => {
