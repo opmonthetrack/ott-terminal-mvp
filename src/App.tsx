@@ -1,21 +1,20 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import {
-  BarChart3,
-  Fingerprint,
+  BookOpen,
+  Compass,
   Home,
-  KeyRound,
   Lock,
+  LogOut,
   Menu,
-  MoreHorizontal,
-  Search,
-  ShieldCheck,
-  Smartphone,
+  UserCircle,
   Wallet,
   X,
 } from "lucide-react";
-import { OTTLogo, OTTLogoMark, OTTProofBadge } from "./components/OTTLogo";
+import { OTTLogoMark } from "./components/OTTLogo";
 import { TerminalHomeTab } from "./tabs/TerminalHomeTab";
 import { isAccessVerified, loadAccessState } from "./lib/accessStore";
+import { getOttAccountName } from "./lib/ottAuth";
+import { useOttAuthSession } from "./lib/useOttAuthSession";
 import { verifyMakeWavesPayload } from "./lib/xamanClient";
 import {
   cleanXamanReturnUrl,
@@ -24,7 +23,11 @@ import {
 } from "./lib/xamanMobileSession";
 import { useTerminalLanguage } from "./lib/useTerminalLanguage";
 import type { TerminalLanguage } from "./lib/terminalCopy";
-import { clearWalletSession, getStoredWalletAddress, saveWalletSession } from "./lib/walletSession";
+import {
+  clearWalletSession,
+  getStoredWalletAddress,
+  saveWalletSession,
+} from "./lib/walletSession";
 
 const DashboardTab = lazy(() => import("./tabs/DashboardTab").then((module) => ({ default: module.DashboardTab })));
 const DailyCheckInTab = lazy(() => import("./tabs/DailyCheckInTab").then((module) => ({ default: module.DailyCheckInTab })));
@@ -103,16 +106,15 @@ type ActiveTab =
 type MenuItem = {
   id: ActiveTab;
   label: string;
-  status?: string;
+  description?: string;
 };
 
 type MenuGroup = {
   title: string;
   items: MenuItem[];
-  collapsedByDefault?: boolean;
 };
 
-const sourceTag = "2606170002";
+const SOURCE_TAG = "2606170002";
 
 const FREE_TABS: ActiveTab[] = [
   "home",
@@ -154,154 +156,190 @@ function getCoreMenuGroups(language: TerminalLanguage): MenuGroup[] {
 
   return [
     {
-      title: "V1 Terminal",
+      title: isEnglish ? "Start" : "Start",
       items: [
-        { id: "home", label: isEnglish ? "Home" : "Start", status: "V1" },
-        { id: "dashboard", label: "Daily Snapshot", status: "Live" },
-        { id: "network", label: isEnglish ? "XRPL Explorer" : "XRPL Verkenner", status: "Live" },
-        { id: "wallet", label: isEnglish ? "Wallet & Profile" : "Wallet & Profiel", status: "Xaman" },
+        {
+          id: "home",
+          label: isEnglish ? "Home" : "Start",
+          description: isEnglish ? "A clear introduction to OTT." : "Een duidelijke introductie tot OTT.",
+        },
+        {
+          id: "dashboard",
+          label: isEnglish ? "Daily overview" : "Dagoverzicht",
+          description: isEnglish ? "Your most relevant information today." : "Jouw belangrijkste informatie van vandaag.",
+        },
+        {
+          id: "wallet",
+          label: isEnglish ? "Account and profile" : "Account en profiel",
+          description: isEnglish
+            ? "Sign in, track learning and optionally connect a wallet."
+            : "Log in, volg je leertraject en koppel optioneel een wallet.",
+        },
       ],
     },
     {
-      title: "Intelligence",
+      title: isEnglish ? "Learn" : "Leren",
       items: [
-        { id: "intel", label: "XRPL Intelligence", status: "Live" },
-        { id: "ottintelligence", label: "OTT Intelligence", status: "AI" },
-        { id: "news", label: "Newsroom", status: "Social" },
+        {
+          id: "academy",
+          label: isEnglish ? "Academy" : "Academie",
+          description: isEnglish ? "Learn XRPL step by step." : "Leer XRPL stap voor stap.",
+        },
+        {
+          id: "xamanactivation",
+          label: isEnglish ? "Wallet learning" : "Leren over wallets",
+          description: isEnglish
+            ? "Compare wallet types, custody and recovery."
+            : "Vergelijk walletsoorten, custody en herstel.",
+        },
+        {
+          id: "network",
+          label: isEnglish ? "XRPL explorer" : "XRPL-verkenner",
+          description: isEnglish
+            ? "Explore the network without technical overload."
+            : "Verken het netwerk zonder technische overload.",
+        },
       ],
     },
     {
-      title: isEnglish ? "Proof / Education" : "Proof / Educatie",
-      collapsedByDefault: true,
+      title: isEnglish ? "Explore" : "Ontdekken",
       items: [
-        { id: "source", label: "SourceTag", status: sourceTag },
-        { id: "roadmap", label: isEnglish ? "Roadmap & Vote" : "Roadmap & Stem", status: "Vote" },
-        { id: "xamanactivation", label: isEnglish ? "Xaman Activation" : "Xaman Activatie", status: "Guide" },
-        { id: "xaman", label: "Xaman Center", status: "Sign" },
-        { id: "xrplverify", label: isEnglish ? "XRPL Verify" : "XRPL Verificatie", status: "Proof" },
-        { id: "checkin", label: isEnglish ? "Daily Check-In" : "Dagelijkse Check-in", status: "XP" },
-        { id: "rewardledger", label: isEnglish ? "Reward Ledger" : "Beloningsoverzicht", status: "XP" },
-        { id: "academy", label: isEnglish ? "Academy" : "Academie", status: isEnglish ? "Learn" : "Leer" },
+        {
+          id: "intel",
+          label: "XRPL Intelligence",
+          description: isEnglish ? "Source-led XRPL updates." : "XRPL-updates met duidelijke bronnen.",
+        },
+        {
+          id: "news",
+          label: isEnglish ? "Newsroom" : "Nieuwsruimte",
+          description: isEnglish
+            ? "Turn verified information into content."
+            : "Zet geverifieerde informatie om in content.",
+        },
+        {
+          id: "roadmap",
+          label: isEnglish ? "Roadmap voting" : "Roadmap stemmen",
+          description: isEnglish
+            ? "Sign and verify a community vote."
+            : "Onderteken en verifieer een communitystem.",
+        },
+        {
+          id: "support",
+          label: isEnglish ? "Support OTT" : "Steun OTT",
+          description: isEnglish
+            ? "Transparent on-ledger support."
+            : "Transparante ondersteuning op de ledger.",
+        },
       ],
     },
     {
-      title: isEnglish ? "Services / Access" : "Services / Toegang",
+      title: isEnglish ? "Wallet tools" : "Wallettools",
       items: [
-        { id: "accessgate", label: isEnglish ? "Access Gate" : "Toegangspoort", status: "Scan" },
-        { id: "support", label: isEnglish ? "Support / Donation" : "Support / Donatie", status: "Phase 1" },
+        {
+          id: "xaman",
+          label: isEnglish ? "Connect XRPL wallet" : "XRPL-wallet koppelen",
+          description: isEnglish
+            ? "Xaman is supported first; more wallets are planned."
+            : "Xaman wordt als eerste ondersteund; meer wallets volgen.",
+        },
+        { id: "xrplverify", label: isEnglish ? "Verify transaction" : "Transactie verifiëren" },
+        { id: "source", label: `SourceTag ${SOURCE_TAG}` },
+        { id: "checkin", label: isEnglish ? "Daily proof" : "Dagelijks bewijs" },
+        { id: "rewardledger", label: isEnglish ? "Progress ledger" : "Voortgangsoverzicht" },
+        { id: "accessgate", label: isEnglish ? "Access" : "Toegang" },
       ],
     },
   ];
 }
 
-function getFounderMenuGroup(language: TerminalLanguage): MenuGroup {
+function getFounderMenuGroups(language: TerminalLanguage): MenuGroup[] {
   const isEnglish = language === "en";
-
-  return {
-    title: isEnglish ? "Founder / Demo / QA" : "Founder / Demo / QA",
-    items: [
-      { id: "pitchmode", label: isEnglish ? "Pitch Mode" : "Pitch Modus", status: "Demo" },
-      { id: "submission", label: isEnglish ? "Submission Pack" : "Inzendpakket", status: "Ship" },
-      { id: "smoketest", label: "Smoke Test", status: "QA" },
-    ],
-  };
-}
-
-function getLabsMenuGroup(language: TerminalLanguage): MenuGroup {
-  const isEnglish = language === "en";
-
-  return {
-    title: isEnglish ? "Labs / Advanced" : "Labs / Geavanceerd",
-    items: [
-      { id: "truthdesk", label: "Truth Desk", status: "Pass" },
-      { id: "marketplace", label: isEnglish ? "Marketplace" : "Webshop", status: "Pass" },
-      { id: "otttestnet", label: "OTT Testnet", status: "Pass" },
-      { id: "portfolio", label: "Portfolio", status: isEnglish ? "View" : "Bekijk" },
-      { id: "partners", label: "Partner Hub", status: isEnglish ? "Learn" : "Leer" },
-      { id: "ecosystem", label: isEnglish ? "Ecosystem" : "Ecosysteem", status: isEnglish ? "Map" : "Kaart" },
-      { id: "validator", label: "Validators", status: "UNL" },
-      { id: "developer", label: "Developer Hub", status: isEnglish ? "Build" : "Bouw" },
-      { id: "tokenization", label: isEnglish ? "Tokenization" : "Tokenisatie", status: "RWA" },
-      { id: "factory", label: isEnglish ? "Token Factory" : "Token Fabriek", status: isEnglish ? "Create" : "Maak" },
-      { id: "profile", label: isEnglish ? "Profile" : "Profiel", status: "User" },
-      { id: "token", label: "OTT Token", status: "XP" },
-      { id: "rewardpolicy", label: isEnglish ? "Reward Policy" : "Beloningsbeleid", status: "Legal" },
-      { id: "launch", label: "Launch Control", status: "Demo" },
-      { id: "ai", label: "AI Hub", status: "Tools" },
-      { id: "defi", label: "DeFi", status: "MVP" },
-    ],
-  };
-}
-
-function getMenuGroups(language: TerminalLanguage, showLabs: boolean): MenuGroup[] {
-  const coreGroups = getCoreMenuGroups(language);
-
-  if (!showLabs) {
-    return coreGroups;
-  }
 
   return [
-    ...coreGroups,
-    getFounderMenuGroup(language),
-    getLabsMenuGroup(language),
+    {
+      title: isEnglish ? "Founder and QA" : "Founder en QA",
+      items: [
+        { id: "pitchmode", label: isEnglish ? "Pitch mode" : "Pitchmodus" },
+        { id: "submission", label: isEnglish ? "Submission pack" : "Inzendpakket" },
+        { id: "smoketest", label: "Smoke test" },
+        { id: "launch", label: "Launch control" },
+      ],
+    },
+    {
+      title: "Labs",
+      items: [
+        { id: "truthdesk", label: "Truth Desk" },
+        { id: "marketplace", label: isEnglish ? "Marketplace" : "Webshop" },
+        { id: "otttestnet", label: "OTT Testnet" },
+        { id: "portfolio", label: "Portfolio" },
+        { id: "partners", label: "Partner Hub" },
+        { id: "ecosystem", label: isEnglish ? "Ecosystem" : "Ecosysteem" },
+        { id: "validator", label: "Validators" },
+        { id: "developer", label: "Developer Hub" },
+        { id: "tokenization", label: isEnglish ? "Tokenization" : "Tokenisatie" },
+        { id: "factory", label: isEnglish ? "Token factory" : "Tokenfabriek" },
+        { id: "profile", label: isEnglish ? "Legacy profile" : "Oud profiel" },
+        { id: "token", label: "OTT Token" },
+        { id: "rewardpolicy", label: isEnglish ? "Reward policy" : "Beloningsbeleid" },
+        { id: "ai", label: "AI Hub" },
+        { id: "defi", label: "DeFi" },
+        { id: "ottintelligence", label: "OTT Intelligence" },
+      ],
+    },
   ];
 }
 
 function getAllRouteItems(language: TerminalLanguage): MenuItem[] {
-  return [
-    ...getCoreMenuGroups(language),
-    getFounderMenuGroup(language),
-    getLabsMenuGroup(language),
-  ].flatMap((group) => group.items);
+  return [...getCoreMenuGroups(language), ...getFounderMenuGroups(language)].flatMap(
+    (group) => group.items,
+  );
 }
 
-function getMobilePrimaryItems(language: TerminalLanguage): MenuItem[] {
+function getPrimaryNavigation(language: TerminalLanguage): Array<{
+  id: ActiveTab;
+  label: string;
+  icon: typeof Home;
+}> {
   const isEnglish = language === "en";
 
   return [
-    { id: "home", label: isEnglish ? "Home" : "Start", status: "V1" },
-    { id: "intel", label: "Intel", status: "Live" },
-    { id: "news", label: "News", status: "Social" },
-    { id: "roadmap", label: "Vote", status: "Pass" },
+    { id: "home", label: isEnglish ? "Home" : "Start", icon: Home },
+    { id: "academy", label: isEnglish ? "Learn" : "Leren", icon: BookOpen },
+    { id: "intel", label: isEnglish ? "Explore" : "Ontdekken", icon: Compass },
+    { id: "wallet", label: isEnglish ? "Profile" : "Profiel", icon: UserCircle },
   ];
 }
 
-function MainApp() {
+export default function App() {
   const [walletAddress, setWalletAddress] = useState<string>(() => getStoredWalletAddress());
   const [activeTab, setActiveTab] = useState<ActiveTab>("home");
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [xamanReturnStatus, setXamanReturnStatus] = useState("");
-  const [showLabs, setShowLabs] = useState(false);
-  const [accessUnlocked, setAccessUnlocked] = useState(() =>
-    getAccessUnlocked(walletAddress),
-  );
-
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [walletStatus, setWalletStatus] = useState("");
+  const [accessUnlocked, setAccessUnlocked] = useState(() => getAccessUnlocked(walletAddress));
   const { language, setLanguage } = useTerminalLanguage();
+  const { user, signedIn, loading: authLoading } = useOttAuthSession();
 
+  const founderMode = useMemo(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
+    return new URLSearchParams(window.location.search).get("founder") === "1";
+  }, []);
+
+  const coreMenuGroups = useMemo(() => getCoreMenuGroups(language), [language]);
   const menuGroups = useMemo(
-    () => getMenuGroups(language, showLabs),
-    [language, showLabs],
+    () => founderMode ? [...coreMenuGroups, ...getFounderMenuGroups(language)] : coreMenuGroups,
+    [coreMenuGroups, founderMode, language],
   );
-
-  const allRouteItems = useMemo(
-    () => getAllRouteItems(language),
-    [language],
-  );
-
-  const mobilePrimaryItems = useMemo(
-    () => getMobilePrimaryItems(language),
-    [language],
-  );
-
-  const activeItem =
-    allRouteItems.find((item) => item.id === activeTab) ?? allRouteItems[0];
-
+  const allRouteItems = useMemo(() => getAllRouteItems(language), [language]);
+  const primaryNavigation = useMemo(() => getPrimaryNavigation(language), [language]);
+  const activeItem = allRouteItems.find((item) => item.id === activeTab) ?? allRouteItems[0];
   const activeTabLocked = !accessUnlocked && !isFreeTab(activeTab);
+  const accountName = getOttAccountName(user);
 
   useEffect(() => {
-    const refreshAccess = () => {
-      setAccessUnlocked(getAccessUnlocked(walletAddress));
-    };
+    const refreshAccess = () => setAccessUnlocked(getAccessUnlocked(walletAddress));
 
     refreshAccess();
     window.addEventListener("focus", refreshAccess);
@@ -331,7 +369,7 @@ function MainApp() {
   }, []);
 
   useEffect(() => {
-    if (!isMobileMenuOpen) {
+    if (!menuOpen) {
       return;
     }
 
@@ -340,7 +378,7 @@ function MainApp() {
 
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setIsMobileMenuOpen(false);
+        setMenuOpen(false);
       }
     };
 
@@ -350,23 +388,23 @@ function MainApp() {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", closeOnEscape);
     };
-  }, [isMobileMenuOpen]);
+  }, [menuOpen]);
 
   useEffect(() => {
     const returnState = getXamanReturnState();
 
-    if (
-      !returnState.hasReturnedFromXaman ||
-      !returnState.payloadUuid ||
-      !returnState.actionId
-    ) {
+    if (!returnState.hasReturnedFromXaman || !returnState.payloadUuid || !returnState.actionId) {
       return;
     }
 
-    let isMounted = true;
+    let mounted = true;
 
     async function verifyReturnedPayload() {
-      setXamanReturnStatus("Xaman return detected. Verifying signature...");
+      setWalletStatus(
+        language === "en"
+          ? "Verifying your wallet signature…"
+          : "Je wallethandtekening wordt gecontroleerd…",
+      );
 
       try {
         const response = await verifyMakeWavesPayload(
@@ -374,7 +412,7 @@ function MainApp() {
           returnState.actionId,
         );
 
-        if (!isMounted) {
+        if (!mounted) {
           return;
         }
 
@@ -382,50 +420,52 @@ function MainApp() {
           saveWalletSession(response.verified.account);
           setWalletAddress(response.verified.account);
           setActiveTab(returnState.returnTarget);
-          setXamanReturnStatus("Wallet connected. Opening dashboard...");
+          setWalletStatus(language === "en" ? "Wallet connected." : "Wallet gekoppeld.");
           clearXamanMobileSession();
         } else if (response.verified?.resolved && !response.verified?.signed) {
           setActiveTab("xaman");
-          setXamanReturnStatus("Xaman request was rejected or expired.");
+          setWalletStatus(
+            language === "en"
+              ? "The wallet request was declined or expired."
+              : "Het walletverzoek is geweigerd of verlopen.",
+          );
         } else {
           setActiveTab("xaman");
-          setXamanReturnStatus("Xaman signing is still waiting.");
+          setWalletStatus(language === "en" ? "Waiting for wallet approval." : "Wachten op walletgoedkeuring.");
         }
       } catch {
-        if (!isMounted) {
+        if (!mounted) {
           return;
         }
 
         setActiveTab("xaman");
-        setXamanReturnStatus("Could not verify Xaman return. Try verify again.");
+        setWalletStatus(
+          language === "en"
+            ? "We could not verify the wallet return."
+            : "De terugkeer van de wallet kon niet worden geverifieerd.",
+        );
       } finally {
         cleanXamanReturnUrl();
-
-        window.setTimeout(() => {
-          if (isMounted) {
-            setXamanReturnStatus("");
-          }
-        }, 4500);
+        window.setTimeout(() => mounted && setWalletStatus(""), 4500);
       }
     }
 
     void verifyReturnedPayload();
 
     return () => {
-      isMounted = false;
+      mounted = false;
     };
-  }, []);
+  }, [language]);
 
   function goTo(target: ActiveTab) {
     setAccessUnlocked(getAccessUnlocked(walletAddress));
     setActiveTab(target);
-    setIsMobileMenuOpen(false);
+    setMenuOpen(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function navigateTo(target: string) {
-    const isValid = allRouteItems.some((item) => item.id === target);
-
-    if (isValid) {
+    if (allRouteItems.some((item) => item.id === target)) {
       goTo(target as ActiveTab);
     }
   }
@@ -434,82 +474,79 @@ function MainApp() {
     saveWalletSession(address);
     setWalletAddress(address);
     setActiveTab("wallet");
-    setIsMobileMenuOpen(false);
+    setMenuOpen(false);
   }
 
   function disconnectWallet() {
     clearWalletSession();
     setWalletAddress("guest");
     setAccessUnlocked(false);
-    setActiveTab("home");
-    setIsMobileMenuOpen(false);
-    setXamanReturnStatus("Wallet session disconnected.");
-
-    window.setTimeout(() => setXamanReturnStatus(""), 2500);
+    setMenuOpen(false);
+    setWalletStatus(language === "en" ? "Wallet disconnected." : "Wallet losgekoppeld.");
+    window.setTimeout(() => setWalletStatus(""), 2500);
   }
 
   return (
-    <div className="min-h-screen bg-white text-[#080808] selection:bg-[#C83888]/20 lg:flex">
-      <DesktopSidebar
+    <div className="min-h-screen bg-white text-[#111827] selection:bg-[#2563EB]/15">
+      <TopNavigation
         activeTab={activeTab}
-        walletAddress={walletAddress}
-        menuGroups={menuGroups}
+        accountName={accountName}
+        signedIn={signedIn}
+        authLoading={authLoading}
+        walletConnected={walletAddress !== "guest"}
         language={language}
         setLanguage={setLanguage}
-        showLabs={showLabs}
-        setShowLabs={setShowLabs}
-        goTo={goTo}
+        primaryNavigation={primaryNavigation}
+        onNavigate={goTo}
+        onOpenMenu={() => setMenuOpen(true)}
       />
 
-      <MobileHeader
-        activeItem={activeItem}
-        walletAddress={walletAddress}
-        language={language}
-        onOpenMenu={() => setIsMobileMenuOpen(true)}
-      />
+      {walletStatus && <StatusBanner text={walletStatus} />}
 
-      {xamanReturnStatus && <XamanReturnBanner text={xamanReturnStatus} />}
-
-      {isMobileMenuOpen && (
-        <MobileMenu
+      {menuOpen && (
+        <AllToolsMenu
           activeTab={activeTab}
+          accountName={accountName}
+          signedIn={signedIn}
           walletAddress={walletAddress}
-          menuGroups={menuGroups}
           language={language}
           setLanguage={setLanguage}
-          showLabs={showLabs}
-          setShowLabs={setShowLabs}
-          goTo={goTo}
-          onClose={() => setIsMobileMenuOpen(false)}
+          menuGroups={menuGroups}
+          founderMode={founderMode}
+          onNavigate={goTo}
+          onDisconnectWallet={disconnectWallet}
+          onClose={() => setMenuOpen(false)}
         />
       )}
 
-      <main className="w-full min-h-screen bg-white lg:flex-1 lg:h-screen lg:overflow-y-auto pb-24 lg:pb-0">
-        <div className="hidden lg:flex sticky top-0 z-20 border-b border-black/10 px-6 xl:px-8 py-4 items-center justify-between bg-white/90 backdrop-blur">
-          <PageHeader activeItem={activeItem} />
-        </div>
+      <main className="min-h-[calc(100vh-72px)] bg-white">
+        {activeTab !== "home" && (
+          <div className="border-b border-slate-200 bg-white">
+            <div className="mx-auto max-w-7xl px-5 py-4 sm:px-8">
+              <p className="text-xs font-medium text-slate-500">
+                {activeItem?.label ?? "OTT"}
+              </p>
+            </div>
+          </div>
+        )}
 
         {activeTabLocked ? (
-          <LockedPremiumPreview
+          <LockedPreview
+            language={language}
             activeItem={activeItem}
             walletAddress={walletAddress}
-            language={language}
-            goTo={goTo}
+            onNavigate={goTo}
           />
         ) : (
-          <Suspense fallback={<RouteLoadingState />}>
-            {activeTab === "home" && (
-              <TerminalHomeTab walletAddress={walletAddress} onNavigate={navigateTo} />
-            )}
+          <Suspense fallback={<RouteLoadingState language={language} />}>
+            {activeTab === "home" && <TerminalHomeTab walletAddress={walletAddress} onNavigate={navigateTo} />}
             {activeTab === "dashboard" && <DashboardTab onNavigate={navigateTo} />}
             {activeTab === "checkin" && <DailyCheckInTab walletAddress={walletAddress} />}
             {activeTab === "source" && <SourceTagMonitorTab walletAddress={walletAddress} />}
             {activeTab === "roadmap" && <RoadmapTab walletAddress={walletAddress} onNavigate={navigateTo} />}
             {activeTab === "support" && <SupportDonationTab />}
             {activeTab === "xamanactivation" && <XamanActivationTab />}
-            {activeTab === "xaman" && (
-              <XamanCenterTab walletAddress={walletAddress} onWalletConnected={connectWallet} />
-            )}
+            {activeTab === "xaman" && <XamanCenterTab walletAddress={walletAddress} onWalletConnected={connectWallet} />}
             {activeTab === "xrplverify" && <XrplVerifyTab walletAddress={walletAddress} />}
             {activeTab === "network" && <NetworkState />}
             {activeTab === "wallet" && <WalletTab walletAddress={walletAddress} onDisconnect={disconnectWallet} />}
@@ -541,522 +578,389 @@ function MainApp() {
           </Suspense>
         )}
       </main>
-
-      <MobileBottomNav
-        activeTab={activeTab}
-        walletAddress={walletAddress}
-        items={mobilePrimaryItems}
-        goTo={goTo}
-      />
     </div>
   );
 }
 
-function RouteLoadingState() {
-  return (
-    <div className="min-h-[60vh] flex items-center justify-center p-6">
-      <div className="border border-black/10 bg-[#F7F8FC] px-6 py-5 text-center">
-        <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-black/40">
-          Loading terminal module…
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function DesktopSidebar({
+function TopNavigation({
   activeTab,
-  walletAddress,
-  menuGroups,
+  accountName,
+  signedIn,
+  authLoading,
+  walletConnected,
   language,
   setLanguage,
-  showLabs,
-  setShowLabs,
-  goTo,
-}: {
-  activeTab: ActiveTab;
-  walletAddress: string;
-  menuGroups: MenuGroup[];
-  language: TerminalLanguage;
-  setLanguage: (language: TerminalLanguage) => void;
-  showLabs: boolean;
-  setShowLabs: (value: boolean) => void;
-  goTo: (target: ActiveTab) => void;
-}) {
-  return (
-    <aside className="hidden lg:flex w-72 border-r border-black/10 flex-col justify-between bg-white z-10 relative shrink-0 h-screen">
-      <div className="p-6 overflow-y-auto flex-1">
-        <BrandButton goTo={goTo} />
-        <IdentityPanel walletAddress={walletAddress} goTo={goTo} language={language} />
-        <DesktopNav activeTab={activeTab} menuGroups={menuGroups} goTo={goTo} />
-      </div>
-
-      <SidebarFooter
-        language={language}
-        setLanguage={setLanguage}
-        showLabs={showLabs}
-        onToggleLabs={() => setShowLabs(!showLabs)}
-        onReset={() => goTo("home")}
-      />
-    </aside>
-  );
-}
-
-function MobileHeader({
-  activeItem,
-  walletAddress,
-  language,
+  primaryNavigation,
+  onNavigate,
   onOpenMenu,
 }: {
-  activeItem: MenuItem;
-  walletAddress: string;
+  activeTab: ActiveTab;
+  accountName: string;
+  signedIn: boolean;
+  authLoading: boolean;
+  walletConnected: boolean;
   language: TerminalLanguage;
+  setLanguage: (language: TerminalLanguage) => void;
+  primaryNavigation: Array<{ id: ActiveTab; label: string; icon: typeof Home }>;
+  onNavigate: (target: ActiveTab) => void;
   onOpenMenu: () => void;
 }) {
+  const accountLabel = authLoading
+    ? "…"
+    : signedIn
+      ? accountName || (language === "en" ? "My account" : "Mijn account")
+      : language === "en"
+        ? "Sign in"
+        : "Inloggen";
+
   return (
-    <header className="lg:hidden sticky top-0 z-40 border-b border-black/10 bg-white/95 backdrop-blur">
-      <div className="px-4 py-3 flex items-center justify-between gap-3">
+    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
+      <div className="mx-auto flex h-[72px] max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
         <button
-          onClick={onOpenMenu}
-          className="w-11 h-11 border border-black/10 bg-[#F7F8FC] flex items-center justify-center text-black"
-          aria-label={language === "en" ? "Open menu" : "Open menu"}
+          type="button"
+          onClick={() => onNavigate("home")}
+          className="flex shrink-0 items-center gap-3 text-left"
+          aria-label="OTT home"
         >
-          <Menu size={20} />
+          <OTTLogoMark size={36} />
+          <div className="hidden sm:block">
+            <p className="text-sm font-semibold tracking-tight text-slate-950">OnTheTrack</p>
+            <p className="text-[11px] text-slate-500">XRPL learning platform</p>
+          </div>
         </button>
 
-        <div className="flex-1 min-w-0">
-          <p className="font-mono text-[9px] text-black/35 uppercase tracking-[0.25em] truncate">
-            {walletAddress === "guest"
-              ? language === "en"
-                ? "Guest / "
-                : "Gast / "
-              : language === "en"
-                ? "Connected / "
-                : "Verbonden / "}
-            XRPL Terminal
-          </p>
-          <h1 className="font-orbitron text-sm font-black uppercase tracking-widest truncate text-black">
-            {activeItem.label}
-          </h1>
-        </div>
+        <nav className="mx-auto hidden items-center gap-1 md:flex" aria-label="Primary navigation">
+          {primaryNavigation.map((item) => {
+            const Icon = item.icon;
+            const selected = activeTab === item.id;
 
-        <OTTLogoMark size="md" />
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onNavigate(item.id)}
+                className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                  selected
+                    ? "bg-slate-100 text-slate-950"
+                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-950"
+                }`}
+              >
+                <Icon size={16} strokeWidth={1.8} />
+                {item.label}
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="ml-auto flex items-center gap-2">
+          <div className="hidden items-center rounded-lg border border-slate-200 p-1 sm:flex">
+            <button
+              type="button"
+              onClick={() => setLanguage("en")}
+              className={`rounded-md px-2.5 py-1.5 text-[11px] font-semibold ${
+                language === "en" ? "bg-slate-900 text-white" : "text-slate-500"
+              }`}
+            >
+              EN
+            </button>
+            <button
+              type="button"
+              onClick={() => setLanguage("nl")}
+              className={`rounded-md px-2.5 py-1.5 text-[11px] font-semibold ${
+                language === "nl" ? "bg-slate-900 text-white" : "text-slate-500"
+              }`}
+            >
+              NL
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => onNavigate("wallet")}
+            className="hidden max-w-44 items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 lg:flex"
+          >
+            <span className="relative">
+              <UserCircle size={17} />
+              {walletConnected && (
+                <span
+                  className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-white"
+                  title={language === "en" ? "Wallet connected" : "Wallet gekoppeld"}
+                />
+              )}
+            </span>
+            <span className="truncate">{accountLabel}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onOpenMenu}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50"
+            aria-label={language === "en" ? "Open all tools" : "Open alle tools"}
+          >
+            <Menu size={19} />
+          </button>
+        </div>
       </div>
+
+      <nav className="flex border-t border-slate-100 px-2 py-2 md:hidden" aria-label="Mobile primary navigation">
+        {primaryNavigation.map((item) => {
+          const Icon = item.icon;
+          const selected = activeTab === item.id;
+
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => onNavigate(item.id)}
+              className={`flex flex-1 flex-col items-center gap-1 rounded-lg py-2 text-[11px] font-medium ${
+                selected ? "bg-slate-100 text-slate-950" : "text-slate-500"
+              }`}
+            >
+              <Icon size={16} />
+              {item.label}
+            </button>
+          );
+        })}
+      </nav>
     </header>
   );
 }
 
-function MobileMenu({
+function AllToolsMenu({
   activeTab,
+  accountName,
+  signedIn,
   walletAddress,
-  menuGroups,
   language,
   setLanguage,
-  showLabs,
-  setShowLabs,
-  goTo,
+  menuGroups,
+  founderMode,
+  onNavigate,
+  onDisconnectWallet,
   onClose,
 }: {
   activeTab: ActiveTab;
+  accountName: string;
+  signedIn: boolean;
   walletAddress: string;
-  menuGroups: MenuGroup[];
   language: TerminalLanguage;
   setLanguage: (language: TerminalLanguage) => void;
-  showLabs: boolean;
-  setShowLabs: (value: boolean) => void;
-  goTo: (target: ActiveTab) => void;
+  menuGroups: MenuGroup[];
+  founderMode: boolean;
+  onNavigate: (target: ActiveTab) => void;
+  onDisconnectWallet: () => void;
   onClose: () => void;
 }) {
+  const walletConnected = Boolean(walletAddress && walletAddress !== "guest");
+
   return (
     <div
-      className="lg:hidden fixed inset-0 z-[90] bg-white text-black"
+      className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/30 p-3 backdrop-blur-sm sm:p-6"
       role="dialog"
       aria-modal="true"
-      aria-label="Terminal navigation"
     >
-      <div className="h-full flex flex-col">
-        <div className="border-b border-black/10 px-4 py-3 flex items-center justify-between gap-3">
-          <OTTLogo size="md" />
+      <button type="button" className="absolute inset-0" onClick={onClose} aria-label="Close menu" />
+
+      <div className="relative mx-auto my-3 max-w-5xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl sm:my-8">
+        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-5 sm:px-7">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight text-slate-950">
+              {language === "en" ? "Explore OTT" : "Ontdek OTT"}
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              {language === "en" ? "Choose one destination." : "Kies één bestemming."}
+            </p>
+          </div>
           <button
+            type="button"
             onClick={onClose}
-            className="w-11 h-11 border border-black/10 bg-[#F7F8FC] flex items-center justify-center"
-            aria-label={language === "en" ? "Close menu" : "Sluit menu"}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+            aria-label={language === "en" ? "Close menu" : "Menu sluiten"}
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
-        <div className="p-4 overflow-y-auto flex-1">
-          <IdentityPanel walletAddress={walletAddress} goTo={goTo} language={language} />
-          <DesktopNav activeTab={activeTab} menuGroups={menuGroups} goTo={goTo} />
+        <div className="grid gap-8 px-5 py-7 sm:px-7 lg:grid-cols-2">
+          {menuGroups.map((group) => (
+            <section key={group.title}>
+              <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                {group.title}
+              </h3>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {group.items.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => onNavigate(item.id)}
+                    className={`rounded-xl border p-4 text-left transition-colors ${
+                      activeTab === item.id
+                        ? "border-blue-200 bg-blue-50"
+                        : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                    }`}
+                  >
+                    <p className="text-sm font-semibold text-slate-900">{item.label}</p>
+                    {item.description && (
+                      <p className="mt-1 text-xs leading-5 text-slate-500">{item.description}</p>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </section>
+          ))}
         </div>
 
-        <SidebarFooter
-          language={language}
-          setLanguage={setLanguage}
-          showLabs={showLabs}
-          onToggleLabs={() => setShowLabs(!showLabs)}
-          onReset={() => goTo("home")}
-        />
-      </div>
-    </div>
-  );
-}
+        <div className="border-t border-slate-200 bg-slate-50 px-5 py-5 sm:px-7">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">
+                {signedIn
+                  ? accountName || (language === "en" ? "OTT account" : "OTT-account")
+                  : language === "en"
+                    ? "Not signed in"
+                    : "Niet ingelogd"}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                {walletConnected
+                  ? `${language === "en" ? "Wallet" : "Wallet"}: ${shortWallet(walletAddress)}`
+                  : language === "en"
+                    ? "No wallet connected"
+                    : "Geen wallet gekoppeld"}
+              </p>
+            </div>
 
-function BrandButton({ goTo }: { goTo: (target: ActiveTab) => void }) {
-  return (
-    <button onClick={() => goTo("home")} className="w-full text-left mb-7">
-      <OTTLogo size="md" />
-    </button>
-  );
-}
-
-function IdentityPanel({
-  walletAddress,
-  goTo,
-  language,
-}: {
-  walletAddress: string;
-  goTo: (target: ActiveTab) => void;
-  language: TerminalLanguage;
-}) {
-  return (
-    <div className="border border-black/10 bg-[#F7F8FC] p-4 mb-6 shadow-sm">
-      <div className="mb-4 text-black">
-        <OTTProofBadge sourceTag={sourceTag} />
-      </div>
-
-      <div className="space-y-2">
-        <StatusRow label="Wallet" value={walletAddress} />
-        <StatusRow label="Mode" value={language === "en" ? "Education-first" : "Educatie-eerst"} />
-      </div>
-
-      <button
-        onClick={() => goTo("xaman")}
-        className="w-full bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] text-white p-3 mt-4 text-left hover:brightness-95 transition-all"
-      >
-        <p className="font-orbitron text-[10px] font-black uppercase tracking-widest">
-          {language === "en" ? "Connect / Sign with Xaman" : "Connect / Sign met Xaman"}
-        </p>
-      </button>
-    </div>
-  );
-}
-
-function DesktopNav({
-  activeTab,
-  menuGroups,
-  goTo,
-}: {
-  activeTab: ActiveTab;
-  menuGroups: MenuGroup[];
-  goTo: (target: ActiveTab) => void;
-}) {
-  return (
-    <nav className="space-y-6">
-      {menuGroups.map((group) => (
-        <details key={group.title} open={!group.collapsedByDefault ? true : undefined}>
-          <summary className="cursor-pointer list-none font-mono text-[9px] text-black/45 hover:text-black uppercase tracking-[0.28em] mb-2 px-2 py-1 flex items-center justify-between gap-2">
-            <span>{group.title}</span>
-            <span aria-hidden="true">＋</span>
-          </summary>
-          <div className="space-y-1">
-            {group.items.map((item) => {
-              const isActive = activeTab === item.id;
-              return (
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setLanguage("en")}
+                className={`rounded-lg px-3 py-2 text-xs font-semibold ${
+                  language === "en"
+                    ? "bg-slate-900 text-white"
+                    : "border border-slate-200 bg-white text-slate-600"
+                }`}
+              >
+                English
+              </button>
+              <button
+                type="button"
+                onClick={() => setLanguage("nl")}
+                className={`rounded-lg px-3 py-2 text-xs font-semibold ${
+                  language === "nl"
+                    ? "bg-slate-900 text-white"
+                    : "border border-slate-200 bg-white text-slate-600"
+                }`}
+              >
+                Nederlands
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate("wallet")}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700"
+              >
+                {signedIn
+                  ? language === "en" ? "Open profile" : "Open profiel"
+                  : language === "en" ? "Sign in" : "Inloggen"}
+              </button>
+              {walletConnected && (
                 <button
-                  key={item.id}
-                  onClick={() => goTo(item.id)}
-                  className={`w-full text-left px-3 py-3 font-orbitron text-[11px] font-bold uppercase tracking-widest transition-all border-l-2 ${
-                    isActive
-                      ? "bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] text-white border-transparent shadow-sm"
-                      : "text-black/48 border-transparent hover:text-black hover:bg-[#F7F8FC]"
-                  }`}
+                  type="button"
+                  onClick={onDisconnectWallet}
+                  className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-500"
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <span>{item.label}</span>
-                    {item.status && (
-                      <span className={`font-mono text-[8px] uppercase tracking-widest ${isActive ? "text-white/75" : "text-black/28"}`}>
-                        {item.status}
-                      </span>
-                    )}
-                  </div>
+                  <LogOut size={14} />
+                  {language === "en" ? "Disconnect wallet" : "Wallet loskoppelen"}
                 </button>
-              );
-            })}
+              )}
+            </div>
           </div>
-        </details>
-      ))}
-    </nav>
-  );
-}
 
-function SidebarFooter({
-  language,
-  setLanguage,
-  showLabs,
-  onToggleLabs,
-  onReset,
-}: {
-  language: TerminalLanguage;
-  setLanguage: (language: TerminalLanguage) => void;
-  showLabs: boolean;
-  onToggleLabs: () => void;
-  onReset: () => void;
-}) {
-  return (
-    <div className="p-4 lg:p-6 space-y-5 border-t border-black/10">
-      <div className="bg-[#F7F8FC] border border-black/10 rounded-lg p-1 flex relative">
-        <div
-          className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] rounded shadow transition-all duration-300 ${
-            language === "en" ? "left-1" : "left-[calc(50%+2px)]"
-          }`}
-        />
-        <button
-          onClick={() => setLanguage("en")}
-          className={`flex-1 relative z-10 text-[10px] font-bold uppercase tracking-widest py-2 rounded transition-colors ${
-            language === "en" ? "text-white" : "text-black/40 hover:text-black"
-          }`}
-        >
-          ENGLISH
-        </button>
-        <button
-          onClick={() => setLanguage("nl")}
-          className={`flex-1 relative z-10 text-[10px] font-bold uppercase tracking-widest py-2 rounded transition-colors ${
-            language === "nl" ? "text-white" : "text-black/40 hover:text-black"
-          }`}
-        >
-          NEDERLANDS
-        </button>
+          {founderMode && (
+            <p className="mt-4 border-t border-slate-200 pt-4 text-xs text-slate-400">
+              {language === "en" ? "Founder mode active." : "Foundermodus actief."}
+            </p>
+          )}
+        </div>
       </div>
-      <button
-        onClick={onToggleLabs}
-        className={`w-full text-left px-3 py-3 text-[10px] font-mono font-bold uppercase tracking-widest border border-black/10 transition-colors ${
-          showLabs
-            ? "bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] text-white"
-            : "bg-[#F7F8FC] text-black/45 hover:text-black"
-        }`}
-      >
-        {showLabs
-          ? language === "en"
-            ? "Hide Founder / Labs"
-            : "Verberg Founder / Labs"
-          : language === "en"
-            ? "Show Founder / Labs"
-            : "Toon Founder / Labs"}
-      </button>
-      <button
-        onClick={onReset}
-        className="w-full text-left px-3 py-3 text-[10px] font-mono font-bold text-black/40 uppercase tracking-widest hover:text-black transition-colors"
-      >
-        {language === "en" ? "Reset to home" : "Terug naar start"}
-      </button>
     </div>
   );
 }
 
-function PageHeader({ activeItem }: { activeItem: MenuItem }) {
-  return (
-    <>
-      <div>
-        <p className="font-mono text-[10px] text-black/35 uppercase tracking-[0.35em] mb-2">
-          {activeItem.status ? `${activeItem.status} / ` : ""}
-          XRPL OnTheTrack Terminal
-        </p>
-        <h1 className="font-orbitron text-lg xl:text-xl font-black uppercase tracking-widest text-black">
-          {activeItem.label}
-        </h1>
-      </div>
-      <div>
-        <OTTLogo size="sm" subtitle="Intelligence + Xaman + Proof" />
-      </div>
-    </>
-  );
-}
-
-function LockedPremiumPreview({
+function LockedPreview({
+  language,
   activeItem,
   walletAddress,
-  language,
-  goTo,
+  onNavigate,
 }: {
-  activeItem: MenuItem;
-  walletAddress: string;
   language: TerminalLanguage;
-  goTo: (target: ActiveTab) => void;
+  activeItem?: MenuItem;
+  walletAddress: string;
+  onNavigate: (target: ActiveTab) => void;
 }) {
-  const isEnglish = language === "en";
-  const isGuest = !walletAddress || walletAddress === "guest";
+  const walletConnected = Boolean(walletAddress && walletAddress !== "guest");
 
   return (
-    <section className="min-h-screen bg-white p-4 md:p-6 xl:p-10">
-      <div className="relative overflow-hidden border border-black/10 bg-[radial-gradient(circle_at_18%_18%,rgba(56,152,232,0.16),transparent_28%),radial-gradient(circle_at_82%_8%,rgba(200,56,136,0.16),transparent_28%),#ffffff] p-6 md:p-8 xl:p-10 shadow-sm">
-        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.22),#ffffff_94%)]" />
-        <div className="relative z-10 grid grid-cols-12 gap-6 items-center">
-          <div className="col-span-12 xl:col-span-8">
-            <div className="inline-flex items-center gap-2 border border-black/10 bg-white/80 shadow-sm px-4 py-2 mb-6">
-              <Lock size={15} className="text-[#C83888]" />
-              <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-black/55">
-                {isEnglish ? "Access Pass Area" : "Access Pass Gebied"}
-              </p>
-            </div>
-            <h2 className="font-orbitron text-4xl xl:text-6xl font-black uppercase leading-none tracking-tight mb-6">
-              {activeItem.label}
-              <br />
-              <span className="bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] bg-clip-text text-transparent">
-                Locked Preview
-              </span>
-            </h2>
-            <p className="font-mono text-sm xl:text-base text-black/60 leading-relaxed max-w-3xl mb-8">
-              {isEnglish
-                ? "This part of the terminal is reserved for Access Pass holders. Free preview stays open for learning, proof, wallet activation, intelligence and Make Waves verification."
-                : "Dit deel van de terminal is gereserveerd voor houders van een Access Pass. De gratis omgeving blijft open voor leren, bewijs, walletactivatie, intelligence en Make Waves-verificatie."}
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-3xl">
-              <button
-                onClick={() => goTo(isGuest ? "xamanactivation" : "accessgate")}
-                className="border border-transparent bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] p-4 text-left text-white hover:brightness-95 transition-all"
-              >
-                <KeyRound size={18} className="mb-3" />
-                <p className="font-orbitron text-xs font-black uppercase tracking-widest mb-2">
-                  {isGuest
-                    ? isEnglish ? "Activate / Connect Xaman" : "Activeer / Koppel Xaman"
-                    : isEnglish ? "Scan Access Pass" : "Scan Access Pass"}
-                </p>
-                <p className="font-mono text-[10px] uppercase tracking-widest text-white/75">
-                  {isGuest ? "Wallet onboarding" : "Scan delivered pass"}
-                </p>
-              </button>
-              <button
-                onClick={() => goTo("academy")}
-                className="border border-black/10 bg-white p-4 text-left hover:bg-[#F7F8FC] transition-all"
-              >
-                <ShieldCheck size={18} className="text-[#3898E8] mb-3" />
-                <p className="font-orbitron text-xs font-black uppercase tracking-widest mb-2 text-black">
-                  {isEnglish ? "Continue Free Preview" : "Ga door met de gratis omgeving"}
-                </p>
-                <p className="font-mono text-[10px] uppercase tracking-widest text-black/40">
-                  Academy / Proof / XP
-                </p>
-              </button>
-            </div>
-          </div>
-          <div className="col-span-12 xl:col-span-4">
-            <div className="border border-black/10 bg-white/90 p-5 shadow-xl shadow-black/5">
-              <p className="font-orbitron text-xs uppercase tracking-widest mb-5">
-                Live Access Model
-              </p>
-              <div className="space-y-3">
-                <LockInfoRow label="Free" value="Home, Intel, Newsroom, Activation, Academy, Proof" />
-                <LockInfoRow label="Premium" value="Truth Desk, Marketplace, partner tools" />
-                <LockInfoRow label="Unlock" value="Exact OTT Access Pass NFT match" />
-                <LockInfoRow label="Safety" value="Payment verified; manual mint/delivery; NFT scanner unlock" />
-              </div>
-            </div>
-          </div>
+    <section className="mx-auto flex min-h-[70vh] max-w-3xl items-center px-5 py-16 sm:px-8">
+      <div className="w-full rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm sm:p-12">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-700">
+          <Lock size={21} />
+        </div>
+        <h1 className="mt-6 text-2xl font-semibold tracking-tight text-slate-950">
+          {activeItem?.label ?? (language === "en" ? "Access feature" : "Toegangsfunctie")}
+        </h1>
+        <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-500">
+          {walletConnected
+            ? language === "en"
+              ? "This feature requires a verified OTT Access Pass."
+              : "Deze functie vereist een geverifieerde OTT Access Pass."
+            : language === "en"
+              ? "A wallet is only needed here to verify ownership of an OTT Access Pass."
+              : "Alleen hier is een wallet nodig om eigendom van een OTT Access Pass te verifiëren."}
+        </p>
+        <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
+          <button
+            type="button"
+            onClick={() => onNavigate(walletConnected ? "accessgate" : "xaman")}
+            className="rounded-lg bg-slate-950 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800"
+          >
+            {walletConnected
+              ? language === "en" ? "View access" : "Bekijk toegang"
+              : language === "en" ? "Connect wallet" : "Wallet koppelen"}
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate("home")}
+            className="rounded-lg border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            {language === "en" ? "Back home" : "Terug naar start"}
+          </button>
         </div>
       </div>
     </section>
   );
 }
 
-function LockInfoRow({ label, value }: { label: string; value: string }) {
+function RouteLoadingState({ language }: { language: TerminalLanguage }) {
   return (
-    <div className="border border-black/10 bg-[#F7F8FC] p-3">
-      <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
-        {label}
-      </p>
-      <p className="font-orbitron text-xs font-black uppercase break-words text-black">
-        {value}
+    <div className="flex min-h-[55vh] items-center justify-center px-6">
+      <p className="text-sm text-slate-500">
+        {language === "en" ? "Loading…" : "Laden…"}
       </p>
     </div>
   );
 }
 
-function MobileBottomNav({
-  activeTab,
-  walletAddress,
-  items,
-  goTo,
-}: {
-  activeTab: ActiveTab;
-  walletAddress: string;
-  items: MenuItem[];
-  goTo: (target: ActiveTab) => void;
-}) {
-  const isGuest = !walletAddress || walletAddress === "guest";
-  const iconMap = {
-    home: Home,
-    intel: BarChart3,
-    news: Search,
-    xamanactivation: Smartphone,
-  };
-
+function StatusBanner({ text }: { text: string }) {
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-black/10 bg-white/95 backdrop-blur px-2 py-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)]">
-      <div className="grid grid-cols-5 gap-1">
-        {items.map((item) => {
-          const isActive = activeTab === item.id;
-          const Icon = iconMap[item.id as keyof typeof iconMap] ?? MoreHorizontal;
-          return (
-            <button
-              key={item.id}
-              onClick={() => goTo(item.id)}
-              className={`min-h-14 rounded-sm border px-2 py-2 transition-all ${
-                isActive
-                  ? "border-transparent bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] text-white"
-                  : "border-black/10 bg-[#F7F8FC] text-black/45"
-              }`}
-            >
-              <Icon size={16} className="mx-auto mb-1" />
-              <span className="font-mono text-[8px] uppercase tracking-widest">
-                {item.label}
-              </span>
-            </button>
-          );
-        })}
-        <button
-          onClick={() => goTo(isGuest ? "xamanactivation" : "xaman")}
-          className={`min-h-14 rounded-sm border px-2 py-2 transition-all ${
-            activeTab === (isGuest ? "xamanactivation" : "xaman")
-              ? "border-transparent bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] text-white"
-              : "border-black/10 bg-[#F7F8FC] text-black/45"
-          }`}
-        >
-          <Wallet size={16} className="mx-auto mb-1" />
-          <span className="font-mono text-[8px] uppercase tracking-widest">XAMAN</span>
-        </button>
-      </div>
-    </nav>
-  );
-}
-
-function XamanReturnBanner({ text }: { text: string }) {
-  return (
-    <div className="fixed top-[69px] lg:top-4 left-4 right-4 lg:left-auto lg:right-36 lg:w-[420px] z-[60] border border-black/10 bg-white text-black p-4 shadow-2xl shadow-black/10">
-      <p className="font-orbitron text-xs font-black uppercase tracking-widest mb-2">
-        Xaman Mobile Return
-      </p>
-      <p className="font-mono text-xs uppercase tracking-widest text-black/60">
-        {text}
-      </p>
+    <div className="fixed left-1/2 top-24 z-[60] -translate-x-1/2 rounded-lg border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-slate-700 shadow-lg">
+      {text}
     </div>
   );
 }
 
-function StatusRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-start justify-between gap-3 border border-black/10 bg-white p-2">
-      <p className="font-mono text-[9px] text-black/35 uppercase tracking-widest">
-        {label}
-      </p>
-      <p className="font-mono text-[9px] text-black/60 uppercase break-all text-right">
-        {value}
-      </p>
-    </div>
-  );
-}
+function shortWallet(address: string) {
+  if (!address || address === "guest") {
+    return "Guest";
+  }
 
-export default function App() {
-  return <MainApp />;
+  return `${address.slice(0, 6)}…${address.slice(-4)}`;
 }

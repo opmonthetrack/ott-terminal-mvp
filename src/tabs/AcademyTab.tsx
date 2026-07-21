@@ -6,13 +6,13 @@ import {
   Brain,
   Building2,
   CheckCircle2,
+  ChevronLeft,
   ChevronRight,
   Code2,
   Coins,
   Cpu,
   ExternalLink,
   Fingerprint,
-  GraduationCap,
   Layers,
   Loader2,
   Lock,
@@ -20,18 +20,24 @@ import {
   Repeat2,
   ShieldCheck,
   Sparkles,
-  Target,
+  UserCircle,
   Wallet,
   XCircle,
 } from "lucide-react";
-import { OTTLogo, OTTProofBadge } from "../components/OTTLogo";
+import {
+  migrateLegacyWalletProgressToAccount,
+  saveAccountAcademyCompletion,
+} from "../lib/accountAcademyStore";
 import { assessAcademyModule } from "../lib/academyAssessmentClient";
 import {
   getAcademyProgressSummary,
-  saveAcademyModuleCompletion,
   type AcademyAnswerAssessment,
 } from "../lib/academyProgressStore";
+import { isAccessVerified, loadAccessState } from "../lib/accessStore";
 import { MAKE_WAVES_SOURCE_TAG } from "../lib/makeWaves";
+import { NFT_EDITION_REGISTRY, formatEditionSerial } from "../lib/nftEditionRegistry";
+import { getOttAccountName } from "../lib/ottAuth";
+import { useOttAuthSession } from "../lib/useOttAuthSession";
 import { useTerminalLanguage } from "../lib/useTerminalLanguage";
 
 type AcademyTabProps = {
@@ -39,58 +45,100 @@ type AcademyTabProps = {
   onNavigate?: (target: string) => void;
 };
 
-type LessonStatus = "free" | "premium";
-type Difficulty = "Beginner" | "Intermediate" | "Builder" | "Agentic";
-type AcademyView = "path" | "module" | "proof";
+type AcademyView = "hub" | "course" | "certificate";
+type CourseAccess = "free" | "access";
+type Difficulty = "Beginner" | "Intermediate" | "Builder" | "Advanced";
+type PathId = "foundations" | "use" | "markets" | "build";
 
-type LessonTask = {
+type CourseTask = {
   id: string;
-  promptNl: string;
   promptEn: string;
+  promptNl: string;
 };
 
-type Lesson = {
+type Course = {
   id: string;
   module: string;
-  difficulty: Difficulty;
+  path: PathId;
   title: string;
-  goalNl: string;
-  goalEn: string;
-  ottAngleNl: string;
-  ottAngleEn: string;
+  difficulty: Difficulty;
+  minutes: number;
+  access: CourseAccess;
+  outcomeEn: string;
+  outcomeNl: string;
+  takeawayEn: string;
+  takeawayNl: string;
   topics: string[];
-  tasks: LessonTask[];
+  tasks: CourseTask[];
   sourceLabel: string;
   sourceUrl: string;
-  minutes: number;
-  status: LessonStatus;
   xp: number;
   credits: number;
   icon: ElementType;
 };
 
+type LearningPath = {
+  id: PathId;
+  titleEn: string;
+  titleNl: string;
+  descriptionEn: string;
+  descriptionNl: string;
+};
+
 const MAX_ANSWER_LENGTH = 200;
 
-const lessons: Lesson[] = [
+const learningPaths: LearningPath[] = [
+  {
+    id: "foundations",
+    titleEn: "Foundations",
+    titleNl: "Basis",
+    descriptionEn: "Blockchain, XRPL, payments and public proof.",
+    descriptionNl: "Blockchain, XRPL, betalingen en openbaar bewijs.",
+  },
+  {
+    id: "use",
+    titleEn: "Safe use",
+    titleNl: "Veilig gebruik",
+    descriptionEn: "Testnet learning, business use and identity.",
+    descriptionNl: "Testnetleren, zakelijk gebruik en identiteit.",
+  },
+  {
+    id: "markets",
+    titleEn: "Tokens and DeFi",
+    titleNl: "Tokens en DeFi",
+    descriptionEn: "Issued assets, liquidity and market risks.",
+    descriptionNl: "Issued assets, liquiditeit en marktrisico’s.",
+  },
+  {
+    id: "build",
+    titleEn: "Build",
+    titleNl: "Bouwen",
+    descriptionEn: "React, JavaScript and controlled AI agents.",
+    descriptionNl: "React, JavaScript en gecontroleerde AI-agents.",
+  },
+];
+
+const courses: Course[] = [
   {
     id: "blockchain-crypto-basics",
     module: "01",
-    difficulty: "Beginner",
+    path: "foundations",
     title: "Blockchain & Crypto Basics",
-    goalNl: "Begrijp blockchain, wallets, transacties en de basisrisico's voordat je tekent.",
-    goalEn: "Understand blockchain, wallets, transactions and basic risks before signing.",
-    ottAngleNl: "Eerst begrijpen, daarna pas ondertekenen.",
-    ottAngleEn: "Understand first, sign later.",
+    difficulty: "Beginner",
+    minutes: 90,
+    access: "free",
+    outcomeEn: "Understand ledgers, wallets, transactions and basic risks.",
+    outcomeNl: "Begrijp ledgers, wallets, transacties en basisrisico’s.",
+    takeawayEn: "Understand first. Sign later.",
+    takeawayNl: "Eerst begrijpen. Daarna ondertekenen.",
     topics: ["Ledger", "Wallet", "Self-custody", "Transactions", "Risk"],
     tasks: [
-      { id: "task-1", promptNl: "Leg in eigen woorden uit wat een ledger is.", promptEn: "Explain in your own words what a ledger is." },
-      { id: "task-2", promptNl: "Noem drie risico's voordat je een wallet gebruikt.", promptEn: "Name three risks to consider before using a wallet." },
-      { id: "task-3", promptNl: "Waarom moet begrijpen vóór ondertekenen komen?", promptEn: "Why should understanding come before signing?" },
+      { id: "task-1", promptEn: "Explain in your own words what a ledger is.", promptNl: "Leg in eigen woorden uit wat een ledger is." },
+      { id: "task-2", promptEn: "Name three risks to consider before using a wallet.", promptNl: "Noem drie risico’s voordat je een wallet gebruikt." },
+      { id: "task-3", promptEn: "Why should understanding come before signing?", promptNl: "Waarom moet begrijpen vóór ondertekenen komen?" },
     ],
     sourceLabel: "XRPL Learning Portal",
-    sourceUrl: "https://learn.xrpl.org/",
-    minutes: 90,
-    status: "free",
+    sourceUrl: "https://learn.xrpl.org/course/blockchain-and-crypto-basics/",
     xp: 25,
     credits: 1,
     icon: BookOpen,
@@ -98,22 +146,23 @@ const lessons: Lesson[] = [
   {
     id: "intro-to-xrpl",
     module: "02",
+    path: "foundations",
+    title: "Introduction to the XRPL",
     difficulty: "Beginner",
-    title: "Intro to the XRPL",
-    goalNl: "Leer wat XRPL is en hoe je gevalideerde transacties leest.",
-    goalEn: "Learn what XRPL is and how to read validated transactions.",
-    ottAngleNl: `Koppel netwerkbegrip aan SourceTag ${MAKE_WAVES_SOURCE_TAG}.`,
-    ottAngleEn: `Connect network understanding to SourceTag ${MAKE_WAVES_SOURCE_TAG}.`,
+    minutes: 90,
+    access: "free",
+    outcomeEn: "Understand accounts, validation and transaction finality.",
+    outcomeNl: "Begrijp accounts, validatie en transactiefinaliteit.",
+    takeawayEn: "A validated transaction is evidence, not a promise.",
+    takeawayNl: "Een gevalideerde transactie is bewijs, geen belofte.",
     topics: ["XRPL", "Accounts", "Validation", "Finality", "Explorer"],
     tasks: [
-      { id: "task-1", promptNl: "Leg uit wat de XRP Ledger is.", promptEn: "Explain what the XRP Ledger is." },
-      { id: "task-2", promptNl: "Wat controleer je bij een XRPL-transactie?", promptEn: "What should you check when looking up an XRPL transaction?" },
-      { id: "task-3", promptNl: "Waarom is finaliteit nuttig voor proof-acties?", promptEn: "Why is finality useful for proof actions?" },
+      { id: "task-1", promptEn: "Explain what the XRP Ledger is.", promptNl: "Leg uit wat de XRP Ledger is." },
+      { id: "task-2", promptEn: "What should you check when looking up an XRPL transaction?", promptNl: "Wat controleer je bij het opzoeken van een XRPL-transactie?" },
+      { id: "task-3", promptEn: "Why is finality useful for proof actions?", promptNl: "Waarom is finaliteit nuttig voor proof-acties?" },
     ],
-    sourceLabel: "XRPL Learning Portal · Intro",
+    sourceLabel: "XRPL Learning Portal",
     sourceUrl: "https://learn.xrpl.org/",
-    minutes: 90,
-    status: "free",
     xp: 25,
     credits: 1,
     icon: Network,
@@ -121,22 +170,23 @@ const lessons: Lesson[] = [
   {
     id: "payments-use-cases",
     module: "03",
+    path: "foundations",
+    title: "Payments on XRPL",
     difficulty: "Beginner",
-    title: "Payments Use Cases on XRPL",
-    goalNl: "Leer veilige XRPL-betalingen en proofbetalingen controleren.",
-    goalEn: "Learn to verify safe XRPL payments and proof payments.",
-    ottAngleNl: "Van payload naar gevalideerde proof, zonder custody.",
-    ottAngleEn: "From payload to validated proof, without custody.",
+    minutes: 90,
+    access: "free",
+    outcomeEn: "Review destinations, amounts, tags, memos and validation.",
+    outcomeNl: "Controleer adressen, bedragen, tags, memo’s en validatie.",
+    takeawayEn: "A successful result still needs context.",
+    takeawayNl: "Een succesvol resultaat heeft nog steeds context nodig.",
     topics: ["Payment", "tesSUCCESS", "Memo", "SourceTag", "Validation"],
     tasks: [
-      { id: "task-1", promptNl: "Beschrijf een veilige XRPL-proofbetaling.", promptEn: "Describe the parts of a safe XRPL proof payment." },
-      { id: "task-2", promptNl: "Wat betekent tesSUCCESS en wat bewijst het niet alleen?", promptEn: "What does tesSUCCESS mean and what does it not prove by itself?" },
-      { id: "task-3", promptNl: "Waarom zijn memo en SourceTag nuttig?", promptEn: "Why can a memo and SourceTag be useful?" },
+      { id: "task-1", promptEn: "Describe the parts of a safe XRPL proof payment.", promptNl: "Beschrijf de onderdelen van een veilige XRPL-proofbetaling." },
+      { id: "task-2", promptEn: "What does tesSUCCESS mean and what does it not prove by itself?", promptNl: "Wat betekent tesSUCCESS en wat bewijst het niet op zichzelf?" },
+      { id: "task-3", promptEn: "Why can a memo and SourceTag be useful?", promptNl: "Waarom kunnen een memo en SourceTag nuttig zijn?" },
     ],
-    sourceLabel: "XRPL Learning Portal · Payments",
+    sourceLabel: "XRPL Learning Portal",
     sourceUrl: "https://learn.xrpl.org/",
-    minutes: 90,
-    status: "free",
     xp: 25,
     credits: 2,
     icon: Wallet,
@@ -144,22 +194,23 @@ const lessons: Lesson[] = [
   {
     id: "source-tag-proof",
     module: "04",
-    difficulty: "Beginner",
+    path: "foundations",
     title: `SourceTag ${MAKE_WAVES_SOURCE_TAG} Proof`,
-    goalNl: "Begrijp de publieke OTT Make Waves-proofidentiteit.",
-    goalEn: "Understand the public OTT Make Waves proof identity.",
-    ottAngleNl: "Connect → Learn → Prove → Track.",
-    ottAngleEn: "Connect → Learn → Prove → Track.",
-    topics: ["SourceTag", "Audit trail", "Memo", "Duplicate protection", "Proof"],
+    difficulty: "Beginner",
+    minutes: 45,
+    access: "free",
+    outcomeEn: "Understand OTT’s public Make Waves proof identity.",
+    outcomeNl: "Begrijp de openbare OTT Make Waves-proofidentiteit.",
+    takeawayEn: "Track one verified action once.",
+    takeawayNl: "Registreer één geverifieerde actie één keer.",
+    topics: ["SourceTag", "Audit trail", "Memo", "Duplicates", "Proof"],
     tasks: [
-      { id: "task-1", promptNl: `Wat identificeert SourceTag ${MAKE_WAVES_SOURCE_TAG}?`, promptEn: `What does SourceTag ${MAKE_WAVES_SOURCE_TAG} identify?` },
-      { id: "task-2", promptNl: "Welke velden controleer je naast SourceTag?", promptEn: "Which transaction fields must be checked alongside SourceTag?" },
-      { id: "task-3", promptNl: "Hoe voorkom je dubbele beloning voor dezelfde proof?", promptEn: "How do you prevent the same proof from rewarding twice?" },
+      { id: "task-1", promptEn: `What does SourceTag ${MAKE_WAVES_SOURCE_TAG} identify?`, promptNl: `Wat identificeert SourceTag ${MAKE_WAVES_SOURCE_TAG}?` },
+      { id: "task-2", promptEn: "Which transaction fields must be checked alongside SourceTag?", promptNl: "Welke transactievelden controleer je naast SourceTag?" },
+      { id: "task-3", promptEn: "How do you prevent the same proof from rewarding twice?", promptNl: "Hoe voorkom je dat dezelfde proof dubbel wordt beloond?" },
     ],
     sourceLabel: "XRPL.org Docs",
     sourceUrl: "https://xrpl.org/docs",
-    minutes: 45,
-    status: "free",
     xp: 15,
     credits: 2,
     icon: Fingerprint,
@@ -167,183 +218,191 @@ const lessons: Lesson[] = [
   {
     id: "defi-island",
     module: "05",
-    difficulty: "Beginner",
+    path: "use",
     title: "Explore DeFi-Island",
-    goalNl: "Gebruik testnet en gamification om DeFi-concepten veilig te leren.",
-    goalEn: "Use testnet and gamification to learn DeFi concepts safely.",
-    ottAngleNl: "Speels leren zonder echt kapitaal te riskeren.",
-    ottAngleEn: "Playful learning without risking real capital.",
+    difficulty: "Beginner",
+    minutes: 60,
+    access: "free",
+    outcomeEn: "Use testnet and gamification to learn DeFi safely.",
+    outcomeNl: "Gebruik testnet en gamification om DeFi veilig te leren.",
+    takeawayEn: "Experiment without risking real capital.",
+    takeawayNl: "Experimenteer zonder echt kapitaal te riskeren.",
     topics: ["Testnet", "Quests", "DEX", "AMM", "Safety"],
     tasks: [
-      { id: "task-1", promptNl: "Beschrijf één DeFi-concept dat je tegenkwam.", promptEn: "Describe one DeFi concept you encountered." },
-      { id: "task-2", promptNl: "Waarom is testnet geschikt voor leerquests?", promptEn: "Why is testnet appropriate for learning quests?" },
-      { id: "task-3", promptNl: "Welke veiligheidsles hoort in een DeFi-quest?", promptEn: "What safety lesson should a gamified DeFi quest include?" },
+      { id: "task-1", promptEn: "Describe one DeFi concept you encountered.", promptNl: "Beschrijf één DeFi-concept dat je tegenkwam." },
+      { id: "task-2", promptEn: "Why is testnet appropriate for learning quests?", promptNl: "Waarom is testnet geschikt voor leerquests?" },
+      { id: "task-3", promptEn: "What safety lesson should a gamified DeFi quest include?", promptNl: "Welke veiligheidsles hoort in een gamified DeFi-quest?" },
     ],
-    sourceLabel: "XRPL Learning Portal · DeFi-Island",
+    sourceLabel: "XRPL Learning Portal",
     sourceUrl: "https://learn.xrpl.org/",
-    minutes: 60,
-    status: "free",
     xp: 20,
     credits: 1,
     icon: Sparkles,
   },
   {
-    id: "deep-dive-defi",
-    module: "06",
-    difficulty: "Intermediate",
-    title: "Deep Dive into XRPL DeFi",
-    goalNl: "Begrijp DEX, AMM, liquiditeit en risico zonder winstbelofte.",
-    goalEn: "Understand DEX, AMM, liquidity and risk without profit promises.",
-    ottAngleNl: "Risico en context vóór uitvoering.",
-    ottAngleEn: "Risk and context before execution.",
-    topics: ["DEX", "AMM", "Liquidity", "Slippage", "Risk"],
-    tasks: [
-      { id: "task-1", promptNl: "Leg een AMM uit zonder winstbelofte.", promptEn: "Explain an AMM without promising profit." },
-      { id: "task-2", promptNl: "Vergelijk een DEX met een broker.", promptEn: "Compare a decentralized exchange with a broker." },
-      { id: "task-3", promptNl: "Noem drie betekenisvolle DeFi-risico's.", promptEn: "Name three meaningful DeFi risks." },
-    ],
-    sourceLabel: "XRPL Learning Portal · DeFi",
-    sourceUrl: "https://learn.xrpl.org/",
-    minutes: 120,
-    status: "premium",
-    xp: 40,
-    credits: 3,
-    icon: Repeat2,
-  },
-  {
     id: "blockchain-for-business",
-    module: "07",
-    difficulty: "Intermediate",
+    module: "06",
+    path: "use",
     title: "Blockchain for Business",
-    goalNl: "Vertaal een bedrijfsprobleem naar een controleerbare XRPL-workflow.",
-    goalEn: "Translate a business problem into a verifiable XRPL workflow.",
-    ottAngleNl: "B2B-proof zonder blockchain als wondermiddel te presenteren.",
-    ottAngleEn: "B2B proof without presenting blockchain as magic.",
+    difficulty: "Intermediate",
+    minutes: 120,
+    access: "access",
+    outcomeEn: "Translate a business problem into a verifiable workflow.",
+    outcomeNl: "Vertaal een bedrijfsprobleem naar een controleerbare workflow.",
+    takeawayEn: "Blockchain supports a process; it does not replace governance.",
+    takeawayNl: "Blockchain ondersteunt een proces; het vervangt governance niet.",
     topics: ["Business case", "Operations", "Compliance", "Proof", "Review"],
     tasks: [
-      { id: "task-1", promptNl: "Beschrijf één realistisch bedrijfsprobleem voor XRPL.", promptEn: "Describe one realistic business problem for XRPL." },
-      { id: "task-2", promptNl: "Beschrijf de XRPL-route en proof trail.", promptEn: "Describe the XRPL route and its proof trail." },
-      { id: "task-3", promptNl: "Welke compliance of menselijke controle blijft nodig?", promptEn: "What compliance or human review is still needed?" },
+      { id: "task-1", promptEn: "Describe one realistic business problem for XRPL.", promptNl: "Beschrijf één realistisch bedrijfsprobleem voor XRPL." },
+      { id: "task-2", promptEn: "Describe the XRPL route and its proof trail.", promptNl: "Beschrijf de XRPL-route en de proof trail." },
+      { id: "task-3", promptEn: "What compliance or human review is still needed?", promptNl: "Welke compliance of menselijke controle blijft nodig?" },
     ],
-    sourceLabel: "XRPL Learning Portal · Business",
+    sourceLabel: "XRPL Learning Portal",
     sourceUrl: "https://learn.xrpl.org/",
-    minutes: 120,
-    status: "premium",
     xp: 45,
     credits: 4,
     icon: Building2,
   },
   {
-    id: "tokenization-rwa",
-    module: "08",
+    id: "decentralized-identity",
+    module: "07",
+    path: "use",
+    title: "Decentralized Identity",
     difficulty: "Intermediate",
-    title: "Tokenization & Real World Assets",
-    goalNl: "Begrijp utility, issuerverantwoordelijkheid en juridische grenzen.",
-    goalEn: "Understand utility, issuer responsibility and legal boundaries.",
-    ottAngleNl: "Geen waarde- of eigendomsbelofte zonder juridische basis.",
-    ottAngleEn: "No value or ownership promise without legal basis.",
+    minutes: 120,
+    access: "access",
+    outcomeEn: "Design credentials with privacy, consent and limited meaning.",
+    outcomeNl: "Ontwerp credentials met privacy, toestemming en beperkte betekenis.",
+    takeawayEn: "Proof should reveal only what is necessary.",
+    takeawayNl: "Bewijs moet alleen tonen wat noodzakelijk is.",
+    topics: ["DID", "Credentials", "Privacy", "Consent", "Certificate"],
+    tasks: [
+      { id: "task-1", promptEn: "Describe a useful proof badge.", promptNl: "Beschrijf een nuttige proofbadge." },
+      { id: "task-2", promptEn: "What profile data should remain private?", promptNl: "Welke profielgegevens moeten privé blijven?" },
+      { id: "task-3", promptEn: "How should a certificate be linked to a wallet safely?", promptNl: "Hoe koppel je een certificaat veilig aan een wallet?" },
+    ],
+    sourceLabel: "XRPL Learning Portal",
+    sourceUrl: "https://learn.xrpl.org/",
+    xp: 40,
+    credits: 4,
+    icon: BadgeCheck,
+  },
+  {
+    id: "deep-dive-defi",
+    module: "08",
+    path: "markets",
+    title: "XRPL DeFi",
+    difficulty: "Intermediate",
+    minutes: 120,
+    access: "access",
+    outcomeEn: "Understand DEX, AMM, liquidity and risk without profit promises.",
+    outcomeNl: "Begrijp DEX, AMM, liquiditeit en risico zonder winstbeloften.",
+    takeawayEn: "Mechanism and risk belong together.",
+    takeawayNl: "Werking en risico horen bij elkaar.",
+    topics: ["DEX", "AMM", "Liquidity", "Slippage", "Risk"],
+    tasks: [
+      { id: "task-1", promptEn: "Explain an AMM without promising profit.", promptNl: "Leg een AMM uit zonder winstbelofte." },
+      { id: "task-2", promptEn: "Compare a decentralized exchange with a broker.", promptNl: "Vergelijk een decentrale exchange met een broker." },
+      { id: "task-3", promptEn: "Name three meaningful DeFi risks.", promptNl: "Noem drie betekenisvolle DeFi-risico’s." },
+    ],
+    sourceLabel: "XRPL Learning Portal",
+    sourceUrl: "https://learn.xrpl.org/",
+    xp: 40,
+    credits: 3,
+    icon: Repeat2,
+  },
+  {
+    id: "tokenization-rwa",
+    module: "09",
+    path: "markets",
+    title: "Tokenization & RWA",
+    difficulty: "Intermediate",
+    minutes: 120,
+    access: "access",
+    outcomeEn: "Understand utility, issuer responsibility and legal boundaries.",
+    outcomeNl: "Begrijp utility, issuerverantwoordelijkheid en juridische grenzen.",
+    takeawayEn: "A token does not create legal rights by itself.",
+    takeawayNl: "Een token creëert op zichzelf geen juridische rechten.",
     topics: ["Tokenization", "RWA", "Issuer", "Utility", "Legal"],
     tasks: [
-      { id: "task-1", promptNl: "Geef een utility-only tokenisatievoorbeeld.", promptEn: "Give a utility-only tokenization example." },
-      { id: "task-2", promptNl: "Wat mag nooit zonder juridische goedkeuring worden beloofd?", promptEn: "What must never be promised without legal approval?" },
-      { id: "task-3", promptNl: "Waarom moeten het actief en de issuer worden geverifieerd?", promptEn: "Why must the off-chain asset and issuer be verified?" },
+      { id: "task-1", promptEn: "Give a utility-only tokenization example.", promptNl: "Geef een utility-only tokenisatievoorbeeld." },
+      { id: "task-2", promptEn: "What must never be promised without legal approval?", promptNl: "Wat mag nooit zonder juridische goedkeuring worden beloofd?" },
+      { id: "task-3", promptEn: "Why must the off-chain asset and issuer be verified?", promptNl: "Waarom moeten het off-chain actief en de issuer worden geverifieerd?" },
     ],
-    sourceLabel: "XRPL Learning Portal · RWA",
+    sourceLabel: "XRPL Learning Portal",
     sourceUrl: "https://learn.xrpl.org/",
-    minutes: 120,
-    status: "premium",
     xp: 45,
     credits: 4,
     icon: Layers,
   },
   {
     id: "stablecoins",
-    module: "09",
-    difficulty: "Intermediate",
+    module: "10",
+    path: "markets",
     title: "Stablecoins on XRPL",
-    goalNl: "Begrijp issued assets, issuer-risico en veilige integratie.",
-    goalEn: "Understand issued assets, issuer risk and safe integration.",
-    ottAngleNl: "Stabiel doel betekent niet risicovrij.",
-    ottAngleEn: "A stable target does not mean risk-free.",
+    difficulty: "Intermediate",
+    minutes: 90,
+    access: "access",
+    outcomeEn: "Understand issued assets, redemption and issuer risk.",
+    outcomeNl: "Begrijp issued assets, inwisselbaarheid en issuerrisico.",
+    takeawayEn: "A stable target does not mean risk-free.",
+    takeawayNl: "Een stabiel doel betekent niet risicovrij.",
     topics: ["Stablecoin", "Issuer", "Trustline", "Redemption", "Risk"],
     tasks: [
-      { id: "task-1", promptNl: "Leg een stablecoin uit zonder het een bankdeposito te noemen.", promptEn: "Explain a stablecoin without calling it a bank deposit." },
-      { id: "task-2", promptNl: "Welke issuer-risico's controleer je?", promptEn: "Which issuer risks should a user check?" },
-      { id: "task-3", promptNl: "Maak een korte stablecoin-veiligheidschecklist.", promptEn: "Create a short stablecoin safety checklist." },
+      { id: "task-1", promptEn: "Explain a stablecoin without calling it a bank deposit.", promptNl: "Leg een stablecoin uit zonder het een bankdeposito te noemen." },
+      { id: "task-2", promptEn: "Which issuer risks should a user check?", promptNl: "Welke issuerrisico’s moet een gebruiker controleren?" },
+      { id: "task-3", promptEn: "Create a short stablecoin safety checklist.", promptNl: "Maak een korte stablecoin-veiligheidschecklist." },
     ],
-    sourceLabel: "XRPL Learning Portal · Stablecoins",
+    sourceLabel: "XRPL Learning Portal",
     sourceUrl: "https://learn.xrpl.org/",
-    minutes: 90,
-    status: "premium",
     xp: 35,
     credits: 3,
     icon: Coins,
   },
   {
     id: "defi-exchanges-lending-trading",
-    module: "10",
-    difficulty: "Intermediate",
+    module: "11",
+    path: "markets",
     title: "Exchanges, Lending & Trading",
-    goalNl: "Scheid educatie, risicoanalyse en financieel advies.",
-    goalEn: "Separate education, risk analysis and financial advice.",
-    ottAngleNl: "Leren en simuleren, geen trade-aansturing.",
-    ottAngleEn: "Learn and simulate, no trade instruction.",
+    difficulty: "Intermediate",
+    minutes: 120,
+    access: "access",
+    outcomeEn: "Separate education, risk analysis and financial advice.",
+    outcomeNl: "Scheid educatie, risicoanalyse en financieel advies.",
+    takeawayEn: "Explain choices without directing a trade.",
+    takeawayNl: "Leg keuzes uit zonder een trade aan te sturen.",
     topics: ["Exchange", "Lending", "Trading", "Advice boundary", "Risk"],
     tasks: [
-      { id: "task-1", promptNl: "Geef een gebalanceerde DeFi-risicoanalyse.", promptEn: "Give a balanced risk analysis for a DeFi action." },
-      { id: "task-2", promptNl: "Leg educatie versus financieel advies uit.", promptEn: "Explain the difference between education and financial advice." },
-      { id: "task-3", promptNl: "Noem drie verboden of misleidende beloften.", promptEn: "List three promises an education platform should not make." },
+      { id: "task-1", promptEn: "Give a balanced risk analysis for a DeFi action.", promptNl: "Geef een gebalanceerde risicoanalyse voor een DeFi-actie." },
+      { id: "task-2", promptEn: "Explain the difference between education and financial advice.", promptNl: "Leg het verschil uit tussen educatie en financieel advies." },
+      { id: "task-3", promptEn: "List three promises an education platform should not make.", promptNl: "Noem drie beloften die een educatieplatform niet moet maken." },
     ],
-    sourceLabel: "XRPL Learning Portal · Exploring DeFi",
+    sourceLabel: "XRPL Learning Portal",
     sourceUrl: "https://learn.xrpl.org/",
-    minutes: 120,
-    status: "premium",
     xp: 45,
     credits: 4,
     icon: ShieldCheck,
   },
   {
-    id: "decentralized-identity",
-    module: "11",
-    difficulty: "Intermediate",
-    title: "Decentralized Identity on XRPL",
-    goalNl: "Ontwerp credentials met privacy, consent en beperkte betekenis.",
-    goalEn: "Design credentials with privacy, consent and limited meaning.",
-    ottAngleNl: "Walletprofiel zonder private gegevens onnodig openbaar te maken.",
-    ottAngleEn: "Wallet profile without unnecessarily exposing private data.",
-    topics: ["DID", "Credentials", "Privacy", "Consent", "Certificate"],
-    tasks: [
-      { id: "task-1", promptNl: "Beschrijf een nuttige proof badge.", promptEn: "Describe a useful proof badge." },
-      { id: "task-2", promptNl: "Welke profielgegevens moeten privé blijven?", promptEn: "What profile data should remain private?" },
-      { id: "task-3", promptNl: "Hoe koppel je een certificaat veilig aan een wallet?", promptEn: "How should a certificate be linked to a wallet safely?" },
-    ],
-    sourceLabel: "XRPL Learning Portal · Identity",
-    sourceUrl: "https://learn.xrpl.org/",
-    minutes: 120,
-    status: "premium",
-    xp: 40,
-    credits: 4,
-    icon: BadgeCheck,
-  },
-  {
     id: "build-react",
     module: "12",
+    path: "build",
+    title: "Build with XRPL and React",
     difficulty: "Builder",
-    title: "Build with XRPL and React.js",
-    goalNl: "Ontwerp veilige front-endflows voor Xaman en XRPL-verificatie.",
-    goalEn: "Design safe front-end flows for Xaman and XRPL verification.",
-    ottAngleNl: "Van gebruiker naar bouwer, eerst testnet.",
-    ottAngleEn: "From user to builder, testnet first.",
-    topics: ["React", "Payload", "Xaman", "Verification", "UX"],
-    tasks: [
-      { id: "task-1", promptNl: "Schets een veilige XRPL React-componentflow.", promptEn: "Outline a safe XRPL React component flow." },
-      { id: "task-2", promptNl: "Beschrijf veilige signing-UX.", promptEn: "Describe safe signing UX." },
-      { id: "task-3", promptNl: "Waarom start een nieuwe flow op testnet?", promptEn: "Why should a new transaction flow start on testnet?" },
-    ],
-    sourceLabel: "XRPL Learning Portal · React",
-    sourceUrl: "https://learn.xrpl.org/",
     minutes: 120,
-    status: "premium",
+    access: "access",
+    outcomeEn: "Design safe front-end signing and verification flows.",
+    outcomeNl: "Ontwerp veilige front-endflows voor ondertekening en verificatie.",
+    takeawayEn: "Good signing UX makes the action understandable.",
+    takeawayNl: "Goede signing-UX maakt de actie begrijpelijk.",
+    topics: ["React", "Payload", "Wallet", "Verification", "UX"],
+    tasks: [
+      { id: "task-1", promptEn: "Outline a safe XRPL React component flow.", promptNl: "Schets een veilige XRPL React-componentflow." },
+      { id: "task-2", promptEn: "Describe safe signing UX.", promptNl: "Beschrijf veilige signing-UX." },
+      { id: "task-3", promptEn: "Why should a new transaction flow start on testnet?", promptNl: "Waarom start een nieuwe transactieflow op testnet?" },
+    ],
+    sourceLabel: "XRPL Learning Portal",
+    sourceUrl: "https://learn.xrpl.org/",
     xp: 50,
     credits: 5,
     icon: Code2,
@@ -351,22 +410,23 @@ const lessons: Lesson[] = [
   {
     id: "code-javascript",
     module: "13",
-    difficulty: "Builder",
+    path: "build",
     title: "Code with XRPL and JavaScript",
-    goalNl: "Leer veilige verificatie, servervalidatie en secret-isolatie.",
-    goalEn: "Learn safe verification, server validation and secret isolation.",
-    ottAngleNl: "Geen credits zonder gevalideerde proof.",
-    ottAngleEn: "No credits without validated proof.",
-    topics: ["xrpl.js", "Verification", "Server validation", "Secrets", "Testnet"],
-    tasks: [
-      { id: "task-1", promptNl: "Beschrijf pseudocode voor transactieverificatie.", promptEn: "Describe pseudocode for transaction verification." },
-      { id: "task-2", promptNl: "Noem drie veiligheidschecks in een XRPL-app.", promptEn: "Name three security checks in an XRPL app." },
-      { id: "task-3", promptNl: "Waarom moeten secrets server-side blijven?", promptEn: "Explain why secrets must stay server-side." },
-    ],
-    sourceLabel: "XRPL Learning Portal · JavaScript",
-    sourceUrl: "https://learn.xrpl.org/",
+    difficulty: "Builder",
     minutes: 120,
-    status: "premium",
+    access: "access",
+    outcomeEn: "Learn server validation, security checks and secret isolation.",
+    outcomeNl: "Leer servervalidatie, veiligheidschecks en secretisolatie.",
+    takeawayEn: "Never reward an unverified transaction.",
+    takeawayNl: "Beloon nooit een ongeverifieerde transactie.",
+    topics: ["xrpl.js", "Verification", "Server", "Secrets", "Testnet"],
+    tasks: [
+      { id: "task-1", promptEn: "Describe pseudocode for transaction verification.", promptNl: "Beschrijf pseudocode voor transactieverificatie." },
+      { id: "task-2", promptEn: "Name three security checks in an XRPL app.", promptNl: "Noem drie veiligheidschecks in een XRPL-app." },
+      { id: "task-3", promptEn: "Explain why secrets must stay server-side.", promptNl: "Leg uit waarom secrets server-side moeten blijven." },
+    ],
+    sourceLabel: "XRPL Learning Portal",
+    sourceUrl: "https://learn.xrpl.org/",
     xp: 50,
     credits: 5,
     icon: Code2,
@@ -374,27 +434,36 @@ const lessons: Lesson[] = [
   {
     id: "agentic-transactions",
     module: "14",
-    difficulty: "Agentic",
-    title: "AI Agents & Agentic Transactions",
-    goalNl: "Ontwerp agentflows met limieten, audit trails en menselijke controle.",
-    goalEn: "Design agent flows with limits, audit trails and human control.",
-    ottAngleNl: "Een agent voert alleen vooraf toegestane acties uit.",
-    ottAngleEn: "An agent only executes pre-approved actions.",
-    topics: ["Agent wallet", "Limits", "Allowlist", "Audit trail", "Emergency stop"],
-    tasks: [
-      { id: "task-1", promptNl: "Wat mag een AI-betaalagent wel en niet doen?", promptEn: "What may and may not an AI payment agent do?" },
-      { id: "task-2", promptNl: "Maak een nuttige limietenlijst voor een agent.", promptEn: "Create a useful agent limit list." },
-      { id: "task-3", promptNl: "Waarom zijn audit trails en menselijke controle nodig?", promptEn: "Why are audit trails and human control required?" },
-    ],
-    sourceLabel: "XRPL.org · Agentic Transactions",
-    sourceUrl: "https://xrpl.org/docs/agents/agentic-transactions",
+    path: "build",
+    title: "AI Agents & Transactions",
+    difficulty: "Advanced",
     minutes: 90,
-    status: "premium",
+    access: "access",
+    outcomeEn: "Design agent flows with limits, audit trails and human control.",
+    outcomeNl: "Ontwerp agentflows met limieten, audit trails en menselijke controle.",
+    takeawayEn: "An agent executes only pre-approved actions.",
+    takeawayNl: "Een agent voert alleen vooraf goedgekeurde acties uit.",
+    topics: ["Agent wallet", "Limits", "Allowlist", "Audit trail", "Stop"],
+    tasks: [
+      { id: "task-1", promptEn: "What may and may not an AI payment agent do?", promptNl: "Wat mag een AI-betaalagent wel en niet doen?" },
+      { id: "task-2", promptEn: "Create a useful agent limit list.", promptNl: "Maak een nuttige limietenlijst voor een agent." },
+      { id: "task-3", promptEn: "Why are audit trails and human control required?", promptNl: "Waarom zijn audit trails en menselijke controle nodig?" },
+    ],
+    sourceLabel: "XRPL.org Docs",
+    sourceUrl: "https://xrpl.org/docs/agents/agentic-transactions",
     xp: 60,
     credits: 6,
     icon: Cpu,
   },
 ];
+
+function isWalletAddress(value: string) {
+  return /^r[1-9A-HJ-NP-Za-km-z]{25,34}$/.test(value);
+}
+
+function shortWallet(value: string) {
+  return value.length > 18 ? `${value.slice(0, 9)}…${value.slice(-7)}` : value;
+}
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error) {
@@ -409,42 +478,41 @@ function getErrorMessage(error: unknown, fallback: string) {
   return fallback;
 }
 
-function shortWallet(value: string) {
-  return value.length > 18 ? `${value.slice(0, 9)}…${value.slice(-7)}` : value;
-}
-
 export function AcademyTab({ walletAddress = "guest", onNavigate }: AcademyTabProps) {
   const { language } = useTerminalLanguage();
+  const { user, signedIn, loading: authLoading } = useOttAuthSession();
   const isEnglish = language === "en";
-  const isGuest = !walletAddress || walletAddress === "guest";
-  const [activeView, setActiveView] = useState<AcademyView>("path");
-  const [selectedLessonId, setSelectedLessonId] = useState(lessons[0].id);
-  const [answersByLesson, setAnswersByLesson] = useState<Record<string, Record<string, string>>>({});
-  const [assessmentsByLesson, setAssessmentsByLesson] = useState<Record<string, AcademyAnswerAssessment[]>>({});
-  const [isAssessing, setIsAssessing] = useState(false);
-  const [status, setStatus] = useState(
-    isEnglish
-      ? "Choose a module, answer every task and let AI assess your understanding."
-      : "Kies een module, beantwoord elke opdracht en laat AI je begrip beoordelen.",
-  );
-  const [progressVersion, setProgressVersion] = useState(0);
+  const hasWallet = isWalletAddress(walletAddress);
+  const accessUnlocked = hasWallet && isAccessVerified(loadAccessState(walletAddress));
+  const accountName = getOttAccountName(user);
 
-  const selectedLesson = lessons.find((lesson) => lesson.id === selectedLessonId) ?? lessons[0];
+  const [view, setView] = useState<AcademyView>("hub");
+  const [selectedPath, setSelectedPath] = useState<PathId | "all">("all");
+  const [selectedCourseId, setSelectedCourseId] = useState(courses[0].id);
+  const [answersByCourse, setAnswersByCourse] = useState<Record<string, Record<string, string>>>({});
+  const [assessmentsByCourse, setAssessmentsByCourse] = useState<Record<string, AcademyAnswerAssessment[]>>({});
+  const [isAssessing, setIsAssessing] = useState(false);
+  const [progressVersion, setProgressVersion] = useState(0);
+  const [status, setStatus] = useState("");
+  const [migrationNote, setMigrationNote] = useState("");
+
   const progress = useMemo(
     () => getAcademyProgressSummary(walletAddress),
-    [walletAddress, progressVersion],
+    [walletAddress, progressVersion, signedIn],
   );
-  const completedLessonIds = progress.completedLessonIds;
-  const progressPercent = Math.round((progress.completedCount / lessons.length) * 100);
-  const selectedAnswers = answersByLesson[selectedLesson.id] ?? {};
-  const selectedAssessments = assessmentsByLesson[selectedLesson.id] ??
-    progress.completions.find((item) => item.lessonId === selectedLesson.id)?.assessments ?? [];
+
+  const selectedCourse = courses.find((course) => course.id === selectedCourseId) ?? courses[0];
   const selectedCompletion = progress.completions.find(
-    (item) => item.lessonId === selectedLesson.id,
+    (completion) => completion.lessonId === selectedCourse.id,
   );
-  const freeLessons = lessons.filter((lesson) => lesson.status === "free").length;
-  const premiumLessons = lessons.length - freeLessons;
-  const totalMinutes = lessons.reduce((sum, lesson) => sum + lesson.minutes, 0);
+  const selectedAnswers = answersByCourse[selectedCourse.id] ?? {};
+  const selectedAssessments = assessmentsByCourse[selectedCourse.id] ?? selectedCompletion?.assessments ?? [];
+  const visibleCourses = selectedPath === "all"
+    ? courses
+    : courses.filter((course) => course.path === selectedPath);
+  const progressPercent = Math.round((progress.completedCount / courses.length) * 100);
+  const totalMinutes = courses.reduce((total, course) => total + course.minutes, 0);
+  const foundation = NFT_EDITION_REGISTRY.foundationCertificate;
 
   useEffect(() => {
     const refresh = () => setProgressVersion((value) => value + 1);
@@ -457,95 +525,145 @@ export function AcademyTab({ walletAddress = "guest", onNavigate }: AcademyTabPr
     };
   }, []);
 
+  useEffect(() => {
+    if (!user?.id || !hasWallet || authLoading) {
+      return;
+    }
+
+    let active = true;
+
+    void migrateLegacyWalletProgressToAccount(user.id, walletAddress)
+      .then((migrated) => {
+        if (!active) {
+          return;
+        }
+
+        if (migrated > 0) {
+          setMigrationNote(
+            isEnglish
+              ? `${migrated} verified legacy course result${migrated === 1 ? " was" : "s were"} moved to your OTT account.`
+              : `${migrated} geverifieerde oudere cursusresulta${migrated === 1 ? "at is" : "ten zijn"} naar je OTT-account verplaatst.`,
+          );
+        }
+        setProgressVersion((value) => value + 1);
+      })
+      .catch(() => {
+        if (active) {
+          setMigrationNote(
+            isEnglish
+              ? "Existing wallet progress remains safe locally and can be migrated when account storage is available."
+              : "Bestaande walletvoortgang blijft lokaal veilig en kan worden gemigreerd zodra accountopslag beschikbaar is.",
+          );
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [authLoading, hasWallet, isEnglish, user?.id, walletAddress]);
+
+  function openCourse(course: Course) {
+    if (course.access === "access" && !accessUnlocked) {
+      setStatus(
+        isEnglish
+          ? "This course is part of the Access learning library. Verify an OTT Access Pass to continue."
+          : "Deze cursus hoort bij de Access-leerbibliotheek. Verifieer een OTT Access Pass om verder te gaan.",
+      );
+      onNavigate?.("accessgate");
+      return;
+    }
+
+    setSelectedCourseId(course.id);
+    setStatus("");
+    setView("course");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   function updateAnswer(taskId: string, value: string) {
-    const cleanValue = value.slice(0, MAX_ANSWER_LENGTH);
-    setAnswersByLesson((current) => ({
+    setAnswersByCourse((current) => ({
       ...current,
-      [selectedLesson.id]: {
-        ...(current[selectedLesson.id] ?? {}),
-        [taskId]: cleanValue,
+      [selectedCourse.id]: {
+        ...(current[selectedCourse.id] ?? {}),
+        [taskId]: value.slice(0, MAX_ANSWER_LENGTH),
       },
     }));
   }
 
   async function assessAndComplete() {
-    const answers = selectedLesson.tasks.map((task) => ({
+    const answers = selectedCourse.tasks.map((task) => ({
       taskId: task.id,
       answer: selectedAnswers[task.id]?.trim() ?? "",
     }));
-    const unanswered = answers.filter((item) => item.answer.length < 18);
 
-    if (unanswered.length > 0) {
+    if (answers.some((item) => item.answer.length < 18)) {
       setStatus(
         isEnglish
-          ? "Answer every task with a meaningful explanation before AI assessment."
-          : "Beantwoord elke opdracht met een betekenisvolle uitleg vóór de AI-beoordeling.",
+          ? "Answer every question with a meaningful explanation before assessment."
+          : "Beantwoord iedere vraag met een betekenisvolle uitleg vóór de beoordeling.",
       );
       return;
     }
 
     setIsAssessing(true);
-    setStatus(
-      isEnglish
-        ? "AI is checking every answer against the module rubric..."
-        : "AI controleert elk antwoord aan de hand van de modulerubric...",
-    );
+    setStatus(isEnglish ? "AI is checking every answer…" : "AI controleert ieder antwoord…");
 
     try {
       const response = await assessAcademyModule({
-        lessonId: selectedLesson.id,
+        lessonId: selectedCourse.id,
         language,
-        walletAddress,
+        walletAddress: hasWallet ? walletAddress : "guest",
         answers,
       });
       const assessments = response.assessments ?? [];
-      setAssessmentsByLesson((current) => ({
+
+      setAssessmentsByCourse((current) => ({
         ...current,
-        [selectedLesson.id]: assessments,
+        [selectedCourse.id]: assessments,
       }));
 
-      if (!response.overallPassed || assessments.some((item) => !item.passed)) {
+      if (!response.overallPassed || assessments.some((assessment) => !assessment.passed)) {
         setStatus(
           isEnglish
-            ? "Module not completed. Improve every failed answer and run the AI check again."
-            : "Module niet afgerond. Verbeter elk onvoldoende antwoord en voer de AI-check opnieuw uit.",
+            ? "Not completed yet. Improve every failed answer and check again."
+            : "Nog niet afgerond. Verbeter ieder onvoldoende antwoord en controleer opnieuw.",
         );
         return;
       }
 
-      if (isGuest) {
+      if (!user?.id) {
         setStatus(
           isEnglish
-            ? "All answers passed in practice mode. Connect Xaman to save this module to your Wallet Dashboard profile."
-            : "Alle antwoorden zijn geslaagd in oefenmodus. Koppel Xaman om deze module in je Wallet Dashboard-profiel op te slaan.",
+            ? "All answers passed in practice mode. Sign in to save verified progress to your OTT account."
+            : "Alle antwoorden zijn geslaagd in oefenmodus. Log in om geverifieerde voortgang in je OTT-account op te slaan.",
         );
         return;
       }
 
-      saveAcademyModuleCompletion({
-        lessonId: selectedLesson.id,
-        lessonTitle: selectedLesson.title,
-        walletAddress,
+      await saveAccountAcademyCompletion({
+        userId: user.id,
+        lessonId: selectedCourse.id,
+        lessonTitle: selectedCourse.title,
         completedAt: Date.now(),
-        xp: selectedLesson.xp,
-        credits: selectedLesson.credits,
+        xp: selectedCourse.xp,
+        credits: selectedCourse.credits,
         overallScore: response.overallScore ?? 0,
         assessments,
-        assessmentMode: "ai",
+        sourceWallet: hasWallet ? walletAddress : undefined,
       });
+
       setProgressVersion((value) => value + 1);
       setStatus(
         isEnglish
-          ? `Module verified and saved to ${shortWallet(walletAddress)}. XP and OTT Credits now appear in Wallet Dashboard.`
-          : `Module geverifieerd en opgeslagen voor ${shortWallet(walletAddress)}. XP en OTT Credits verschijnen nu in Wallet Dashboard.`,
+          ? `Course completed and saved to ${accountName || "your OTT account"}.`
+          : `Cursus afgerond en opgeslagen in ${accountName || "je OTT-account"}.`,
       );
     } catch (error) {
       setStatus(
         getErrorMessage(
           error,
           isEnglish
-            ? "AI assessment failed. Try again shortly."
-            : "AI-beoordeling mislukt. Probeer het straks opnieuw.",
+            ? "The AI assessment or account save could not be completed."
+            : "De AI-beoordeling of accountopslag kon niet worden voltooid.",
         ),
       );
     } finally {
@@ -554,417 +672,588 @@ export function AcademyTab({ walletAddress = "guest", onNavigate }: AcademyTabPr
   }
 
   return (
-    <div className="min-h-screen bg-white text-[#080808]">
-      <section className="relative overflow-hidden border-b border-black/10 bg-[radial-gradient(circle_at_18%_18%,rgba(56,152,232,0.16),transparent_28%),radial-gradient(circle_at_82%_8%,rgba(200,56,136,0.16),transparent_28%),#ffffff] p-4 md:p-8 xl:p-10">
-        <div className="flex flex-wrap items-start justify-between gap-6 mb-8">
-          <OTTLogo
-            size="lg"
-            subtitle={
-              isEnglish
-                ? "AI-assessed XRPL learning linked to your verified wallet"
-                : "AI-beoordeeld XRPL-leren gekoppeld aan je geverifieerde wallet"
-            }
-          />
-          <OTTProofBadge sourceTag={String(MAKE_WAVES_SOURCE_TAG)} />
-        </div>
+    <div className="min-h-screen bg-white text-slate-950">
+      <section className="border-b border-slate-200">
+        <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-700">
+                OTT Academy
+              </p>
+              <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
+                {isEnglish ? "Learn in clear steps. Prove what you understand." : "Leer in duidelijke stappen. Bewijs wat je begrijpt."}
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-7 text-slate-600">
+                {isEnglish
+                  ? "Learn without connecting a wallet. Sign in to save progress across devices. Add a wallet only for Access and on-chain certificates."
+                  : "Leer zonder een wallet te koppelen. Log in om voortgang op apparaten te bewaren. Voeg alleen een wallet toe voor Access en on-chain certificaten."}
+              </p>
+            </div>
 
-        <div className="max-w-5xl">
-          <div className="inline-flex items-center gap-2 border border-black/10 bg-white/80 px-4 py-2 mb-6">
-            <Brain size={15} className="text-[#C83888]" />
-            <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-black/55">
-              {isEnglish ? "OTT Academy · AI Assessment" : "OTT Academie · AI-Beoordeling"}
-            </p>
+            <div className="flex flex-wrap gap-2">
+              <ViewButton active={view === "hub"} onClick={() => setView("hub")}>
+                {isEnglish ? "Courses" : "Cursussen"}
+              </ViewButton>
+              <ViewButton active={view === "certificate"} onClick={() => setView("certificate")}>
+                {isEnglish ? "Certificate" : "Certificaat"}
+              </ViewButton>
+            </div>
           </div>
 
-          <h1 className="font-orbitron text-4xl md:text-6xl font-black uppercase leading-none tracking-tight mb-6">
-            {isEnglish ? "Learn. Explain." : "Leer. Leg uit."}
-            <br />
-            <span className="bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] bg-clip-text text-transparent">
-              {isEnglish ? "Pass every answer." : "Slaag voor elk antwoord."}
-            </span>
-          </h1>
-
-          <p className="font-mono text-sm md:text-base text-black/60 leading-relaxed max-w-4xl">
-            {isEnglish
-              ? "No self-verification and no multiple-choice shortcut. Type your own answers, stay within 200 characters and pass every AI-checked task before the module can enter your Wallet Dashboard profile."
-              : "Geen zelfverificatie en geen meerkeuzesnelweg. Typ je eigen antwoorden, blijf binnen 200 tekens en slaag voor elke AI-gecontroleerde opdracht voordat de module in je Wallet Dashboard-profiel komt."}
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-8">
-          <MetricCard label={isEnglish ? "Progress" : "Voortgang"} value={`${progressPercent}%`} text={`${progress.completedCount}/${lessons.length} verified`} icon={Target} />
-          <MetricCard label="XP" value={String(progress.totalXp)} text={isEnglish ? "Verified learning" : "Geverifieerd leren"} icon={Sparkles} />
-          <MetricCard label="OTT Credits" value={String(progress.totalCredits)} text={isEnglish ? "Profile credits" : "Profielcredits"} icon={Award} />
-          <MetricCard label={isEnglish ? "AI Average" : "AI-Gemiddelde"} value={`${progress.averageScore}%`} text={isEnglish ? "Passed modules" : "Geslaagde modules"} icon={Brain} />
-          <MetricCard label={isEnglish ? "Catalog" : "Catalogus"} value={`${freeLessons}+${premiumLessons}`} text={`${Math.round(totalMinutes / 60)}h+`} icon={BookOpen} />
-        </div>
-
-        <div className="flex flex-wrap gap-2 mt-6">
-          <ViewButton active={activeView === "path"} label={isEnglish ? "Learning Path" : "Leerpad"} onClick={() => setActiveView("path")} />
-          <ViewButton active={activeView === "module"} label={isEnglish ? "Assessment Room" : "Beoordelingsruimte"} onClick={() => setActiveView("module")} />
-          <ViewButton active={activeView === "proof"} label={isEnglish ? "Completion Proof" : "Afrondingsproof"} onClick={() => setActiveView("proof")} />
+          <div className="mt-10 grid gap-4 sm:grid-cols-3">
+            <SummaryCard
+              label={isEnglish ? "Course progress" : "Cursusvoortgang"}
+              value={authLoading ? "…" : `${progress.completedCount}/${courses.length}`}
+              text={`${progressPercent}%`}
+            />
+            <SummaryCard
+              label={isEnglish ? "Verified learning" : "Geverifieerd leren"}
+              value={`${progress.totalXp} XP`}
+              text={signedIn ? accountName || user?.email || "OTT account" : (isEnglish ? "Sign in to save" : "Log in om op te slaan")}
+            />
+            <SummaryCard
+              label={isEnglish ? "Foundation edition" : "Foundation-editie"}
+              value={`${formatEditionSerial("foundationCertificate", foundation.serialStart)}–${formatEditionSerial("foundationCertificate", foundation.serialEnd)}`}
+              text={isEnglish ? "Separate from Access Pass" : "Los van Access Pass"}
+            />
+          </div>
         </div>
       </section>
 
-      <section className="p-4 md:p-8 xl:p-10">
-        {isGuest && (
-          <div className="border border-[#C83888]/25 bg-[#C83888]/10 p-4 mb-5 flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <Lock size={18} className="text-[#C83888] mt-0.5 shrink-0" />
-              <p className="font-mono text-xs text-black/60 leading-relaxed max-w-3xl">
-                {isEnglish
-                  ? "Practice mode is available, but progress is never added to Wallet Dashboard until a verified Xaman wallet is connected."
-                  : "Oefenmodus is beschikbaar, maar voortgang wordt nooit aan Wallet Dashboard toegevoegd voordat een geverifieerde Xaman-wallet is gekoppeld."}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => onNavigate?.("xaman")}
-              className="bg-black text-white px-4 py-3 font-orbitron text-[10px] font-black uppercase tracking-widest"
-            >
-              {isEnglish ? "Connect Xaman" : "Koppel Xaman"}
-            </button>
+      {(status || migrationNote) && (
+        <div className="border-b border-blue-100 bg-blue-50">
+          <div className="mx-auto max-w-6xl space-y-1 px-5 py-3 text-sm text-blue-900 sm:px-8">
+            {status && <p>{status}</p>}
+            {migrationNote && <p>{migrationNote}</p>}
           </div>
-        )}
+        </div>
+      )}
 
-        {activeView === "path" && (
-          <div className="grid grid-cols-12 gap-4">
-            <div className="col-span-12 xl:col-span-8">
-              <Panel title={isEnglish ? "AI-Verified Learning Path" : "AI-Geverifieerd Leerpad"} icon={GraduationCap}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {lessons.map((lesson) => {
-                    const completion = progress.completions.find((item) => item.lessonId === lesson.id);
-
-                    return (
-                      <button
-                        key={lesson.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedLessonId(lesson.id);
-                          setActiveView("module");
-                        }}
-                        className={`border p-5 text-left transition-all ${
-                          completion
-                            ? "border-[#3898E8]/35 bg-[#3898E8]/5"
-                            : "border-black/10 bg-[#F7F8FC] hover:bg-white"
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-3 mb-4">
-                          <div>
-                            <p className="font-mono text-[10px] uppercase tracking-widest text-[#C83888] mb-2">
-                              Module {lesson.module} · {lesson.difficulty}
-                            </p>
-                            <p className="font-orbitron text-sm font-black uppercase leading-tight">
-                              {lesson.title}
-                            </p>
-                          </div>
-                          {completion ? (
-                            <BadgeCheck size={20} className="text-[#3898E8] shrink-0" />
-                          ) : lesson.status === "premium" ? (
-                            <Lock size={18} className="text-black/35 shrink-0" />
-                          ) : (
-                            <ChevronRight size={18} className="text-black/35 shrink-0" />
-                          )}
-                        </div>
-                        <p className="font-mono text-xs text-black/50 leading-relaxed mb-4">
-                          {isEnglish ? lesson.goalEn : lesson.goalNl}
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          <Tag text={`${lesson.minutes} min`} />
-                          <Tag text={`+${lesson.xp} XP`} />
-                          <Tag text={completion ? `${completion.overallScore}% AI verified` : lesson.status} />
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </Panel>
-            </div>
-
-            <div className="col-span-12 xl:col-span-4 space-y-4">
-              <Panel title={isEnglish ? "Assessment Rules" : "Beoordelingsregels"} icon={ShieldCheck}>
-                <div className="space-y-3">
-                  <InfoLine text={isEnglish ? "Three typed answers per module." : "Drie getypte antwoorden per module."} />
-                  <InfoLine text={isEnglish ? "Maximum 200 characters per answer." : "Maximaal 200 tekens per antwoord."} />
-                  <InfoLine text={isEnglish ? "Each answer must score at least 70%." : "Elk antwoord moet minimaal 70% scoren."} />
-                  <InfoLine text={isEnglish ? "One failed answer blocks completion." : "Eén onvoldoende antwoord blokkeert afronding."} />
-                  <InfoLine text={isEnglish ? "Only verified wallet progress enters the profile." : "Alleen geverifieerde walletvoortgang komt in het profiel."} />
-                </div>
-              </Panel>
-
-              <Panel title={isEnglish ? "Official Sources" : "Officiële Bronnen"} icon={ExternalLink}>
-                <SourceLink label="XRPL Learning Portal" url="https://learn.xrpl.org/" />
-                <SourceLink label="XRPL.org Docs" url="https://xrpl.org/docs" />
-                <SourceLink label="Agentic Transactions" url="https://xrpl.org/docs/agents/agentic-transactions" />
-              </Panel>
-            </div>
-          </div>
-        )}
-
-        {activeView === "module" && (
-          <div className="grid grid-cols-12 gap-4">
-            <div className="col-span-12 xl:col-span-3">
-              <Panel title={isEnglish ? "Modules" : "Modules"} icon={BookOpen}>
-                <div className="space-y-2 max-h-[760px] overflow-y-auto pr-1">
-                  {lessons.map((lesson) => (
-                    <button
-                      key={lesson.id}
-                      type="button"
-                      onClick={() => setSelectedLessonId(lesson.id)}
-                      className={`w-full border p-3 text-left ${
-                        selectedLesson.id === lesson.id
-                          ? "border-[#C83888] bg-[#C83888]/10"
-                          : "border-black/10 bg-[#F7F8FC]"
-                      }`}
-                    >
-                      <p className="font-mono text-[9px] uppercase tracking-widest text-black/35 mb-1">
-                        {lesson.module} · {completedLessonIds.includes(lesson.id) ? "Verified" : lesson.status}
-                      </p>
-                      <p className="font-orbitron text-[10px] font-black uppercase leading-tight">
-                        {lesson.title}
-                      </p>
-                    </button>
-                  ))}
-                </div>
-              </Panel>
-            </div>
-
-            <div className="col-span-12 xl:col-span-9 space-y-4">
-              <Panel title={selectedLesson.title} icon={selectedLesson.icon}>
-                <div className="grid grid-cols-12 gap-4">
-                  <div className="col-span-12 lg:col-span-8">
-                    <div className="border border-black/10 bg-[#F7F8FC] p-5 mb-4">
-                      <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-black/35 mb-3">
-                        {isEnglish ? "Learning Goal" : "Leerdoel"}
-                      </p>
-                      <p className="font-mono text-sm text-black/60 leading-relaxed mb-4">
-                        {isEnglish ? selectedLesson.goalEn : selectedLesson.goalNl}
-                      </p>
-                      <div className="border border-[#C83888]/25 bg-[#C83888]/10 p-4">
-                        <p className="font-mono text-xs text-black/60 leading-relaxed">
-                          {isEnglish ? selectedLesson.ottAngleEn : selectedLesson.ottAngleNl}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-5">
-                      {selectedLesson.topics.map((topic) => <Tag key={topic} text={topic} />)}
-                    </div>
-
-                    <div className="space-y-4">
-                      {selectedLesson.tasks.map((task, index) => {
-                        const answer = selectedAnswers[task.id] ?? "";
-                        const assessment = selectedAssessments.find((item) => item.taskId === task.id);
-
-                        return (
-                          <div key={task.id} className={`border p-5 ${assessment ? (assessment.passed ? "border-[#3898E8]/35 bg-[#3898E8]/5" : "border-[#C83888]/35 bg-[#C83888]/5") : "border-black/10 bg-white"}`}>
-                            <div className="flex items-start justify-between gap-3 mb-3">
-                              <div>
-                                <p className="font-mono text-[9px] uppercase tracking-widest text-[#3898E8] mb-2">
-                                  {isEnglish ? `Task ${index + 1}` : `Opdracht ${index + 1}`}
-                                </p>
-                                <p className="font-orbitron text-sm font-black uppercase leading-relaxed">
-                                  {isEnglish ? task.promptEn : task.promptNl}
-                                </p>
-                              </div>
-                              {assessment && (
-                                <div className={`px-3 py-2 font-orbitron text-xs font-black ${assessment.passed ? "bg-[#3898E8] text-white" : "bg-[#C83888] text-white"}`}>
-                                  {assessment.score}%
-                                </div>
-                              )}
-                            </div>
-
-                            <textarea
-                              value={answer}
-                              onChange={(event) => updateAnswer(task.id, event.target.value)}
-                              maxLength={MAX_ANSWER_LENGTH}
-                              rows={4}
-                              disabled={Boolean(selectedCompletion)}
-                              placeholder={isEnglish ? "Type your own explanation..." : "Typ je eigen uitleg..."}
-                              className="w-full border border-black/10 bg-[#F7F8FC] p-4 font-mono text-sm text-black outline-none focus:border-[#3898E8] disabled:opacity-60"
-                            />
-                            <div className="flex items-center justify-between gap-3 mt-2">
-                              <p className="font-mono text-[9px] uppercase tracking-widest text-black/35">
-                                {answer.length}/{MAX_ANSWER_LENGTH}
-                              </p>
-                              <p className="font-mono text-[9px] uppercase tracking-widest text-black/35">
-                                {isEnglish ? "Minimum meaningful explanation" : "Minimaal betekenisvolle uitleg"}
-                              </p>
-                            </div>
-
-                            {assessment && (
-                              <div className="border border-black/10 bg-white p-4 mt-4">
-                                <div className="flex items-start gap-3">
-                                  {assessment.passed ? <CheckCircle2 size={17} className="text-[#3898E8] mt-0.5 shrink-0" /> : <XCircle size={17} className="text-[#C83888] mt-0.5 shrink-0" />}
-                                  <div>
-                                    <p className="font-mono text-xs text-black/60 leading-relaxed">
-                                      {assessment.feedback}
-                                    </p>
-                                    {assessment.missingConcepts.length > 0 && (
-                                      <p className="font-mono text-[10px] text-[#C83888] mt-2">
-                                        {isEnglish ? "Missing: " : "Ontbreekt: "}{assessment.missingConcepts.join(", ")}
-                                      </p>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="col-span-12 lg:col-span-4 space-y-4">
-                    <div className="border border-black/10 bg-[#F7F8FC] p-5 sticky top-6">
-                      <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-black/35 mb-4">
-                        {isEnglish ? "Module Verification" : "Moduleverificatie"}
-                      </p>
-                      <InfoRow label="Wallet" value={isGuest ? "Guest / practice" : shortWallet(walletAddress)} />
-                      <InfoRow label={isEnglish ? "Reward" : "Beloning"} value={`+${selectedLesson.xp} XP · +${selectedLesson.credits} Credits`} />
-                      <InfoRow label={isEnglish ? "Status" : "Status"} value={selectedCompletion ? `AI verified · ${selectedCompletion.overallScore}%` : "Not verified"} />
-
-                      <button
-                        type="button"
-                        onClick={() => void assessAndComplete()}
-                        disabled={isAssessing || Boolean(selectedCompletion)}
-                        className="w-full mt-5 bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] text-white p-4 font-orbitron text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50"
-                      >
-                        {isAssessing ? <Loader2 size={16} className="animate-spin" /> : selectedCompletion ? <BadgeCheck size={16} /> : <Brain size={16} />}
-                        {isAssessing
-                          ? isEnglish ? "AI checking answers" : "AI controleert antwoorden"
-                          : selectedCompletion
-                            ? isEnglish ? "Module AI Verified" : "Module AI-Geverifieerd"
-                            : isEnglish ? "AI Check & Complete" : "AI-Check & Afronden"}
-                      </button>
-
-                      <div className="border border-black/10 bg-white p-4 mt-4">
-                        <p className="font-mono text-xs text-black/60 leading-relaxed">{status}</p>
-                      </div>
-
-                      <a
-                        href={selectedLesson.sourceUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="mt-4 border border-black/10 bg-white p-4 flex items-center justify-between gap-3"
-                      >
-                        <div>
-                          <p className="font-mono text-[9px] uppercase tracking-widest text-black/35 mb-1">Official source</p>
-                          <p className="font-orbitron text-[10px] font-black uppercase">{selectedLesson.sourceLabel}</p>
-                        </div>
-                        <ExternalLink size={16} />
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </Panel>
-            </div>
-          </div>
-        )}
-
-        {activeView === "proof" && (
-          <Panel title={isEnglish ? "Wallet-Linked Completion Proof" : "Wallet-Gekoppelde Afrondingsproof"} icon={Award}>
-            <div className="max-w-4xl mx-auto border border-black/10 bg-[radial-gradient(circle_at_20%_20%,rgba(56,152,232,0.14),transparent_28%),radial-gradient(circle_at_82%_15%,rgba(200,56,136,0.14),transparent_28%),#ffffff] p-6 md:p-10 text-center">
-              <Award size={46} className="mx-auto mb-6 text-[#C83888]" />
-              <p className="font-mono text-[10px] uppercase tracking-[0.45em] text-black/35 mb-4">OTT Academy</p>
-              <h2 className="font-orbitron text-3xl md:text-5xl font-black uppercase mb-5">
-                {progressPercent === 100 ? (isEnglish ? "Learning Path Completed" : "Leerpad Afgerond") : (isEnglish ? "Completion Locked" : "Afronding Vergrendeld")}
-              </h2>
-              <p className="font-mono text-sm text-black/55 leading-relaxed max-w-2xl mx-auto mb-8">
-                {isEnglish
-                  ? "This proof only unlocks after all 14 modules have passed every AI-assessed answer under the same verified wallet profile."
-                  : "Deze proof wordt pas ontgrendeld nadat alle 14 modules onder hetzelfde geverifieerde walletprofiel voor elk AI-beoordeeld antwoord zijn geslaagd."}
-              </p>
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8 text-left">
-                <InfoRow label={isEnglish ? "Modules" : "Modules"} value={`${progress.completedCount}/${lessons.length}`} />
-                <InfoRow label="XP" value={String(progress.totalXp)} />
-                <InfoRow label="Credits" value={String(progress.totalCredits)} />
-                <InfoRow label={isEnglish ? "AI Average" : "AI-Gemiddelde"} value={`${progress.averageScore}%`} />
+      {view === "hub" && (
+        <main className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
+          <section className="rounded-3xl border border-slate-200 bg-slate-50 p-6 sm:p-8">
+            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+              <div className="max-w-2xl">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
+                  {isEnglish ? "Recommended first lesson" : "Aanbevolen eerste les"}
+                </p>
+                <h2 className="mt-3 text-2xl font-semibold">
+                  {isEnglish ? "Understand wallets before connecting one" : "Begrijp wallets voordat je er één koppelt"}
+                </h2>
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  {isEnglish
+                    ? "Compare mobile, browser, hardware, custodial, multisign and watch-only wallets, including recovery and provider-failure risks."
+                    : "Vergelijk mobiele, browser-, hardware-, custodial-, multisign- en watch-only wallets, inclusief herstel- en aanbiedersrisico’s."}
+                </p>
               </div>
-
               <button
                 type="button"
-                disabled={progressPercent < 100 || isGuest}
-                onClick={() => onNavigate?.("wallet")}
-                className="bg-black text-white px-6 py-4 font-orbitron text-xs font-black uppercase tracking-widest disabled:opacity-35"
+                onClick={() => onNavigate?.("xamanactivation")}
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800"
               >
-                {isGuest
-                  ? isEnglish ? "Connect Xaman first" : "Koppel eerst Xaman"
-                  : progressPercent === 100
-                    ? isEnglish ? "Open Wallet Dashboard Profile" : "Open Wallet Dashboard-Profiel"
-                    : isEnglish ? "Complete every AI assessment" : "Rond elke AI-beoordeling af"}
+                {isEnglish ? "Open Wallet Learning" : "Open Wallet Learning"}
+                <ChevronRight size={17} />
               </button>
             </div>
-          </Panel>
-        )}
-      </section>
+          </section>
+
+          {!signedIn && (
+            <section className="mt-6 flex flex-col gap-4 rounded-2xl border border-blue-100 bg-blue-50 p-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <UserCircle className="mt-0.5 shrink-0 text-blue-700" size={21} />
+                <div>
+                  <p className="font-semibold text-blue-950">
+                    {isEnglish ? "Create a free OTT account" : "Maak een gratis OTT-account"}
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-blue-900/75">
+                    {isEnglish
+                      ? "An account saves verified learning across devices. It does not control your wallet or funds."
+                      : "Een account bewaart geverifieerd leren op apparaten. Het beheert je wallet of geld niet."}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => onNavigate?.("wallet")}
+                className="shrink-0 rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800"
+              >
+                {isEnglish ? "Sign in" : "Inloggen"}
+              </button>
+            </section>
+          )}
+
+          <section className="mt-14">
+            <div className="max-w-2xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
+                {isEnglish ? "Learning paths" : "Leerpaden"}
+              </p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-tight">
+                {isEnglish ? "Choose one subject at a time." : "Kies één onderwerp tegelijk."}
+              </h2>
+              <p className="mt-4 text-base leading-7 text-slate-600">
+                {isEnglish
+                  ? `${courses.length} courses · approximately ${Math.round(totalMinutes / 60)} hours · every required answer must pass.`
+                  : `${courses.length} cursussen · ongeveer ${Math.round(totalMinutes / 60)} uur · ieder verplicht antwoord moet slagen.`}
+              </p>
+            </div>
+
+            <div className="mt-8 flex flex-wrap gap-2">
+              <FilterButton active={selectedPath === "all"} onClick={() => setSelectedPath("all")}>
+                {isEnglish ? "All courses" : "Alle cursussen"}
+              </FilterButton>
+              {learningPaths.map((path) => (
+                <FilterButton
+                  key={path.id}
+                  active={selectedPath === path.id}
+                  onClick={() => setSelectedPath(path.id)}
+                >
+                  {isEnglish ? path.titleEn : path.titleNl}
+                </FilterButton>
+              ))}
+            </div>
+
+            {selectedPath !== "all" && (
+              <p className="mt-4 text-sm text-slate-500">
+                {isEnglish
+                  ? learningPaths.find((path) => path.id === selectedPath)?.descriptionEn
+                  : learningPaths.find((path) => path.id === selectedPath)?.descriptionNl}
+              </p>
+            )}
+
+            <div className="mt-8 grid gap-5 lg:grid-cols-2">
+              {visibleCourses.map((course) => {
+                const completion = progress.completions.find((item) => item.lessonId === course.id);
+                const locked = course.access === "access" && !accessUnlocked;
+                return (
+                  <CourseCard
+                    key={course.id}
+                    course={course}
+                    isEnglish={isEnglish}
+                    locked={locked}
+                    score={completion?.overallScore}
+                    onClick={() => openCourse(course)}
+                  />
+                );
+              })}
+            </div>
+          </section>
+        </main>
+      )}
+
+      {view === "course" && (
+        <main className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
+          <button
+            type="button"
+            onClick={() => setView("hub")}
+            className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-950"
+          >
+            <ChevronLeft size={17} />
+            {isEnglish ? "Back to courses" : "Terug naar cursussen"}
+          </button>
+
+          <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_320px]">
+            <section>
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-slate-100">
+                  <selectedCourse.icon size={23} strokeWidth={1.8} />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
+                    {isEnglish ? "Course" : "Cursus"} {selectedCourse.module} · {selectedCourse.difficulty} · {selectedCourse.minutes} min
+                  </p>
+                  <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+                    {selectedCourse.title}
+                  </h2>
+                </div>
+              </div>
+
+              <div className="mt-8 rounded-2xl border border-slate-200 p-6">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  {isEnglish ? "Learning outcome" : "Leerresultaat"}
+                </p>
+                <p className="mt-3 text-base leading-7 text-slate-700">
+                  {isEnglish ? selectedCourse.outcomeEn : selectedCourse.outcomeNl}
+                </p>
+                <div className="mt-5 rounded-xl bg-slate-50 px-4 py-3 text-sm font-medium text-slate-800">
+                  {isEnglish ? selectedCourse.takeawayEn : selectedCourse.takeawayNl}
+                </div>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {selectedCourse.topics.map((topic) => (
+                    <span key={topic} className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-600">
+                      {topic}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-8 space-y-5">
+                {selectedCourse.tasks.map((task, index) => {
+                  const answer = selectedAnswers[task.id] ?? "";
+                  const assessment = selectedAssessments.find((item) => item.taskId === task.id);
+
+                  return (
+                    <article
+                      key={task.id}
+                      className={`rounded-2xl border p-5 sm:p-6 ${
+                        assessment?.passed
+                          ? "border-emerald-200 bg-emerald-50/40"
+                          : assessment
+                            ? "border-amber-200 bg-amber-50/40"
+                            : "border-slate-200 bg-white"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
+                            {isEnglish ? `Question ${index + 1}` : `Vraag ${index + 1}`}
+                          </p>
+                          <h3 className="mt-2 text-base font-semibold leading-6">
+                            {isEnglish ? task.promptEn : task.promptNl}
+                          </h3>
+                        </div>
+                        {assessment && (
+                          <span className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold">
+                            {assessment.score}%
+                          </span>
+                        )}
+                      </div>
+
+                      <textarea
+                        value={answer}
+                        onChange={(event) => updateAnswer(task.id, event.target.value)}
+                        maxLength={MAX_ANSWER_LENGTH}
+                        rows={4}
+                        disabled={Boolean(selectedCompletion)}
+                        placeholder={isEnglish ? "Explain this in your own words…" : "Leg dit in je eigen woorden uit…"}
+                        className="mt-5 w-full rounded-xl border border-slate-200 bg-white p-4 text-sm leading-6 outline-none focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500"
+                      />
+                      <div className="mt-2 flex justify-between text-xs text-slate-500">
+                        <span>{isEnglish ? "Minimum 18 meaningful characters" : "Minimaal 18 betekenisvolle tekens"}</span>
+                        <span>{answer.length}/{MAX_ANSWER_LENGTH}</span>
+                      </div>
+
+                      {assessment && (
+                        <div className="mt-4 flex gap-3 rounded-xl border border-slate-200 bg-white p-4">
+                          {assessment.passed ? (
+                            <CheckCircle2 className="mt-0.5 shrink-0 text-emerald-700" size={18} />
+                          ) : (
+                            <XCircle className="mt-0.5 shrink-0 text-amber-700" size={18} />
+                          )}
+                          <div>
+                            <p className="text-sm leading-6 text-slate-700">{assessment.feedback}</p>
+                            {assessment.missingConcepts.length > 0 && (
+                              <p className="mt-2 text-xs text-slate-500">
+                                {isEnglish ? "Review: " : "Controleer: "}{assessment.missingConcepts.join(", ")}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
+
+            <aside>
+              <div className="sticky top-24 rounded-2xl border border-slate-200 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  {isEnglish ? "Course check" : "Cursuscontrole"}
+                </p>
+                <div className="mt-5 space-y-4 text-sm">
+                  <InfoRow label={isEnglish ? "Stored under" : "Opgeslagen onder"} value={signedIn ? accountName || "OTT account" : (isEnglish ? "Practice only" : "Alleen oefenen")} />
+                  <InfoRow label={isEnglish ? "Answers" : "Antwoorden"} value={`3 × ${MAX_ANSWER_LENGTH}`} />
+                  <InfoRow label={isEnglish ? "Pass mark" : "Slagingsgrens"} value="70% each" />
+                  <InfoRow label={isEnglish ? "Reward" : "Beloning"} value={`+${selectedCourse.xp} XP`} />
+                  <InfoRow
+                    label={isEnglish ? "Status" : "Status"}
+                    value={selectedCompletion ? `${selectedCompletion.overallScore}% verified` : (isEnglish ? "Not completed" : "Niet afgerond")}
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => void assessAndComplete()}
+                  disabled={isAssessing || Boolean(selectedCompletion)}
+                  className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isAssessing ? (
+                    <Loader2 className="animate-spin" size={17} />
+                  ) : selectedCompletion ? (
+                    <BadgeCheck size={17} />
+                  ) : (
+                    <Brain size={17} />
+                  )}
+                  {isAssessing
+                    ? (isEnglish ? "Checking answers" : "Antwoorden controleren")
+                    : selectedCompletion
+                      ? (isEnglish ? "Course verified" : "Cursus geverifieerd")
+                      : (isEnglish ? "Check my answers" : "Controleer mijn antwoorden")}
+                </button>
+
+                {!signedIn && (
+                  <button
+                    type="button"
+                    onClick={() => onNavigate?.("wallet")}
+                    className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    <UserCircle size={17} />
+                    {isEnglish ? "Sign in to save" : "Log in om op te slaan"}
+                  </button>
+                )}
+
+                <a
+                  href={selectedCourse.sourceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-5 flex items-center justify-between gap-3 border-t border-slate-200 pt-5 text-sm text-slate-600 hover:text-slate-950"
+                >
+                  <span>
+                    <span className="block text-xs text-slate-400">{isEnglish ? "Official source" : "Officiële bron"}</span>
+                    <span className="mt-1 block font-medium">{selectedCourse.sourceLabel}</span>
+                  </span>
+                  <ExternalLink size={17} />
+                </a>
+              </div>
+            </aside>
+          </div>
+        </main>
+      )}
+
+      {view === "certificate" && (
+        <main className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
+          <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
+            <section>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
+                {isEnglish ? "Final Academy achievement" : "Definitieve Academy-prestatie"}
+              </p>
+              <h2 className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight sm:text-4xl">
+                OTT XRPL Foundation Certificate
+              </h2>
+              <p className="mt-5 max-w-3xl text-base leading-7 text-slate-600">
+                {isEnglish
+                  ? "This is a new certificate collection for verified Foundation completion. It is not part of the 500 OTT Access Pass NFTs."
+                  : "Dit is een nieuwe certificaatcollectie voor geverifieerde Foundation-afronding. Deze hoort niet bij de 500 OTT Access Pass-NFT’s."}
+              </p>
+
+              <div className="mt-10 grid gap-4 sm:grid-cols-2">
+                <EditionCard
+                  title="OTT Access Pass"
+                  edition="#001–#500"
+                  purpose={isEnglish ? "Access utility" : "Toegangsutility"}
+                  muted
+                />
+                <EditionCard
+                  title="OTT XRPL Foundation Certificate"
+                  edition="#0001–#5000"
+                  purpose={isEnglish ? "Verified learning certificate" : "Geverifieerd leercertificaat"}
+                />
+              </div>
+
+              <div className="mt-10 rounded-2xl border border-slate-200 p-6 sm:p-8">
+                <h3 className="text-xl font-semibold">
+                  {isEnglish ? "Certificate requirements" : "Certificaatvoorwaarden"}
+                </h3>
+                <div className="mt-6 space-y-4">
+                  <Requirement done={progress.completedCount === courses.length} text={isEnglish ? `Complete all ${courses.length} Academy courses` : `Rond alle ${courses.length} Academy-cursussen af`} />
+                  <Requirement done={false} text={isEnglish ? "Pass the randomized Foundation final assessment" : "Slaag voor de willekeurige Foundation-eindtoets"} />
+                  <Requirement done={signedIn} text={isEnglish ? "Use a verified OTT account" : "Gebruik een geverifieerd OTT-account"} />
+                  <Requirement done={hasWallet} text={isEnglish ? "Connect and prove ownership of the receiving wallet" : "Koppel en bewijs eigendom van de ontvangende wallet"} />
+                  <Requirement done={false} text={isEnglish ? "Confirm the optional mint or delivery action" : "Bevestig de optionele mint- of leveringsactie"} />
+                </div>
+
+                <div className="mt-8">
+                  <div className="flex justify-between text-sm font-medium">
+                    <span>{isEnglish ? "Current course progress" : "Huidige cursusvoortgang"}</span>
+                    <span>{progressPercent}%</span>
+                  </div>
+                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
+                    <div className="h-full rounded-full bg-blue-700" style={{ width: `${progressPercent}%` }} />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <aside className="rounded-3xl border border-slate-200 bg-slate-950 p-7 text-white">
+              <Award size={32} className="text-blue-300" />
+              <p className="mt-8 text-xs font-semibold uppercase tracking-[0.18em] text-blue-300">
+                {isEnglish ? "Edition reservation" : "Editiereservering"}
+              </p>
+              <p className="mt-3 text-3xl font-semibold">#0001–#5000</p>
+              <p className="mt-4 text-sm leading-6 text-slate-300">
+                {isEnglish
+                  ? "Artwork, metadata, final assessment and the claim service still need to be built and tested before any certificate can be issued."
+                  : "Artwork, metadata, eindtoets en claimservice moeten nog worden gebouwd en getest voordat een certificaat kan worden uitgegeven."}
+              </p>
+              <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-5">
+                <p className="text-sm font-semibold">
+                  {isEnglish ? "Current status" : "Huidige status"}
+                </p>
+                <p className="mt-2 text-sm text-slate-300">
+                  {isEnglish ? "Reserved · not mintable yet" : "Gereserveerd · nog niet mintbaar"}
+                </p>
+              </div>
+              {hasWallet && (
+                <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-5">
+                  <p className="text-xs text-slate-400">{isEnglish ? "Receiving wallet" : "Ontvangende wallet"}</p>
+                  <p className="mt-2 font-mono text-xs text-slate-200">{shortWallet(walletAddress)}</p>
+                </div>
+              )}
+            </aside>
+          </div>
+        </main>
+      )}
     </div>
   );
 }
 
-function Panel({ title, icon: Icon, children }: { title: string; icon: ElementType; children: React.ReactNode }) {
-  return (
-    <div className="border border-black/10 bg-white p-5 md:p-6 shadow-sm shadow-black/5">
-      <div className="flex items-center gap-2 mb-5">
-        <Icon size={18} className="text-[#3898E8]" />
-        <p className="font-orbitron text-xs uppercase tracking-widest">{title}</p>
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function MetricCard({ label, value, text, icon: Icon }: { label: string; value: string; text: string; icon: ElementType }) {
-  return (
-    <div className="border border-black/10 bg-white/85 p-4">
-      <Icon size={17} className="text-[#3898E8] mb-3" />
-      <p className="font-mono text-[9px] uppercase tracking-widest text-black/35 mb-1">{label}</p>
-      <p className="font-orbitron text-lg font-black uppercase mb-1">{value}</p>
-      <p className="font-mono text-[9px] uppercase tracking-widest text-black/40">{text}</p>
-    </div>
-  );
-}
-
-function ViewButton({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) {
+function ViewButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`px-4 py-3 font-orbitron text-[10px] font-black uppercase tracking-widest ${active ? "bg-black text-white" : "border border-black/10 bg-white text-black"}`}
+      className={`rounded-xl px-4 py-2.5 text-sm font-semibold ${
+        active ? "bg-slate-950 text-white" : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+      }`}
     >
-      {label}
+      {children}
     </button>
   );
 }
 
-function Tag({ text }: { text: string }) {
-  return <span className="border border-black/10 bg-white px-3 py-2 font-mono text-[9px] uppercase tracking-widest text-black/45">{text}</span>;
+function FilterButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full px-4 py-2 text-sm font-medium ${
+        active ? "bg-slate-950 text-white" : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+      }`}
+    >
+      {children}
+    </button>
+  );
 }
 
-function InfoLine({ text }: { text: string }) {
+function SummaryCard({ label, value, text }: { label: string; value: string; text: string }) {
   return (
-    <div className="flex items-start gap-2">
-      <CheckCircle2 size={14} className="text-[#3898E8] mt-0.5 shrink-0" />
-      <p className="font-mono text-xs text-black/55 leading-relaxed">{text}</p>
+    <div className="rounded-2xl border border-slate-200 p-5">
+      <p className="text-xs font-medium text-slate-500">{label}</p>
+      <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
+      <p className="mt-2 truncate text-xs text-slate-500">{text}</p>
     </div>
+  );
+}
+
+function CourseCard({
+  course,
+  isEnglish,
+  locked,
+  score,
+  onClick,
+}: {
+  course: Course;
+  isEnglish: boolean;
+  locked: boolean;
+  score?: number;
+  onClick: () => void;
+}) {
+  const Icon = course.icon;
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group rounded-2xl border border-slate-200 p-6 text-left transition hover:border-slate-300 hover:shadow-sm"
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-slate-800">
+          <Icon size={21} strokeWidth={1.8} />
+        </div>
+        {score !== undefined ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
+            <BadgeCheck size={14} /> {score}%
+          </span>
+        ) : locked ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+            <Lock size={13} /> Access
+          </span>
+        ) : (
+          <span className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-500">
+            {isEnglish ? "Free" : "Gratis"}
+          </span>
+        )}
+      </div>
+
+      <p className="mt-6 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">
+        {isEnglish ? "Course" : "Cursus"} {course.module} · {course.difficulty} · {course.minutes} min
+      </p>
+      <h3 className="mt-3 text-xl font-semibold tracking-tight">{course.title}</h3>
+      <p className="mt-3 text-sm leading-6 text-slate-600">
+        {isEnglish ? course.outcomeEn : course.outcomeNl}
+      </p>
+      <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4 text-sm font-semibold">
+        <span>{score !== undefined ? (isEnglish ? "Review course" : "Bekijk cursus") : locked ? (isEnglish ? "Open Access" : "Open Toegang") : (isEnglish ? "Start course" : "Start cursus")}</span>
+        <ChevronRight className="transition group-hover:translate-x-0.5" size={17} />
+      </div>
+    </button>
   );
 }
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border border-black/10 bg-white p-3 mb-2 last:mb-0 text-left">
-      <p className="font-mono text-[9px] uppercase tracking-widest text-black/35 mb-1">{label}</p>
-      <p className="font-mono text-xs text-black/65 break-all">{value}</p>
+    <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-3 last:border-b-0 last:pb-0">
+      <span className="text-slate-500">{label}</span>
+      <span className="text-right font-medium text-slate-900">{value}</span>
     </div>
   );
 }
 
-function SourceLink({ label, url }: { label: string; url: string }) {
+function EditionCard({
+  title,
+  edition,
+  purpose,
+  muted = false,
+}: {
+  title: string;
+  edition: string;
+  purpose: string;
+  muted?: boolean;
+}) {
   return (
-    <a href={url} target="_blank" rel="noreferrer" className="border border-black/10 bg-[#F7F8FC] p-4 mb-2 last:mb-0 flex items-center justify-between gap-3">
-      <p className="font-orbitron text-[10px] font-black uppercase">{label}</p>
-      <ExternalLink size={15} />
-    </a>
+    <div className={`rounded-2xl border p-6 ${muted ? "border-slate-200 bg-slate-50" : "border-blue-200 bg-blue-50"}`}>
+      <p className="text-sm font-semibold">{title}</p>
+      <p className="mt-3 text-2xl font-semibold tracking-tight">{edition}</p>
+      <p className="mt-2 text-sm text-slate-600">{purpose}</p>
+    </div>
+  );
+}
+
+function Requirement({ done, text }: { done: boolean; text: string }) {
+  return (
+    <div className="flex items-center gap-3">
+      {done ? (
+        <CheckCircle2 className="shrink-0 text-emerald-700" size={20} />
+      ) : (
+        <Lock className="shrink-0 text-slate-400" size={18} />
+      )}
+      <span className={`text-sm ${done ? "font-medium text-slate-900" : "text-slate-600"}`}>{text}</span>
+    </div>
   );
 }

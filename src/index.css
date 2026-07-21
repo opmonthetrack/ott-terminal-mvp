@@ -24,9 +24,33 @@
   border-image: linear-gradient(135deg, var(--color-ott-blue) 0%, #a855f7 50%, var(--color-ott-pink) 100%) 1;
 }
 
+html {
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+  background-color: #fff;
+}
+
 body {
+  width: 100%;
+  min-width: 0;
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
   background-color: #fff;
   color: #080808;
 }
 
+#root {
+  width: 100%;
+  min-width: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
 
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}

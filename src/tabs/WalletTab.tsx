@@ -1,97 +1,62 @@
-import { useEffect, useMemo, useState, type ElementType } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  Activity,
-  Award,
+  Apple,
   BadgeCheck,
   BookOpen,
+  Building2,
   CheckCircle2,
+  Chrome,
   Copy,
-  Database,
-  Fingerprint,
-  GraduationCap,
+  Github,
   Loader2,
+  LockKeyhole,
+  LogIn,
   LogOut,
+  Mail,
   RefreshCcw,
   Save,
   ShieldCheck,
-  User,
+  UserCircle,
   Wallet,
-  Zap,
 } from "lucide-react";
-import { OTTLogo, OTTProofBadge } from "../components/OTTLogo";
 import { getAcademyProgressSummary } from "../lib/academyProgressStore";
-import { MAKE_WAVES_SOURCE_TAG } from "../lib/makeWaves";
 import {
-  loadCustomerProfile,
-  saveCustomerProfile,
-  type OttCustomerProfile,
-} from "../lib/profileStore";
+  getOttAccountName,
+  isOttAuthConfigured,
+  resetOttPassword,
+  signInOttAccount,
+  signInOttProvider,
+  signOutOttAccount,
+  signUpOttAccount,
+  updateOttDisplayName,
+  type OttAuthProvider,
+} from "../lib/ottAuth";
+import { useOttAuthSession } from "../lib/useOttAuthSession";
 import { useTerminalLanguage } from "../lib/useTerminalLanguage";
 
-type WalletTabProps = {
+ type WalletTabProps = {
   walletAddress?: string;
   onDisconnect?: () => void;
 };
 
-type AccountInfo = {
-  address: string;
+type AuthMode = "sign-in" | "create";
+type WalletSnapshot = {
   balanceXrp: string;
-  sequence: number | null;
-  ownerCount: number | null;
-  ledgerIndex: number | null;
+  sequence: number;
+  ownerCount: number;
+  ledgerIndex: number;
 };
-
-type Trustline = {
-  currency: string;
-  balance: string;
-  issuer: string;
-};
-
-type AccountTransaction = {
-  hash: string;
-  type: string;
-  date: string;
-  fee: string;
-  sourceTag: string;
-};
-
-type LookupStatus = "idle" | "loading" | "success" | "error";
-type DashboardView = "overview" | "profile" | "academy";
 
 type XrplResponse = {
   id?: number;
-  status?: string;
   result?: {
-    status?: string;
     error?: string;
+    ledger_index?: number;
     account_data?: {
-      Account?: string;
       Balance?: string;
       Sequence?: number;
       OwnerCount?: number;
     };
-    lines?: Array<{
-      currency?: string;
-      balance?: string;
-      account?: string;
-    }>;
-    transactions?: Array<{
-      tx?: {
-        hash?: string;
-        TransactionType?: string;
-        Fee?: string;
-        SourceTag?: number;
-        date?: number;
-      };
-      tx_json?: {
-        hash?: string;
-        TransactionType?: string;
-        Fee?: string;
-        SourceTag?: number;
-        date?: number;
-      };
-    }>;
-    ledger_index?: number;
   };
 };
 
@@ -107,11 +72,9 @@ function shortWallet(value: string) {
 
 function dropsToXrp(value: string) {
   const drops = Number(value);
-  return Number.isFinite(drops) ? (drops / 1_000_000).toLocaleString(undefined, { maximumFractionDigits: 6 }) : "0";
-}
-
-function formatRippleDate(value: number) {
-  return new Date((value + 946684800) * 1000).toLocaleString();
+  return Number.isFinite(drops)
+    ? (drops / 1_000_000).toLocaleString(undefined, { maximumFractionDigits: 6 })
+    : "0";
 }
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -119,33 +82,56 @@ function getErrorMessage(error: unknown, fallback: string) {
     return error.message;
   }
 
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === "string") {
+      return message;
+    }
+  }
+
   return fallback;
 }
 
-function xrplRequest(command: Record<string, unknown>) {
-  return new Promise<XrplResponse>((resolve, reject) => {
+function loadWalletSnapshot(walletAddress: string) {
+  return new Promise<WalletSnapshot>((resolve, reject) => {
     const socket = new WebSocket(XRPL_ENDPOINT);
-    const id = Date.now() + Math.floor(Math.random() * 1000);
+    const id = Date.now();
     const timeout = window.setTimeout(() => {
       socket.close();
       reject(new Error("XRPL request timed out."));
     }, 15_000);
 
     socket.onopen = () => {
-      socket.send(JSON.stringify({ id, ...command }));
+      socket.send(JSON.stringify({
+        id,
+        command: "account_info",
+        account: walletAddress,
+        ledger_index: "validated",
+      }));
     };
 
     socket.onmessage = (event) => {
       try {
         const response = JSON.parse(event.data) as XrplResponse;
-
         if (response.id !== id) {
           return;
         }
 
         window.clearTimeout(timeout);
         socket.close();
-        resolve(response);
+
+        const account = response.result?.account_data;
+        if (response.result?.error || !account) {
+          reject(new Error(response.result?.error || "No validated wallet data found."));
+          return;
+        }
+
+        resolve({
+          balanceXrp: dropsToXrp(account.Balance ?? "0"),
+          sequence: account.Sequence ?? 0,
+          ownerCount: account.OwnerCount ?? 0,
+          ledgerIndex: response.result?.ledger_index ?? 0,
+        });
       } catch (error) {
         window.clearTimeout(timeout);
         socket.close();
@@ -156,7 +142,7 @@ function xrplRequest(command: Record<string, unknown>) {
     socket.onerror = () => {
       window.clearTimeout(timeout);
       socket.close();
-      reject(new Error("XRPL websocket connection failed."));
+      reject(new Error("Could not reach the XRP Ledger."));
     };
   });
 }
@@ -164,456 +150,616 @@ function xrplRequest(command: Record<string, unknown>) {
 export function WalletTab({ walletAddress = "guest", onDisconnect }: WalletTabProps) {
   const { language } = useTerminalLanguage();
   const isEnglish = language === "en";
-  const hasVerifiedWallet = isLikelyXrplAddress(walletAddress);
-  const [activeView, setActiveView] = useState<DashboardView>("overview");
-  const [status, setStatus] = useState<LookupStatus>("idle");
-  const [error, setError] = useState("");
-  const [accountInfo, setAccountInfo] = useState<AccountInfo | null>(null);
-  const [trustlines, setTrustlines] = useState<Trustline[]>([]);
-  const [transactions, setTransactions] = useState<AccountTransaction[]>([]);
-  const [lastUpdated, setLastUpdated] = useState("not loaded");
-  const [profile, setProfile] = useState<OttCustomerProfile | null>(() =>
-    hasVerifiedWallet ? loadCustomerProfile(walletAddress) : null,
-  );
-  const [displayName, setDisplayName] = useState(profile?.displayName ?? "");
-  const [handle, setHandle] = useState(profile?.handle ?? "");
-  const [bio, setBio] = useState(profile?.bio ?? "");
-  const [profileStatus, setProfileStatus] = useState("");
-  const [progressVersion, setProgressVersion] = useState(0);
+  const { user, loading: authLoading, signedIn } = useOttAuthSession();
+  const hasWallet = isLikelyXrplAddress(walletAddress);
+  const [authMode, setAuthMode] = useState<AuthMode>("sign-in");
+  const [displayName, setDisplayName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authStatus, setAuthStatus] = useState("");
+  const [profileName, setProfileName] = useState("");
+  const [profileBusy, setProfileBusy] = useState(false);
+  const [walletSnapshot, setWalletSnapshot] = useState<WalletSnapshot | null>(null);
+  const [walletBusy, setWalletBusy] = useState(false);
+  const [walletError, setWalletError] = useState("");
 
   const academy = useMemo(
     () => getAcademyProgressSummary(walletAddress),
-    [walletAddress, progressVersion],
-  );
-  const sourceTagHits = useMemo(
-    () => transactions.filter((transaction) => transaction.sourceTag === String(MAKE_WAVES_SOURCE_TAG)),
-    [transactions],
+    [walletAddress],
   );
 
   useEffect(() => {
-    const nextProfile = hasVerifiedWallet ? loadCustomerProfile(walletAddress) : null;
-    setProfile(nextProfile);
-    setDisplayName(nextProfile?.displayName ?? "");
-    setHandle(nextProfile?.handle ?? "");
-    setBio(nextProfile?.bio ?? "");
-  }, [walletAddress, hasVerifiedWallet]);
+    setProfileName(getOttAccountName(user));
+  }, [user]);
 
   useEffect(() => {
-    const refreshProgress = () => setProgressVersion((value) => value + 1);
-    window.addEventListener("ott-academy-progress-changed", refreshProgress);
-    window.addEventListener("ott-profile-changed", refreshProgress);
-    window.addEventListener("storage", refreshProgress);
-
-    return () => {
-      window.removeEventListener("ott-academy-progress-changed", refreshProgress);
-      window.removeEventListener("ott-profile-changed", refreshProgress);
-      window.removeEventListener("storage", refreshProgress);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!hasVerifiedWallet) {
-      setAccountInfo(null);
-      setTrustlines([]);
-      setTransactions([]);
-      setStatus("idle");
+    if (!hasWallet) {
+      setWalletSnapshot(null);
+      setWalletError("");
       return;
     }
 
-    void loadWallet();
-  }, [walletAddress, hasVerifiedWallet]);
+    void refreshWallet();
+  }, [walletAddress, hasWallet]);
 
-  async function loadWallet() {
-    if (!hasVerifiedWallet) {
+  async function refreshWallet() {
+    if (!hasWallet) {
       return;
     }
 
-    setStatus("loading");
-    setError("");
+    setWalletBusy(true);
+    setWalletError("");
 
     try {
-      const [infoResponse, linesResponse, txResponse] = await Promise.all([
-        xrplRequest({ command: "account_info", account: walletAddress, ledger_index: "validated" }),
-        xrplRequest({ command: "account_lines", account: walletAddress, ledger_index: "validated", limit: 20 }),
-        xrplRequest({ command: "account_tx", account: walletAddress, ledger_index_min: -1, ledger_index_max: -1, binary: false, limit: 15 }),
-      ]);
-
-      if (infoResponse.result?.error || !infoResponse.result?.account_data?.Account) {
-        throw new Error(infoResponse.result?.error || "No validated account data found.");
-      }
-
-      const accountData = infoResponse.result.account_data;
-      setAccountInfo({
-        address: accountData.Account,
-        balanceXrp: dropsToXrp(accountData.Balance ?? "0"),
-        sequence: accountData.Sequence ?? null,
-        ownerCount: accountData.OwnerCount ?? null,
-        ledgerIndex: infoResponse.result.ledger_index ?? null,
-      });
-      setTrustlines(
-        (linesResponse.result?.lines ?? []).map((line) => ({
-          currency: line.currency ?? "Unknown",
-          balance: line.balance ?? "0",
-          issuer: line.account ?? "unknown",
-        })),
+      setWalletSnapshot(await loadWalletSnapshot(walletAddress));
+    } catch (error) {
+      setWalletError(
+        getErrorMessage(
+          error,
+          isEnglish ? "Wallet data could not be loaded." : "Walletdata kon niet worden geladen.",
+        ),
       );
-      setTransactions(
-        (txResponse.result?.transactions ?? [])
-          .map((entry) => {
-            const tx = entry.tx_json ?? entry.tx;
-
-            if (!tx?.hash) {
-              return null;
-            }
-
-            return {
-              hash: tx.hash,
-              type: tx.TransactionType ?? "Unknown",
-              date: typeof tx.date === "number" ? formatRippleDate(tx.date) : "—",
-              fee: tx.Fee ? `${dropsToXrp(tx.Fee)} XRP` : "—",
-              sourceTag: tx.SourceTag ? String(tx.SourceTag) : "—",
-            };
-          })
-          .filter((item): item is AccountTransaction => Boolean(item)),
-      );
-      setLastUpdated(new Date().toLocaleTimeString());
-      setStatus("success");
-    } catch (lookupError) {
-      setStatus("error");
-      setError(getErrorMessage(lookupError, "Wallet lookup failed."));
+    } finally {
+      setWalletBusy(false);
     }
   }
 
-  function saveProfile() {
-    try {
-      const nextProfile = saveCustomerProfile({
-        walletAddress,
-        displayName,
-        handle,
-        bio,
-      });
-      setProfile(nextProfile);
-      setProfileStatus(
+  async function submitEmailAuth() {
+    if (!email.trim() || password.length < 8) {
+      setAuthStatus(
         isEnglish
-          ? "Profile saved locally under your verified wallet session. It is private by default."
-          : "Profiel lokaal opgeslagen onder je geverifieerde walletsessie. Het is standaard privé.",
+          ? "Enter a valid email address and a password of at least 8 characters."
+          : "Vul een geldig e-mailadres en een wachtwoord van minimaal 8 tekens in.",
       );
-    } catch (profileError) {
-      setProfileStatus(
-        getErrorMessage(
-          profileError,
-          isEnglish ? "Could not save profile." : "Profiel kon niet worden opgeslagen.",
-        ),
+      return;
+    }
+
+    setAuthBusy(true);
+    setAuthStatus("");
+
+    try {
+      if (authMode === "create") {
+        const result = await signUpOttAccount({ email, password, displayName });
+        setAuthStatus(
+          result.session
+            ? (isEnglish ? "Account created and signed in." : "Account aangemaakt en ingelogd.")
+            : (isEnglish
+                ? "Account created. Check your email to confirm your address."
+                : "Account aangemaakt. Controleer je e-mail om je adres te bevestigen."),
+        );
+      } else {
+        await signInOttAccount(email, password);
+        setAuthStatus(isEnglish ? "Signed in successfully." : "Je bent ingelogd.");
+      }
+    } catch (error) {
+      setAuthStatus(
+        getErrorMessage(error, isEnglish ? "Account action failed." : "Accountactie is mislukt."),
       );
+    } finally {
+      setAuthBusy(false);
+    }
+  }
+
+  async function useProvider(provider: OttAuthProvider) {
+    setAuthBusy(true);
+    setAuthStatus("");
+
+    try {
+      await signInOttProvider(provider);
+    } catch (error) {
+      setAuthStatus(
+        getErrorMessage(error, isEnglish ? "Provider login failed." : "Inloggen via provider is mislukt."),
+      );
+      setAuthBusy(false);
+    }
+  }
+
+  async function sendReset() {
+    if (!email.trim()) {
+      setAuthStatus(isEnglish ? "Enter your email address first." : "Vul eerst je e-mailadres in.");
+      return;
+    }
+
+    setAuthBusy(true);
+    try {
+      await resetOttPassword(email);
+      setAuthStatus(
+        isEnglish
+          ? "Password reset instructions were sent when the account exists."
+          : "Instructies voor wachtwoordherstel zijn verzonden wanneer het account bestaat.",
+      );
+    } catch (error) {
+      setAuthStatus(
+        getErrorMessage(error, isEnglish ? "Reset email failed." : "Herstelmail is mislukt."),
+      );
+    } finally {
+      setAuthBusy(false);
+    }
+  }
+
+  async function saveAccountName() {
+    if (!profileName.trim()) {
+      return;
+    }
+
+    setProfileBusy(true);
+    setAuthStatus("");
+    try {
+      await updateOttDisplayName(profileName);
+      setAuthStatus(isEnglish ? "Profile name saved." : "Profielnaam opgeslagen.");
+    } catch (error) {
+      setAuthStatus(
+        getErrorMessage(error, isEnglish ? "Could not save the profile." : "Profiel kon niet worden opgeslagen."),
+      );
+    } finally {
+      setProfileBusy(false);
+    }
+  }
+
+  async function signOut() {
+    setAuthBusy(true);
+    try {
+      await signOutOttAccount();
+      setEmail("");
+      setPassword("");
+      setAuthStatus(isEnglish ? "Signed out." : "Uitgelogd.");
+    } catch (error) {
+      setAuthStatus(
+        getErrorMessage(error, isEnglish ? "Sign out failed." : "Uitloggen is mislukt."),
+      );
+    } finally {
+      setAuthBusy(false);
     }
   }
 
   function copyWallet() {
-    if (hasVerifiedWallet) {
+    if (hasWallet) {
       void navigator.clipboard?.writeText(walletAddress);
     }
   }
 
-  if (!hasVerifiedWallet) {
-    return (
-      <div className="min-h-screen bg-white text-[#080808] p-4 md:p-8 xl:p-10">
-        <div className="max-w-4xl mx-auto border border-black/10 bg-[radial-gradient(circle_at_20%_20%,rgba(56,152,232,0.16),transparent_32%),radial-gradient(circle_at_82%_12%,rgba(200,56,136,0.16),transparent_30%),#fff] p-6 md:p-10 text-center">
-          <Wallet size={44} className="mx-auto text-[#3898E8] mb-6" />
-          <p className="font-mono text-[10px] uppercase tracking-[0.4em] text-black/35 mb-4">
-            Wallet Dashboard + Profile
+  return (
+    <div className="min-h-screen bg-white text-slate-950">
+      <section className="border-b border-slate-200">
+        <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-700">
+            {isEnglish ? "Account and profile" : "Account en profiel"}
           </p>
-          <h1 className="font-orbitron text-3xl md:text-5xl font-black uppercase mb-6">
-            {isEnglish ? "Connect once. Track everything." : "Eén keer koppelen. Alles bijhouden."}
-          </h1>
-          <p className="font-mono text-sm text-black/55 leading-relaxed max-w-2xl mx-auto">
+          <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl">
             {isEnglish
-              ? "Connect through Xaman to load public XRPL data and create a private OTT profile. Only AI-verified Academy progress is added here."
-              : "Koppel via Xaman om publieke XRPL-data te laden en een privé OTT-profiel te maken. Alleen AI-geverifieerde Academy-voortgang wordt hier toegevoegd."}
+              ? "One normal account. Add a wallet only when you need it."
+              : "Eén normaal account. Voeg alleen een wallet toe wanneer je die nodig hebt."}
+          </h1>
+          <p className="mt-5 max-w-2xl text-base leading-7 text-slate-600">
+            {isEnglish
+              ? "Your OTT account holds your profile and learning journey. A connected wallet remains separate and is used for signing, access proofs and NFTs."
+              : "Je OTT-account bewaart je profiel en leertraject. Een gekoppelde wallet blijft apart en wordt gebruikt voor ondertekening, toegangsbewijs en NFT’s."}
           </p>
         </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-white text-[#080808]">
-      <section className="border-b border-black/10 bg-[radial-gradient(circle_at_15%_12%,rgba(56,152,232,0.16),transparent_30%),radial-gradient(circle_at_85%_10%,rgba(200,56,136,0.16),transparent_30%),#fff] p-4 md:p-8 xl:p-10">
-        <div className="flex flex-wrap items-start justify-between gap-6 mb-8">
-          <OTTLogo
-            size="lg"
-            subtitle={
-              isEnglish
-                ? "Wallet data, customer profile and verified learning in one place"
-                : "Walletdata, klantprofiel en geverifieerd leren op één plek"
-            }
-          />
-          <OTTProofBadge sourceTag={String(MAKE_WAVES_SOURCE_TAG)} />
-        </div>
-
-        <div className="grid grid-cols-12 gap-6 items-end">
-          <div className="col-span-12 xl:col-span-8">
-            <div className="inline-flex items-center gap-2 border border-black/10 bg-white/80 px-4 py-2 mb-6">
-              <User size={15} className="text-[#C83888]" />
-              <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-black/55">
-                {isEnglish ? "Verified Customer Command Center" : "Geverifieerd Klantencentrum"}
-              </p>
-            </div>
-            <h1 className="font-orbitron text-4xl md:text-6xl font-black uppercase leading-none tracking-tight mb-6">
-              {profile?.displayName || (isEnglish ? "Your Wallet." : "Jouw Wallet.")}
-              <br />
-              <span className="bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] bg-clip-text text-transparent">
-                {isEnglish ? "Your OTT profile." : "Jouw OTT-profiel."}
-              </span>
-            </h1>
-            <div className="flex flex-wrap items-center gap-3">
-              <code className="border border-black/10 bg-white px-4 py-3 font-mono text-xs break-all">{walletAddress}</code>
-              <button type="button" onClick={copyWallet} className="border border-black/10 bg-white p-3" aria-label="Copy wallet"><Copy size={16} /></button>
-              <button type="button" onClick={onDisconnect} className="border border-[#C83888]/25 bg-[#C83888]/10 px-4 py-3 font-orbitron text-[10px] font-black uppercase tracking-widest flex items-center gap-2"><LogOut size={15} />{isEnglish ? "Disconnect" : "Ontkoppel"}</button>
-            </div>
-          </div>
-
-          <div className="col-span-12 xl:col-span-4 border border-black/10 bg-white/90 p-5">
-            <InfoRow label={isEnglish ? "Session" : "Sessie"} value="Xaman verified · 7-day local session" />
-            <InfoRow label={isEnglish ? "Profile privacy" : "Profielprivacy"} value="Private / local by default" />
-            <InfoRow label={isEnglish ? "Last wallet update" : "Laatste walletupdate"} value={lastUpdated} />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-8">
-          <MetricCard icon={Wallet} label="XRP" value={accountInfo?.balanceXrp ?? "—"} text={isEnglish ? "Public balance" : "Publiek saldo"} />
-          <MetricCard icon={Database} label="Trustlines" value={String(trustlines.length)} text={isEnglish ? "Issued assets" : "Issued assets"} />
-          <MetricCard icon={GraduationCap} label={isEnglish ? "Modules" : "Modules"} value={String(academy.completedCount)} text={isEnglish ? "AI verified" : "AI-geverifieerd"} />
-          <MetricCard icon={Zap} label="XP" value={String(academy.totalXp)} text={isEnglish ? "Verified learning" : "Geverifieerd leren"} />
-          <MetricCard icon={Award} label="Credits" value={String(academy.totalCredits)} text={`${academy.averageScore}% AI avg`} />
-        </div>
-
-        <div className="flex flex-wrap gap-2 mt-6">
-          <ViewButton active={activeView === "overview"} label={isEnglish ? "Wallet Overview" : "Walletoverzicht"} onClick={() => setActiveView("overview")} />
-          <ViewButton active={activeView === "profile"} label={isEnglish ? "My Profile" : "Mijn Profiel"} onClick={() => setActiveView("profile")} />
-          <ViewButton active={activeView === "academy"} label={isEnglish ? "Academy Progress" : "Academy-Voortgang"} onClick={() => setActiveView("academy")} />
-        </div>
       </section>
 
-      <section className="p-4 md:p-8 xl:p-10">
-        {activeView === "overview" && (
-          <div className="grid grid-cols-12 gap-4">
-            <div className="col-span-12 xl:col-span-8 space-y-4">
-              <Panel title={isEnglish ? "Public XRPL Account" : "Publiek XRPL-Account"} icon={Wallet}>
-                <div className="flex flex-wrap items-center justify-between gap-4 mb-5">
-                  <p className="font-mono text-xs text-black/55 leading-relaxed">
-                    {isEnglish ? "Read-only data. OTT never stores private keys or a seed phrase." : "Alleen-lezen data. OTT bewaart nooit private keys of een seed phrase."}
+      <main className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
+        {authStatus && (
+          <div className="mb-6 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+            {authStatus}
+          </div>
+        )}
+
+        <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">
+          <section className="rounded-3xl border border-slate-200 p-6 sm:p-8">
+            {authLoading ? (
+              <div className="flex min-h-72 items-center justify-center">
+                <Loader2 className="animate-spin text-slate-500" size={24} />
+              </div>
+            ) : signedIn && user ? (
+              <SignedInAccount
+                userEmail={user.email ?? ""}
+                provider={String(user.app_metadata?.provider ?? "email")}
+                profileName={profileName}
+                setProfileName={setProfileName}
+                profileBusy={profileBusy}
+                authBusy={authBusy}
+                onSaveName={() => void saveAccountName()}
+                onSignOut={() => void signOut()}
+                isEnglish={isEnglish}
+              />
+            ) : (
+              <AccountAccess
+                configured={isOttAuthConfigured}
+                mode={authMode}
+                setMode={setAuthMode}
+                displayName={displayName}
+                setDisplayName={setDisplayName}
+                email={email}
+                setEmail={setEmail}
+                password={password}
+                setPassword={setPassword}
+                busy={authBusy}
+                onEmailSubmit={() => void submitEmailAuth()}
+                onProvider={(provider) => void useProvider(provider)}
+                onReset={() => void sendReset()}
+                isEnglish={isEnglish}
+              />
+            )}
+          </section>
+
+          <div className="space-y-6">
+            <section className="rounded-3xl border border-slate-200 p-6 sm:p-7">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
+                    {isEnglish ? "Optional wallet" : "Optionele wallet"}
                   </p>
-                  <button type="button" onClick={() => void loadWallet()} disabled={status === "loading"} className="border border-black/10 bg-[#F7F8FC] px-4 py-3 font-orbitron text-[10px] font-black uppercase flex items-center gap-2 disabled:opacity-50">
-                    {status === "loading" ? <Loader2 size={15} className="animate-spin" /> : <RefreshCcw size={15} />}
-                    {isEnglish ? "Refresh" : "Verversen"}
+                  <h2 className="mt-3 text-2xl font-semibold">
+                    {hasWallet
+                      ? (isEnglish ? "Wallet connected" : "Wallet gekoppeld")
+                      : (isEnglish ? "No wallet connected" : "Geen wallet gekoppeld")}
+                  </h2>
+                </div>
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100">
+                  <Wallet size={21} />
+                </div>
+              </div>
+
+              {hasWallet ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={copyWallet}
+                    className="mt-5 flex w-full items-center justify-between rounded-xl bg-slate-50 px-4 py-3 text-left"
+                  >
+                    <span className="font-mono text-xs text-slate-700">{shortWallet(walletAddress)}</span>
+                    <Copy size={16} className="text-slate-400" />
                   </button>
-                </div>
 
-                {error && <div className="border border-[#C83888]/25 bg-[#C83888]/10 p-4 font-mono text-xs text-black/60 mb-4">{error}</div>}
+                  <div className="mt-5 grid grid-cols-2 gap-3">
+                    <Metric label="XRP" value={walletSnapshot?.balanceXrp ?? (walletBusy ? "…" : "—")} />
+                    <Metric label={isEnglish ? "Objects" : "Objecten"} value={walletSnapshot ? String(walletSnapshot.ownerCount) : "—"} />
+                    <Metric label="Sequence" value={walletSnapshot ? String(walletSnapshot.sequence) : "—"} />
+                    <Metric label="Ledger" value={walletSnapshot ? String(walletSnapshot.ledgerIndex) : "—"} />
+                  </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <InfoRow label={isEnglish ? "Validated ledger" : "Gevalideerde ledger"} value={String(accountInfo?.ledgerIndex ?? "—")} />
-                  <InfoRow label="Sequence" value={String(accountInfo?.sequence ?? "—")} />
-                  <InfoRow label="Owner Count" value={String(accountInfo?.ownerCount ?? "—")} />
-                </div>
-              </Panel>
+                  {walletError && <p className="mt-4 text-sm text-amber-700">{walletError}</p>}
 
-              <Panel title={isEnglish ? "Recent Transactions" : "Recente Transacties"} icon={Activity}>
-                <div className="space-y-2">
-                  {transactions.map((transaction) => (
-                    <div key={transaction.hash} className="border border-black/10 bg-[#F7F8FC] p-4 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3">
-                      <div className="min-w-0">
-                        <p className="font-orbitron text-xs font-black uppercase mb-2">{transaction.type}</p>
-                        <p className="font-mono text-[10px] text-black/45 break-all">{transaction.hash}</p>
-                      </div>
-                      <div className="text-left md:text-right">
-                        <p className="font-mono text-[10px] text-black/45">{transaction.date}</p>
-                        <p className="font-mono text-[10px] text-black/45 mt-1">SourceTag {transaction.sourceTag}</p>
-                      </div>
-                    </div>
-                  ))}
-                  {transactions.length === 0 && <EmptyState text={isEnglish ? "No recent transactions loaded." : "Geen recente transacties geladen."} />}
-                </div>
-              </Panel>
-            </div>
-
-            <div className="col-span-12 xl:col-span-4 space-y-4">
-              <Panel title="OTT Proof Signals" icon={Fingerprint}>
-                <InfoRow label="Official SourceTag" value={String(MAKE_WAVES_SOURCE_TAG)} />
-                <InfoRow label={isEnglish ? "Recent matches" : "Recente matches"} value={String(sourceTagHits.length)} />
-                <InfoRow label={isEnglish ? "Profile status" : "Profielstatus"} value={profile ? "Created" : "Not created"} />
-              </Panel>
-
-              <Panel title={isEnglish ? "Issued Assets" : "Issued Assets"} icon={Database}>
-                <div className="space-y-2">
-                  {trustlines.map((line) => (
-                    <div key={`${line.currency}-${line.issuer}`} className="border border-black/10 bg-[#F7F8FC] p-3">
-                      <p className="font-orbitron text-xs font-black uppercase">{line.currency} · {line.balance}</p>
-                      <p className="font-mono text-[9px] text-black/40 break-all mt-2">{line.issuer}</p>
-                    </div>
-                  ))}
-                  {trustlines.length === 0 && <EmptyState text={isEnglish ? "No trustlines found." : "Geen trustlines gevonden."} />}
-                </div>
-              </Panel>
-            </div>
-          </div>
-        )}
-
-        {activeView === "profile" && (
-          <div className="grid grid-cols-12 gap-4">
-            <div className="col-span-12 xl:col-span-7">
-              <Panel title={profile ? (isEnglish ? "Edit Customer Profile" : "Bewerk Klantprofiel") : (isEnglish ? "Create Customer Profile" : "Maak Klantprofiel")} icon={User}>
-                <div className="border border-[#3898E8]/25 bg-[#3898E8]/10 p-4 mb-5">
-                  <p className="font-mono text-xs text-black/60 leading-relaxed">
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      onClick={() => void refreshWallet()}
+                      disabled={walletBusy}
+                      className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      <RefreshCcw className={walletBusy ? "animate-spin" : ""} size={16} />
+                      {isEnglish ? "Refresh" : "Vernieuwen"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onDisconnect}
+                      className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-500 hover:bg-slate-50"
+                    >
+                      <LogOut size={16} />
+                      {isEnglish ? "Disconnect" : "Loskoppelen"}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="mt-5 rounded-2xl bg-slate-50 p-5">
+                  <p className="text-sm leading-6 text-slate-600">
                     {isEnglish
-                      ? "The profile is optional and stored locally under this verified wallet. Nothing becomes public automatically."
-                      : "Het profiel is optioneel en wordt lokaal onder deze geverifieerde wallet opgeslagen. Niets wordt automatisch openbaar."}
+                      ? "You can use the Academy and research tools without a wallet. Open the wallet button in the top navigation only when you need to sign or receive an NFT."
+                      : "Je kunt de Academy en onderzoekstools zonder wallet gebruiken. Open de walletknop bovenin pas wanneer je wilt ondertekenen of een NFT wilt ontvangen."}
                   </p>
                 </div>
+              )}
+            </section>
 
-                <label className="block mb-4">
-                  <span className="font-mono text-[10px] uppercase tracking-widest text-black/40">{isEnglish ? "Display name" : "Weergavenaam"}</span>
-                  <input value={displayName} onChange={(event) => setDisplayName(event.target.value.slice(0, 40))} maxLength={40} className="mt-2 w-full border border-black/10 bg-[#F7F8FC] p-4 font-mono text-sm outline-none focus:border-[#3898E8]" placeholder="XRPL Learner" />
-                  <span className="block text-right font-mono text-[9px] text-black/35 mt-1">{displayName.length}/40</span>
-                </label>
-
-                <label className="block mb-4">
-                  <span className="font-mono text-[10px] uppercase tracking-widest text-black/40">Handle</span>
-                  <div className="mt-2 flex border border-black/10 bg-[#F7F8FC] focus-within:border-[#3898E8]">
-                    <span className="p-4 font-mono text-sm text-black/35">@</span>
-                    <input value={handle} onChange={(event) => setHandle(event.target.value.replace(/^@/, "").slice(0, 32))} maxLength={32} className="flex-1 bg-transparent p-4 pl-0 font-mono text-sm outline-none" placeholder="on_the_track" />
-                  </div>
-                  <span className="block text-right font-mono text-[9px] text-black/35 mt-1">{handle.length}/32</span>
-                </label>
-
-                <label className="block mb-5">
-                  <span className="font-mono text-[10px] uppercase tracking-widest text-black/40">Bio</span>
-                  <textarea value={bio} onChange={(event) => setBio(event.target.value.slice(0, 160))} maxLength={160} rows={5} className="mt-2 w-full border border-black/10 bg-[#F7F8FC] p-4 font-mono text-sm outline-none focus:border-[#3898E8]" placeholder={isEnglish ? "What are you learning or building on XRPL?" : "Wat leer of bouw je op XRPL?"} />
-                  <span className="block text-right font-mono text-[9px] text-black/35 mt-1">{bio.length}/160</span>
-                </label>
-
-                <button type="button" onClick={saveProfile} className="w-full bg-black text-white p-4 font-orbitron text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2"><Save size={16} />{isEnglish ? "Save Private Profile" : "Sla Privéprofiel Op"}</button>
-                {profileStatus && <div className="border border-black/10 bg-[#F7F8FC] p-4 mt-4 font-mono text-xs text-black/60">{profileStatus}</div>}
-              </Panel>
-            </div>
-
-            <div className="col-span-12 xl:col-span-5">
-              <Panel title={isEnglish ? "Profile Preview" : "Profielvoorbeeld"} icon={BadgeCheck}>
-                <div className="border border-black/10 bg-[radial-gradient(circle_at_20%_20%,rgba(56,152,232,0.14),transparent_30%),radial-gradient(circle_at_85%_15%,rgba(200,56,136,0.14),transparent_30%),#fff] p-6">
-                  <div className="w-16 h-16 bg-black text-white flex items-center justify-center font-orbitron text-xl font-black mb-5">
-                    {(displayName || "OTT").slice(0, 3).toUpperCase()}
-                  </div>
-                  <h2 className="font-orbitron text-2xl font-black uppercase mb-2">{displayName || "Unnamed learner"}</h2>
-                  <p className="font-mono text-xs text-[#C83888] mb-4">{handle ? `@${handle}` : "No public handle"}</p>
-                  <p className="font-mono text-sm text-black/55 leading-relaxed mb-5">{bio || (isEnglish ? "Add a short private profile bio." : "Voeg een korte privéprofielbio toe.")}</p>
-                  <InfoRow label="Wallet" value={shortWallet(walletAddress)} />
-                  <InfoRow label={isEnglish ? "Verified modules" : "Geverifieerde modules"} value={String(academy.completedCount)} />
-                  <InfoRow label="XP / Credits" value={`${academy.totalXp} / ${academy.totalCredits}`} />
-                </div>
-              </Panel>
-            </div>
+            <section className="rounded-3xl border border-slate-200 p-6 sm:p-7">
+              <div className="flex items-center gap-3">
+                <BookOpen className="text-blue-700" size={21} />
+                <h2 className="text-lg font-semibold">
+                  {isEnglish ? "Learning progress" : "Leervoortgang"}
+                </h2>
+              </div>
+              <div className="mt-5 grid grid-cols-3 gap-3">
+                <Metric label={isEnglish ? "Courses" : "Cursussen"} value={String(academy.completedCount)} />
+                <Metric label="XP" value={String(academy.totalXp)} />
+                <Metric label={isEnglish ? "Average" : "Gemiddeld"} value={academy.averageScore ? `${academy.averageScore}%` : "—"} />
+              </div>
+              <p className="mt-4 text-xs leading-5 text-slate-500">
+                {signedIn
+                  ? (isEnglish
+                      ? "Account-based Academy storage is prepared in the new data layer; existing wallet progress remains visible during migration."
+                      : "Accountgebaseerde Academy-opslag is voorbereid in de nieuwe datalaag; bestaande walletvoortgang blijft tijdens de migratie zichtbaar.")
+                  : (isEnglish
+                      ? "Create an OTT account so future learning progress can follow you across devices."
+                      : "Maak een OTT-account zodat toekomstige leervoortgang je op verschillende apparaten kan volgen.")}
+              </p>
+            </section>
           </div>
-        )}
+        </div>
 
-        {activeView === "academy" && (
-          <div className="grid grid-cols-12 gap-4">
-            <div className="col-span-12 xl:col-span-8">
-              <Panel title={isEnglish ? "Verified Academy History" : "Geverifieerde Academy-Historie"} icon={GraduationCap}>
-                <div className="space-y-3">
-                  {academy.completions.map((completion) => (
-                    <div key={completion.lessonId} className="border border-black/10 bg-[#F7F8FC] p-5 flex flex-wrap items-center justify-between gap-4">
-                      <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <CheckCircle2 size={16} className="text-[#3898E8]" />
-                          <p className="font-orbitron text-sm font-black uppercase">{completion.lessonTitle}</p>
-                        </div>
-                        <p className="font-mono text-[10px] text-black/40 uppercase tracking-widest">
-                          {new Date(completion.completedAt).toLocaleString()} · AI assessment
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Tag text={`${completion.overallScore}%`} />
-                        <Tag text={`+${completion.xp} XP`} />
-                        <Tag text={`+${completion.credits} Credits`} />
-                      </div>
-                    </div>
-                  ))}
-                  {academy.completions.length === 0 && <EmptyState text={isEnglish ? "No AI-verified modules yet. Academy answers must all pass before they appear here." : "Nog geen AI-geverifieerde modules. Alle Academy-antwoorden moeten slagen voordat ze hier verschijnen."} />}
-                </div>
-              </Panel>
-            </div>
-
-            <div className="col-span-12 xl:col-span-4 space-y-4">
-              <Panel title={isEnglish ? "Learning Profile" : "Leerprofiel"} icon={BookOpen}>
-                <InfoRow label={isEnglish ? "Completed modules" : "Afgeronde modules"} value={String(academy.completedCount)} />
-                <InfoRow label="AI Average" value={`${academy.averageScore}%`} />
-                <InfoRow label="XP" value={String(academy.totalXp)} />
-                <InfoRow label="OTT Credits" value={String(academy.totalCredits)} />
-              </Panel>
-
-              <Panel title={isEnglish ? "Integrity Rules" : "Integriteitsregels"} icon={ShieldCheck}>
-                <InfoLine text={isEnglish ? "No manual completion button." : "Geen handmatige afrondingsknop."} />
-                <InfoLine text={isEnglish ? "All module answers must pass." : "Alle moduleantwoorden moeten slagen."} />
-                <InfoLine text={isEnglish ? "Progress is separated by verified wallet." : "Voortgang is per geverifieerde wallet gescheiden."} />
-                <InfoLine text={isEnglish ? "Profile is private by default." : "Profiel is standaard privé."} />
-              </Panel>
-            </div>
-          </div>
-        )}
-      </section>
+        <section className="mt-8 grid gap-4 md:grid-cols-3">
+          <TrustCard
+            icon={ShieldCheck}
+            title={isEnglish ? "Account is not a wallet" : "Account is geen wallet"}
+            text={isEnglish ? "Your login does not give OTT control over funds." : "Je login geeft OTT geen controle over je geld."}
+          />
+          <TrustCard
+            icon={LockKeyhole}
+            title={isEnglish ? "No recovery secrets" : "Geen herstelgeheimen"}
+            text={isEnglish ? "OTT never asks for seed phrases or private keys." : "OTT vraagt nooit om seed phrases of private keys."}
+          />
+          <TrustCard
+            icon={BadgeCheck}
+            title={isEnglish ? "Proof when needed" : "Bewijs wanneer nodig"}
+            text={isEnglish ? "Wallet ownership is proven only for on-chain actions." : "Walletbezit wordt alleen bewezen voor on-chain acties."}
+          />
+        </section>
+      </main>
     </div>
   );
 }
 
-function Panel({ title, icon: Icon, children }: { title: string; icon: ElementType; children: React.ReactNode }) {
+function AccountAccess({
+  configured,
+  mode,
+  setMode,
+  displayName,
+  setDisplayName,
+  email,
+  setEmail,
+  password,
+  setPassword,
+  busy,
+  onEmailSubmit,
+  onProvider,
+  onReset,
+  isEnglish,
+}: {
+  configured: boolean;
+  mode: AuthMode;
+  setMode: (mode: AuthMode) => void;
+  displayName: string;
+  setDisplayName: (value: string) => void;
+  email: string;
+  setEmail: (value: string) => void;
+  password: string;
+  setPassword: (value: string) => void;
+  busy: boolean;
+  onEmailSubmit: () => void;
+  onProvider: (provider: OttAuthProvider) => void;
+  onReset: () => void;
+  isEnglish: boolean;
+}) {
   return (
-    <div className="border border-black/10 bg-white p-5 md:p-6 shadow-sm shadow-black/5">
-      <div className="flex items-center gap-2 mb-5">
-        <Icon size={18} className="text-[#3898E8]" />
-        <p className="font-orbitron text-xs uppercase tracking-widest">{title}</p>
+    <>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
+            {isEnglish ? "OTT account" : "OTT-account"}
+          </p>
+          <h2 className="mt-3 text-2xl font-semibold">
+            {mode === "sign-in"
+              ? (isEnglish ? "Welcome back" : "Welkom terug")
+              : (isEnglish ? "Create your free account" : "Maak je gratis account")}
+          </h2>
+        </div>
+        <UserCircle size={30} className="text-slate-300" />
       </div>
-      {children}
-    </div>
+
+      {!configured && (
+        <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+          {isEnglish
+            ? "The login interface is ready, but the Supabase project keys still need to be added to Vercel before accounts can be used."
+            : "De logininterface is klaar, maar de Supabase-projectsleutels moeten nog aan Vercel worden toegevoegd voordat accounts werken."}
+        </div>
+      )}
+
+      <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        <ProviderButton icon={Chrome} label="Google" onClick={() => onProvider("google")} disabled={!configured || busy} />
+        <ProviderButton icon={Apple} label="Apple" onClick={() => onProvider("apple")} disabled={!configured || busy} />
+        <ProviderButton icon={Building2} label="Microsoft" onClick={() => onProvider("azure")} disabled={!configured || busy} />
+        <ProviderButton icon={Github} label="GitHub" onClick={() => onProvider("github")} disabled={!configured || busy} />
+      </div>
+
+      <div className="my-6 flex items-center gap-3">
+        <div className="h-px flex-1 bg-slate-200" />
+        <span className="text-xs text-slate-400">{isEnglish ? "or use email" : "of gebruik e-mail"}</span>
+        <div className="h-px flex-1 bg-slate-200" />
+      </div>
+
+      <div className="space-y-4">
+        {mode === "create" && (
+          <label className="block">
+            <span className="text-xs font-medium text-slate-600">{isEnglish ? "Display name" : "Weergavenaam"}</span>
+            <input
+              value={displayName}
+              onChange={(event) => setDisplayName(event.target.value)}
+              autoComplete="name"
+              className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-500"
+            />
+          </label>
+        )}
+        <label className="block">
+          <span className="text-xs font-medium text-slate-600">Email</span>
+          <div className="relative mt-2">
+            <Mail className="absolute left-4 top-3.5 text-slate-400" size={17} />
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              autoComplete="email"
+              className="w-full rounded-xl border border-slate-200 py-3 pl-11 pr-4 text-sm outline-none focus:border-blue-500"
+            />
+          </div>
+        </label>
+        <label className="block">
+          <span className="text-xs font-medium text-slate-600">{isEnglish ? "Password" : "Wachtwoord"}</span>
+          <input
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            autoComplete={mode === "create" ? "new-password" : "current-password"}
+            className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-500"
+          />
+        </label>
+      </div>
+
+      <button
+        type="button"
+        onClick={onEmailSubmit}
+        disabled={!configured || busy}
+        className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {busy ? <Loader2 className="animate-spin" size={17} /> : <LogIn size={17} />}
+        {mode === "create"
+          ? (isEnglish ? "Create account" : "Account maken")
+          : (isEnglish ? "Sign in" : "Inloggen")}
+      </button>
+
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 text-sm">
+        <button
+          type="button"
+          onClick={() => setMode(mode === "sign-in" ? "create" : "sign-in")}
+          className="font-medium text-blue-700 hover:text-blue-900"
+        >
+          {mode === "sign-in"
+            ? (isEnglish ? "Create a free account" : "Maak een gratis account")
+            : (isEnglish ? "I already have an account" : "Ik heb al een account")}
+        </button>
+        {mode === "sign-in" && (
+          <button type="button" onClick={onReset} className="text-slate-500 hover:text-slate-900">
+            {isEnglish ? "Forgot password?" : "Wachtwoord vergeten?"}
+          </button>
+        )}
+      </div>
+    </>
   );
 }
 
-function MetricCard({ icon: Icon, label, value, text }: { icon: ElementType; label: string; value: string; text: string }) {
+function SignedInAccount({
+  userEmail,
+  provider,
+  profileName,
+  setProfileName,
+  profileBusy,
+  authBusy,
+  onSaveName,
+  onSignOut,
+  isEnglish,
+}: {
+  userEmail: string;
+  provider: string;
+  profileName: string;
+  setProfileName: (value: string) => void;
+  profileBusy: boolean;
+  authBusy: boolean;
+  onSaveName: () => void;
+  onSignOut: () => void;
+  isEnglish: boolean;
+}) {
   return (
-    <div className="border border-black/10 bg-white/85 p-4">
-      <Icon size={17} className="text-[#3898E8] mb-3" />
-      <p className="font-mono text-[9px] uppercase tracking-widest text-black/35 mb-1">{label}</p>
-      <p className="font-orbitron text-lg font-black uppercase mb-1 break-words">{value}</p>
-      <p className="font-mono text-[9px] uppercase tracking-widest text-black/40">{text}</p>
-    </div>
+    <>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800">
+            <CheckCircle2 size={14} />
+            {isEnglish ? "Signed in" : "Ingelogd"}
+          </div>
+          <h2 className="mt-5 text-2xl font-semibold">{profileName || "OTT member"}</h2>
+          <p className="mt-2 text-sm text-slate-500">{userEmail}</p>
+        </div>
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-950 text-white">
+          <UserCircle size={25} />
+        </div>
+      </div>
+
+      <div className="mt-7 rounded-2xl bg-slate-50 p-5">
+        <p className="text-xs font-medium text-slate-500">{isEnglish ? "Login method" : "Inlogmethode"}</p>
+        <p className="mt-2 text-sm font-semibold capitalize">{provider === "azure" ? "Microsoft" : provider}</p>
+      </div>
+
+      <label className="mt-6 block">
+        <span className="text-xs font-medium text-slate-600">{isEnglish ? "Profile name" : "Profielnaam"}</span>
+        <input
+          value={profileName}
+          onChange={(event) => setProfileName(event.target.value)}
+          className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-500"
+        />
+      </label>
+
+      <button
+        type="button"
+        onClick={onSaveName}
+        disabled={profileBusy}
+        className="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
+      >
+        {profileBusy ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+        {isEnglish ? "Save profile" : "Profiel opslaan"}
+      </button>
+
+      <div className="mt-8 border-t border-slate-200 pt-5">
+        <button
+          type="button"
+          onClick={onSignOut}
+          disabled={authBusy}
+          className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-950 disabled:opacity-50"
+        >
+          <LogOut size={16} />
+          {isEnglish ? "Sign out of OTT" : "Uitloggen bij OTT"}
+        </button>
+      </div>
+    </>
   );
 }
 
-function ViewButton({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) {
-  return <button type="button" onClick={onClick} className={`px-4 py-3 font-orbitron text-[10px] font-black uppercase tracking-widest ${active ? "bg-black text-white" : "border border-black/10 bg-white"}`}>{label}</button>;
-}
-
-function InfoRow({ label, value }: { label: string; value: string }) {
+function ProviderButton({
+  icon: Icon,
+  label,
+  onClick,
+  disabled,
+}: {
+  icon: typeof Chrome;
+  label: string;
+  onClick: () => void;
+  disabled: boolean;
+}) {
   return (
-    <div className="border border-black/10 bg-[#F7F8FC] p-3 mb-2 last:mb-0">
-      <p className="font-mono text-[9px] uppercase tracking-widest text-black/35 mb-1">{label}</p>
-      <p className="font-mono text-xs text-black/65 break-all">{value}</p>
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+    >
+      <Icon size={18} />
+      {label}
+    </button>
   );
 }
 
-function InfoLine({ text }: { text: string }) {
+function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-start gap-2 mb-3 last:mb-0">
-      <CheckCircle2 size={14} className="text-[#3898E8] mt-0.5 shrink-0" />
-      <p className="font-mono text-xs text-black/55 leading-relaxed">{text}</p>
+    <div className="rounded-xl bg-slate-50 p-4">
+      <p className="text-xs text-slate-500">{label}</p>
+      <p className="mt-2 break-all text-sm font-semibold text-slate-900">{value}</p>
     </div>
   );
 }
 
-function Tag({ text }: { text: string }) {
-  return <span className="border border-black/10 bg-white px-3 py-2 font-mono text-[9px] uppercase tracking-widest text-black/45">{text}</span>;
-}
-
-function EmptyState({ text }: { text: string }) {
-  return <div className="border border-black/10 bg-[#F7F8FC] p-5 font-mono text-xs text-black/45 leading-relaxed">{text}</div>;
+function TrustCard({
+  icon: Icon,
+  title,
+  text,
+}: {
+  icon: typeof ShieldCheck;
+  title: string;
+  text: string;
+}) {
+  return (
+    <article className="rounded-2xl border border-slate-200 p-5">
+      <Icon className="text-blue-700" size={20} />
+      <h3 className="mt-4 text-sm font-semibold">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-slate-500">{text}</p>
+    </article>
+  );
 }

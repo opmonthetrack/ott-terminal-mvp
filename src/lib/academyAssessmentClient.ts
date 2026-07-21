@@ -1,4 +1,5 @@
 import type { AcademyAnswerAssessment } from "./academyProgressStore";
+import { ottSupabase } from "./ottAuth";
 
 export type AcademyAssessmentResponse = {
   ok: boolean;
@@ -16,6 +17,12 @@ export type AcademyAssessmentResponse = {
   overallScore?: number;
   assessments?: AcademyAnswerAssessment[];
   assessedAt?: string;
+  accountStorage?: {
+    authenticated: boolean;
+    stored: boolean;
+    preservedHigherScore?: boolean;
+    error?: string;
+  };
   error?: string;
 };
 
@@ -28,11 +35,20 @@ export async function assessAcademyModule(input: {
     answer: string;
   }>;
 }) {
+  const session = ottSupabase
+    ? (await ottSupabase.auth.getSession()).data.session
+    : null;
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (session?.access_token) {
+    headers.Authorization = `Bearer ${session.access_token}`;
+  }
+
   const response = await fetch("/api/academy-assess", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers,
     body: JSON.stringify(input),
   });
 
