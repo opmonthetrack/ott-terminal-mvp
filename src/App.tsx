@@ -6,7 +6,6 @@ import {
   Lock,
   LogOut,
   Menu,
-  ShieldCheck,
   UserCircle,
   Wallet,
   X,
@@ -14,6 +13,8 @@ import {
 import { OTTLogoMark } from "./components/OTTLogo";
 import { TerminalHomeTab } from "./tabs/TerminalHomeTab";
 import { isAccessVerified, loadAccessState } from "./lib/accessStore";
+import { getOttAccountName } from "./lib/ottAuth";
+import { useOttAuthSession } from "./lib/useOttAuthSession";
 import { verifyMakeWavesPayload } from "./lib/xamanClient";
 import {
   cleanXamanReturnUrl,
@@ -169,8 +170,10 @@ function getCoreMenuGroups(language: TerminalLanguage): MenuGroup[] {
         },
         {
           id: "wallet",
-          label: isEnglish ? "Profile" : "Profiel",
-          description: isEnglish ? "Account, progress and connected wallet." : "Account, voortgang en gekoppelde wallet.",
+          label: isEnglish ? "Account and profile" : "Account en profiel",
+          description: isEnglish
+            ? "Sign in, track learning and optionally connect a wallet."
+            : "Log in, volg je leertraject en koppel optioneel een wallet.",
         },
       ],
     },
@@ -184,13 +187,17 @@ function getCoreMenuGroups(language: TerminalLanguage): MenuGroup[] {
         },
         {
           id: "xamanactivation",
-          label: isEnglish ? "Xaman guide" : "Xaman-gids",
-          description: isEnglish ? "Understand wallet setup safely." : "Begrijp walletinstellingen op een veilige manier.",
+          label: isEnglish ? "Wallet learning" : "Leren over wallets",
+          description: isEnglish
+            ? "Compare wallet types, custody and recovery."
+            : "Vergelijk walletsoorten, custody en herstel.",
         },
         {
           id: "network",
           label: isEnglish ? "XRPL explorer" : "XRPL-verkenner",
-          description: isEnglish ? "Explore the network without technical overload." : "Verken het netwerk zonder technische overload.",
+          description: isEnglish
+            ? "Explore the network without technical overload."
+            : "Verken het netwerk zonder technische overload.",
         },
       ],
     },
@@ -205,24 +212,36 @@ function getCoreMenuGroups(language: TerminalLanguage): MenuGroup[] {
         {
           id: "news",
           label: isEnglish ? "Newsroom" : "Nieuwsruimte",
-          description: isEnglish ? "Turn verified information into content." : "Zet geverifieerde informatie om in content.",
+          description: isEnglish
+            ? "Turn verified information into content."
+            : "Zet geverifieerde informatie om in content.",
         },
         {
           id: "roadmap",
           label: isEnglish ? "Roadmap voting" : "Roadmap stemmen",
-          description: isEnglish ? "Sign and verify a community vote." : "Onderteken en verifieer een communitystem.",
+          description: isEnglish
+            ? "Sign and verify a community vote."
+            : "Onderteken en verifieer een communitystem.",
         },
         {
           id: "support",
           label: isEnglish ? "Support OTT" : "Steun OTT",
-          description: isEnglish ? "Transparent support through Xaman." : "Transparante steun via Xaman.",
+          description: isEnglish
+            ? "Transparent on-ledger support."
+            : "Transparante ondersteuning op de ledger.",
         },
       ],
     },
     {
       title: isEnglish ? "Wallet tools" : "Wallettools",
       items: [
-        { id: "xaman", label: "Xaman Center" },
+        {
+          id: "xaman",
+          label: isEnglish ? "Connect XRPL wallet" : "XRPL-wallet koppelen",
+          description: isEnglish
+            ? "Xaman is supported first; more wallets are planned."
+            : "Xaman wordt als eerste ondersteund; meer wallets volgen.",
+        },
         { id: "xrplverify", label: isEnglish ? "Verify transaction" : "Transactie verifiëren" },
         { id: "source", label: `SourceTag ${SOURCE_TAG}` },
         { id: "checkin", label: isEnglish ? "Daily proof" : "Dagelijks bewijs" },
@@ -247,7 +266,7 @@ function getFounderMenuGroups(language: TerminalLanguage): MenuGroup[] {
       ],
     },
     {
-      title: isEnglish ? "Labs" : "Labs",
+      title: "Labs",
       items: [
         { id: "truthdesk", label: "Truth Desk" },
         { id: "marketplace", label: isEnglish ? "Marketplace" : "Webshop" },
@@ -271,10 +290,9 @@ function getFounderMenuGroups(language: TerminalLanguage): MenuGroup[] {
 }
 
 function getAllRouteItems(language: TerminalLanguage): MenuItem[] {
-  return [
-    ...getCoreMenuGroups(language),
-    ...getFounderMenuGroups(language),
-  ].flatMap((group) => group.items);
+  return [...getCoreMenuGroups(language), ...getFounderMenuGroups(language)].flatMap(
+    (group) => group.items,
+  );
 }
 
 function getPrimaryNavigation(language: TerminalLanguage): Array<{
@@ -296,26 +314,29 @@ export default function App() {
   const [walletAddress, setWalletAddress] = useState<string>(() => getStoredWalletAddress());
   const [activeTab, setActiveTab] = useState<ActiveTab>("home");
   const [menuOpen, setMenuOpen] = useState(false);
-  const [xamanReturnStatus, setXamanReturnStatus] = useState("");
-  const [showLabs, setShowLabs] = useState(() => {
+  const [walletStatus, setWalletStatus] = useState("");
+  const [accessUnlocked, setAccessUnlocked] = useState(() => getAccessUnlocked(walletAddress));
+  const { language, setLanguage } = useTerminalLanguage();
+  const { user, signedIn, loading: authLoading } = useOttAuthSession();
+
+  const founderMode = useMemo(() => {
     if (typeof window === "undefined") {
       return false;
     }
 
     return new URLSearchParams(window.location.search).get("founder") === "1";
-  });
-  const [accessUnlocked, setAccessUnlocked] = useState(() => getAccessUnlocked(walletAddress));
-  const { language, setLanguage } = useTerminalLanguage();
+  }, []);
 
   const coreMenuGroups = useMemo(() => getCoreMenuGroups(language), [language]);
   const menuGroups = useMemo(
-    () => showLabs ? [...coreMenuGroups, ...getFounderMenuGroups(language)] : coreMenuGroups,
-    [coreMenuGroups, language, showLabs],
+    () => founderMode ? [...coreMenuGroups, ...getFounderMenuGroups(language)] : coreMenuGroups,
+    [coreMenuGroups, founderMode, language],
   );
   const allRouteItems = useMemo(() => getAllRouteItems(language), [language]);
   const primaryNavigation = useMemo(() => getPrimaryNavigation(language), [language]);
   const activeItem = allRouteItems.find((item) => item.id === activeTab) ?? allRouteItems[0];
   const activeTabLocked = !accessUnlocked && !isFreeTab(activeTab);
+  const accountName = getOttAccountName(user);
 
   useEffect(() => {
     const refreshAccess = () => setAccessUnlocked(getAccessUnlocked(walletAddress));
@@ -333,7 +354,9 @@ export default function App() {
   useEffect(() => {
     const syncWalletSession = () => {
       const storedAddress = getStoredWalletAddress();
-      setWalletAddress((currentAddress) => currentAddress === storedAddress ? currentAddress : storedAddress);
+      setWalletAddress((currentAddress) =>
+        currentAddress === storedAddress ? currentAddress : storedAddress,
+      );
     };
 
     window.addEventListener("storage", syncWalletSession);
@@ -377,7 +400,11 @@ export default function App() {
     let mounted = true;
 
     async function verifyReturnedPayload() {
-      setXamanReturnStatus(language === "en" ? "Verifying your Xaman signature…" : "Je Xaman-handtekening wordt gecontroleerd…");
+      setWalletStatus(
+        language === "en"
+          ? "Verifying your wallet signature…"
+          : "Je wallethandtekening wordt gecontroleerd…",
+      );
 
       try {
         const response = await verifyMakeWavesPayload(
@@ -393,14 +420,18 @@ export default function App() {
           saveWalletSession(response.verified.account);
           setWalletAddress(response.verified.account);
           setActiveTab(returnState.returnTarget);
-          setXamanReturnStatus(language === "en" ? "Wallet connected." : "Wallet gekoppeld.");
+          setWalletStatus(language === "en" ? "Wallet connected." : "Wallet gekoppeld.");
           clearXamanMobileSession();
         } else if (response.verified?.resolved && !response.verified?.signed) {
           setActiveTab("xaman");
-          setXamanReturnStatus(language === "en" ? "The Xaman request was declined or expired." : "Het Xaman-verzoek is geweigerd of verlopen.");
+          setWalletStatus(
+            language === "en"
+              ? "The wallet request was declined or expired."
+              : "Het walletverzoek is geweigerd of verlopen.",
+          );
         } else {
           setActiveTab("xaman");
-          setXamanReturnStatus(language === "en" ? "Waiting for Xaman." : "Wachten op Xaman.");
+          setWalletStatus(language === "en" ? "Waiting for wallet approval." : "Wachten op walletgoedkeuring.");
         }
       } catch {
         if (!mounted) {
@@ -408,10 +439,14 @@ export default function App() {
         }
 
         setActiveTab("xaman");
-        setXamanReturnStatus(language === "en" ? "We could not verify the Xaman return." : "De Xaman-terugkeer kon niet worden geverifieerd.");
+        setWalletStatus(
+          language === "en"
+            ? "We could not verify the wallet return."
+            : "De terugkeer van de wallet kon niet worden geverifieerd.",
+        );
       } finally {
         cleanXamanReturnUrl();
-        window.setTimeout(() => mounted && setXamanReturnStatus(""), 4500);
+        window.setTimeout(() => mounted && setWalletStatus(""), 4500);
       }
     }
 
@@ -446,17 +481,19 @@ export default function App() {
     clearWalletSession();
     setWalletAddress("guest");
     setAccessUnlocked(false);
-    setActiveTab("home");
     setMenuOpen(false);
-    setXamanReturnStatus(language === "en" ? "Wallet disconnected." : "Wallet losgekoppeld.");
-    window.setTimeout(() => setXamanReturnStatus(""), 2500);
+    setWalletStatus(language === "en" ? "Wallet disconnected." : "Wallet losgekoppeld.");
+    window.setTimeout(() => setWalletStatus(""), 2500);
   }
 
   return (
     <div className="min-h-screen bg-white text-[#111827] selection:bg-[#2563EB]/15">
       <TopNavigation
         activeTab={activeTab}
-        walletAddress={walletAddress}
+        accountName={accountName}
+        signedIn={signedIn}
+        authLoading={authLoading}
+        walletConnected={walletAddress !== "guest"}
         language={language}
         setLanguage={setLanguage}
         primaryNavigation={primaryNavigation}
@@ -464,19 +501,20 @@ export default function App() {
         onOpenMenu={() => setMenuOpen(true)}
       />
 
-      {xamanReturnStatus && <StatusBanner text={xamanReturnStatus} />}
+      {walletStatus && <StatusBanner text={walletStatus} />}
 
       {menuOpen && (
         <AllToolsMenu
           activeTab={activeTab}
+          accountName={accountName}
+          signedIn={signedIn}
           walletAddress={walletAddress}
           language={language}
           setLanguage={setLanguage}
           menuGroups={menuGroups}
-          showLabs={showLabs}
-          setShowLabs={setShowLabs}
+          founderMode={founderMode}
           onNavigate={goTo}
-          onDisconnect={disconnectWallet}
+          onDisconnectWallet={disconnectWallet}
           onClose={() => setMenuOpen(false)}
         />
       )}
@@ -546,7 +584,10 @@ export default function App() {
 
 function TopNavigation({
   activeTab,
-  walletAddress,
+  accountName,
+  signedIn,
+  authLoading,
+  walletConnected,
   language,
   setLanguage,
   primaryNavigation,
@@ -554,14 +595,23 @@ function TopNavigation({
   onOpenMenu,
 }: {
   activeTab: ActiveTab;
-  walletAddress: string;
+  accountName: string;
+  signedIn: boolean;
+  authLoading: boolean;
+  walletConnected: boolean;
   language: TerminalLanguage;
   setLanguage: (language: TerminalLanguage) => void;
   primaryNavigation: Array<{ id: ActiveTab; label: string; icon: typeof Home }>;
   onNavigate: (target: ActiveTab) => void;
   onOpenMenu: () => void;
 }) {
-  const isGuest = !walletAddress || walletAddress === "guest";
+  const accountLabel = authLoading
+    ? "…"
+    : signedIn
+      ? accountName || (language === "en" ? "My account" : "Mijn account")
+      : language === "en"
+        ? "Sign in"
+        : "Inloggen";
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
@@ -607,14 +657,18 @@ function TopNavigation({
             <button
               type="button"
               onClick={() => setLanguage("en")}
-              className={`rounded-md px-2.5 py-1.5 text-[11px] font-semibold ${language === "en" ? "bg-slate-900 text-white" : "text-slate-500"}`}
+              className={`rounded-md px-2.5 py-1.5 text-[11px] font-semibold ${
+                language === "en" ? "bg-slate-900 text-white" : "text-slate-500"
+              }`}
             >
               EN
             </button>
             <button
               type="button"
               onClick={() => setLanguage("nl")}
-              className={`rounded-md px-2.5 py-1.5 text-[11px] font-semibold ${language === "nl" ? "bg-slate-900 text-white" : "text-slate-500"}`}
+              className={`rounded-md px-2.5 py-1.5 text-[11px] font-semibold ${
+                language === "nl" ? "bg-slate-900 text-white" : "text-slate-500"
+              }`}
             >
               NL
             </button>
@@ -622,13 +676,19 @@ function TopNavigation({
 
           <button
             type="button"
-            onClick={() => onNavigate(isGuest ? "xaman" : "wallet")}
-            className="hidden items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 lg:flex"
+            onClick={() => onNavigate("wallet")}
+            className="hidden max-w-44 items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 lg:flex"
           >
-            {isGuest ? <Wallet size={16} /> : <ShieldCheck size={16} />}
-            {isGuest
-              ? language === "en" ? "Connect wallet" : "Wallet koppelen"
-              : shortWallet(walletAddress)}
+            <span className="relative">
+              <UserCircle size={17} />
+              {walletConnected && (
+                <span
+                  className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-white"
+                  title={language === "en" ? "Wallet connected" : "Wallet gekoppeld"}
+                />
+              )}
+            </span>
+            <span className="truncate">{accountLabel}</span>
           </button>
 
           <button
@@ -652,7 +712,9 @@ function TopNavigation({
               key={item.id}
               type="button"
               onClick={() => onNavigate(item.id)}
-              className={`flex flex-1 flex-col items-center gap-1 rounded-lg py-2 text-[11px] font-medium ${selected ? "bg-slate-100 text-slate-950" : "text-slate-500"}`}
+              className={`flex flex-1 flex-col items-center gap-1 rounded-lg py-2 text-[11px] font-medium ${
+                selected ? "bg-slate-100 text-slate-950" : "text-slate-500"
+              }`}
             >
               <Icon size={16} />
               {item.label}
@@ -666,31 +728,37 @@ function TopNavigation({
 
 function AllToolsMenu({
   activeTab,
+  accountName,
+  signedIn,
   walletAddress,
   language,
   setLanguage,
   menuGroups,
-  showLabs,
-  setShowLabs,
+  founderMode,
   onNavigate,
-  onDisconnect,
+  onDisconnectWallet,
   onClose,
 }: {
   activeTab: ActiveTab;
+  accountName: string;
+  signedIn: boolean;
   walletAddress: string;
   language: TerminalLanguage;
   setLanguage: (language: TerminalLanguage) => void;
   menuGroups: MenuGroup[];
-  showLabs: boolean;
-  setShowLabs: (show: boolean) => void;
+  founderMode: boolean;
   onNavigate: (target: ActiveTab) => void;
-  onDisconnect: () => void;
+  onDisconnectWallet: () => void;
   onClose: () => void;
 }) {
-  const isGuest = !walletAddress || walletAddress === "guest";
+  const walletConnected = Boolean(walletAddress && walletAddress !== "guest");
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/30 p-3 backdrop-blur-sm sm:p-6" role="dialog" aria-modal="true">
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/30 p-3 backdrop-blur-sm sm:p-6"
+      role="dialog"
+      aria-modal="true"
+    >
       <button type="button" className="absolute inset-0" onClick={onClose} aria-label="Close menu" />
 
       <div className="relative mx-auto my-3 max-w-5xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl sm:my-8">
@@ -707,6 +775,7 @@ function AllToolsMenu({
             type="button"
             onClick={onClose}
             className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+            aria-label={language === "en" ? "Close menu" : "Menu sluiten"}
           >
             <X size={18} />
           </button>
@@ -741,42 +810,74 @@ function AllToolsMenu({
           ))}
         </div>
 
-        <div className="flex flex-col gap-4 border-t border-slate-200 bg-slate-50 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-7">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setLanguage("en")}
-              className={`rounded-lg px-3 py-2 text-xs font-semibold ${language === "en" ? "bg-slate-900 text-white" : "border border-slate-200 bg-white text-slate-600"}`}
-            >
-              English
-            </button>
-            <button
-              type="button"
-              onClick={() => setLanguage("nl")}
-              className={`rounded-lg px-3 py-2 text-xs font-semibold ${language === "nl" ? "bg-slate-900 text-white" : "border border-slate-200 bg-white text-slate-600"}`}
-            >
-              Nederlands
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowLabs(!showLabs)}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-500"
-            >
-              {showLabs
-                ? language === "en" ? "Hide founder tools" : "Verberg foundertools"
-                : language === "en" ? "Founder access" : "Foundertoegang"}
-            </button>
+        <div className="border-t border-slate-200 bg-slate-50 px-5 py-5 sm:px-7">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">
+                {signedIn
+                  ? accountName || (language === "en" ? "OTT account" : "OTT-account")
+                  : language === "en"
+                    ? "Not signed in"
+                    : "Niet ingelogd"}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                {walletConnected
+                  ? `${language === "en" ? "Wallet" : "Wallet"}: ${shortWallet(walletAddress)}`
+                  : language === "en"
+                    ? "No wallet connected"
+                    : "Geen wallet gekoppeld"}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setLanguage("en")}
+                className={`rounded-lg px-3 py-2 text-xs font-semibold ${
+                  language === "en"
+                    ? "bg-slate-900 text-white"
+                    : "border border-slate-200 bg-white text-slate-600"
+                }`}
+              >
+                English
+              </button>
+              <button
+                type="button"
+                onClick={() => setLanguage("nl")}
+                className={`rounded-lg px-3 py-2 text-xs font-semibold ${
+                  language === "nl"
+                    ? "bg-slate-900 text-white"
+                    : "border border-slate-200 bg-white text-slate-600"
+                }`}
+              >
+                Nederlands
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate("wallet")}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700"
+              >
+                {signedIn
+                  ? language === "en" ? "Open profile" : "Open profiel"
+                  : language === "en" ? "Sign in" : "Inloggen"}
+              </button>
+              {walletConnected && (
+                <button
+                  type="button"
+                  onClick={onDisconnectWallet}
+                  className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-500"
+                >
+                  <LogOut size={14} />
+                  {language === "en" ? "Disconnect wallet" : "Wallet loskoppelen"}
+                </button>
+              )}
+            </div>
           </div>
 
-          {!isGuest && (
-            <button
-              type="button"
-              onClick={onDisconnect}
-              className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900"
-            >
-              <LogOut size={16} />
-              {language === "en" ? "Disconnect wallet" : "Wallet loskoppelen"}
-            </button>
+          {founderMode && (
+            <p className="mt-4 border-t border-slate-200 pt-4 text-xs text-slate-400">
+              {language === "en" ? "Founder mode active." : "Foundermodus actief."}
+            </p>
           )}
         </div>
       </div>
@@ -795,7 +896,7 @@ function LockedPreview({
   walletAddress: string;
   onNavigate: (target: ActiveTab) => void;
 }) {
-  const isGuest = !walletAddress || walletAddress === "guest";
+  const walletConnected = Boolean(walletAddress && walletAddress !== "guest");
 
   return (
     <section className="mx-auto flex min-h-[70vh] max-w-3xl items-center px-5 py-16 sm:px-8">
@@ -804,26 +905,26 @@ function LockedPreview({
           <Lock size={21} />
         </div>
         <h1 className="mt-6 text-2xl font-semibold tracking-tight text-slate-950">
-          {activeItem?.label ?? (language === "en" ? "Premium feature" : "Premiumfunctie")}
+          {activeItem?.label ?? (language === "en" ? "Access feature" : "Toegangsfunctie")}
         </h1>
         <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-500">
-          {isGuest
+          {walletConnected
             ? language === "en"
-              ? "Connect your wallet first. You can review the access options afterwards."
-              : "Koppel eerst je wallet. Daarna kun je de toegangsopties bekijken."
-            : language === "en"
               ? "This feature requires a verified OTT Access Pass."
-              : "Deze functie vereist een geverifieerde OTT Access Pass."}
+              : "Deze functie vereist een geverifieerde OTT Access Pass."
+            : language === "en"
+              ? "A wallet is only needed here to verify ownership of an OTT Access Pass."
+              : "Alleen hier is een wallet nodig om eigendom van een OTT Access Pass te verifiëren."}
         </p>
         <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
           <button
             type="button"
-            onClick={() => onNavigate(isGuest ? "xaman" : "accessgate")}
+            onClick={() => onNavigate(walletConnected ? "accessgate" : "xaman")}
             className="rounded-lg bg-slate-950 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800"
           >
-            {isGuest
-              ? language === "en" ? "Connect wallet" : "Wallet koppelen"
-              : language === "en" ? "View access" : "Bekijk toegang"}
+            {walletConnected
+              ? language === "en" ? "View access" : "Bekijk toegang"
+              : language === "en" ? "Connect wallet" : "Wallet koppelen"}
           </button>
           <button
             type="button"
