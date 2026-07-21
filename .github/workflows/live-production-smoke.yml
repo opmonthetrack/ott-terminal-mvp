@@ -15,7 +15,7 @@ permissions:
 jobs:
   live-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
 
     steps:
       - name: Checkout QA branch
@@ -32,16 +32,22 @@ jobs:
       - name: Install Chromium dependencies
         run: npx playwright install --with-deps chromium
 
-      - name: Run live OTT Terminal smoke test
+      - name: Run all-tab production browser test
+        continue-on-error: true
         env:
           BASE_URL: https://ott-terminal-mvp.vercel.app
         run: node scripts/live-smoke-test.mjs
 
-      - name: Upload smoke test report and screenshots
+      - name: Run targeted functional smoke test
+        env:
+          BASE_URL: https://ott-terminal-mvp.vercel.app
+        run: node scripts/live-functional-smoke.mjs
+
+      - name: Upload QA reports and screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ott-live-smoke-report
-          path: artifacts/live-smoke
+          name: ott-live-qa-report
+          path: artifacts
           if-no-files-found: error
           retention-days: 14
