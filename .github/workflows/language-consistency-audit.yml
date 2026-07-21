@@ -7,6 +7,9 @@ on:
     paths:
       - scripts/language-consistency-audit.mjs
       - .github/workflows/language-consistency-audit.yml
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
