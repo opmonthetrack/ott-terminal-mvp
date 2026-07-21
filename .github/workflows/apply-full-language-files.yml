@@ -1,0 +1,64 @@
+name: Apply Full Language Files
+
+on:
+  push:
+    branches:
+      - feature/academy-ai-profile-session
+    paths:
+      - scripts/apply-full-language-files.mjs
+      - .github/workflows/apply-full-language-files.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/academy-ai-profile-session
+          fetch-depth: 0
+
+      - name: Apply complete bilingual public-tab files
+        run: node scripts/apply-full-language-files.mjs
+
+      - name: Validate TypeScript syntax
+        run: |
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const ts = require('/opt/hostedtoolcache/node/20.19.4/x64/lib/node_modules/typescript');
+          const files = [
+            'src/tabs/LedgerIntelTab.tsx',
+            'src/tabs/OTTIntelligence.tsx',
+            'src/tabs/NewsTab.tsx',
+            'src/tabs/DailyCheckInTab.tsx',
+            'src/tabs/RoadmapTab.tsx',
+          ];
+          for (const file of files) {
+            const result = ts.transpileModule(fs.readFileSync(file, 'utf8'), {
+              compilerOptions: { jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext },
+              reportDiagnostics: true,
+              fileName: file,
+            });
+            if (result.diagnostics?.length) {
+              throw new Error(`${file}: ${result.diagnostics.map((item) => ts.flattenDiagnosticMessageText(item.messageText, '\n')).join('\n')}`);
+            }
+          }
+          NODE
+
+      - name: Commit bilingual public tabs
+        run: |
+          if git diff --quiet; then
+            echo "No language file changes needed."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/tabs/LedgerIntelTab.tsx src/tabs/OTTIntelligence.tsx src/tabs/NewsTab.tsx src/tabs/DailyCheckInTab.tsx src/tabs/RoadmapTab.tsx
+          git commit -m "Make public intelligence, newsroom, proof and voting tabs bilingual [skip ci]"
+          git push origin HEAD:feature/academy-ai-profile-session
