@@ -13,7 +13,6 @@ import {
   Cpu,
   ExternalLink,
   Fingerprint,
-  GraduationCap,
   Layers,
   Loader2,
   Lock,
@@ -21,18 +20,24 @@ import {
   Repeat2,
   ShieldCheck,
   Sparkles,
+  UserCircle,
   Wallet,
   XCircle,
 } from "lucide-react";
+import {
+  migrateLegacyWalletProgressToAccount,
+  saveAccountAcademyCompletion,
+} from "../lib/accountAcademyStore";
 import { assessAcademyModule } from "../lib/academyAssessmentClient";
 import {
   getAcademyProgressSummary,
-  saveAcademyModuleCompletion,
   type AcademyAnswerAssessment,
 } from "../lib/academyProgressStore";
 import { isAccessVerified, loadAccessState } from "../lib/accessStore";
 import { MAKE_WAVES_SOURCE_TAG } from "../lib/makeWaves";
 import { NFT_EDITION_REGISTRY, formatEditionSerial } from "../lib/nftEditionRegistry";
+import { getOttAccountName } from "../lib/ottAuth";
+import { useOttAuthSession } from "../lib/useOttAuthSession";
 import { useTerminalLanguage } from "../lib/useTerminalLanguage";
 
 type AcademyTabProps = {
@@ -475,9 +480,11 @@ function getErrorMessage(error: unknown, fallback: string) {
 
 export function AcademyTab({ walletAddress = "guest", onNavigate }: AcademyTabProps) {
   const { language } = useTerminalLanguage();
+  const { user, signedIn, loading: authLoading } = useOttAuthSession();
   const isEnglish = language === "en";
-  const isGuest = !isWalletAddress(walletAddress);
-  const accessUnlocked = !isGuest && isAccessVerified(loadAccessState(walletAddress));
+  const hasWallet = isWalletAddress(walletAddress);
+  const accessUnlocked = hasWallet && isAccessVerified(loadAccessState(walletAddress));
+  const accountName = getOttAccountName(user);
 
   const [view, setView] = useState<AcademyView>("hub");
   const [selectedPath, setSelectedPath] = useState<PathId | "all">("all");
@@ -487,10 +494,11 @@ export function AcademyTab({ walletAddress = "guest", onNavigate }: AcademyTabPr
   const [isAssessing, setIsAssessing] = useState(false);
   const [progressVersion, setProgressVersion] = useState(0);
   const [status, setStatus] = useState("");
+  const [migrationNote, setMigrationNote] = useState("");
 
   const progress = useMemo(
     () => getAcademyProgressSummary(walletAddress),
-    [walletAddress, progressVersion],
+    [walletAddress, progressVersion, signedIn],
   );
 
   const selectedCourse = courses.find((course) => course.id === selectedCourseId) ?? courses[0];
@@ -517,12 +525,49 @@ export function AcademyTab({ walletAddress = "guest", onNavigate }: AcademyTabPr
     };
   }, []);
 
+  useEffect(() => {
+    if (!user?.id || !hasWallet || authLoading) {
+      return;
+    }
+
+    let active = true;
+
+    void migrateLegacyWalletProgressToAccount(user.id, walletAddress)
+      .then((migrated) => {
+        if (!active) {
+          return;
+        }
+
+        if (migrated > 0) {
+          setMigrationNote(
+            isEnglish
+              ? `${migrated} verified legacy course result${migrated === 1 ? " was" : "s were"} moved to your OTT account.`
+              : `${migrated} geverifieerde oudere cursusresulta${migrated === 1 ? "at is" : "ten zijn"} naar je OTT-account verplaatst.`,
+          );
+        }
+        setProgressVersion((value) => value + 1);
+      })
+      .catch(() => {
+        if (active) {
+          setMigrationNote(
+            isEnglish
+              ? "Existing wallet progress remains safe locally and can be migrated when account storage is available."
+              : "Bestaande walletvoortgang blijft lokaal veilig en kan worden gemigreerd zodra accountopslag beschikbaar is.",
+          );
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [authLoading, hasWallet, isEnglish, user?.id, walletAddress]);
+
   function openCourse(course: Course) {
     if (course.access === "access" && !accessUnlocked) {
       setStatus(
         isEnglish
-          ? "This course is part of the Access learning library. Open Access to continue."
-          : "Deze cursus hoort bij de Access-leerbibliotheek. Open Toegang om verder te gaan.",
+          ? "This course is part of the Access learning library. Verify an OTT Access Pass to continue."
+          : "Deze cursus hoort bij de Access-leerbibliotheek. Verifieer een OTT Access Pass om verder te gaan.",
       );
       onNavigate?.("accessgate");
       return;
@@ -566,7 +611,7 @@ export function AcademyTab({ walletAddress = "guest", onNavigate }: AcademyTabPr
       const response = await assessAcademyModule({
         lessonId: selectedCourse.id,
         language,
-        walletAddress,
+        walletAddress: hasWallet ? walletAddress : "guest",
         answers,
       });
       const assessments = response.assessments ?? [];
@@ -585,40 +630,40 @@ export function AcademyTab({ walletAddress = "guest", onNavigate }: AcademyTabPr
         return;
       }
 
-      if (isGuest) {
+      if (!user?.id) {
         setStatus(
           isEnglish
-            ? "All answers passed in practice mode. Connect a supported wallet to save verified progress for now. Normal account login is being added next."
-            : "Alle antwoorden zijn geslaagd in oefenmodus. Koppel voorlopig een ondersteunde wallet om geverifieerde voortgang op te slaan. Normale accountlogin wordt als volgende toegevoegd.",
+            ? "All answers passed in practice mode. Sign in to save verified progress to your OTT account."
+            : "Alle antwoorden zijn geslaagd in oefenmodus. Log in om geverifieerde voortgang in je OTT-account op te slaan.",
         );
         return;
       }
 
-      saveAcademyModuleCompletion({
+      await saveAccountAcademyCompletion({
+        userId: user.id,
         lessonId: selectedCourse.id,
         lessonTitle: selectedCourse.title,
-        walletAddress,
         completedAt: Date.now(),
         xp: selectedCourse.xp,
         credits: selectedCourse.credits,
         overallScore: response.overallScore ?? 0,
         assessments,
-        assessmentMode: "ai",
+        sourceWallet: hasWallet ? walletAddress : undefined,
       });
 
       setProgressVersion((value) => value + 1);
       setStatus(
         isEnglish
-          ? `Course completed and saved to ${shortWallet(walletAddress)}.`
-          : `Cursus afgerond en opgeslagen bij ${shortWallet(walletAddress)}.`,
+          ? `Course completed and saved to ${accountName || "your OTT account"}.`
+          : `Cursus afgerond en opgeslagen in ${accountName || "je OTT-account"}.`,
       );
     } catch (error) {
       setStatus(
         getErrorMessage(
           error,
           isEnglish
-            ? "The AI assessment could not be completed."
-            : "De AI-beoordeling kon niet worden voltooid.",
+            ? "The AI assessment or account save could not be completed."
+            : "De AI-beoordeling of accountopslag kon niet worden voltooid.",
         ),
       );
     } finally {
@@ -640,8 +685,8 @@ export function AcademyTab({ walletAddress = "guest", onNavigate }: AcademyTabPr
               </h1>
               <p className="mt-5 max-w-2xl text-base leading-7 text-slate-600">
                 {isEnglish
-                  ? "Short course overviews, predictable lessons and AI-verified answers. Learning is available before a wallet is connected."
-                  : "Korte cursusoverzichten, voorspelbare lessen en AI-geverifieerde antwoorden. Leren kan voordat een wallet is gekoppeld."}
+                  ? "Learn without connecting a wallet. Sign in to save progress across devices. Add a wallet only for Access and on-chain certificates."
+                  : "Leer zonder een wallet te koppelen. Log in om voortgang op apparaten te bewaren. Voeg alleen een wallet toe voor Access en on-chain certificaten."}
               </p>
             </div>
 
@@ -658,13 +703,13 @@ export function AcademyTab({ walletAddress = "guest", onNavigate }: AcademyTabPr
           <div className="mt-10 grid gap-4 sm:grid-cols-3">
             <SummaryCard
               label={isEnglish ? "Course progress" : "Cursusvoortgang"}
-              value={`${progress.completedCount}/${courses.length}`}
+              value={authLoading ? "…" : `${progress.completedCount}/${courses.length}`}
               text={`${progressPercent}%`}
             />
             <SummaryCard
               label={isEnglish ? "Verified learning" : "Geverifieerd leren"}
               value={`${progress.totalXp} XP`}
-              text={isGuest ? (isEnglish ? "Practice mode" : "Oefenmodus") : shortWallet(walletAddress)}
+              text={signedIn ? accountName || user?.email || "OTT account" : (isEnglish ? "Sign in to save" : "Log in om op te slaan")}
             />
             <SummaryCard
               label={isEnglish ? "Foundation edition" : "Foundation-editie"}
@@ -675,10 +720,11 @@ export function AcademyTab({ walletAddress = "guest", onNavigate }: AcademyTabPr
         </div>
       </section>
 
-      {status && (
+      {(status || migrationNote) && (
         <div className="border-b border-blue-100 bg-blue-50">
-          <div className="mx-auto max-w-6xl px-5 py-3 text-sm text-blue-900 sm:px-8">
-            {status}
+          <div className="mx-auto max-w-6xl space-y-1 px-5 py-3 text-sm text-blue-900 sm:px-8">
+            {status && <p>{status}</p>}
+            {migrationNote && <p>{migrationNote}</p>}
           </div>
         </div>
       )}
@@ -711,6 +757,31 @@ export function AcademyTab({ walletAddress = "guest", onNavigate }: AcademyTabPr
             </div>
           </section>
 
+          {!signedIn && (
+            <section className="mt-6 flex flex-col gap-4 rounded-2xl border border-blue-100 bg-blue-50 p-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <UserCircle className="mt-0.5 shrink-0 text-blue-700" size={21} />
+                <div>
+                  <p className="font-semibold text-blue-950">
+                    {isEnglish ? "Create a free OTT account" : "Maak een gratis OTT-account"}
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-blue-900/75">
+                    {isEnglish
+                      ? "An account saves verified learning across devices. It does not control your wallet or funds."
+                      : "Een account bewaart geverifieerd leren op apparaten. Het beheert je wallet of geld niet."}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => onNavigate?.("wallet")}
+                className="shrink-0 rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800"
+              >
+                {isEnglish ? "Sign in" : "Inloggen"}
+              </button>
+            </section>
+          )}
+
           <section className="mt-14">
             <div className="max-w-2xl">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
@@ -740,6 +811,14 @@ export function AcademyTab({ walletAddress = "guest", onNavigate }: AcademyTabPr
                 </FilterButton>
               ))}
             </div>
+
+            {selectedPath !== "all" && (
+              <p className="mt-4 text-sm text-slate-500">
+                {isEnglish
+                  ? learningPaths.find((path) => path.id === selectedPath)?.descriptionEn
+                  : learningPaths.find((path) => path.id === selectedPath)?.descriptionNl}
+              </p>
+            )}
 
             <div className="mt-8 grid gap-5 lg:grid-cols-2">
               {visibleCourses.map((course) => {
@@ -882,6 +961,7 @@ export function AcademyTab({ walletAddress = "guest", onNavigate }: AcademyTabPr
                   {isEnglish ? "Course check" : "Cursuscontrole"}
                 </p>
                 <div className="mt-5 space-y-4 text-sm">
+                  <InfoRow label={isEnglish ? "Stored under" : "Opgeslagen onder"} value={signedIn ? accountName || "OTT account" : (isEnglish ? "Practice only" : "Alleen oefenen")} />
                   <InfoRow label={isEnglish ? "Answers" : "Antwoorden"} value={`3 × ${MAX_ANSWER_LENGTH}`} />
                   <InfoRow label={isEnglish ? "Pass mark" : "Slagingsgrens"} value="70% each" />
                   <InfoRow label={isEnglish ? "Reward" : "Beloning"} value={`+${selectedCourse.xp} XP`} />
@@ -911,14 +991,14 @@ export function AcademyTab({ walletAddress = "guest", onNavigate }: AcademyTabPr
                       : (isEnglish ? "Check my answers" : "Controleer mijn antwoorden")}
                 </button>
 
-                {isGuest && (
+                {!signedIn && (
                   <button
                     type="button"
-                    onClick={() => onNavigate?.("xaman")}
+                    onClick={() => onNavigate?.("wallet")}
                     className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                   >
-                    <Wallet size={17} />
-                    {isEnglish ? "Connect wallet" : "Wallet koppelen"}
+                    <UserCircle size={17} />
+                    {isEnglish ? "Sign in to save" : "Log in om op te slaan"}
                   </button>
                 )}
 
@@ -977,8 +1057,8 @@ export function AcademyTab({ walletAddress = "guest", onNavigate }: AcademyTabPr
                 <div className="mt-6 space-y-4">
                   <Requirement done={progress.completedCount === courses.length} text={isEnglish ? `Complete all ${courses.length} Academy courses` : `Rond alle ${courses.length} Academy-cursussen af`} />
                   <Requirement done={false} text={isEnglish ? "Pass the randomized Foundation final assessment" : "Slaag voor de willekeurige Foundation-eindtoets"} />
-                  <Requirement done={!isGuest} text={isEnglish ? "Use a verified OTT profile" : "Gebruik een geverifieerd OTT-profiel"} />
-                  <Requirement done={false} text={isEnglish ? "Connect and prove ownership of the receiving wallet" : "Koppel en bewijs eigendom van de ontvangende wallet"} />
+                  <Requirement done={signedIn} text={isEnglish ? "Use a verified OTT account" : "Gebruik een geverifieerd OTT-account"} />
+                  <Requirement done={hasWallet} text={isEnglish ? "Connect and prove ownership of the receiving wallet" : "Koppel en bewijs eigendom van de ontvangende wallet"} />
                   <Requirement done={false} text={isEnglish ? "Confirm the optional mint or delivery action" : "Bevestig de optionele mint- of leveringsactie"} />
                 </div>
 
@@ -1013,6 +1093,12 @@ export function AcademyTab({ walletAddress = "guest", onNavigate }: AcademyTabPr
                   {isEnglish ? "Reserved · not mintable yet" : "Gereserveerd · nog niet mintbaar"}
                 </p>
               </div>
+              {hasWallet && (
+                <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-5">
+                  <p className="text-xs text-slate-400">{isEnglish ? "Receiving wallet" : "Ontvangende wallet"}</p>
+                  <p className="mt-2 font-mono text-xs text-slate-200">{shortWallet(walletAddress)}</p>
+                </div>
+              )}
             </aside>
           </div>
         </main>
@@ -1070,7 +1156,7 @@ function SummaryCard({ label, value, text }: { label: string; value: string; tex
     <div className="rounded-2xl border border-slate-200 p-5">
       <p className="text-xs font-medium text-slate-500">{label}</p>
       <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
-      <p className="mt-2 text-xs text-slate-500">{text}</p>
+      <p className="mt-2 truncate text-xs text-slate-500">{text}</p>
     </div>
   );
 }
