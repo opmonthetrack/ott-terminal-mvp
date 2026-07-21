@@ -40,6 +40,7 @@ import {
   type XrplIntelItem,
   type XrplIntelResponse,
 } from "../lib/newsClient";
+import { useTerminalLanguage } from "../lib/useTerminalLanguage";
 
 type OutputMode =
   | "x"
@@ -80,110 +81,53 @@ const TERMINAL_URL = "https://ott-terminal-mvp.vercel.app";
 const BRAND_LINE = "Built by TruthOnTheTrack · XRPL OnTheTrack Terminal";
 const ATTRIBUTION = `Powered by XRPL OnTheTrack Terminal\nSourceTag ${SOURCE_TAG}\nBuilt by TruthOnTheTrack\n${TERMINAL_URL}`;
 
-const outputOptions: OutputOption[] = [
-  {
-    id: "x",
-    title: "X Post",
-    status: "Share",
-    icon: Newspaper,
-    text: "Korte post met cashtags, hashtags, bron en verified mention suggestions.",
-  },
-  {
-    id: "linkedin",
-    title: "LinkedIn",
-    status: "Share",
-    icon: Linkedin,
-    text: "Professionele caption met 3-5 tags en business/compliance angle.",
-  },
-  {
-    id: "instagram",
-    title: "Instagram",
-    status: "Copy",
-    icon: Sparkles,
-    text: "Caption voor carousel/reel met discovery hashtags onderaan.",
-  },
-  {
-    id: "facebook",
-    title: "Facebook",
-    status: "Share",
-    icon: MessageCircle,
-    text: "Community post met uitleg, bronlink en toegankelijke hashtags.",
-  },
-  {
-    id: "medium",
-    title: "Medium Article",
-    status: "Article",
-    icon: FileText,
-    text: "Artikel-outline met source links, topics en veilige uitleg.",
-  },
-  {
-    id: "tiktok",
-    title: "TikTok Hook",
-    status: "Upload",
-    icon: Video,
-    text: "Sterke video hook + talking points + FYP topic hashtags.",
-  },
-  {
-    id: "whatsapp",
-    title: "WhatsApp Status",
-    status: "Send",
-    icon: Send,
-    text: "Compacte community update zonder tag-spam.",
-  },
-  {
-    id: "youtube",
-    title: "YouTube Bullets",
-    status: "Studio",
-    icon: BookOpen,
-    text: "Video/Shorts outline met description hashtags en chapters.",
-  },
-];
+function getOutputOptions(isEnglish: boolean): OutputOption[] {
+  return [
+    { id: "x", title: "X Post", status: isEnglish ? "Share" : "Delen", icon: Newspaper, text: isEnglish ? "A concise post with cashtags, hashtags, a source and verified mention suggestions." : "Een korte post met cashtags, hashtags, een bron en gecontroleerde vermeldingssuggesties." },
+    { id: "linkedin", title: "LinkedIn", status: isEnglish ? "Share" : "Delen", icon: Linkedin, text: isEnglish ? "A professional caption with 3–5 tags and a business or compliance angle." : "Een professionele tekst met 3–5 tags en een zakelijke of compliance-invalshoek." },
+    { id: "instagram", title: "Instagram", status: isEnglish ? "Copy" : "Kopiëren", icon: Sparkles, text: isEnglish ? "A carousel or reel caption with discovery hashtags at the bottom." : "Een tekst voor een carrousel of reel met ontdek-hashtags onderaan." },
+    { id: "facebook", title: "Facebook", status: isEnglish ? "Share" : "Delen", icon: MessageCircle, text: isEnglish ? "A community post with an explanation, source link and accessible hashtags." : "Een communitybericht met uitleg, bronlink en toegankelijke hashtags." },
+    { id: "medium", title: "Medium Article", status: isEnglish ? "Article" : "Artikel", icon: FileText, text: isEnglish ? "An article outline with source links, topics and careful explanations." : "Een artikelopzet met bronlinks, onderwerpen en zorgvuldige uitleg." },
+    { id: "tiktok", title: "TikTok Hook", status: "Upload", icon: Video, text: isEnglish ? "A strong video hook, talking points and topic hashtags." : "Een sterke video-opening, gesprekspunten en onderwerp-hashtags." },
+    { id: "whatsapp", title: "WhatsApp Status", status: isEnglish ? "Send" : "Verzenden", icon: Send, text: isEnglish ? "A compact community update without tag spam." : "Een compacte community-update zonder tagspam." },
+    { id: "youtube", title: "YouTube Bullets", status: "Studio", icon: BookOpen, text: isEnglish ? "A video or Shorts outline with description hashtags and chapters." : "Een opzet voor video of Shorts met hashtags in de beschrijving en hoofdstukken." },
+  ];
+}
 
-const rules: Rule[] = [
-  {
-    title: "Source First",
-    status: "Rule",
-    text: "Elke output noemt bron, datum en context. Geen losse claims zonder herleidbare bron.",
-    icon: FileSearch,
-  },
-  {
-    title: "Playbook Tags",
-    status: "Data",
-    text: "Hashtags, cashtags en mentions komen uit src/data/socialTagPlaybook.ts per platform en context.",
-    icon: Target,
-  },
-  {
-    title: "Verify Mentions",
-    status: "Safe",
-    text: "@ handles zijn suggesties. De app markeert ze als verify-before-posting om spam en fouten te voorkomen.",
-    icon: ShieldCheck,
-  },
-  {
-    title: "No Hype",
-    status: "Guard",
-    text: "Meer bereik mag, maar geen prijsvoorspellingen, koopadvies of winstbelofte.",
-    icon: AlertTriangle,
-  },
-];
+function getRules(isEnglish: boolean): Rule[] {
+  return [
+    { title: isEnglish ? "Source First" : "Bron eerst", status: isEnglish ? "Rule" : "Regel", text: isEnglish ? "Every output includes a source, date and context. No unsupported claims without a traceable source." : "Elke uitvoer bevat een bron, datum en context. Geen losse claims zonder herleidbare bron.", icon: FileSearch },
+    { title: isEnglish ? "Playbook Tags" : "Tags uit het draaiboek", status: "Data", text: isEnglish ? "Hashtags, cashtags and mentions come from the social tag playbook for each platform and context." : "Hashtags, cashtags en vermeldingen komen uit het socialmediataalboek per platform en context.", icon: Target },
+    { title: isEnglish ? "Verify Mentions" : "Controleer vermeldingen", status: isEnglish ? "Safe" : "Veilig", text: isEnglish ? "Account handles are suggestions and must be verified before posting to prevent spam and mistakes." : "Accounthandles zijn suggesties en moeten vóór publicatie worden gecontroleerd om spam en fouten te voorkomen.", icon: ShieldCheck },
+    { title: isEnglish ? "No Hype" : "Geen hype", status: isEnglish ? "Guard" : "Beveiliging", text: isEnglish ? "Reach is welcome, but price predictions, buy advice and profit promises are not." : "Meer bereik is welkom, maar prijsvoorspellingen, koopadvies en winstbeloften niet.", icon: AlertTriangle },
+  ];
+}
 
-const emptyItem: XrplIntelItem = {
-  title: "No intelligence selected",
-  link: "#",
-  pubDate: new Date().toISOString(),
-  source: "OTT Terminal",
-  sourceType: "fallback",
-  category: "XRPL Intelligence",
-  bucket: "XRPL Intelligence",
-  tags: [],
-  signalType: "ecosystem-signal",
-  officialSource: false,
-  needsConfirmation: true,
-  confidenceScore: 50,
-  whyItMatters: "Load the intelligence feed and select an item.",
-  description: "Waiting for live intelligence data.",
-};
+function getEmptyItem(isEnglish: boolean): XrplIntelItem {
+  return {
+    title: isEnglish ? "No intelligence selected" : "Geen intelligence geselecteerd",
+    link: "#",
+    pubDate: new Date().toISOString(),
+    source: "OTT Terminal",
+    sourceType: "fallback",
+    category: "XRPL Intelligence",
+    bucket: "XRPL Intelligence",
+    tags: [],
+    signalType: "ecosystem-signal",
+    officialSource: false,
+    needsConfirmation: true,
+    confidenceScore: 50,
+    whyItMatters: isEnglish ? "Load the intelligence feed and select an item." : "Laad de intelligence-feed en selecteer een item.",
+    description: isEnglish ? "Waiting for live intelligence data." : "Wachten op live intelligence-data.",
+  };
+}
 
 export function NewsTab() {
+  const { language } = useTerminalLanguage();
+  const isEnglish = language === "en";
+  const outputOptions = getOutputOptions(isEnglish);
+  const rules = getRules(isEnglish);
+  const emptyItem = getEmptyItem(isEnglish);
   const [data, setData] = useState<XrplIntelResponse | null>(null);
   const [items, setItems] = useState<XrplIntelItem[]>([]);
   const [selectedItem, setSelectedItem] = useState<XrplIntelItem>(emptyItem);
@@ -211,7 +155,9 @@ export function NewsTab() {
       setError(
         loadError instanceof Error
           ? loadError.message
-          : "XRPL Intelligence feed kon niet worden geladen.",
+          : isEnglish
+            ? "The XRPL Intelligence feed could not be loaded."
+            : "De XRPL Intelligence-feed kon niet worden geladen.",
       );
     } finally {
       setLoading(false);
@@ -229,13 +175,13 @@ export function NewsTab() {
     outputOptions.find((option) => option.id === selectedOutput) ?? outputOptions[0];
 
   const tagStrategy = useMemo(
-    () => buildTagStrategy(selectedItem, selectedOutput),
-    [selectedItem, selectedOutput],
+    () => buildTagStrategy(selectedItem, selectedOutput, isEnglish),
+    [selectedItem, selectedOutput, isEnglish],
   );
 
   const generatedOutput = useMemo(
-    () => buildSocialOutput(selectedItem, selectedOutput),
-    [selectedItem, selectedOutput],
+    () => buildSocialOutput(selectedItem, selectedOutput, isEnglish),
+    [selectedItem, selectedOutput, isEnglish],
   );
 
   async function copyOutput() {
@@ -244,7 +190,7 @@ export function NewsTab() {
       setCopied(`copy-${selectedOutput}`);
       window.setTimeout(() => setCopied(""), 1800);
     } catch {
-      setError("Copy failed. Select the text manually and copy it.");
+      setError(isEnglish ? "Copy failed. Select the text manually and copy it." : "Kopiëren is mislukt. Selecteer de tekst en kopieer deze handmatig.");
     }
   }
 
@@ -254,7 +200,7 @@ export function NewsTab() {
 
   function openSource() {
     if (!selectedItem.link || selectedItem.link === "#") {
-      setError("No source link available for this item.");
+      setError(isEnglish ? "No source link is available for this item." : "Voor dit item is geen bronlink beschikbaar.");
       return;
     }
 
@@ -277,24 +223,24 @@ export function NewsTab() {
                 <Radio size={17} />
 
                 <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
-                  Public Social Newsroom
+                  {isEnglish ? "Public Social Newsroom" : "Publieke Sociale Newsroom"}
                 </p>
               </div>
 
               <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
-                Turn Intel Into Reach
+                {isEnglish ? "Turn Intel Into Reach" : "Maak Bereik Van Intelligence"}
               </h2>
 
               <p className="font-mono text-sm text-black/55 max-w-3xl leading-relaxed">
-                Zet XRPL Intelligence om naar posts, captions, video hooks en article
-                outlines. Tags komen nu uit het social tag playbook: per platform, per
-                onderwerp en met verify-before-posting voor mentions.
+                {isEnglish
+                  ? "Turn XRPL Intelligence into posts, captions, video hooks and article outlines. Tags come from the social tag playbook by platform and topic, with verify-before-posting guidance for mentions."
+                  : "Zet XRPL Intelligence om in berichten, teksten, video-openingen en artikelopzetten. Tags komen uit het socialmediataalboek per platform en onderwerp, met controle vóór publicatie voor vermeldingen."}
               </p>
 
               <div className="flex flex-wrap gap-3 mt-5">
                 <ActionButton
                   icon={RefreshCcw}
-                  label={refreshing ? "Refreshing" : "Refresh Newsroom"}
+                  label={refreshing ? (isEnglish ? "Refreshing" : "Verversen") : (isEnglish ? "Refresh Newsroom" : "Newsroom verversen")}
                   onClick={() => void loadNews("refresh")}
                   disabled={loading || refreshing}
                   gradient
@@ -303,27 +249,27 @@ export function NewsTab() {
 
                 <ActionButton
                   icon={Clipboard}
-                  label={copied ? "Copied" : "Copy Output"}
+                  label={copied ? (isEnglish ? "Copied" : "Gekopieerd") : (isEnglish ? "Copy Output" : "Uitvoer kopiëren")}
                   onClick={copyOutput}
                 />
 
                 <ActionButton
                   icon={ExternalLink}
-                  label="Open Source"
+                  label={isEnglish ? "Open Source" : "Open bron"}
                   onClick={openSource}
                 />
 
                 <ActionButton
                   icon={ArrowUpRight}
-                  label={`Open ${selectedOutputOption.title}`}
+                  label={`${isEnglish ? "Open" : "Open"} ${selectedOutputOption.title}`}
                   onClick={openPlatformAction}
                 />
               </div>
             </div>
 
             <div className="col-span-12 xl:col-span-4 grid grid-cols-2 gap-3">
-              <StatBox icon={Newspaper} label="Items" value={loading ? "..." : String(items.length)} />
-              <StatBox icon={Bell} label="Fallback" value={data?.fallback ? "Yes" : "No"} />
+              <StatBox icon={Newspaper} label={isEnglish ? "Items" : "Items"} value={loading ? "..." : String(items.length)} />
+              <StatBox icon={Bell} label={isEnglish ? "Fallback" : "Terugval"} value={data?.fallback ? (isEnglish ? "Yes" : "Ja") : (isEnglish ? "No" : "Nee")} />
               <StatBox icon={Target} label="SourceTag" value={String(data?.sourceTag ?? SOURCE_TAG)} />
               <StatBox icon={Sparkles} label="Tags" value={tagStrategy.platformLabel} />
             </div>
@@ -344,7 +290,7 @@ export function NewsTab() {
 
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-12 xl:col-span-3 space-y-4">
-            <Panel title="Output Modes" icon={Zap}>
+            <Panel title={isEnglish ? "Output Modes" : "Uitvoermodi"} icon={Zap}>
               <div className="space-y-3">
                 {outputOptions.map((option) => (
                   <OutputButton
@@ -357,7 +303,7 @@ export function NewsTab() {
               </div>
             </Panel>
 
-            <Panel title="Top Buckets" icon={Search}>
+            <Panel title={isEnglish ? "Top Buckets" : "Belangrijkste categorieën"} icon={Search}>
               <div className="space-y-3">
                 {buckets.map((bucket) => (
                   <div
@@ -378,13 +324,13 @@ export function NewsTab() {
           </div>
 
           <div className="col-span-12 xl:col-span-5 space-y-4">
-            <Panel title="Live Intelligence Queue" icon={FileSearch}>
+            <Panel title={isEnglish ? "Live Intelligence Queue" : "Live intelligence-wachtrij"} icon={FileSearch}>
               {loading ? (
                 <div className="border border-black/10 bg-[#F7F8FC] p-5">
                   <Loader2 size={18} className="text-[#3898E8] animate-spin mb-4" />
 
                   <p className="font-mono text-xs text-black/45">
-                    Loading /api/news intelligence...
+                    {isEnglish ? "Loading /api/news intelligence..." : "Intelligence van /api/news laden..."}
                   </p>
                 </div>
               ) : (
@@ -401,12 +347,12 @@ export function NewsTab() {
               )}
             </Panel>
 
-            <Panel title="Selected Source" icon={BookOpen}>
+            <Panel title={isEnglish ? "Selected Source" : "Geselecteerde bron"} icon={BookOpen}>
               <div className="flex flex-wrap gap-2 mb-4">
                 <Badge label={selectedItem.bucket} />
                 <Badge label={getSourceTypeLabel(selectedItem.sourceType)} />
                 <Badge label={`${selectedItem.confidenceScore}% ${getConfidenceLabel(selectedItem.confidenceScore)}`} />
-                {selectedItem.needsConfirmation && <Badge label="Needs review" tone="warn" />}
+                {selectedItem.needsConfirmation && <Badge label={isEnglish ? "Needs review" : "Controle nodig"} tone="warn" />}
               </div>
 
               <h3 className="font-orbitron text-2xl font-black uppercase mb-3 leading-tight">
@@ -422,14 +368,14 @@ export function NewsTab() {
               </p>
 
               <div className="flex flex-wrap gap-3 mb-4">
-                <ActionButton icon={ExternalLink} label="Open Original Source" onClick={openSource} />
-                <ActionButton icon={Clipboard} label="Copy Draft" onClick={copyOutput} />
-                <ActionButton icon={ArrowUpRight} label="Open Platform" onClick={openPlatformAction} />
+                <ActionButton icon={ExternalLink} label={isEnglish ? "Open Original Source" : "Open oorspronkelijke bron"} onClick={openSource} />
+                <ActionButton icon={Clipboard} label={isEnglish ? "Copy Draft" : "Concept kopiëren"} onClick={copyOutput} />
+                <ActionButton icon={ArrowUpRight} label={isEnglish ? "Open Platform" : "Open platform"} onClick={openPlatformAction} />
               </div>
 
               <div className="border border-black/10 bg-[#F7F8FC] p-4">
                 <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
-                  Why it matters
+                  {isEnglish ? "Why it matters" : "Waarom dit belangrijk is"}
                 </p>
 
                 <p className="font-mono text-xs text-black/55 leading-relaxed">
@@ -440,7 +386,7 @@ export function NewsTab() {
           </div>
 
           <div className="col-span-12 xl:col-span-4 space-y-4">
-            <Panel title={`${selectedOutputOption.title} Draft`} icon={selectedOutputOption.icon}>
+            <Panel title={`${selectedOutputOption.title} ${isEnglish ? "Draft" : "Concept"}`} icon={selectedOutputOption.icon}>
               <div className="border border-black/10 bg-[#F7F8FC] p-5 min-h-[360px]">
                 <pre className="font-mono text-xs text-black/65 whitespace-pre-wrap leading-relaxed">
                   {generatedOutput}
@@ -448,23 +394,23 @@ export function NewsTab() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
-                <ActionButton icon={Clipboard} label="Copy" onClick={copyOutput} />
-                <ActionButton icon={ArrowUpRight} label="Open Platform" onClick={openPlatformAction} />
-                <ActionButton icon={ExternalLink} label="Open Source" onClick={openSource} />
+                <ActionButton icon={Clipboard} label={isEnglish ? "Copy" : "Kopiëren"} onClick={copyOutput} />
+                <ActionButton icon={ArrowUpRight} label={isEnglish ? "Open Platform" : "Open platform"} onClick={openPlatformAction} />
+                <ActionButton icon={ExternalLink} label={isEnglish ? "Open Source" : "Open bron"} onClick={openSource} />
               </div>
             </Panel>
 
-            <Panel title="Tag Strategy" icon={Globe2}>
+            <Panel title={isEnglish ? "Tag Strategy" : "Tagstrategie"} icon={Globe2}>
               <div className="space-y-3">
-                <TagInfo label="Platform" value={tagStrategy.platformLabel} />
-                <TagInfo label="Contexts" value={tagStrategy.contexts.join(", ")} />
-                <TagInfo label="Placement" value={tagStrategy.placement} />
-                <TagInfo label="Mentions" value={tagStrategy.mentions || "No mentions for this mode"} warn />
-                <TagInfo label="Hashtags" value={tagStrategy.hashtags || "No hashtags"} />
+                <TagInfo label={isEnglish ? "Platform" : "Platform"} value={tagStrategy.platformLabel} />
+                <TagInfo label={isEnglish ? "Contexts" : "Contexten"} value={tagStrategy.contexts.join(", ")} />
+                <TagInfo label={isEnglish ? "Placement" : "Plaatsing"} value={tagStrategy.placement} />
+                <TagInfo label={isEnglish ? "Mentions" : "Vermeldingen"} value={tagStrategy.mentions || (isEnglish ? "No mentions for this mode" : "Geen vermeldingen voor deze modus")} warn />
+                <TagInfo label="Hashtags" value={tagStrategy.hashtags || (isEnglish ? "No hashtags" : "Geen hashtags")} />
               </div>
             </Panel>
 
-            <Panel title="Publishing Rules" icon={ShieldCheck}>
+            <Panel title={isEnglish ? "Publishing Rules" : "Publicatieregels"} icon={ShieldCheck}>
               <div className="space-y-3">
                 {rules.map((rule) => (
                   <RuleCard key={rule.title} rule={rule} />
@@ -474,10 +420,10 @@ export function NewsTab() {
           </div>
 
           <div className="col-span-12 grid grid-cols-1 md:grid-cols-4 gap-4">
-            <FeatureBox icon={Newspaper} title="Share Buttons" text="X, LinkedIn, Facebook, WhatsApp" />
-            <FeatureBox icon={FileText} title="Playbook Data" text="Platform hashtags + mentions" />
-            <FeatureBox icon={Video} title="Video Mode" text="TikTok and YouTube workflows" />
-            <FeatureBox icon={Globe2} title="Public Attribution" text="OTT + TruthOnTheTrack visible" />
+            <FeatureBox icon={Newspaper} title={isEnglish ? "Share Buttons" : "Deelknoppen"} text="X, LinkedIn, Facebook, WhatsApp" />
+            <FeatureBox icon={FileText} title={isEnglish ? "Playbook Data" : "Draaiboekdata"} text={isEnglish ? "Platform hashtags + mentions" : "Platformhashtags + vermeldingen"} />
+            <FeatureBox icon={Video} title={isEnglish ? "Video Mode" : "Videomodus"} text={isEnglish ? "TikTok and YouTube workflows" : "TikTok- en YouTube-workflows"} />
+            <FeatureBox icon={Globe2} title={isEnglish ? "Public Attribution" : "Openbare naamsvermelding"} text={isEnglish ? "OTT + TruthOnTheTrack visible" : "OTT + TruthOnTheTrack zichtbaar"} />
           </div>
         </div>
       </div>
@@ -485,16 +431,206 @@ export function NewsTab() {
   );
 }
 
-function buildSocialOutput(item: XrplIntelItem, mode: OutputMode) {
+function buildSocialOutput(item: XrplIntelItem, mode: OutputMode, isEnglish: boolean) {
   const date = formatIntelDate(item.pubDate);
-  const sourceLine = `Source: ${item.source} (${getSourceTypeLabel(item.sourceType)})`;
+  const sourceLine = `${isEnglish ? "Source" : "Bron"}: ${item.source} (${getSourceTypeLabel(item.sourceType)})`;
   const safetyLine = item.needsConfirmation
-    ? "⚠️ Needs confirmation before publishing."
-    : "✅ Source-weighted signal. Still review before publishing.";
+    ? isEnglish ? "⚠️ Needs confirmation before publishing." : "⚠️ Bevestiging nodig vóór publicatie."
+    : isEnglish ? "✅ Source-weighted signal. Still review before publishing." : "✅ Op bron gewogen signaal. Controleer het alsnog vóór publicatie.";
   const sourceUrl = item.link && item.link !== "#" ? item.link : TERMINAL_URL;
-  const strategy = buildTagStrategy(item, mode);
+  const strategy = buildTagStrategy(item, mode, isEnglish);
   const hashtags = strategy.hashtags;
   const mentions = strategy.mentions;
+
+  if (!isEnglish) {
+    if (mode === "linkedin") {
+      return `🔎 XRPL Intelligence-notitie
+
+${item.title}
+
+Waarom dit belangrijk is:
+${item.whyItMatters}
+
+Context voor bouwers:
+${item.description}
+
+${sourceLine}
+Datum: ${date}
+Betrouwbaarheid: ${item.confidenceScore}%
+
+${safetyLine}
+
+Vraag voor bouwers:
+Wat zou jij controleren voordat je dit omzet in productstrategie?
+
+${BRAND_LINE}
+${TERMINAL_URL}
+
+Voorgestelde accounts om vóór publicatie te controleren: ${mentions}
+
+${hashtags}`;
+    }
+    if (mode === "instagram") {
+      return `🚨 XRPL Intelligence-update
+
+${item.title}
+
+🧠 Waarom dit belangrijk is:
+${item.whyItMatters}
+
+🔍 Context:
+${item.description}
+
+📌 Bewaar dit. Controleer de bron. Volg de infrastructuur, niet de hype.
+
+${sourceLine}
+📅 ${date}
+
+${BRAND_LINE}
+SourceTag ${SOURCE_TAG}
+${TERMINAL_URL}
+
+Voorgestelde accounts om vóór publicatie te controleren: ${mentions}
+
+${hashtags}`;
+    }
+    if (mode === "facebook") {
+      return `📡 XRPL Intelligence-update
+
+${item.title}
+
+${item.whyItMatters}
+
+Wat je moet controleren:
+1️⃣ Lees de bron
+2️⃣ Scheid feiten van hype
+3️⃣ Let op het infrastructuursignaal
+
+${sourceLine}
+Datum: ${date}
+
+Alleen educatie. Geen hype en geen handelssignaal.
+
+${BRAND_LINE}
+${TERMINAL_URL}
+
+Voorgestelde accounts om vóór publicatie te controleren: ${mentions}
+
+${hashtags}`;
+    }
+    if (mode === "medium") {
+      return `# ${item.title}
+
+## Korte samenvatting
+${item.description}
+
+## Waarom dit belangrijk is
+${item.whyItMatters}
+
+## Broncontext
+- ${sourceLine}
+- Datum: ${date}
+- Categorie: ${item.bucket}
+- Betrouwbaarheid: ${item.confidenceScore}%
+- Bron-URL: ${sourceUrl}
+
+## Waar bouwers op moeten letten
+- Impact op protocol of infrastructuur
+- Context rond adoptie in het ecosysteem
+- Wat nog moet worden gecontroleerd
+- Of dit officiële, technische of macrocontext is
+
+## Veiligheidsnotitie
+Dit artikel is alleen voor educatie. Het is geen financieel advies, geen handelssignaal en geen claim van gegarandeerde adoptie.
+
+## Over OTT
+${ATTRIBUTION}
+
+Medium-onderwerpen/tags:
+${hashtags.replaceAll("#", "")}`;
+    }
+    if (mode === "tiktok") {
+      return `🎬 OPENING:
+De meeste mensen volgen cryptokoppen. Bouwers volgen infrastructuursignalen.
+
+ONDERWERP:
+${item.title}
+
+GESPREKSPUNTEN:
+1️⃣ Wat gebeurde er: ${item.description}
+2️⃣ Waarom dit belangrijk is: ${item.whyItMatters}
+3️⃣ Veiligheid: ${safetyLine}
+
+OPROEP:
+Volg de bron. Leer de infrastructuur. Blijf 589 stappen voor.
+
+Tekst:
+${item.title} ⚡ XRPL Intelligence met de bron voorop. Alleen educatie.
+
+${BRAND_LINE}
+${hashtags}`;
+    }
+    if (mode === "whatsapp") {
+      return `📡 XRPL Intelligence-update
+
+${item.title}
+
+${item.whyItMatters}
+
+${sourceLine}
+${date}
+
+Alleen educatie. Geen hype en geen handelssignaal.
+
+${BRAND_LINE}
+${TERMINAL_URL}`;
+    }
+    if (mode === "youtube") {
+      return `YouTube / Shorts-opzet
+
+🎥 Titelidee:
+${item.title}
+
+Openingszin:
+Dit is geen prijssignaal. Dit is een infrastructuursignaal.
+
+Videopunten:
+- Bron: ${item.source}
+- Datum: ${date}
+- Categorie: ${item.bucket}
+- Betrouwbaarheid: ${item.confidenceScore}%
+- Wat gebeurde er: ${item.description}
+- Waarom dit belangrijk is: ${item.whyItMatters}
+- Veiligheidsnotitie: ${safetyLine}
+
+Beschrijving:
+XRPL Intelligence met de bron voorop vanuit XRPL OnTheTrack Terminal.
+${sourceUrl}
+
+${ATTRIBUTION}
+
+Voorgestelde accounts om vóór publicatie te controleren: ${mentions}
+
+${hashtags}`;
+    }
+    return `🚨 XRPL Intelligence
+
+${item.title}
+
+${item.whyItMatters}
+
+${sourceLine}
+Betrouwbaarheid: ${item.confidenceScore}%
+
+${safetyLine}
+
+${BRAND_LINE}
+${TERMINAL_URL}
+
+Voorgestelde accounts om te controleren: ${mentions}
+
+${hashtags}`;
+  }
 
   if (mode === "linkedin") {
     return `🔎 XRPL Intelligence Note\n\n${item.title}\n\nWhy this matters:\n${item.whyItMatters}\n\nBuilder context:\n${item.description}\n\n${sourceLine}\nDate: ${date}\nConfidence: ${item.confidenceScore}%\n\n${safetyLine}\n\nQuestion for builders:\nWhat would you verify before turning this into product strategy?\n\n${BRAND_LINE}\n${TERMINAL_URL}\n\nSuggested tags to verify before posting: ${mentions}\n\n${hashtags}`;
@@ -527,7 +663,7 @@ function buildSocialOutput(item: XrplIntelItem, mode: OutputMode) {
   return `🚨 XRPL Intel\n\n${item.title}\n\n${item.whyItMatters}\n\n${sourceLine}\nConfidence: ${item.confidenceScore}%\n\n${safetyLine}\n\n${BRAND_LINE}\n${TERMINAL_URL}\n\nSuggested tags to verify: ${mentions}\n\n${hashtags}`;
 }
 
-function buildTagStrategy(item: XrplIntelItem, mode: OutputMode): TagStrategy {
+function buildTagStrategy(item: XrplIntelItem, mode: OutputMode, isEnglish = true): TagStrategy {
   const platform = getSocialPlatform(mode);
   const contexts = detectTagContexts(item);
 
@@ -537,8 +673,8 @@ function buildTagStrategy(item: XrplIntelItem, mode: OutputMode): TagStrategy {
       hashtags: "",
       mentions: "",
       contexts,
-      ruleText: "No hashtag strategy for WhatsApp status.",
-      placement: "Keep WhatsApp clean: source, summary, link.",
+      ruleText: isEnglish ? "No hashtag strategy for WhatsApp status." : "Geen hashtagstrategie voor WhatsApp Status.",
+      placement: isEnglish ? "Keep WhatsApp clean: source, summary, link." : "Houd WhatsApp rustig: bron, samenvatting en link.",
     };
   }
 
@@ -567,8 +703,12 @@ function buildTagStrategy(item: XrplIntelItem, mode: OutputMode): TagStrategy {
     hashtags: hashtags.join(" "),
     mentions: uniqueStrings(handles).join(" "),
     contexts,
-    ruleText: rule?.mentionPolicy ?? "Use mentions only when directly relevant.",
-    placement: rule?.placement ?? "Place tags at the bottom after source context.",
+    ruleText: isEnglish
+      ? rule?.mentionPolicy ?? "Use mentions only when directly relevant."
+      : "Gebruik vermeldingen alleen wanneer ze direct relevant zijn en controleer de handle vóór publicatie.",
+    placement: isEnglish
+      ? rule?.placement ?? "Place tags at the bottom after source context."
+      : "Plaats tags onderaan, na de broncontext.",
   };
 }
 
