@@ -7,6 +7,12 @@ on:
     paths:
       - scripts/apply-full-language-files.mjs
       - .github/workflows/apply-full-language-files.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - scripts/apply-full-language-files.mjs
+      - .github/workflows/apply-full-language-files.yml
   workflow_dispatch:
 
 permissions:
