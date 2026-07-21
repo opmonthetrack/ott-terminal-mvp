@@ -464,6 +464,7 @@ function MainApp() {
       <MobileHeader
         activeItem={activeItem}
         walletAddress={walletAddress}
+        language={language}
         onOpenMenu={() => setIsMobileMenuOpen(true)}
       />
 
@@ -604,10 +605,12 @@ function DesktopSidebar({
 function MobileHeader({
   activeItem,
   walletAddress,
+  language,
   onOpenMenu,
 }: {
   activeItem: MenuItem;
   walletAddress: string;
+  language: TerminalLanguage;
   onOpenMenu: () => void;
 }) {
   return (
@@ -616,14 +619,20 @@ function MobileHeader({
         <button
           onClick={onOpenMenu}
           className="w-11 h-11 border border-black/10 bg-[#F7F8FC] flex items-center justify-center text-black"
-          aria-label="Open menu"
+          aria-label={language === "en" ? "Open menu" : "Open menu"}
         >
           <Menu size={20} />
         </button>
 
         <div className="flex-1 min-w-0">
           <p className="font-mono text-[9px] text-black/35 uppercase tracking-[0.25em] truncate">
-            {walletAddress === "guest" ? "Guest / " : "Connected / "}
+            {walletAddress === "guest"
+              ? language === "en"
+                ? "Guest / "
+                : "Gast / "
+              : language === "en"
+                ? "Connected / "
+                : "Verbonden / "}
             XRPL Terminal
           </p>
           <h1 className="font-orbitron text-sm font-black uppercase tracking-widest truncate text-black">
@@ -671,7 +680,7 @@ function MobileMenu({
           <button
             onClick={onClose}
             className="w-11 h-11 border border-black/10 bg-[#F7F8FC] flex items-center justify-center"
-            aria-label="Close menu"
+            aria-label={language === "en" ? "Close menu" : "Sluit menu"}
           >
             <X size={20} />
           </button>
@@ -800,24 +809,24 @@ function SidebarFooter({
       <div className="bg-[#F7F8FC] border border-black/10 rounded-lg p-1 flex relative">
         <div
           className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] rounded shadow transition-all duration-300 ${
-            language === "nl" ? "left-1" : "left-[calc(50%+2px)]"
+            language === "en" ? "left-1" : "left-[calc(50%+2px)]"
           }`}
         />
-        <button
-          onClick={() => setLanguage("nl")}
-          className={`flex-1 relative z-10 text-[10px] font-bold uppercase tracking-widest py-2 rounded transition-colors ${
-            language === "nl" ? "text-white" : "text-black/40 hover:text-black"
-          }`}
-        >
-          NL
-        </button>
         <button
           onClick={() => setLanguage("en")}
           className={`flex-1 relative z-10 text-[10px] font-bold uppercase tracking-widest py-2 rounded transition-colors ${
             language === "en" ? "text-white" : "text-black/40 hover:text-black"
           }`}
         >
-          EN
+          ENGLISH
+        </button>
+        <button
+          onClick={() => setLanguage("nl")}
+          className={`flex-1 relative z-10 text-[10px] font-bold uppercase tracking-widest py-2 rounded transition-colors ${
+            language === "nl" ? "text-white" : "text-black/40 hover:text-black"
+          }`}
+        >
+          NEDERLANDS
         </button>
       </div>
       <button
