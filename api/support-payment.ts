@@ -1,8 +1,12 @@
 // api/support-payment.ts is a standalone Vercel serverless route for voluntary OTT support payments.
-// It does not mint NFTs, unlock access, create token rights, or modify the core Xaman/API flow.
+// It creates Xaman payloads and reads public XRPL transactions for the live support counter.
 
 const MAKE_WAVES_SOURCE_TAG = 2606170002;
 const XAMAN_API_URL = "https://xumm.app/api/v1/platform/payload";
+const XRPL_RPC_URL = process.env.XRPL_RPC_URL || "https://s1.ripple.com:51234/";
+const RIPPLE_EPOCH_OFFSET_SECONDS = 946684800;
+const MAX_ACCOUNT_TX_PAGES = 5;
+const ACCOUNT_TX_PAGE_SIZE = 200;
 
 const SUPPORT_AMOUNTS: Record<string, string> = {
   "0.589": "589000",
@@ -42,6 +46,55 @@ type ResponseLike = {
   status: (code: number) => {
     json: (body: unknown) => void;
   };
+  setHeader?: (name: string, value: string) => void;
+};
+
+type XrplMemo = {
+  Memo?: {
+    MemoType?: string;
+    MemoData?: string;
+    MemoFormat?: string;
+  };
+};
+
+type XrplTransaction = {
+  Account?: string;
+  Destination?: string;
+  Amount?: string | Record<string, unknown>;
+  TransactionType?: string;
+  SourceTag?: number;
+  Memos?: XrplMemo[];
+  date?: number;
+  hash?: string;
+};
+
+type XrplTransactionMeta = {
+  TransactionResult?: string;
+};
+
+type AccountTransactionEntry = {
+  tx?: XrplTransaction;
+  tx_json?: XrplTransaction;
+  meta?: XrplTransactionMeta;
+  validated?: boolean;
+  hash?: string;
+};
+
+type XrplRpcResponse = {
+  result?: {
+    transactions?: AccountTransactionEntry[];
+    marker?: unknown;
+    error?: string;
+    error_message?: string;
+  };
+  error?: string;
+};
+
+type PublicSupportMemo = {
+  version: 1;
+  public: true;
+  name: string;
+  message: string;
 };
 
 function normalizePublicUrl(value: string | undefined) {
@@ -65,9 +118,40 @@ function textToHex(value: string) {
     .toUpperCase();
 }
 
+function hexToText(value: string | undefined) {
+  if (!value) {
+    return "";
+  }
+
+  const cleanValue = value.startsWith("0x") ? value.slice(2) : value;
+
+  if (!/^[0-9A-Fa-f]+$/.test(cleanValue) || cleanValue.length % 2 !== 0) {
+    return value;
+  }
+
+  try {
+    const bytes = cleanValue.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16));
+    return bytes ? new TextDecoder().decode(new Uint8Array(bytes)) : "";
+  } catch {
+    return "";
+  }
+}
+
 function getString(body: RequestBody, key: string) {
   const value = body[key];
   return typeof value === "string" ? value.trim() : "";
+}
+
+function getBoolean(body: RequestBody, key: string) {
+  return body[key] === true;
+}
+
+function cleanPublicText(value: string, maxLength: number) {
+  return value
+    .replace(/[\u0000-\u001F\u007F]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maxLength);
 }
 
 function isValidXrplAddress(value: string) {
@@ -140,9 +224,116 @@ async function getXamanPayload(uuid: string) {
   };
 }
 
+async function xrplRpc(method: string, params: Record<string, unknown>) {
+  const response = await fetch(XRPL_RPC_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      method,
+      params: [params],
+    }),
+  });
+
+  const data = (await response.json()) as XrplRpcResponse;
+
+  if (!response.ok || data.error || data.result?.error) {
+    return {
+      status: 502,
+      body: {
+        ok: false,
+        error: "XRPL support counter lookup failed.",
+        details: data,
+      },
+    };
+  }
+
+  return {
+    status: 200,
+    body: data,
+  };
+}
+
+function getTransaction(entry: AccountTransactionEntry) {
+  return entry.tx_json ?? entry.tx ?? {};
+}
+
+function getMemoText(transaction: XrplTransaction) {
+  return (transaction.Memos ?? []).map((entry) => ({
+    type: hexToText(entry.Memo?.MemoType),
+    data: hexToText(entry.Memo?.MemoData),
+  }));
+}
+
+function hasSupportPaymentMemo(transaction: XrplTransaction) {
+  return getMemoText(transaction).some(
+    (memo) =>
+      memo.type === "OTT_SUPPORT_PAYMENT" ||
+      memo.data.includes("OTT Terminal voluntary support"),
+  );
+}
+
+function readPublicSupportMemo(transaction: XrplTransaction): PublicSupportMemo | null {
+  const publicMemo = getMemoText(transaction).find(
+    (memo) => memo.type === "OTT_SUPPORT_PUBLIC",
+  );
+
+  if (!publicMemo?.data) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(publicMemo.data) as Partial<PublicSupportMemo>;
+
+    if (parsed.version !== 1 || parsed.public !== true) {
+      return null;
+    }
+
+    const name = cleanPublicText(typeof parsed.name === "string" ? parsed.name : "", 40);
+    const message = cleanPublicText(
+      typeof parsed.message === "string" ? parsed.message : "",
+      160,
+    );
+
+    if (!name && !message) {
+      return null;
+    }
+
+    return {
+      version: 1,
+      public: true,
+      name,
+      message,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function dropsToXrp(drops: bigint) {
+  const whole = drops / 1_000_000n;
+  const fraction = (drops % 1_000_000n).toString().padStart(6, "0").replace(/0+$/, "");
+  return fraction ? `${whole}.${fraction}` : whole.toString();
+}
+
+function rippleDateToIso(date: number | undefined) {
+  if (!Number.isFinite(date)) {
+    return null;
+  }
+
+  return new Date(((date as number) + RIPPLE_EPOCH_OFFSET_SECONDS) * 1000).toISOString();
+}
+
+function shortAddress(value: string) {
+  return value.length > 13 ? `${value.slice(0, 7)}...${value.slice(-5)}` : value;
+}
+
 async function handleCreateSupportPaymentPayload(body: RequestBody) {
   const amountXrp = getString(body, "amountXrp");
   const amountDrops = SUPPORT_AMOUNTS[amountXrp];
+  const supporterName = cleanPublicText(getString(body, "supporterName"), 40);
+  const publicMessage = cleanPublicText(getString(body, "publicMessage"), 160);
+  const publicConsent = getBoolean(body, "publicConsent");
+  const hasPublicContent = Boolean(supporterName || publicMessage);
 
   if (!amountDrops) {
     return {
@@ -162,7 +353,27 @@ async function handleCreateSupportPaymentPayload(body: RequestBody) {
     };
   }
 
+  if (hasPublicContent && !publicConsent) {
+    return {
+      status: 400,
+      body: {
+        ok: false,
+        error:
+          "Confirm that the name/message may be stored publicly on XRPL and shared by OTT, or clear the fields.",
+      },
+    };
+  }
+
   const memoText = `OTT Terminal voluntary support | ${amountXrp} XRP | no investment, yield, access, NFT, token or governance rights | SourceTag ${MAKE_WAVES_SOURCE_TAG}`;
+  const publicMemo: PublicSupportMemo | null =
+    hasPublicContent && publicConsent
+      ? {
+          version: 1,
+          public: true,
+          name: supporterName,
+          message: publicMessage,
+        }
+      : null;
   const returnUrl = `${OTT_PUBLIC_APP_URL}/?support_payment_return=1&payload={id}&amount=${encodeURIComponent(amountXrp)}`;
 
   const result = await createXamanPayload({
@@ -178,6 +389,17 @@ async function handleCreateSupportPaymentPayload(body: RequestBody) {
             MemoData: textToHex(memoText),
           },
         },
+        ...(publicMemo
+          ? [
+              {
+                Memo: {
+                  MemoType: textToHex("OTT_SUPPORT_PUBLIC"),
+                  MemoFormat: textToHex("application/json"),
+                  MemoData: textToHex(JSON.stringify(publicMemo)),
+                },
+              },
+            ]
+          : []),
       ],
     },
     options: {
@@ -189,7 +411,9 @@ async function handleCreateSupportPaymentPayload(body: RequestBody) {
     },
     custom_meta: {
       identifier: `ott-support-${amountXrp.replace(".", "-")}`,
-      instruction: `Voluntary support payment of ${amountXrp} XRP for OTT Terminal development, education and onboarding. No investment or access rights.`,
+      instruction: publicMemo
+        ? `Voluntary support of ${amountXrp} XRP for OTT Terminal. Your optional public message is included in the XRPL transaction memo.`
+        : `Voluntary support payment of ${amountXrp} XRP for OTT Terminal development, education and onboarding. No investment or access rights.`,
       blob: {
         mode: "ott-support-payment",
         amountXrp,
@@ -197,6 +421,7 @@ async function handleCreateSupportPaymentPayload(body: RequestBody) {
         destinationWallet: OTT_SUPPORT_WALLET,
         sourceTag: MAKE_WAVES_SOURCE_TAG,
         memoText,
+        publicSupportMessage: publicMemo,
       },
     },
   });
@@ -215,6 +440,7 @@ async function handleCreateSupportPaymentPayload(body: RequestBody) {
         amountXrp,
         amountDrops,
         destinationWallet: OTT_SUPPORT_WALLET,
+        hasPublicMessage: Boolean(publicMemo),
       },
       payload: result.body,
     },
@@ -256,6 +482,131 @@ async function handleVerifySupportPaymentPayload(body: RequestBody) {
   };
 }
 
+async function handleGetSupportStats() {
+  if (!isValidXrplAddress(OTT_SUPPORT_WALLET)) {
+    return {
+      status: 500,
+      body: { ok: false, error: "Missing or invalid OTT support wallet." },
+    };
+  }
+
+  const entries: AccountTransactionEntry[] = [];
+  let marker: unknown = undefined;
+  let truncated = false;
+
+  for (let page = 0; page < MAX_ACCOUNT_TX_PAGES; page += 1) {
+    const result = await xrplRpc("account_tx", {
+      account: OTT_SUPPORT_WALLET,
+      ledger_index_min: -1,
+      ledger_index_max: -1,
+      binary: false,
+      forward: false,
+      limit: ACCOUNT_TX_PAGE_SIZE,
+      ...(marker ? { marker } : {}),
+    });
+
+    if (result.status !== 200) {
+      return result;
+    }
+
+    const data = result.body as XrplRpcResponse;
+    entries.push(...(data.result?.transactions ?? []));
+    marker = data.result?.marker;
+
+    if (!marker) {
+      break;
+    }
+
+    if (page === MAX_ACCOUNT_TX_PAGES - 1) {
+      truncated = true;
+    }
+  }
+
+  let totalDrops = 0n;
+  let paymentCount = 0;
+  let publicMessageCount = 0;
+  let latestPaymentAt: string | null = null;
+  const supporterAccounts = new Set<string>();
+  const latestPublicSupporters: Array<{
+    name: string;
+    account: string;
+    amountXrp: string;
+    date: string | null;
+  }> = [];
+
+  for (const entry of entries) {
+    const transaction = getTransaction(entry);
+    const meta = entry.meta ?? {};
+    const amount = transaction.Amount;
+    const isSupportPayment = Boolean(
+      entry.validated !== false &&
+        meta.TransactionResult === "tesSUCCESS" &&
+        transaction.TransactionType === "Payment" &&
+        transaction.Destination === OTT_SUPPORT_WALLET &&
+        transaction.SourceTag === MAKE_WAVES_SOURCE_TAG &&
+        typeof amount === "string" &&
+        /^\d+$/.test(amount) &&
+        hasSupportPaymentMemo(transaction),
+    );
+
+    if (!isSupportPayment || typeof amount !== "string") {
+      continue;
+    }
+
+    const amountDrops = BigInt(amount);
+    const paymentDate = rippleDateToIso(transaction.date);
+    const publicMemo = readPublicSupportMemo(transaction);
+
+    totalDrops += amountDrops;
+    paymentCount += 1;
+
+    if (transaction.Account) {
+      supporterAccounts.add(transaction.Account);
+    }
+
+    if (!latestPaymentAt && paymentDate) {
+      latestPaymentAt = paymentDate;
+    }
+
+    if (publicMemo) {
+      publicMessageCount += 1;
+
+      if (latestPublicSupporters.length < 8) {
+        latestPublicSupporters.push({
+          name: publicMemo.name || "Anonymous supporter",
+          account: transaction.Account ? shortAddress(transaction.Account) : "Unknown wallet",
+          amountXrp: dropsToXrp(amountDrops),
+          date: paymentDate,
+        });
+      }
+    }
+  }
+
+  return {
+    status: 200,
+    body: {
+      ok: true,
+      mode: "ott-support-stats",
+      sourceTag: MAKE_WAVES_SOURCE_TAG,
+      supportWallet: OTT_SUPPORT_WALLET,
+      stats: {
+        totalXrp: dropsToXrp(totalDrops),
+        totalDrops: totalDrops.toString(),
+        paymentCount,
+        uniqueSupporters: supporterAccounts.size,
+        publicMessageCount,
+        latestPaymentAt,
+        scannedTransactions: entries.length,
+        truncated,
+        updatedAt: new Date().toISOString(),
+      },
+      latestPublicSupporters,
+      note:
+        "Public message text is stored on XRPL but is reviewed before OTT republishes or features it.",
+    },
+  };
+}
+
 export default async function handler(req: RequestLike, res: ResponseLike) {
   if (req.method !== "POST") {
     return res.status(405).json({
@@ -263,6 +614,8 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
       error: "Method not allowed. Use POST.",
     });
   }
+
+  res.setHeader?.("Cache-Control", "no-store, max-age=0");
 
   try {
     const body = req.body ?? {};
@@ -281,6 +634,10 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
 
     if (action === "xaman.verifySupportPaymentPayload") {
       result = await handleVerifySupportPaymentPayload(body);
+    }
+
+    if (action === "xrpl.getSupportStats") {
+      result = await handleGetSupportStats();
     }
 
     if (!result) {

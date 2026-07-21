@@ -96,6 +96,52 @@
         margin-bottom: 0;
       }
 
+      .live-strip {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        padding: 18px 18px 0;
+      }
+
+      @media (max-width: 760px) {
+        .live-strip {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      .live-card {
+        border: 1px solid var(--line);
+        background: white;
+        padding: 16px;
+      }
+
+      .live-card.featured {
+        border: 0;
+        color: white;
+        background: linear-gradient(135deg, var(--blue), var(--purple) 42%, var(--pink) 68%, var(--red));
+      }
+
+      .live-card span {
+        display: block;
+        margin-bottom: 9px;
+        color: rgba(8, 8, 8, 0.42);
+        font-size: 9px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+      }
+
+      .live-card.featured span {
+        color: rgba(255, 255, 255, 0.72);
+      }
+
+      .live-card strong {
+        display: block;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: clamp(20px, 3vw, 30px);
+        font-weight: 900;
+        word-break: break-word;
+      }
+
       .grid {
         display: grid;
         grid-template-columns: 1.15fr 0.85fr;
@@ -115,13 +161,92 @@
         padding: 20px;
       }
 
-      .warning {
-        border: 1px solid rgba(200, 56, 136, 0.25);
-        background: rgba(200, 56, 136, 0.08);
+      .warning,
+      .public-note {
         padding: 14px;
         color: rgba(8, 8, 8, 0.68);
         font-size: 12px;
         line-height: 1.7;
+      }
+
+      .warning {
+        border: 1px solid rgba(200, 56, 136, 0.25);
+        background: rgba(200, 56, 136, 0.08);
+      }
+
+      .public-note {
+        margin: 16px 0;
+        border: 1px solid rgba(56, 152, 232, 0.25);
+        background: rgba(56, 152, 232, 0.08);
+      }
+
+      .field-grid {
+        display: grid;
+        grid-template-columns: 0.75fr 1.25fr;
+        gap: 10px;
+        margin: 16px 0 10px;
+      }
+
+      @media (max-width: 620px) {
+        .field-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      label.field span {
+        display: block;
+        margin-bottom: 8px;
+        color: rgba(8, 8, 8, 0.46);
+        font-size: 9px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+
+      input,
+      textarea {
+        width: 100%;
+        border: 1px solid var(--line);
+        background: var(--soft);
+        padding: 13px;
+        color: var(--ink);
+        font: inherit;
+        font-size: 12px;
+        outline: none;
+      }
+
+      textarea {
+        min-height: 92px;
+        resize: vertical;
+      }
+
+      input:focus,
+      textarea:focus {
+        border-color: var(--blue);
+        background: white;
+      }
+
+      .consent {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin: 10px 0 16px;
+        color: rgba(8, 8, 8, 0.65);
+        font-size: 11px;
+        line-height: 1.6;
+      }
+
+      .consent input {
+        width: 16px;
+        height: 16px;
+        margin: 2px 0 0;
+        flex: 0 0 auto;
+      }
+
+      .character-count {
+        margin: -4px 0 0;
+        color: rgba(8, 8, 8, 0.38);
+        font-size: 9px;
+        text-align: right;
       }
 
       .amount-grid {
@@ -226,13 +351,15 @@
         word-break: break-all;
       }
 
-      .list {
+      .list,
+      .supporter-list {
         display: grid;
         gap: 10px;
         margin-top: 14px;
       }
 
-      .item {
+      .item,
+      .supporter-item {
         border: 1px solid var(--line);
         background: var(--soft);
         padding: 14px;
@@ -241,7 +368,24 @@
         line-height: 1.7;
       }
 
-      .secondary-link {
+      .supporter-item strong {
+        display: block;
+        margin-bottom: 5px;
+        color: var(--ink);
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 15px;
+      }
+
+      .supporter-item span {
+        display: block;
+        color: rgba(8, 8, 8, 0.44);
+        font-size: 9px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .secondary-link,
+      .refresh-button {
         display: block;
         width: 100%;
         margin-top: 12px;
@@ -250,9 +394,12 @@
         padding: 14px;
         color: var(--ink);
         text-decoration: none;
+        text-align: left;
+        font: inherit;
         font-weight: 800;
         letter-spacing: 0.08em;
         text-transform: uppercase;
+        cursor: pointer;
       }
 
       .small {
@@ -265,11 +412,30 @@
     <main>
       <section class="shell">
         <div class="hero">
-          <p class="eyebrow">OnTheTrack / XRPL Terminal / Support</p>
+          <p class="eyebrow">OnTheTrack / XRPL Terminal / Live Support</p>
           <h1>Support OTT Terminal</h1>
           <p>
-            Choose a voluntary XRP support amount. After selecting an amount, a Xaman payment request opens. After signing and payment, Xaman returns you directly to OTT Terminal.
+            Choose a voluntary XRP support amount. Add an optional name, brand or @handle and a short public message to leave your mark on the XRPL. After signing and payment, Xaman returns you directly to OTT Terminal.
           </p>
+        </div>
+
+        <div class="live-strip">
+          <div class="live-card featured">
+            <span>Total collected</span>
+            <strong id="totalXrp">Loading...</strong>
+          </div>
+          <div class="live-card">
+            <span>Payments</span>
+            <strong id="paymentCount">—</strong>
+          </div>
+          <div class="live-card">
+            <span>Unique supporters</span>
+            <strong id="uniqueSupporters">—</strong>
+          </div>
+          <div class="live-card">
+            <span>Public messages</span>
+            <strong id="publicMessageCount">—</strong>
+          </div>
         </div>
 
         <div class="grid">
@@ -278,6 +444,28 @@
             <div class="warning">
               Support payments are voluntary donations. They are not investments and do not create yield, profit rights, token rights, governance rights, equity, guaranteed access, or a guaranteed NFT.
             </div>
+
+            <div class="public-note">
+              <strong>Leave your mark.</strong> Add a short message such as “Keep building”, “Make Waves” or your reason for supporting OTT. With your permission, the name and message are stored in the public XRPL transaction memo and may later be featured by OTT on social media.
+            </div>
+
+            <div class="field-grid">
+              <label class="field">
+                <span>Name, brand or @handle — optional</span>
+                <input id="supporterName" maxlength="40" placeholder="Example: @TruthOnTheTrack" autocomplete="off" />
+              </label>
+
+              <label class="field">
+                <span>Public support message — optional</span>
+                <textarea id="publicMessage" maxlength="160" placeholder="Example: Keep building. Make Waves. We got your back."></textarea>
+                <p class="character-count"><span id="messageLength">0</span>/160</p>
+              </label>
+            </div>
+
+            <label class="consent">
+              <input id="publicConsent" type="checkbox" />
+              <span>I understand that my optional name/message will be public on the XRPL and may be shown or reposted by OTT. Leave the fields empty when you prefer a private-looking donation without a public message.</span>
+            </label>
 
             <div class="amount-grid" id="amountGrid">
               <button class="support-button" data-amount="0.589"><strong>0.589 XRP</strong><span>Open Xaman</span></button>
@@ -298,7 +486,7 @@
           </div>
 
           <div class="panel">
-            <h2>Payment details</h2>
+            <h2>Live support proof</h2>
             <div class="metric-grid">
               <div class="metric">
                 <span class="label">Support wallet</span>
@@ -313,22 +501,27 @@
                 <strong>Xaman / XRPL</strong>
               </div>
               <div class="metric">
-                <span class="label">Rights</span>
-                <strong>No financial rights</strong>
+                <span class="label">Counter source</span>
+                <strong>Validated XRPL transactions</strong>
               </div>
             </div>
 
-            <h3>What support helps build</h3>
+            <h3>Latest public supporters</h3>
+            <div id="supporterList" class="supporter-list">
+              <div class="supporter-item">Loading public supporter names...</div>
+            </div>
+            <p class="small">
+              Public message text is reviewed before OTT republishes it. The live total includes validated support payments with the official SourceTag, including donations without a public message.
+            </p>
+            <button id="refreshStats" class="refresh-button" type="button">Refresh live XRPL counter</button>
+
+            <h3 style="margin-top: 24px">What support helps build</h3>
             <div class="list">
               <div class="item">XRPL beginner education and community onboarding.</div>
               <div class="item">Xaman guidance and SourceTag proof flows.</div>
               <div class="item">Promotion, advertising, content creation and Make Waves delivery.</div>
               <div class="item">Access Pass tooling, verification and customer support.</div>
             </div>
-
-            <p class="small">
-              Every preset amount is validated on the server. The destination wallet and SourceTag cannot be changed by the browser.
-            </p>
           </div>
         </div>
       </section>
@@ -337,6 +530,12 @@
     <script>
       const statusEl = document.getElementById("status");
       const supportButtons = Array.from(document.querySelectorAll("[data-amount]"));
+      const supporterNameEl = document.getElementById("supporterName");
+      const publicMessageEl = document.getElementById("publicMessage");
+      const publicConsentEl = document.getElementById("publicConsent");
+      const messageLengthEl = document.getElementById("messageLength");
+      const refreshStatsEl = document.getElementById("refreshStats");
+      const supporterListEl = document.getElementById("supporterList");
 
       function setStatus(message) {
         statusEl.textContent = message;
@@ -348,9 +547,101 @@
         });
       }
 
+      function formatSupportDate(value) {
+        if (!value) {
+          return "Recent XRPL payment";
+        }
+
+        const date = new Date(value);
+        return Number.isNaN(date.getTime())
+          ? "Recent XRPL payment"
+          : date.toLocaleString(undefined, {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+      }
+
+      function renderPublicSupporters(supporters) {
+        supporterListEl.replaceChildren();
+
+        if (!Array.isArray(supporters) || supporters.length === 0) {
+          const empty = document.createElement("div");
+          empty.className = "supporter-item";
+          empty.textContent = "No public supporter names yet. Be the first to leave your mark.";
+          supporterListEl.appendChild(empty);
+          return;
+        }
+
+        supporters.forEach((supporter) => {
+          const item = document.createElement("div");
+          item.className = "supporter-item";
+
+          const name = document.createElement("strong");
+          name.textContent = supporter.name || "Anonymous supporter";
+
+          const details = document.createElement("span");
+          details.textContent = `${supporter.amountXrp} XRP • ${supporter.account} • ${formatSupportDate(supporter.date)}`;
+
+          item.append(name, details);
+          supporterListEl.appendChild(item);
+        });
+      }
+
+      async function loadSupportStats() {
+        refreshStatsEl.disabled = true;
+        refreshStatsEl.textContent = "Refreshing XRPL counter...";
+
+        try {
+          const response = await fetch("/api/support-payment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            cache: "no-store",
+            body: JSON.stringify({ action: "xrpl.getSupportStats" }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok || !data.ok) {
+            throw data;
+          }
+
+          document.getElementById("totalXrp").textContent = `${data.stats.totalXrp} XRP`;
+          document.getElementById("paymentCount").textContent = String(data.stats.paymentCount);
+          document.getElementById("uniqueSupporters").textContent = String(data.stats.uniqueSupporters);
+          document.getElementById("publicMessageCount").textContent = String(data.stats.publicMessageCount);
+          renderPublicSupporters(data.latestPublicSupporters);
+        } catch (error) {
+          document.getElementById("totalXrp").textContent = "Unavailable";
+          supporterListEl.textContent = error?.error || "Could not load live XRPL support statistics.";
+        } finally {
+          refreshStatsEl.disabled = false;
+          refreshStatsEl.textContent = "Refresh live XRPL counter";
+        }
+      }
+
       async function createSupportPayment(amountXrp) {
+        const supporterName = supporterNameEl.value.trim();
+        const publicMessage = publicMessageEl.value.trim();
+        const publicConsent = publicConsentEl.checked;
+        const hasPublicContent = Boolean(supporterName || publicMessage);
+
+        if (hasPublicContent && !publicConsent) {
+          setStatus(
+            "Please confirm the public XRPL memo permission, or clear the optional name and message fields.",
+          );
+          publicConsentEl.focus();
+          return;
+        }
+
         setButtonsDisabled(true);
-        setStatus(`Creating ${amountXrp} XRP Xaman support payment...`);
+        setStatus(
+          hasPublicContent
+            ? `Creating ${amountXrp} XRP Xaman support payment with your public message...`
+            : `Creating ${amountXrp} XRP Xaman support payment...`,
+        );
 
         try {
           const response = await fetch("/api/support-payment", {
@@ -359,6 +650,9 @@
             body: JSON.stringify({
               action: "xaman.createSupportPaymentPayload",
               amountXrp,
+              supporterName,
+              publicMessage,
+              publicConsent,
             }),
           });
 
@@ -377,13 +671,25 @@
             throw new Error("Xaman returned no payment URL.");
           }
 
-          setStatus(`Opening Xaman for ${amountXrp} XRP. After signing, you will return to OTT Terminal.`);
+          setStatus(
+            data.support?.hasPublicMessage
+              ? `Opening Xaman for ${amountXrp} XRP. Your approved public support message is included in the XRPL memo.`
+              : `Opening Xaman for ${amountXrp} XRP. After signing, you will return to OTT Terminal.`,
+          );
           window.location.assign(payloadUrl);
         } catch (error) {
           setStatus(error?.error || error?.message || "Could not create the Xaman support payment.");
           setButtonsDisabled(false);
         }
       }
+
+      publicMessageEl.addEventListener("input", () => {
+        messageLengthEl.textContent = String(publicMessageEl.value.length);
+      });
+
+      refreshStatsEl.addEventListener("click", () => {
+        void loadSupportStats();
+      });
 
       supportButtons.forEach((button) => {
         button.addEventListener("click", () => {
@@ -394,6 +700,8 @@
           }
         });
       });
+
+      void loadSupportStats();
     </script>
   </body>
 </html>
