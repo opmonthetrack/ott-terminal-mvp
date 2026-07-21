@@ -4,6 +4,7 @@ import {
   type MakeWavesActionId,
 } from "./makeWaves";
 import { addMainnetLockedEvent, addXpRewardEvent } from "./rewardStore";
+import { saveWalletSession } from "./walletSession";
 
 export { MAKE_WAVES_SOURCE_TAG };
 
@@ -180,6 +181,10 @@ export async function verifyMakeWavesPayload(
     uuid,
     actionId,
   });
+
+  if (response.verified?.makeWavesVerified && response.verified.account) {
+    saveWalletSession(response.verified.account);
+  }
 
   creditXamanReturnReward(response, actionId);
 

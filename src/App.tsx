@@ -24,6 +24,7 @@ import {
 } from "./lib/xamanMobileSession";
 import { useTerminalLanguage } from "./lib/useTerminalLanguage";
 import type { TerminalLanguage } from "./lib/terminalCopy";
+import { clearWalletSession, getStoredWalletAddress, saveWalletSession } from "./lib/walletSession";
 
 const DashboardTab = lazy(() => import("./tabs/DashboardTab").then((module) => ({ default: module.DashboardTab })));
 const DailyCheckInTab = lazy(() => import("./tabs/DailyCheckInTab").then((module) => ({ default: module.DailyCheckInTab })));
@@ -158,7 +159,7 @@ function getCoreMenuGroups(language: TerminalLanguage): MenuGroup[] {
         { id: "home", label: isEnglish ? "Home" : "Start", status: "V1" },
         { id: "dashboard", label: "Daily Snapshot", status: "Live" },
         { id: "network", label: isEnglish ? "XRPL Explorer" : "XRPL Verkenner", status: "Live" },
-        { id: "wallet", label: isEnglish ? "Wallet Dashboard" : "Wallet Overzicht", status: "Xaman" },
+        { id: "wallet", label: isEnglish ? "Wallet & Profile" : "Wallet & Profiel", status: "Xaman" },
       ],
     },
     {
@@ -266,7 +267,7 @@ function getMobilePrimaryItems(language: TerminalLanguage): MenuItem[] {
 }
 
 function MainApp() {
-  const [walletAddress, setWalletAddress] = useState<string>("guest");
+  const [walletAddress, setWalletAddress] = useState<string>(() => getStoredWalletAddress());
   const [activeTab, setActiveTab] = useState<ActiveTab>("home");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [xamanReturnStatus, setXamanReturnStatus] = useState("");
@@ -311,6 +312,23 @@ function MainApp() {
       window.removeEventListener("storage", refreshAccess);
     };
   }, [walletAddress]);
+
+  useEffect(() => {
+    const syncWalletSession = () => {
+      const storedAddress = getStoredWalletAddress();
+      setWalletAddress((currentAddress) =>
+        currentAddress === storedAddress ? currentAddress : storedAddress,
+      );
+    };
+
+    window.addEventListener("storage", syncWalletSession);
+    window.addEventListener("ott-wallet-session-changed", syncWalletSession);
+
+    return () => {
+      window.removeEventListener("storage", syncWalletSession);
+      window.removeEventListener("ott-wallet-session-changed", syncWalletSession);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isMobileMenuOpen) {
@@ -361,6 +379,7 @@ function MainApp() {
         }
 
         if (response.verified?.signed && response.verified?.account) {
+          saveWalletSession(response.verified.account);
           setWalletAddress(response.verified.account);
           setActiveTab(returnState.returnTarget);
           setXamanReturnStatus("Wallet connected. Opening dashboard...");
@@ -412,9 +431,21 @@ function MainApp() {
   }
 
   function connectWallet(address: string) {
+    saveWalletSession(address);
     setWalletAddress(address);
     setActiveTab("wallet");
     setIsMobileMenuOpen(false);
+  }
+
+  function disconnectWallet() {
+    clearWalletSession();
+    setWalletAddress("guest");
+    setAccessUnlocked(false);
+    setActiveTab("home");
+    setIsMobileMenuOpen(false);
+    setXamanReturnStatus("Wallet session disconnected.");
+
+    window.setTimeout(() => setXamanReturnStatus(""), 2500);
   }
 
   return (
@@ -480,7 +511,7 @@ function MainApp() {
             )}
             {activeTab === "xrplverify" && <XrplVerifyTab walletAddress={walletAddress} />}
             {activeTab === "network" && <NetworkState />}
-            {activeTab === "wallet" && <WalletTab walletAddress={walletAddress} />}
+            {activeTab === "wallet" && <WalletTab walletAddress={walletAddress} onDisconnect={disconnectWallet} />}
             {activeTab === "portfolio" && <PortfolioTab walletAddress={walletAddress} />}
             {activeTab === "ecosystem" && <EcosystemTab />}
             {activeTab === "validator" && <ValidatorTab />}
@@ -504,7 +535,7 @@ function MainApp() {
             {activeTab === "marketplace" && <MarketplaceTab />}
             {activeTab === "news" && <NewsTab />}
             {activeTab === "defi" && <DeFiTab />}
-            {activeTab === "academy" && <AcademyTab />}
+            {activeTab === "academy" && <AcademyTab walletAddress={walletAddress} onNavigate={navigateTo} />}
             {activeTab === "intel" && <LedgerIntelTab />}
           </Suspense>
         )}
