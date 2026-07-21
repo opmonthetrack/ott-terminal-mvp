@@ -1,0 +1,49 @@
+name: Platform quality
+
+on:
+  push:
+    branches:
+      - main
+      - feature/complete-platform-foundations
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: platform-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: TypeScript and production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript validation
+        run: npm run lint
+
+      - name: Production build
+        run: npm run build
+
+      - name: Verify required public files
+        shell: bash
+        run: |
+          test -f dist/index.html
+          test -d dist/assets
+          test -s dist/index.html
