@@ -28,10 +28,15 @@ jobs:
       - name: Run language consistency audit
         run: node scripts/language-consistency-audit.mjs
 
-      - name: Upload language audit
+      - name: Upload language audit and source snapshot
         uses: actions/upload-artifact@v4
         with:
           name: public-tab-language-audit
-          path: artifacts/language-audit
+          path: |
+            artifacts/language-audit
+            src/App.tsx
+            src/tabs
+            src/lib/useTerminalLanguage.ts
+            src/lib/terminalCopy.ts
           if-no-files-found: error
           retention-days: 7
