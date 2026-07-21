@@ -30,6 +30,7 @@ import {
   type XrplIntelItem,
   type XrplIntelResponse,
 } from "../lib/newsClient";
+import { useTerminalLanguage } from "../lib/useTerminalLanguage";
 
 type MetricCard = {
   label: string;
@@ -53,55 +54,74 @@ type DashboardTabProps = {
 const SOURCE_TAG = 2606170002;
 const TERMINAL_URL = "https://ott-terminal-mvp.vercel.app";
 
-const quickRoutes: QuickRoute[] = [
-  {
-    title: "XRPL Intelligence",
-    status: "Raw Feed",
-    text: "Open de bronlaag met buckets, source health en live intelligence items.",
-    icon: Radio,
-    tabId: "intel",
-  },
-  {
-    title: "Newsroom",
-    status: "Social",
-    text: "Maak copy-ready drafts voor X, LinkedIn, Instagram, Medium en meer.",
-    icon: Newspaper,
-    tabId: "news",
-  },
-  {
-    title: "OTT Intelligence",
-    status: "AI Studio",
-    text: "Analyseer elk item met builder lens, risico-context en verify checklist.",
-    icon: Sparkles,
-    tabId: "ottintelligence",
-  },
-  {
-    title: "Reward Ledger",
-    status: "XP",
-    text: "Bekijk lokale XP, OTT Credits en Make Waves proof context.",
-    icon: BookOpen,
-    tabId: "rewardledger",
-  },
-];
+function getQuickRoutes(isEnglish: boolean): QuickRoute[] {
+  return [
+    {
+      title: "XRPL Intelligence",
+      status: "Raw Feed",
+      text: isEnglish
+        ? "Open the source layer with buckets, source health and live intelligence items."
+        : "Open de bronlaag met buckets, bronstatus en live intelligence-items.",
+      icon: Radio,
+      tabId: "intel",
+    },
+    {
+      title: "Newsroom",
+      status: "Social",
+      text: isEnglish
+        ? "Create copy-ready drafts for X, LinkedIn, Instagram, Medium and more."
+        : "Maak direct bruikbare concepten voor X, LinkedIn, Instagram, Medium en meer.",
+      icon: Newspaper,
+      tabId: "news",
+    },
+    {
+      title: "OTT Intelligence",
+      status: "AI Studio",
+      text: isEnglish
+        ? "Analyze every item through a builder lens, risk context and verification checklist."
+        : "Analyseer elk item met een bouwersblik, risicocontext en verificatiechecklist.",
+      icon: Sparkles,
+      tabId: "ottintelligence",
+    },
+    {
+      title: isEnglish ? "Reward Ledger" : "Beloningsoverzicht",
+      status: "XP",
+      text: isEnglish
+        ? "View local XP, OTT Credits and Make Waves proof context."
+        : "Bekijk lokale XP, OTT Credits en Make Waves-bewijscontext.",
+      icon: BookOpen,
+      tabId: "rewardledger",
+    },
+  ];
+}
 
-const emptyItem: XrplIntelItem = {
-  title: "No intelligence loaded yet",
-  link: "#",
-  pubDate: new Date().toISOString(),
-  source: "OTT Terminal",
-  sourceType: "fallback",
-  category: "XRPL Intelligence",
-  bucket: "XRPL Intelligence",
-  tags: [],
-  signalType: "ecosystem-signal",
-  officialSource: false,
-  needsConfirmation: true,
-  confidenceScore: 50,
-  whyItMatters: "Load the daily snapshot to see today’s top signal.",
-  description: "Waiting for /api/news intelligence data.",
-};
+function getEmptyItem(isEnglish: boolean): XrplIntelItem {
+  return {
+    title: isEnglish ? "No intelligence loaded yet" : "Nog geen intelligence geladen",
+    link: "#",
+    pubDate: new Date().toISOString(),
+    source: "OTT Terminal",
+    sourceType: "fallback",
+    category: "XRPL Intelligence",
+    bucket: "XRPL Intelligence",
+    tags: [],
+    signalType: "ecosystem-signal",
+    officialSource: false,
+    needsConfirmation: true,
+    confidenceScore: 50,
+    whyItMatters: isEnglish
+      ? "Load the daily snapshot to see today’s top signal."
+      : "Laad de dagelijkse momentopname om het belangrijkste signaal van vandaag te zien.",
+    description: isEnglish
+      ? "Waiting for /api/news intelligence data."
+      : "Wachten op intelligence-data van /api/news.",
+  };
+}
 
 export function DashboardTab({ onNavigate }: DashboardTabProps) {
+  const { language } = useTerminalLanguage();
+  const isEnglish = language === "en";
+  const quickRoutes = getQuickRoutes(isEnglish);
   const [data, setData] = useState<XrplIntelResponse | null>(null);
   const [items, setItems] = useState<XrplIntelItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -125,7 +145,9 @@ export function DashboardTab({ onNavigate }: DashboardTabProps) {
       setError(
         loadError instanceof Error
           ? loadError.message
-          : "Daily Intelligence Snapshot kon niet worden geladen.",
+          : isEnglish
+            ? "Daily Intelligence Snapshot could not be loaded."
+            : "De dagelijkse intelligence-momentopname kon niet worden geladen.",
       );
     } finally {
       setLoading(false);
@@ -137,7 +159,7 @@ export function DashboardTab({ onNavigate }: DashboardTabProps) {
     void loadDashboard("initial");
   }, []);
 
-  const topItem = items[0] ?? emptyItem;
+  const topItem = items[0] ?? getEmptyItem(isEnglish);
   const buckets = useMemo(() => getIntelBuckets(items).slice(0, 5), [items]);
   const officialCount = useMemo(
     () => items.filter((item) => item.officialSource).length,
@@ -154,19 +176,21 @@ export function DashboardTab({ onNavigate }: DashboardTabProps) {
 
   const metrics: MetricCard[] = [
     {
-      label: "Live Items",
+      label: isEnglish ? "Live Items" : "Live-items",
       value: loading ? "..." : String(items.length),
-      text: data?.fallback ? "Fallback active" : "Daily feed",
+      text: data?.fallback
+        ? isEnglish ? "Fallback active" : "Terugval actief"
+        : isEnglish ? "Daily feed" : "Dagelijkse feed",
       icon: Newspaper,
     },
     {
-      label: "Official Sources",
+      label: isEnglish ? "Official Sources" : "Officiële bronnen",
       value: loading ? "..." : String(officialCount),
-      text: "Source weighted",
+      text: isEnglish ? "Source weighted" : "Gewogen op bron",
       icon: ShieldCheck,
     },
     {
-      label: "Tech Signals",
+      label: isEnglish ? "Tech Signals" : "Technische signalen",
       value: loading ? "..." : String(technicalCount),
       text: "XLS / Core / Protocol",
       icon: Layers,
@@ -181,7 +205,11 @@ export function DashboardTab({ onNavigate }: DashboardTabProps) {
 
   function openSource() {
     if (!topItem.link || topItem.link === "#") {
-      setError("No source link available for today’s top signal.");
+      setError(
+        isEnglish
+          ? "No source link is available for today’s top signal."
+          : "Er is geen bronlink beschikbaar voor het belangrijkste signaal van vandaag.",
+      );
       return;
     }
 
@@ -218,9 +246,9 @@ export function DashboardTab({ onNavigate }: DashboardTabProps) {
               </h2>
 
               <p className="font-mono text-sm text-black/55 max-w-3xl leading-relaxed">
-                Eén dashboard voor de dagelijkse XRPL Intelligence-flow: top
-                signal, source health, buckets en snelle routes naar Intelligence,
-                Newsroom en OTT AI Studio.
+                {isEnglish
+                  ? "One dashboard for the daily XRPL Intelligence flow: top signal, source health, buckets and fast routes to Intelligence, Newsroom and OTT AI Studio."
+                  : "Eén dashboard voor de dagelijkse XRPL Intelligence-stroom: belangrijkste signaal, bronstatus, categorieën en snelle routes naar Intelligence, Newsroom en OTT AI Studio."}
               </p>
 
               <div className="flex flex-wrap gap-3 mt-5">
@@ -235,7 +263,9 @@ export function DashboardTab({ onNavigate }: DashboardTabProps) {
                   />
 
                   <span className="font-orbitron text-xs font-black uppercase">
-                    {refreshing ? "Refreshing" : "Refresh Snapshot"}
+                    {refreshing
+                      ? isEnglish ? "Refreshing" : "Verversen"
+                      : isEnglish ? "Refresh Snapshot" : "Momentopname verversen"}
                   </span>
                 </button>
 
@@ -246,7 +276,7 @@ export function DashboardTab({ onNavigate }: DashboardTabProps) {
                   <ArrowUpRight size={16} className="text-[#3898E8]" />
 
                   <span className="font-orbitron text-xs font-bold uppercase">
-                    Open Top Source
+                    {isEnglish ? "Open Top Source" : "Open belangrijkste bron"}
                   </span>
                 </button>
               </div>
@@ -274,12 +304,14 @@ export function DashboardTab({ onNavigate }: DashboardTabProps) {
 
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-12 xl:col-span-5 space-y-4">
-            <Panel title="Today’s Top Signal" icon={Radio}>
+            <Panel title={isEnglish ? "Today’s Top Signal" : "Belangrijkste signaal van vandaag"} icon={Radio}>
               {loading ? (
                 <div className="border border-black/10 bg-[#F7F8FC] p-5">
                   <Loader2 size={18} className="text-[#3898E8] animate-spin mb-4" />
                   <p className="font-mono text-xs text-black/45">
-                    Loading /api/news daily snapshot...
+                    {isEnglish
+                      ? "Loading /api/news daily snapshot..."
+                      : "Dagelijkse momentopname van /api/news laden..."}
                   </p>
                 </div>
               ) : (
@@ -292,7 +324,7 @@ export function DashboardTab({ onNavigate }: DashboardTabProps) {
                         topItem.confidenceScore,
                       )}`}
                     />
-                    {topItem.needsConfirmation && <Badge label="Needs review" tone="warn" />}
+                    {topItem.needsConfirmation && <Badge label={isEnglish ? "Needs review" : "Controle nodig"} tone="warn" />}
                   </div>
 
                   <h3 className="font-orbitron text-2xl font-black uppercase mb-3 leading-tight">
@@ -309,7 +341,7 @@ export function DashboardTab({ onNavigate }: DashboardTabProps) {
 
                   <div className="border border-black/10 bg-[#F7F8FC] p-4 mb-4">
                     <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
-                      Why it matters
+                      {isEnglish ? "Why it matters" : "Waarom dit belangrijk is"}
                     </p>
 
                     <p className="font-mono text-xs text-black/55 leading-relaxed">
@@ -318,15 +350,20 @@ export function DashboardTab({ onNavigate }: DashboardTabProps) {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <MiniBox label="Bucket" value={topItem.bucket} />
-                    <MiniBox label="Signal" value={topItem.signalType} />
-                    <MiniBox label="Review" value={topItem.needsConfirmation ? "Required" : "Low"} />
+                    <MiniBox label={isEnglish ? "Bucket" : "Categorie"} value={topItem.bucket} />
+                    <MiniBox label={isEnglish ? "Signal" : "Signaal"} value={topItem.signalType} />
+                    <MiniBox
+                      label={isEnglish ? "Review" : "Controle"}
+                      value={topItem.needsConfirmation
+                        ? isEnglish ? "Required" : "Vereist"
+                        : isEnglish ? "Low" : "Laag"}
+                    />
                   </div>
                 </div>
               )}
             </Panel>
 
-            <Panel title="Source Health" icon={Eye}>
+            <Panel title={isEnglish ? "Source Health" : "Bronstatus"} icon={Eye}>
               <div className="space-y-3">
                 {(data?.debug ?? []).slice(0, 7).map((source) => (
                   <div
@@ -350,7 +387,9 @@ export function DashboardTab({ onNavigate }: DashboardTabProps) {
 
                 {!data?.debug?.length && (
                   <p className="font-mono text-xs text-black/45 leading-relaxed">
-                    Source health verschijnt na live fetch.
+                    {isEnglish
+                      ? "Source health appears after a live fetch."
+                      : "De bronstatus verschijnt na een live-ophaalactie."}
                   </p>
                 )}
               </div>
@@ -358,7 +397,7 @@ export function DashboardTab({ onNavigate }: DashboardTabProps) {
           </div>
 
           <div className="col-span-12 xl:col-span-4 space-y-4">
-            <Panel title="Top Buckets" icon={BarChart3}>
+            <Panel title={isEnglish ? "Top Buckets" : "Belangrijkste categorieën"} icon={BarChart3}>
               <div className="space-y-3">
                 {buckets.map((bucket) => (
                   <div
@@ -391,7 +430,7 @@ export function DashboardTab({ onNavigate }: DashboardTabProps) {
               </div>
             </Panel>
 
-            <Panel title="Signal Queue" icon={FileSearch}>
+            <Panel title={isEnglish ? "Signal Queue" : "Signalenwachtrij"} icon={FileSearch}>
               <div className="space-y-3">
                 {items.slice(0, 5).map((item) => (
                   <button
@@ -417,7 +456,7 @@ export function DashboardTab({ onNavigate }: DashboardTabProps) {
           </div>
 
           <div className="col-span-12 xl:col-span-3 space-y-4">
-            <Panel title="Quick Actions" icon={Zap}>
+            <Panel title={isEnglish ? "Quick Actions" : "Snelle acties"} icon={Zap}>
               <div className="space-y-3">
                 {quickRoutes.map((route) => (
                   <QuickAction key={route.title} route={route} onClick={() => goTo(route.tabId)} />
@@ -425,20 +464,20 @@ export function DashboardTab({ onNavigate }: DashboardTabProps) {
               </div>
             </Panel>
 
-            <Panel title="Safety Position" icon={ShieldCheck}>
+            <Panel title={isEnglish ? "Safety Position" : "Veiligheidspositie"} icon={ShieldCheck}>
               <div className="space-y-3">
-                <SafetyLine icon={CheckCircle2} text="Education-first intelligence." />
-                <SafetyLine icon={CheckCircle2} text="No financial advice or trading signals." />
-                <SafetyLine icon={CheckCircle2} text="SourceTag 2606170002 remains visible." />
-                <SafetyLine icon={CheckCircle2} text="Human review before publishing." />
+                <SafetyLine icon={CheckCircle2} text={isEnglish ? "Education-first intelligence." : "Intelligence met educatie voorop."} />
+                <SafetyLine icon={CheckCircle2} text={isEnglish ? "No financial advice or trading signals." : "Geen financieel advies of handelssignalen."} />
+                <SafetyLine icon={CheckCircle2} text={isEnglish ? "SourceTag 2606170002 remains visible." : "SourceTag 2606170002 blijft zichtbaar."} />
+                <SafetyLine icon={CheckCircle2} text={isEnglish ? "Human review before publishing." : "Menselijke controle vóór publicatie."} />
               </div>
             </Panel>
 
-            <Panel title="Build Status" icon={Bell}>
+            <Panel title={isEnglish ? "Build Status" : "Bouwstatus"} icon={Bell}>
               <div className="space-y-3">
                 <MiniBox label="Terminal" value="V1 Live" />
                 <MiniBox label="News API" value={data?.fallback ? "Fallback" : "Live"} />
-                <MiniBox label="Public URL" value={TERMINAL_URL.replace("https://", "")} />
+                <MiniBox label={isEnglish ? "Public URL" : "Publieke URL"} value={TERMINAL_URL.replace("https://", "")} />
               </div>
             </Panel>
           </div>

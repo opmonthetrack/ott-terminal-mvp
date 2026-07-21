@@ -24,6 +24,7 @@ import {
 } from "./lib/xamanMobileSession";
 import { useTerminalLanguage } from "./lib/useTerminalLanguage";
 import type { TerminalLanguage } from "./lib/terminalCopy";
+import { clearWalletSession, getStoredWalletAddress, saveWalletSession } from "./lib/walletSession";
 
 const DashboardTab = lazy(() => import("./tabs/DashboardTab").then((module) => ({ default: module.DashboardTab })));
 const DailyCheckInTab = lazy(() => import("./tabs/DailyCheckInTab").then((module) => ({ default: module.DailyCheckInTab })));
@@ -158,7 +159,7 @@ function getCoreMenuGroups(language: TerminalLanguage): MenuGroup[] {
         { id: "home", label: isEnglish ? "Home" : "Start", status: "V1" },
         { id: "dashboard", label: "Daily Snapshot", status: "Live" },
         { id: "network", label: isEnglish ? "XRPL Explorer" : "XRPL Verkenner", status: "Live" },
-        { id: "wallet", label: isEnglish ? "Wallet Dashboard" : "Wallet Overzicht", status: "Xaman" },
+        { id: "wallet", label: isEnglish ? "Wallet & Profile" : "Wallet & Profiel", status: "Xaman" },
       ],
     },
     {
@@ -266,7 +267,7 @@ function getMobilePrimaryItems(language: TerminalLanguage): MenuItem[] {
 }
 
 function MainApp() {
-  const [walletAddress, setWalletAddress] = useState<string>("guest");
+  const [walletAddress, setWalletAddress] = useState<string>(() => getStoredWalletAddress());
   const [activeTab, setActiveTab] = useState<ActiveTab>("home");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [xamanReturnStatus, setXamanReturnStatus] = useState("");
@@ -311,6 +312,23 @@ function MainApp() {
       window.removeEventListener("storage", refreshAccess);
     };
   }, [walletAddress]);
+
+  useEffect(() => {
+    const syncWalletSession = () => {
+      const storedAddress = getStoredWalletAddress();
+      setWalletAddress((currentAddress) =>
+        currentAddress === storedAddress ? currentAddress : storedAddress,
+      );
+    };
+
+    window.addEventListener("storage", syncWalletSession);
+    window.addEventListener("ott-wallet-session-changed", syncWalletSession);
+
+    return () => {
+      window.removeEventListener("storage", syncWalletSession);
+      window.removeEventListener("ott-wallet-session-changed", syncWalletSession);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isMobileMenuOpen) {
@@ -361,6 +379,7 @@ function MainApp() {
         }
 
         if (response.verified?.signed && response.verified?.account) {
+          saveWalletSession(response.verified.account);
           setWalletAddress(response.verified.account);
           setActiveTab(returnState.returnTarget);
           setXamanReturnStatus("Wallet connected. Opening dashboard...");
@@ -412,9 +431,21 @@ function MainApp() {
   }
 
   function connectWallet(address: string) {
+    saveWalletSession(address);
     setWalletAddress(address);
     setActiveTab("wallet");
     setIsMobileMenuOpen(false);
+  }
+
+  function disconnectWallet() {
+    clearWalletSession();
+    setWalletAddress("guest");
+    setAccessUnlocked(false);
+    setActiveTab("home");
+    setIsMobileMenuOpen(false);
+    setXamanReturnStatus("Wallet session disconnected.");
+
+    window.setTimeout(() => setXamanReturnStatus(""), 2500);
   }
 
   return (
@@ -433,6 +464,7 @@ function MainApp() {
       <MobileHeader
         activeItem={activeItem}
         walletAddress={walletAddress}
+        language={language}
         onOpenMenu={() => setIsMobileMenuOpen(true)}
       />
 
@@ -480,7 +512,7 @@ function MainApp() {
             )}
             {activeTab === "xrplverify" && <XrplVerifyTab walletAddress={walletAddress} />}
             {activeTab === "network" && <NetworkState />}
-            {activeTab === "wallet" && <WalletTab walletAddress={walletAddress} />}
+            {activeTab === "wallet" && <WalletTab walletAddress={walletAddress} onDisconnect={disconnectWallet} />}
             {activeTab === "portfolio" && <PortfolioTab walletAddress={walletAddress} />}
             {activeTab === "ecosystem" && <EcosystemTab />}
             {activeTab === "validator" && <ValidatorTab />}
@@ -504,7 +536,7 @@ function MainApp() {
             {activeTab === "marketplace" && <MarketplaceTab />}
             {activeTab === "news" && <NewsTab />}
             {activeTab === "defi" && <DeFiTab />}
-            {activeTab === "academy" && <AcademyTab />}
+            {activeTab === "academy" && <AcademyTab walletAddress={walletAddress} onNavigate={navigateTo} />}
             {activeTab === "intel" && <LedgerIntelTab />}
           </Suspense>
         )}
@@ -573,10 +605,12 @@ function DesktopSidebar({
 function MobileHeader({
   activeItem,
   walletAddress,
+  language,
   onOpenMenu,
 }: {
   activeItem: MenuItem;
   walletAddress: string;
+  language: TerminalLanguage;
   onOpenMenu: () => void;
 }) {
   return (
@@ -585,14 +619,20 @@ function MobileHeader({
         <button
           onClick={onOpenMenu}
           className="w-11 h-11 border border-black/10 bg-[#F7F8FC] flex items-center justify-center text-black"
-          aria-label="Open menu"
+          aria-label={language === "en" ? "Open menu" : "Open menu"}
         >
           <Menu size={20} />
         </button>
 
         <div className="flex-1 min-w-0">
           <p className="font-mono text-[9px] text-black/35 uppercase tracking-[0.25em] truncate">
-            {walletAddress === "guest" ? "Guest / " : "Connected / "}
+            {walletAddress === "guest"
+              ? language === "en"
+                ? "Guest / "
+                : "Gast / "
+              : language === "en"
+                ? "Connected / "
+                : "Verbonden / "}
             XRPL Terminal
           </p>
           <h1 className="font-orbitron text-sm font-black uppercase tracking-widest truncate text-black">
@@ -640,7 +680,7 @@ function MobileMenu({
           <button
             onClick={onClose}
             className="w-11 h-11 border border-black/10 bg-[#F7F8FC] flex items-center justify-center"
-            aria-label="Close menu"
+            aria-label={language === "en" ? "Close menu" : "Sluit menu"}
           >
             <X size={20} />
           </button>
@@ -769,24 +809,24 @@ function SidebarFooter({
       <div className="bg-[#F7F8FC] border border-black/10 rounded-lg p-1 flex relative">
         <div
           className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] rounded shadow transition-all duration-300 ${
-            language === "nl" ? "left-1" : "left-[calc(50%+2px)]"
+            language === "en" ? "left-1" : "left-[calc(50%+2px)]"
           }`}
         />
-        <button
-          onClick={() => setLanguage("nl")}
-          className={`flex-1 relative z-10 text-[10px] font-bold uppercase tracking-widest py-2 rounded transition-colors ${
-            language === "nl" ? "text-white" : "text-black/40 hover:text-black"
-          }`}
-        >
-          NL
-        </button>
         <button
           onClick={() => setLanguage("en")}
           className={`flex-1 relative z-10 text-[10px] font-bold uppercase tracking-widest py-2 rounded transition-colors ${
             language === "en" ? "text-white" : "text-black/40 hover:text-black"
           }`}
         >
-          EN
+          ENGLISH
+        </button>
+        <button
+          onClick={() => setLanguage("nl")}
+          className={`flex-1 relative z-10 text-[10px] font-bold uppercase tracking-widest py-2 rounded transition-colors ${
+            language === "nl" ? "text-white" : "text-black/40 hover:text-black"
+          }`}
+        >
+          NEDERLANDS
         </button>
       </div>
       <button

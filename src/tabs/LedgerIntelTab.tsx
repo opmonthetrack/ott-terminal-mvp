@@ -33,6 +33,7 @@ import {
   type XrplIntelItem,
   type XrplIntelResponse,
 } from "../lib/newsClient";
+import { useTerminalLanguage } from "../lib/useTerminalLanguage";
 
 type Metric = {
   label: string;
@@ -50,51 +51,71 @@ type Rule = {
 
 const SOURCE_TAG = 2606170002;
 
-const rules: Rule[] = [
-  {
-    title: "Official First",
-    status: "Rule",
-    text: "XRPL, Ripple, Xaman, GitHub, BIS, IMF, SWIFT en centrale bank bronnen wegen zwaarder dan media of social claims.",
-    icon: ShieldCheck,
-  },
-  {
-    title: "No Trading Signals",
-    status: "Guard",
-    text: "Deze intelligence is education-only. Geen koopadvies, prijsvoorspelling of winstbelofte.",
-    icon: AlertTriangle,
-  },
-  {
-    title: "Macro Needs Context",
-    status: "CBDC / BRICS",
-    text: "CBDC, BRICS en ISO 20022 signalen zijn macro context. Niet automatisch bewijs dat XRP of XRPL gebruikt wordt.",
-    icon: Globe2,
-  },
-  {
-    title: "Verify Before Posting",
-    status: "Social",
-    text: "Gebruik bron, datum, confidence en needs-confirmation voordat je iets op X, TikTok of LinkedIn zet.",
-    icon: FileSearch,
-  },
-];
+function getRules(isEnglish: boolean): Rule[] {
+  return [
+    {
+      title: isEnglish ? "Official Sources First" : "Officiële bronnen eerst",
+      status: isEnglish ? "Rule" : "Regel",
+      text: isEnglish
+        ? "XRPL, Ripple, Xaman, GitHub, BIS, IMF, SWIFT and central-bank sources carry more weight than media or social claims."
+        : "Bronnen van XRPL, Ripple, Xaman, GitHub, BIS, IMF, SWIFT en centrale banken wegen zwaarder dan media- of socialmediaclaims.",
+      icon: ShieldCheck,
+    },
+    {
+      title: isEnglish ? "No Trading Signals" : "Geen handelssignalen",
+      status: isEnglish ? "Guard" : "Beveiliging",
+      text: isEnglish
+        ? "This intelligence is for education only. It is not buy advice, a price prediction or a profit promise."
+        : "Deze intelligence is alleen voor educatie. Het is geen koopadvies, prijsvoorspelling of winstbelofte.",
+      icon: AlertTriangle,
+    },
+    {
+      title: isEnglish ? "Macro Needs Context" : "Macro vereist context",
+      status: "CBDC / BRICS",
+      text: isEnglish
+        ? "CBDC, BRICS and ISO 20022 signals are macro context, not automatic proof that XRP or XRPL is being used."
+        : "Signalen rond CBDC, BRICS en ISO 20022 zijn macrocontext en geen automatisch bewijs dat XRP of XRPL wordt gebruikt.",
+      icon: Globe2,
+    },
+    {
+      title: isEnglish ? "Verify Before Posting" : "Controleer vóór publicatie",
+      status: "Social",
+      text: isEnglish
+        ? "Check the source, date, confidence and confirmation status before posting on X, TikTok or LinkedIn."
+        : "Controleer bron, datum, betrouwbaarheid en bevestigingsstatus voordat je iets op X, TikTok of LinkedIn plaatst.",
+      icon: FileSearch,
+    },
+  ];
+}
 
-const emptyItem: XrplIntelItem = {
-  title: "No intelligence item selected",
-  link: "#",
-  pubDate: new Date().toISOString(),
-  source: "OTT Terminal",
-  sourceType: "fallback",
-  category: "XRPL Intelligence",
-  bucket: "XRPL Intelligence",
-  tags: [],
-  signalType: "ecosystem-signal",
-  officialSource: false,
-  needsConfirmation: true,
-  confidenceScore: 50,
-  whyItMatters: "Load the intelligence feed and select an item.",
-  description: "Waiting for live XRPL Intelligence data.",
-};
+function getEmptyItem(isEnglish: boolean): XrplIntelItem {
+  return {
+    title: isEnglish ? "No intelligence item selected" : "Geen intelligence-item geselecteerd",
+    link: "#",
+    pubDate: new Date().toISOString(),
+    source: "OTT Terminal",
+    sourceType: "fallback",
+    category: "XRPL Intelligence",
+    bucket: "XRPL Intelligence",
+    tags: [],
+    signalType: "ecosystem-signal",
+    officialSource: false,
+    needsConfirmation: true,
+    confidenceScore: 50,
+    whyItMatters: isEnglish
+      ? "Load the intelligence feed and select an item."
+      : "Laad de intelligence-feed en selecteer een item.",
+    description: isEnglish
+      ? "Waiting for live XRPL Intelligence data."
+      : "Wachten op live XRPL Intelligence-data.",
+  };
+}
 
 export function LedgerIntelTab() {
+  const { language } = useTerminalLanguage();
+  const isEnglish = language === "en";
+  const rules = getRules(isEnglish);
+  const emptyItem = getEmptyItem(isEnglish);
   const [data, setData] = useState<XrplIntelResponse | null>(null);
   const [items, setItems] = useState<XrplIntelItem[]>([]);
   const [selectedBucket, setSelectedBucket] = useState("All");
@@ -128,7 +149,9 @@ export function LedgerIntelTab() {
       setError(
         loadError instanceof Error
           ? loadError.message
-          : "XRPL Intelligence feed kon niet worden geladen.",
+          : isEnglish
+            ? "The XRPL Intelligence feed could not be loaded."
+            : "De XRPL Intelligence-feed kon niet worden geladen.",
       );
     } finally {
       setLoading(false);
@@ -166,21 +189,23 @@ export function LedgerIntelTab() {
 
   const metrics: Metric[] = [
     {
-      label: "Live Items",
+      label: isEnglish ? "Live Items" : "Live-items",
       value: loading ? "..." : String(items.length),
-      text: data?.fallback ? "Fallback mode" : "Fetched now",
+      text: data?.fallback
+        ? isEnglish ? "Fallback mode" : "Terugvalmodus"
+        : isEnglish ? "Fetched now" : "Zojuist opgehaald",
       icon: Newspaper,
     },
     {
-      label: "Official",
+      label: isEnglish ? "Official" : "Officieel",
       value: loading ? "..." : String(officialCount),
-      text: "Source weighted",
+      text: isEnglish ? "Source weighted" : "Gewogen op bron",
       icon: ShieldCheck,
     },
     {
-      label: "Needs Review",
+      label: isEnglish ? "Needs Review" : "Controle nodig",
       value: loading ? "..." : String(reviewCount),
-      text: "Verify before post",
+      text: isEnglish ? "Verify before posting" : "Controleer vóór publicatie",
       icon: Eye,
     },
     {
@@ -212,9 +237,9 @@ export function LedgerIntelTab() {
               </h2>
 
               <p className="font-mono text-sm text-black/55 max-w-3xl leading-relaxed">
-                Live intelligence laag voor XRPL, XRP, Ripple, Xaman, XLS,
-                amendments, CBDC, BRICS, ISO 20022, RWA en payments. Gebouwd
-                voor awareness, niet voor trading signals.
+                {isEnglish
+                  ? "A live intelligence layer for XRPL, XRP, Ripple, Xaman, XLS amendments, CBDCs, BRICS, ISO 20022, real-world assets and payments. Built for awareness, not trading signals."
+                  : "Een live intelligence-laag voor XRPL, XRP, Ripple, Xaman, XLS-amendementen, CBDC's, BRICS, ISO 20022, real-world assets en betalingen. Gebouwd voor bewustwording, niet voor handelssignalen."}
               </p>
 
               <div className="flex flex-wrap gap-3 mt-5">
@@ -229,7 +254,9 @@ export function LedgerIntelTab() {
                   />
 
                   <span className="font-orbitron text-xs font-black uppercase">
-                    {refreshing ? "Refreshing" : "Refresh Intel"}
+                    {refreshing
+                      ? isEnglish ? "Refreshing" : "Verversen"
+                      : isEnglish ? "Refresh Intel" : "Intelligence verversen"}
                   </span>
                 </button>
 
@@ -263,7 +290,7 @@ export function LedgerIntelTab() {
 
               <div>
                 <p className="font-orbitron text-xs font-black uppercase mb-2">
-                  Intelligence Feed Error
+                  {isEnglish ? "Intelligence Feed Error" : "Fout in intelligence-feed"}
                 </p>
 
                 <p className="font-mono text-xs text-black/55 leading-relaxed">
@@ -281,7 +308,7 @@ export function LedgerIntelTab() {
                 <Search size={18} className="text-[#3898E8]" />
 
                 <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Buckets
+                  {isEnglish ? "Buckets" : "Categorieën"}
                 </p>
               </div>
 
@@ -307,7 +334,7 @@ export function LedgerIntelTab() {
                 <Sparkles size={18} className="text-[#C83888]" />
 
                 <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Daily Brief
+                  {isEnglish ? "Daily Brief" : "Dagelijkse samenvatting"}
                 </p>
               </div>
 
@@ -317,7 +344,9 @@ export function LedgerIntelTab() {
 
               <p className="font-mono text-xs text-black/55 leading-relaxed mb-4">
                 {data?.brief?.summary ??
-                  "Feed laden. Daily brief verschijnt zodra /api/news antwoord geeft."}
+                  (isEnglish
+                    ? "Loading the feed. The daily brief appears when /api/news responds."
+                    : "De feed wordt geladen. De dagelijkse samenvatting verschijnt zodra /api/news antwoord geeft.")}
               </p>
 
               <MiniStatus
@@ -332,8 +361,9 @@ export function LedgerIntelTab() {
               {data?.fallback && (
                 <div className="mt-3 border border-[#D84858]/20 bg-[#D84858]/10 p-3">
                   <p className="font-mono text-[10px] text-black/55 uppercase leading-relaxed">
-                    Fallback active — live feeds konden niet schoon worden
-                    opgehaald.
+                    {isEnglish
+                      ? "Fallback active — live feeds could not be retrieved cleanly."
+                      : "Terugval actief — de live-feeds konden niet correct worden opgehaald."}
                   </p>
                 </div>
               )}
@@ -345,11 +375,13 @@ export function LedgerIntelTab() {
               <div className="flex items-center justify-between gap-4 mb-6">
                 <div>
                   <p className="font-mono text-[10px] text-black/35 uppercase tracking-[0.35em] mb-2">
-                    Live Feed
+                    {isEnglish ? "Live Feed" : "Live-feed"}
                   </p>
 
                   <h3 className="font-orbitron text-xl font-black uppercase">
-                    {selectedBucket === "All" ? "All Intelligence" : selectedBucket}
+                    {selectedBucket === "All"
+                      ? isEnglish ? "All Intelligence" : "Alle intelligence"
+                      : selectedBucket}
                   </h3>
                 </div>
 
@@ -357,7 +389,7 @@ export function LedgerIntelTab() {
               </div>
 
               {loading ? (
-                <LoadingPanel />
+                <LoadingPanel isEnglish={isEnglish} />
               ) : visibleItems.length > 0 ? (
                 <div className="space-y-3">
                   {visibleItems.map((item) => (
@@ -370,7 +402,7 @@ export function LedgerIntelTab() {
                   ))}
                 </div>
               ) : (
-                <EmptyPanel />
+                <EmptyPanel isEnglish={isEnglish} />
               )}
             </div>
 
@@ -379,7 +411,7 @@ export function LedgerIntelTab() {
                 <BookOpen size={18} className="text-[#3898E8]" />
 
                 <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Selected Intelligence
+                  {isEnglish ? "Selected Intelligence" : "Geselecteerde intelligence"}
                 </p>
               </div>
 
@@ -389,13 +421,13 @@ export function LedgerIntelTab() {
                 <Badge label={selectedItem.signalType} />
 
                 {selectedItem.officialSource ? (
-                  <Badge label="Official Weighted" />
+                  <Badge label={isEnglish ? "Official Weighted" : "Officieel gewogen"} />
                 ) : (
-                  <Badge label="Secondary / Review" />
+                  <Badge label={isEnglish ? "Secondary / Review" : "Secundair / controle"} />
                 )}
 
                 {selectedItem.needsConfirmation && (
-                  <Badge label="Needs Confirmation" tone="warn" />
+                  <Badge label={isEnglish ? "Needs Confirmation" : "Bevestiging nodig"} tone="warn" />
                 )}
               </div>
 
@@ -408,29 +440,32 @@ export function LedgerIntelTab() {
               </p>
 
               <p className="font-mono text-sm text-black/55 leading-relaxed mb-5">
-                {selectedItem.description || "Geen beschrijving meegeleverd."}
+                {selectedItem.description ||
+                  (isEnglish ? "No description was provided." : "Geen beschrijving meegeleverd.")}
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
                 <MiniStatus
-                  label="Confidence"
+                  label={isEnglish ? "Confidence" : "Betrouwbaarheid"}
                   value={`${selectedItem.confidenceScore}% ${getConfidenceLabel(
                     selectedItem.confidenceScore,
                   )}`}
                 />
                 <MiniStatus
-                  label="Source Type"
+                  label={isEnglish ? "Source Type" : "Brontype"}
                   value={getSourceTypeLabel(selectedItem.sourceType)}
                 />
                 <MiniStatus
-                  label="Review"
-                  value={selectedItem.needsConfirmation ? "Required" : "Low"}
+                  label={isEnglish ? "Review" : "Controle"}
+                  value={selectedItem.needsConfirmation
+                    ? isEnglish ? "Required" : "Vereist"
+                    : isEnglish ? "Low" : "Laag"}
                 />
               </div>
 
               <div className="border border-black/10 bg-[#F7F8FC] p-4 mb-5">
                 <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
-                  Why it matters
+                  {isEnglish ? "Why it matters" : "Waarom dit belangrijk is"}
                 </p>
 
                 <p className="font-mono text-xs text-black/55 leading-relaxed">
@@ -460,7 +495,7 @@ export function LedgerIntelTab() {
                 <ArrowUpRight size={16} className="text-[#3898E8]" />
 
                 <span className="font-orbitron text-xs font-bold uppercase">
-                  Open Source
+                  {isEnglish ? "Open Source" : "Open bron"}
                 </span>
               </a>
             </div>
@@ -472,7 +507,7 @@ export function LedgerIntelTab() {
                 <ShieldCheck size={18} className="text-[#3898E8]" />
 
                 <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Intel Rules
+                  {isEnglish ? "Intelligence Rules" : "Intelligence-regels"}
                 </p>
               </div>
 
@@ -488,7 +523,7 @@ export function LedgerIntelTab() {
                 <Target size={18} className="text-[#C83888]" />
 
                 <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Source Health
+                  {isEnglish ? "Source Health" : "Bronstatus"}
                 </p>
               </div>
 
@@ -516,7 +551,9 @@ export function LedgerIntelTab() {
 
                 {!data?.debug?.length && (
                   <p className="font-mono text-xs text-black/45 leading-relaxed">
-                    Source debug verschijnt na live fetch.
+                    {isEnglish
+                      ? "Source diagnostics appear after a live fetch."
+                      : "Brondiagnostiek verschijnt na een live-ophaalactie."}
                   </p>
                 )}
               </div>
@@ -527,15 +564,15 @@ export function LedgerIntelTab() {
                 <Zap size={18} className="text-[#3898E8]" />
 
                 <p className="font-orbitron text-xs uppercase tracking-widest">
-                  Next Layer
+                  {isEnglish ? "Next Layer" : "Volgende laag"}
                 </p>
               </div>
 
               <div className="space-y-3">
-                <StepLine number="01" text="NewsTab wordt later social output." />
-                <StepLine number="02" text="OTTIntelligence wordt later AI agent layer." />
-                <StepLine number="03" text="Dashboard kan later daily brief tonen." />
-                <StepLine number="04" text="No auto-posting without human review." />
+                <StepLine number="01" text={isEnglish ? "Newsroom turns intelligence into social output." : "Newsroom zet intelligence om in socialmedia-uitvoer."} />
+                <StepLine number="02" text={isEnglish ? "OTT Intelligence adds an AI analysis layer." : "OTT Intelligence voegt een AI-analyselaag toe."} />
+                <StepLine number="03" text={isEnglish ? "The dashboard can display the daily brief." : "Het dashboard kan de dagelijkse samenvatting tonen."} />
+                <StepLine number="04" text={isEnglish ? "No automatic posting without human review." : "Geen automatische publicatie zonder menselijke controle."} />
               </div>
             </div>
           </div>
@@ -543,7 +580,7 @@ export function LedgerIntelTab() {
           <div className="col-span-12 grid grid-cols-1 md:grid-cols-4 gap-4">
             <FeatureBox icon={Globe2} title="XRPL" text="Core, XLS, amendments" />
             <FeatureBox icon={Landmark} title="Macro" text="CBDC, ISO, BRICS" />
-            <FeatureBox icon={BarChart3} title="Signals" text="Context, not trades" />
+            <FeatureBox icon={BarChart3} title={isEnglish ? "Signals" : "Signalen"} text={isEnglish ? "Context, not trades" : "Context, geen handel"} />
             <FeatureBox icon={Waves} title="Make Waves" text="SourceTag 2606170002" />
           </div>
         </div>
@@ -694,33 +731,37 @@ function Badge({ label, tone = "normal" }: { label: string; tone?: "normal" | "w
   );
 }
 
-function LoadingPanel() {
+function LoadingPanel({ isEnglish }: { isEnglish: boolean }) {
   return (
     <div className="border border-black/10 bg-[#F7F8FC] p-6">
       <RefreshCcw size={18} className="text-[#3898E8] animate-spin mb-4" />
 
       <p className="font-orbitron text-sm font-black uppercase mb-2">
-        Loading XRPL Intelligence
+        {isEnglish ? "Loading XRPL Intelligence" : "XRPL Intelligence laden"}
       </p>
 
       <p className="font-mono text-xs text-black/45 leading-relaxed">
-        Fetching official, technical and institutional sources from /api/news.
+        {isEnglish
+          ? "Fetching official, technical and institutional sources from /api/news."
+          : "Officiële, technische en institutionele bronnen ophalen via /api/news."}
       </p>
     </div>
   );
 }
 
-function EmptyPanel() {
+function EmptyPanel({ isEnglish }: { isEnglish: boolean }) {
   return (
     <div className="border border-black/10 bg-[#F7F8FC] p-6">
       <AlertTriangle size={18} className="text-[#D84858] mb-4" />
 
       <p className="font-orbitron text-sm font-black uppercase mb-2">
-        No items in this bucket
+        {isEnglish ? "No items in this category" : "Geen items in deze categorie"}
       </p>
 
       <p className="font-mono text-xs text-black/45 leading-relaxed">
-        Select another bucket or refresh the intelligence feed.
+        {isEnglish
+          ? "Select another category or refresh the intelligence feed."
+          : "Selecteer een andere categorie of ververs de intelligence-feed."}
       </p>
     </div>
   );

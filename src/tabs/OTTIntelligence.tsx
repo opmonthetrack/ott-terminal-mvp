@@ -32,6 +32,7 @@ import {
   type XrplIntelItem,
   type XrplIntelResponse,
 } from "../lib/newsClient";
+import { useTerminalLanguage } from "../lib/useTerminalLanguage";
 
 type AnalysisMode = "builder" | "beginner" | "risk" | "content" | "verify";
 
@@ -53,62 +54,84 @@ type ScoreCard = {
 const SOURCE_TAG = 2606170002;
 const TERMINAL_URL = "https://ott-terminal-mvp.vercel.app";
 
-const analysisOptions: AnalysisOption[] = [
-  {
-    id: "builder",
-    title: "Builder Lens",
-    status: "Impact",
-    icon: Brain,
-    text: "Wat betekent dit voor XRPL builders, dApps, standards of tooling?",
-  },
-  {
-    id: "beginner",
-    title: "Beginner Explain",
-    status: "Simple",
-    icon: BookOpen,
-    text: "Leg het uit alsof iemand net met XRPL begint.",
-  },
-  {
-    id: "risk",
-    title: "Risk Context",
-    status: "Safe",
-    icon: ShieldCheck,
-    text: "Welke claims zijn veilig, welke hebben extra verificatie nodig?",
-  },
-  {
-    id: "content",
-    title: "Content Angle",
-    status: "Reach",
-    icon: Sparkles,
-    text: "Welke hook, angle en CTA passen bij dit item?",
-  },
-  {
-    id: "verify",
-    title: "Verify Checklist",
-    status: "Check",
-    icon: FileSearch,
-    text: "Wat moet je controleren voordat je dit deelt of publiceert?",
-  },
-];
+function getAnalysisOptions(isEnglish: boolean): AnalysisOption[] {
+  return [
+    {
+      id: "builder",
+      title: isEnglish ? "Builder Lens" : "Bouwersblik",
+      status: isEnglish ? "Impact" : "Impact",
+      icon: Brain,
+      text: isEnglish
+        ? "What does this mean for XRPL builders, dApps, standards or tooling?"
+        : "Wat betekent dit voor XRPL-bouwers, dApps, standaarden of hulpmiddelen?",
+    },
+    {
+      id: "beginner",
+      title: isEnglish ? "Beginner Explanation" : "Uitleg voor beginners",
+      status: isEnglish ? "Simple" : "Eenvoudig",
+      icon: BookOpen,
+      text: isEnglish
+        ? "Explain it as if someone has just started learning about XRPL."
+        : "Leg het uit alsof iemand net met XRPL begint.",
+    },
+    {
+      id: "risk",
+      title: isEnglish ? "Risk Context" : "Risicocontext",
+      status: isEnglish ? "Safe" : "Veilig",
+      icon: ShieldCheck,
+      text: isEnglish
+        ? "Which claims are safe and which need additional verification?"
+        : "Welke claims zijn veilig en welke vereisen aanvullende verificatie?",
+    },
+    {
+      id: "content",
+      title: isEnglish ? "Content Angle" : "Contentinvalshoek",
+      status: isEnglish ? "Reach" : "Bereik",
+      icon: Sparkles,
+      text: isEnglish
+        ? "Which hook, angle and call to action fit this item?"
+        : "Welke opening, invalshoek en oproep tot actie passen bij dit item?",
+    },
+    {
+      id: "verify",
+      title: isEnglish ? "Verification Checklist" : "Verificatiechecklist",
+      status: isEnglish ? "Check" : "Controle",
+      icon: FileSearch,
+      text: isEnglish
+        ? "What should be checked before this is shared or published?"
+        : "Wat moet worden gecontroleerd voordat dit wordt gedeeld of gepubliceerd?",
+    },
+  ];
+}
 
-const emptyItem: XrplIntelItem = {
-  title: "No intelligence selected",
-  link: "#",
-  pubDate: new Date().toISOString(),
-  source: "OTT Terminal",
-  sourceType: "fallback",
-  category: "XRPL Intelligence",
-  bucket: "XRPL Intelligence",
-  tags: [],
-  signalType: "ecosystem-signal",
-  officialSource: false,
-  needsConfirmation: true,
-  confidenceScore: 50,
-  whyItMatters: "Load the intelligence feed and select an item.",
-  description: "Waiting for live intelligence data.",
-};
+function getEmptyItem(isEnglish: boolean): XrplIntelItem {
+  return {
+    title: isEnglish ? "No intelligence selected" : "Geen intelligence geselecteerd",
+    link: "#",
+    pubDate: new Date().toISOString(),
+    source: "OTT Terminal",
+    sourceType: "fallback",
+    category: "XRPL Intelligence",
+    bucket: "XRPL Intelligence",
+    tags: [],
+    signalType: "ecosystem-signal",
+    officialSource: false,
+    needsConfirmation: true,
+    confidenceScore: 50,
+    whyItMatters: isEnglish
+      ? "Load the intelligence feed and select an item."
+      : "Laad de intelligence-feed en selecteer een item.",
+    description: isEnglish
+      ? "Waiting for live intelligence data."
+      : "Wachten op live intelligence-data.",
+  };
+}
 
 export function OTTIntelligence() {
+  const { language } = useTerminalLanguage();
+  const isEnglish = language === "en";
+  const analysisOptions = getAnalysisOptions(isEnglish);
+  const emptyItem = getEmptyItem(isEnglish);
   const [data, setData] = useState<XrplIntelResponse | null>(null);
   const [items, setItems] = useState<XrplIntelItem[]>([]);
   const [selectedItem, setSelectedItem] = useState<XrplIntelItem>(emptyItem);
@@ -136,7 +159,9 @@ export function OTTIntelligence() {
       setError(
         loadError instanceof Error
           ? loadError.message
-          : "OTT Intelligence feed kon niet worden geladen.",
+          : isEnglish
+            ? "The OTT Intelligence feed could not be loaded."
+            : "De OTT Intelligence-feed kon niet worden geladen.",
       );
     } finally {
       setLoading(false);
@@ -154,11 +179,14 @@ export function OTTIntelligence() {
     analysisOptions.find((option) => option.id === selectedMode) ?? analysisOptions[0];
 
   const analysisText = useMemo(
-    () => buildAnalysisOutput(selectedItem, selectedMode),
-    [selectedItem, selectedMode],
+    () => buildAnalysisOutput(selectedItem, selectedMode, isEnglish),
+    [selectedItem, selectedMode, isEnglish],
   );
 
-  const scores = useMemo(() => buildScores(selectedItem), [selectedItem]);
+  const scores = useMemo(
+    () => buildScores(selectedItem, isEnglish),
+    [selectedItem, isEnglish],
+  );
 
   async function copyAnalysis() {
     try {
@@ -166,13 +194,21 @@ export function OTTIntelligence() {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1600);
     } catch {
-      setError("Copy failed. Select the text manually and copy it.");
+      setError(
+        isEnglish
+          ? "Copy failed. Select the text manually and copy it."
+          : "Kopiëren is mislukt. Selecteer de tekst en kopieer deze handmatig.",
+      );
     }
   }
 
   function openSource() {
     if (!selectedItem.link || selectedItem.link === "#") {
-      setError("No source link available for this item.");
+      setError(
+        isEnglish
+          ? "No source link is available for this item."
+          : "Voor dit item is geen bronlink beschikbaar.",
+      );
       return;
     }
 
@@ -200,15 +236,17 @@ export function OTTIntelligence() {
               </h2>
 
               <p className="font-mono text-sm text-black/55 max-w-3xl leading-relaxed">
-                Analyseer XRPL Intelligence items voordat je ze omzet naar content.
-                Deze studio helpt met beginner-uitleg, builder-impact, risico-context,
-                verify-checks en bereik-veilige angles. Geen auto-posting, geen trading signals.
+                {isEnglish
+                  ? "Analyze XRPL Intelligence items before turning them into content. This studio supports beginner explanations, builder impact, risk context, verification checks and reach-safe angles. No automatic posting and no trading signals."
+                  : "Analyseer XRPL Intelligence-items voordat je ze omzet in content. Deze studio ondersteunt uitleg voor beginners, impact voor bouwers, risicocontext, verificatiecontroles en bereikveilige invalshoeken. Geen automatische publicatie en geen handelssignalen."}
               </p>
 
               <div className="flex flex-wrap gap-3 mt-5">
                 <ActionButton
                   icon={RefreshCcw}
-                  label={refreshing ? "Refreshing" : "Refresh Studio"}
+                  label={refreshing
+                    ? isEnglish ? "Refreshing" : "Verversen"
+                    : isEnglish ? "Refresh Studio" : "Studio verversen"}
                   onClick={() => void loadIntel("refresh")}
                   disabled={loading || refreshing}
                   gradient
@@ -217,19 +255,21 @@ export function OTTIntelligence() {
 
                 <ActionButton
                   icon={Clipboard}
-                  label={copied ? "Copied" : "Copy Analysis"}
+                  label={copied
+                    ? isEnglish ? "Copied" : "Gekopieerd"
+                    : isEnglish ? "Copy Analysis" : "Analyse kopiëren"}
                   onClick={copyAnalysis}
                 />
 
-                <ActionButton icon={ExternalLink} label="Open Source" onClick={openSource} />
+                <ActionButton icon={ExternalLink} label={isEnglish ? "Open Source" : "Open bron"} onClick={openSource} />
               </div>
             </div>
 
             <div className="col-span-12 xl:col-span-4 grid grid-cols-2 gap-3">
-              <StatBox icon={Bot} label="Mode" value={selectedOption.status} />
+              <StatBox icon={Bot} label={isEnglish ? "Mode" : "Modus"} value={selectedOption.status} />
               <StatBox icon={Target} label="SourceTag" value={String(data?.sourceTag ?? SOURCE_TAG)} />
-              <StatBox icon={CheckCircle2} label="Fallback" value={data?.fallback ? "Yes" : "No"} />
-              <StatBox icon={BarChart3} label="Items" value={loading ? "..." : String(items.length)} />
+              <StatBox icon={CheckCircle2} label={isEnglish ? "Fallback" : "Terugval"} value={data?.fallback ? (isEnglish ? "Yes" : "Ja") : (isEnglish ? "No" : "Nee")} />
+              <StatBox icon={BarChart3} label={isEnglish ? "Items" : "Items"} value={loading ? "..." : String(items.length)} />
             </div>
           </div>
         </div>
@@ -246,7 +286,7 @@ export function OTTIntelligence() {
 
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-12 xl:col-span-3 space-y-4">
-            <Panel title="Analysis Modes" icon={Zap}>
+            <Panel title={isEnglish ? "Analysis Modes" : "Analysemodi"} icon={Zap}>
               <div className="space-y-3">
                 {analysisOptions.map((option) => (
                   <ModeButton
@@ -259,7 +299,7 @@ export function OTTIntelligence() {
               </div>
             </Panel>
 
-            <Panel title="Buckets" icon={Search}>
+            <Panel title={isEnglish ? "Buckets" : "Categorieën"} icon={Search}>
               <div className="space-y-3">
                 {buckets.map((bucket) => (
                   <div
@@ -280,13 +320,13 @@ export function OTTIntelligence() {
           </div>
 
           <div className="col-span-12 xl:col-span-5 space-y-4">
-            <Panel title="Intelligence Queue" icon={FileSearch}>
+            <Panel title={isEnglish ? "Intelligence Queue" : "Intelligence-wachtrij"} icon={FileSearch}>
               {loading ? (
                 <div className="border border-black/10 bg-[#F7F8FC] p-5">
                   <Loader2 size={18} className="text-[#3898E8] animate-spin mb-4" />
 
                   <p className="font-mono text-xs text-black/45">
-                    Loading /api/news intelligence...
+                    {isEnglish ? "Loading /api/news intelligence..." : "Intelligence van /api/news laden..."}
                   </p>
                 </div>
               ) : (
@@ -303,12 +343,12 @@ export function OTTIntelligence() {
               )}
             </Panel>
 
-            <Panel title="Selected Item" icon={BookOpen}>
+            <Panel title={isEnglish ? "Selected Item" : "Geselecteerd item"} icon={BookOpen}>
               <div className="flex flex-wrap gap-2 mb-4">
                 <Badge label={selectedItem.bucket} />
                 <Badge label={getSourceTypeLabel(selectedItem.sourceType)} />
                 <Badge label={`${selectedItem.confidenceScore}% ${getConfidenceLabel(selectedItem.confidenceScore)}`} />
-                {selectedItem.needsConfirmation && <Badge label="Needs review" tone="warn" />}
+                {selectedItem.needsConfirmation && <Badge label={isEnglish ? "Needs review" : "Controle nodig"} tone="warn" />}
               </div>
 
               <h3 className="font-orbitron text-2xl font-black uppercase mb-3 leading-tight">
@@ -331,7 +371,7 @@ export function OTTIntelligence() {
 
               <div className="border border-black/10 bg-[#F7F8FC] p-4">
                 <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
-                  Why it matters
+                  {isEnglish ? "Why it matters" : "Waarom dit belangrijk is"}
                 </p>
 
                 <p className="font-mono text-xs text-black/55 leading-relaxed">
@@ -342,7 +382,7 @@ export function OTTIntelligence() {
           </div>
 
           <div className="col-span-12 xl:col-span-4 space-y-4">
-            <Panel title={`${selectedOption.title} Output`} icon={selectedOption.icon}>
+            <Panel title={`${selectedOption.title} ${isEnglish ? "Output" : "Uitvoer"}`} icon={selectedOption.icon}>
               <div className="border border-black/10 bg-[#F7F8FC] p-5 min-h-[420px]">
                 <pre className="font-mono text-xs text-black/65 whitespace-pre-wrap leading-relaxed">
                   {analysisText}
@@ -350,25 +390,43 @@ export function OTTIntelligence() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
-                <ActionButton icon={Clipboard} label="Copy" onClick={copyAnalysis} />
-                <ActionButton icon={ArrowUpRight} label="Open Source" onClick={openSource} />
+                <ActionButton icon={Clipboard} label={isEnglish ? "Copy" : "Kopiëren"} onClick={copyAnalysis} />
+                <ActionButton icon={ArrowUpRight} label={isEnglish ? "Open Source" : "Open bron"} onClick={openSource} />
               </div>
             </Panel>
 
-            <Panel title="AI Studio Rules" icon={ShieldCheck}>
+            <Panel title={isEnglish ? "AI Studio Rules" : "AI-studioregels"} icon={ShieldCheck}>
               <div className="space-y-3">
-                <RuleLine icon={Eye} title="Human review" text="Gebruik dit als analysehulp. Jij controleert de bron en context vóór publicatie." />
-                <RuleLine icon={Globe2} title="Macro context" text="CBDC, ISO en BRICS signalen zijn context, geen automatisch XRPL/XRP bewijs." />
-                <RuleLine icon={AlertTriangle} title="No financial advice" text="Geen trading signal, prijsverwachting of belofte van adoptie/winst." />
+                <RuleLine
+                  icon={Eye}
+                  title={isEnglish ? "Human Review" : "Menselijke controle"}
+                  text={isEnglish
+                    ? "Use this as analysis support. You remain responsible for checking the source and context before publishing."
+                    : "Gebruik dit als analysehulp. Je blijft zelf verantwoordelijk voor het controleren van bron en context vóór publicatie."}
+                />
+                <RuleLine
+                  icon={Globe2}
+                  title={isEnglish ? "Macro Context" : "Macrocontext"}
+                  text={isEnglish
+                    ? "CBDC, ISO and BRICS signals provide context and are not automatic proof of XRPL or XRP usage."
+                    : "Signalen rond CBDC, ISO en BRICS bieden context en zijn geen automatisch bewijs van XRPL- of XRP-gebruik."}
+                />
+                <RuleLine
+                  icon={AlertTriangle}
+                  title={isEnglish ? "No Financial Advice" : "Geen financieel advies"}
+                  text={isEnglish
+                    ? "No trading signals, price expectations or promises of adoption or profit."
+                    : "Geen handelssignalen, prijsverwachtingen of beloften over adoptie of winst."}
+                />
               </div>
             </Panel>
           </div>
 
           <div className="col-span-12 grid grid-cols-1 md:grid-cols-4 gap-4">
-            <FeatureBox icon={Brain} title="Analyse" text="Builder impact and context" />
-            <FeatureBox icon={BookOpen} title="Explain" text="Beginner-friendly notes" />
-            <FeatureBox icon={ShieldCheck} title="Verify" text="Checklist before posting" />
-            <FeatureBox icon={Lightbulb} title="Angle" text="Reach without hype" />
+            <FeatureBox icon={Brain} title={isEnglish ? "Analyze" : "Analyseer"} text={isEnglish ? "Builder impact and context" : "Impact voor bouwers en context"} />
+            <FeatureBox icon={BookOpen} title={isEnglish ? "Explain" : "Leg uit"} text={isEnglish ? "Beginner-friendly notes" : "Toegankelijke uitleg voor beginners"} />
+            <FeatureBox icon={ShieldCheck} title={isEnglish ? "Verify" : "Controleer"} text={isEnglish ? "Checklist before posting" : "Checklist vóór publicatie"} />
+            <FeatureBox icon={Lightbulb} title={isEnglish ? "Angle" : "Invalshoek"} text={isEnglish ? "Reach without hype" : "Bereik zonder hype"} />
           </div>
         </div>
       </div>
@@ -376,37 +434,178 @@ export function OTTIntelligence() {
   );
 }
 
-function buildScores(item: XrplIntelItem): ScoreCard[] {
+function buildScores(item: XrplIntelItem, isEnglish: boolean): ScoreCard[] {
   const safetyScore = item.needsConfirmation ? "Medium" : item.confidenceScore >= 85 ? "High" : "Review";
   const reachScore = item.bucket.includes("XLS") || item.bucket.includes("XRPL") ? "Builder" : item.bucket.includes("CBDC") || item.bucket.includes("ISO") ? "Macro" : "Community";
   const complexityScore = item.bucket.includes("XLS") || item.title.toLowerCase().includes("mpt") ? "Advanced" : item.bucket.includes("CBDC") ? "Context" : "Medium";
 
   return [
     {
-      label: "Safety",
+      label: isEnglish ? "Safety" : "Veiligheid",
       value: safetyScore,
-      text: item.needsConfirmation ? "Needs extra source check" : "Source-weighted",
+      text: item.needsConfirmation
+        ? isEnglish ? "Needs an extra source check" : "Extra broncontrole nodig"
+        : isEnglish ? "Source-weighted" : "Gewogen op bron",
       icon: ShieldCheck,
     },
     {
-      label: "Audience",
+      label: isEnglish ? "Audience" : "Doelgroep",
       value: reachScore,
-      text: "Best matching angle",
+      text: isEnglish ? "Best matching angle" : "Best passende invalshoek",
       icon: Target,
     },
     {
-      label: "Complexity",
+      label: isEnglish ? "Complexity" : "Complexiteit",
       value: complexityScore,
-      text: "Explain before posting",
+      text: isEnglish ? "Explain before posting" : "Leg uit vóór publicatie",
       icon: Brain,
     },
   ];
 }
 
-function buildAnalysisOutput(item: XrplIntelItem, mode: AnalysisMode) {
+function buildAnalysisOutput(item: XrplIntelItem, mode: AnalysisMode, isEnglish: boolean) {
   const date = formatIntelDate(item.pubDate);
   const sourceLine = `${item.source} (${getSourceTypeLabel(item.sourceType)})`;
   const tags = item.tags.length > 0 ? item.tags.map((tag) => `#${tag.replace(/\s+/g, "")}`).join(" ") : "#XRPL #OnTheTrack";
+
+  if (!isEnglish) {
+    if (mode === "beginner") {
+      return `UITLEG VOOR BEGINNERS
+
+Onderwerp:
+${item.title}
+
+Eenvoudige betekenis:
+Dit is een signaal van ${sourceLine}. Het valt onder ${item.bucket}.
+
+Uitleg:
+${item.description}
+
+Waarom een beginner dit moet weten:
+${item.whyItMatters}
+
+Wat je niet mag aannemen:
+- Dit is geen financieel advies.
+- Dit is geen prijsvoorspelling.
+- Macro-items betekenen niet automatisch adoptie van XRP of XRPL.
+
+Brondatum: ${date}
+${tags}`;
+    }
+
+    if (mode === "risk") {
+      return `RISICO- EN CONTEXTCONTROLE
+
+Item:
+${item.title}
+
+Bron:
+${sourceLine}
+Datum: ${date}
+Betrouwbaarheid: ${item.confidenceScore}%
+Extra bevestiging nodig: ${item.needsConfirmation ? "Ja" : "Nee"}
+
+Veilig om te zeggen:
+- De bron heeft dit item gepubliceerd of ernaar verwezen.
+- Het is relevant voor ${item.bucket}.
+- Het kan belangrijk zijn omdat: ${item.whyItMatters}
+
+Zeg NIET:
+- Dit garandeert adoptie.
+- Dit is een koop- of verkoopsignaal.
+- Dit bevestigt XRP- of XRPL-gebruik, tenzij de bron dat expliciet zegt.
+
+Controle vóór publicatie:
+- Open de oorspronkelijke bron.
+- Controleer de datum.
+- Controleer het brontype.
+- Verwijder hypetaal.`;
+    }
+
+    if (mode === "content") {
+      return `CONTENTINVALSHOEK
+
+Beste opening:
+🚨 De meeste mensen kijken naar prijs. Bouwers kijken naar infrastructuur.
+
+Invalshoek:
+${item.title}
+
+Waarom dit kan werken:
+- Het is gebaseerd op een bron.
+- Het sluit aan op ${item.bucket}.
+- Het kan informeren zonder hype.
+
+Richting voor de tekst:
+${item.whyItMatters}
+
+Oproep tot actie:
+Open de bron. Leer de infrastructuur. Blijf 589 stappen vooruit.
+
+Voorgestelde hashtags:
+${tags} #TruthOnTheTrack #OnTheTrack
+
+Naamsvermelding:
+Mogelijk gemaakt door XRPL OnTheTrack Terminal
+SourceTag 2606170002
+${TERMINAL_URL}`;
+    }
+
+    if (mode === "verify") {
+      return `CONTROLEER VÓÓR PUBLICATIE
+
+1. Open de bron
+${item.link}
+
+2. Controleer het brontype
+${sourceLine}
+
+3. Controleer de datum
+${date}
+
+4. Controleer het claimniveau
+- Is het officieel? ${item.officialSource ? "Ja" : "Nee"}
+- Extra bevestiging nodig? ${item.needsConfirmation ? "Ja" : "Nee"}
+
+5. Verwijder onveilige claims
+- Geen gegarandeerde adoptie.
+- Geen prijsvoorspelling.
+- Geen handelssignaal.
+- Geen aanname dat macro automatisch XRP betekent.
+
+6. Publiceer alleen als educatie of context
+Categorie: ${item.bucket}
+Betrouwbaarheid: ${item.confidenceScore}%`;
+    }
+
+    return `BOUWERSBLIK
+
+Item:
+${item.title}
+
+Bron:
+${sourceLine}
+Datum: ${date}
+Categorie: ${item.bucket}
+Betrouwbaarheid: ${item.confidenceScore}%
+
+Impact voor bouwers:
+${item.whyItMatters}
+
+Technische of contextuele toelichting:
+${item.description}
+
+Waar bouwers hierna op moeten letten:
+- Heeft dit invloed op standaarden, hulpmiddelen, wallets of integraties?
+- Levert dit een nieuwe Academy-module op?
+- Verdient dit een Newsroom-post of Medium-artikel?
+- Is vóór publicatie nog een extra bron nodig?
+
+Veilige formulering:
+Educatie eerst. Bronnen eerst. Geen hype. Geen handelssignaal.
+
+${tags}`;
+  }
 
   if (mode === "beginner") {
     return `BEGINNER EXPLAINER\n\nTopic:\n${item.title}\n\nSimple meaning:\nThis is a signal from ${sourceLine}. It belongs to ${item.bucket}.\n\nPlain explanation:\n${item.description}\n\nWhy someone new should care:\n${item.whyItMatters}\n\nWhat not to assume:\n- This is not financial advice.\n- This is not a price prediction.\n- Macro items do not automatically mean XRP/XRPL adoption.\n\nSource date: ${date}\n${tags}`;

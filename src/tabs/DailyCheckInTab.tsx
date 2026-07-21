@@ -40,12 +40,15 @@ import {
   loadRewardState,
   type RewardState,
 } from "../lib/rewardStore";
+import { useTerminalLanguage } from "../lib/useTerminalLanguage";
 
 type DailyCheckInTabProps = {
   walletAddress: string;
 };
 
 export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
+  const { language } = useTerminalLanguage();
+  const isEnglish = language === "en";
   const [selectedActionId, setSelectedActionId] =
     useState<MakeWavesActionId>("daily-checkin");
   const [payload, setPayload] = useState<XamanPayloadResponse | null>(null);
@@ -57,7 +60,9 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
   const [busy, setBusy] = useState(false);
   const [verifyBusy, setVerifyBusy] = useState(false);
   const [statusMessage, setStatusMessage] = useState(
-    "Connect Xaman, create a Make Waves proof payload, sign it, verify it and credit XP only after Mainnet validation.",
+    isEnglish
+      ? "Connect Xaman, create a Make Waves proof payload, sign it, verify it and credit XP only after Mainnet validation."
+      : "Koppel Xaman, maak een Make Waves-proofverzoek, onderteken het, verifieer het en ken XP pas toe na Mainnet-validatie.",
   );
 
   const selectedAction = useMemo(
@@ -79,20 +84,24 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
     setVerification(null);
     setStatusMessage(
       walletAddress === "guest"
-        ? "Connect Xaman first. Daily proof actions only work with a connected wallet."
-        : "Wallet loaded. Choose a proof action, create a Xaman payload and verify after signing.",
+        ? isEnglish
+          ? "Connect Xaman first. Daily proof actions only work with a connected wallet."
+          : "Koppel eerst Xaman. Dagelijkse proofacties werken alleen met een gekoppelde wallet."
+        : isEnglish
+          ? "Wallet loaded. Choose a proof action, create a Xaman payload and verify after signing."
+          : "Wallet geladen. Kies een proofactie, maak een Xaman-verzoek en verifieer na ondertekening.",
     );
-  }, [walletAddress]);
+  }, [walletAddress, isEnglish]);
 
   async function createPayload() {
     if (!walletAddress || walletAddress === "guest") {
-      setStatusMessage("Connect eerst met Xaman voordat je een reward-actie start.");
+      setStatusMessage(isEnglish ? "Connect Xaman before starting a reward action." : "Koppel Xaman voordat je een beloningsactie start.");
       return;
     }
 
     setBusy(true);
     setVerification(null);
-    setStatusMessage("Creating Xaman Make Waves payload...");
+    setStatusMessage(isEnglish ? "Creating Xaman Make Waves payload..." : "Xaman Make Waves-verzoek maken...");
 
     try {
       const response = await createMakeWavesPayload({
@@ -102,10 +111,12 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
 
       setPayload(response);
       setStatusMessage(
-        `Payload ready for ${selectedAction.title} with SourceTag ${MAKE_WAVES_SOURCE_TAG}.`,
+        isEnglish
+          ? `Payload ready for ${getActionTitle(selectedActionId, true)} with SourceTag ${MAKE_WAVES_SOURCE_TAG}.`
+          : `Verzoek klaar voor ${getActionTitle(selectedActionId, false)} met SourceTag ${MAKE_WAVES_SOURCE_TAG}.`,
       );
     } catch (error) {
-      setStatusMessage(getErrorMessage(error));
+      setStatusMessage(getErrorMessage(error, isEnglish));
     } finally {
       setBusy(false);
     }
@@ -115,17 +126,17 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
     const uuid = payloadUuid;
 
     if (!walletAddress || walletAddress === "guest") {
-      setStatusMessage("Connect eerst met Xaman voordat je een reward verifieert.");
+      setStatusMessage(isEnglish ? "Connect Xaman before verifying a reward." : "Koppel Xaman voordat je een beloning verifieert.");
       return;
     }
 
     if (!uuid) {
-      setStatusMessage("Geen Xaman payload UUID gevonden.");
+      setStatusMessage(isEnglish ? "No Xaman payload UUID was found." : "Geen Xaman-verzoek-ID gevonden.");
       return;
     }
 
     setVerifyBusy(true);
-    setStatusMessage("Verifying Xaman payload...");
+    setStatusMessage(isEnglish ? "Verifying Xaman payload..." : "Xaman-verzoek verifiëren...");
 
     try {
       const response = await verifyMakeWavesPayload(
@@ -141,14 +152,16 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
           walletAddress,
           actionId: selectedActionId,
           txHash: response.verified?.txid,
-          note: `${selectedAction.title} validated on XRPL Mainnet with SourceTag ${MAKE_WAVES_SOURCE_TAG}.`,
+          note: `${getActionTitle(selectedActionId, isEnglish)} ${isEnglish ? "validated on XRPL Mainnet with" : "gevalideerd op XRPL Mainnet met"} SourceTag ${MAKE_WAVES_SOURCE_TAG}.`,
         });
 
         const finalState = addMainnetLockedEvent({
           walletAddress,
           actionId: selectedActionId,
           txHash: response.verified?.txid,
-          note: "Future on-chain OTT token conversion stays disabled until utility, profitability and legal review are complete.",
+          note: isEnglish
+            ? "Future on-chain OTT token conversion stays disabled until utility, profitability and legal review are complete."
+            : "Toekomstige on-chain omzetting naar OTT-tokens blijft uitgeschakeld totdat utility, haalbaarheid en juridische toetsing zijn afgerond.",
         });
 
         const rewardWasAdded =
@@ -159,15 +172,19 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
 
         setStatusMessage(
           rewardWasAdded
-            ? `${getMakeWavesVerificationLabel(response)}. Reward Ledger credited +${selectedAction.xp} XP and +${selectedOttCredits} OTT Credits.`
-            : `${getMakeWavesVerificationLabel(response)}. This transaction was already processed; no duplicate reward was added.`,
+            ? isEnglish
+              ? `${getMakeWavesVerificationLabel(response)}. Reward Ledger credited +${selectedAction.xp} XP and +${selectedOttCredits} OTT Credits.`
+              : `${getMakeWavesVerificationLabel(response)}. Het beloningsoverzicht kreeg +${selectedAction.xp} XP en +${selectedOttCredits} OTT Credits.`
+            : isEnglish
+              ? `${getMakeWavesVerificationLabel(response)}. This transaction was already processed; no duplicate reward was added.`
+              : `${getMakeWavesVerificationLabel(response)}. Deze transactie was al verwerkt; er is geen dubbele beloning toegevoegd.`,
         );
         return;
       }
 
       setStatusMessage(getMakeWavesVerificationLabel(response));
     } catch (error) {
-      setStatusMessage(getErrorMessage(error));
+      setStatusMessage(getErrorMessage(error, isEnglish));
     } finally {
       setVerifyBusy(false);
     }
@@ -177,18 +194,18 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
     const opened = openXamanPayload(payload);
 
     if (!opened) {
-      setStatusMessage("Geen Xaman payload link gevonden.");
+      setStatusMessage(isEnglish ? "No Xaman payload link was found." : "Geen Xaman-verzoeklink gevonden.");
     }
   }
 
   async function copyUuid() {
     if (!payloadUuid) {
-      setStatusMessage("Geen payload UUID om te kopiëren.");
+      setStatusMessage(isEnglish ? "There is no payload UUID to copy." : "Er is geen verzoek-ID om te kopiëren.");
       return;
     }
 
     await navigator.clipboard.writeText(payloadUuid);
-    setStatusMessage("Payload UUID copied.");
+    setStatusMessage(isEnglish ? "Payload UUID copied." : "Verzoek-ID gekopieerd.");
   }
 
   return (
@@ -216,16 +233,16 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
               </h1>
 
               <p className="font-mono text-sm xl:text-base text-black/60 max-w-3xl leading-relaxed mb-8">
-                This is the clean Make Waves demo action: connect Xaman, create a SourceTag payload,
-                sign with self-custody, verify the Mainnet result, then credit XP and OTT Credits
-                only after proof is validated.
+                {isEnglish
+                  ? "This is the clear Make Waves proof flow: connect Xaman, create a SourceTag payload, sign with self-custody, verify the Mainnet result, then credit XP and OTT Credits only after the proof is validated."
+                  : "Dit is de duidelijke Make Waves-proofflow: koppel Xaman, maak een SourceTag-verzoek, onderteken via self-custody, verifieer het Mainnet-resultaat en ken XP en OTT Credits pas toe nadat de proof is gevalideerd."}
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-4 gap-3 max-w-5xl">
-                <FlowStep number="01" title="Connect" text="Xaman wallet" />
-                <FlowStep number="02" title="Sign" text="Payload" />
-                <FlowStep number="03" title="Verify" text="Mainnet proof" />
-                <FlowStep number="04" title="Credit" text="XP + OTT Credits" />
+                <FlowStep number="01" title={isEnglish ? "Connect" : "Koppelen"} text="Xaman wallet" />
+                <FlowStep number="02" title={isEnglish ? "Sign" : "Ondertekenen"} text={isEnglish ? "Payload" : "Verzoek"} />
+                <FlowStep number="03" title={isEnglish ? "Verify" : "Verifiëren"} text="Mainnet proof" />
+                <FlowStep number="04" title={isEnglish ? "Credit" : "Toekennen"} text="XP + OTT Credits" />
               </div>
             </div>
 
@@ -238,23 +255,23 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
               />
 
               <MetricBox
-                label="Selected"
+                label={isEnglish ? "Selected" : "Geselecteerd"}
                 value={`+${selectedAction.xp} XP`}
                 text={`+${selectedOttCredits} OTT Credits`}
                 icon={<Gift size={18} />}
               />
 
               <MetricBox
-                label="Total XP"
+                label={isEnglish ? "Total XP" : "Totale XP"}
                 value={String(rewardState.totalXp)}
-                text="Reward Ledger"
+                text={isEnglish ? "Reward Ledger" : "Beloningsoverzicht"}
                 icon={<Trophy size={18} />}
               />
 
               <MetricBox
                 label="OTT Credits"
                 value={String(rewardState.ottCredits)}
-                text="Internal utility"
+                text={isEnglish ? "Internal utility" : "Interne utility"}
                 icon={<ShieldCheck size={18} />}
               />
             </div>
@@ -265,7 +282,7 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
       <section className="p-4 md:p-6 xl:p-10 bg-white">
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-12 xl:col-span-4">
-            <Panel title="Choose Proof Action" icon={<Sparkles size={18} />}>
+            <Panel title={isEnglish ? "Choose Proof Action" : "Kies proofactie"} icon={<Sparkles size={18} />}>
               <div className="space-y-3">
                 {MAKE_WAVES_ACTIONS.map((action) => (
                   <button
@@ -275,7 +292,9 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
                       setPayload(null);
                       setVerification(null);
                       setStatusMessage(
-                        `${action.title} selected. Create a fresh Xaman payload for this action.`,
+                        isEnglish
+                          ? `${getActionTitle(action.id, true)} selected. Create a fresh Xaman payload for this action.`
+                          : `${getActionTitle(action.id, false)} geselecteerd. Maak voor deze actie een nieuw Xaman-verzoek.`,
                       );
                     }}
                     className={`w-full border p-4 text-left transition-all ${
@@ -287,7 +306,7 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="font-orbitron text-xs font-bold uppercase mb-2 text-black">
-                          {action.title}
+                          {getActionTitle(action.id, isEnglish)}
                         </p>
 
                         <p className="font-mono text-[10px] text-black/40 uppercase leading-relaxed">
@@ -306,12 +325,12 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
               </div>
             </Panel>
 
-            <Panel title="Why this counts" icon={<Info size={18} />}>
+            <Panel title={isEnglish ? "Why this counts" : "Waarom dit meetelt"} icon={<Info size={18} />}>
               <div className="space-y-3">
-                <InfoLine text="The action creates a real Xaman signing request." />
-                <InfoLine text={`The payload must include SourceTag ${MAKE_WAVES_SOURCE_TAG}.`} />
-                <InfoLine text="XP and OTT Credits are credited only after verification." />
-                <InfoLine text="Duplicate rewards are blocked by the Reward Ledger." />
+                <InfoLine text={isEnglish ? "The action creates a real Xaman signing request." : "De actie maakt een echt Xaman-ondertekenverzoek."} />
+                <InfoLine text={isEnglish ? `The payload must include SourceTag ${MAKE_WAVES_SOURCE_TAG}.` : `Het verzoek moet SourceTag ${MAKE_WAVES_SOURCE_TAG} bevatten.`} />
+                <InfoLine text={isEnglish ? "XP and OTT Credits are credited only after verification." : "XP en OTT Credits worden pas na verificatie toegekend."} />
+                <InfoLine text={isEnglish ? "Duplicate rewards are blocked by the Reward Ledger." : "Dubbele beloningen worden door het beloningsoverzicht geblokkeerd."} />
               </div>
             </Panel>
           </div>
@@ -321,7 +340,7 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
               {isGuest && (
                 <div className="border border-[#D84858]/25 bg-[#D84858]/10 p-4 mb-5">
                   <p className="font-mono text-xs text-black/60 leading-relaxed">
-                    Connect Xaman first. Guest mode can read the terminal, but cannot create reward proof.
+                    {isEnglish ? "Connect Xaman first. Guest mode can read the terminal, but cannot create reward proof." : "Koppel eerst Xaman. In gastmodus kun je de terminal lezen, maar geen beloningsproof maken."}
                   </p>
                 </div>
               )}
@@ -336,7 +355,7 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
                 ) : (
                   <QrCode size={16} />
                 )}
-                Create Xaman Proof Payload
+                {isEnglish ? "Create Xaman Proof Payload" : "Maak Xaman-proofverzoek"}
               </button>
 
               {payloadUuid && (
@@ -348,21 +367,21 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
                   )}
 
                   <MiniStatus label="Payload UUID" value={payloadUuid} />
-                  <MiniStatus label="Payload URL" value={payloadUrl ?? "None"} />
+                  <MiniStatus label="Payload URL" value={payloadUrl ?? (isEnglish ? "None" : "Geen")} />
                   <MiniStatus label="SourceTag" value={String(MAKE_WAVES_SOURCE_TAG)} />
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <ActionButton
                       icon={<ExternalLink size={18} />}
-                      title="Open Xaman"
-                      text="Launch payload"
+                      title={isEnglish ? "Open Xaman" : "Open Xaman"}
+                      text={isEnglish ? "Launch payload" : "Open verzoek"}
                       onClick={openPayload}
                     />
 
                     <ActionButton
                       icon={<Copy size={18} />}
-                      title="Copy UUID"
-                      text="For verification"
+                      title={isEnglish ? "Copy UUID" : "Kopieer ID"}
+                      text={isEnglish ? "For verification" : "Voor verificatie"}
                       onClick={copyUuid}
                     />
                   </div>
@@ -370,7 +389,7 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
               )}
             </Panel>
 
-            <Panel title="Verify + Credit Rewards" icon={<CheckCircle2 size={18} />}>
+            <Panel title={isEnglish ? "Verify + Credit Rewards" : "Verifieer + ken beloningen toe"} icon={<CheckCircle2 size={18} />}>
               <button
                 onClick={verifyPayload}
                 disabled={verifyBusy || !payloadUuid || isGuest}
@@ -385,11 +404,11 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
 
                   <div>
                     <p className="font-orbitron text-xs font-bold uppercase text-black">
-                      Verify Signed Payload
+                      {isEnglish ? "Verify Signed Payload" : "Verifieer ondertekend verzoek"}
                     </p>
 
                     <p className="font-mono text-[10px] text-black/40 uppercase leading-relaxed">
-                      Mainnet validation credits XP + OTT Credits
+                      {isEnglish ? "Mainnet validation credits XP + OTT Credits" : "Mainnet-validatie kent XP + OTT Credits toe"}
                     </p>
                   </div>
                 </div>
@@ -397,7 +416,7 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
 
               <div className="border border-black/10 bg-[#F7F8FC] p-4 mt-5">
                 <p className="font-mono text-xs text-black/55 leading-relaxed">
-                  Reward logic stays local/off-chain for V1. Future on-chain OTT token conversion remains disabled until utility, profitability and legal review are complete.
+                  {isEnglish ? "Reward logic stays local and off-chain for V1. Future on-chain OTT token conversion remains disabled until utility, feasibility and legal review are complete." : "De beloningslogica blijft in V1 lokaal en off-chain. Toekomstige on-chain omzetting naar OTT-tokens blijft uitgeschakeld totdat utility, haalbaarheid en juridische toetsing zijn afgerond."}
                 </p>
               </div>
             </Panel>
@@ -412,16 +431,16 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
               </div>
             </Panel>
 
-            <Panel title="Verification" icon={<ShieldCheck size={18} />}>
+            <Panel title={isEnglish ? "Verification" : "Verificatie"} icon={<ShieldCheck size={18} />}>
               {verification?.verified ? (
                 <div className="space-y-3">
                   <MiniStatus
-                    label="Signed in Xaman"
-                    value={verification.verified.signed ? "Yes" : "No"}
+                    label={isEnglish ? "Signed in Xaman" : "Ondertekend in Xaman"}
+                    value={verification.verified.signed ? (isEnglish ? "Yes" : "Ja") : (isEnglish ? "No" : "Nee")}
                   />
                   <MiniStatus
-                    label="Payload resolved"
-                    value={verification.verified.resolved ? "Yes" : "No"}
+                    label={isEnglish ? "Payload resolved" : "Verzoek afgerond"}
+                    value={verification.verified.resolved ? (isEnglish ? "Yes" : "Ja") : (isEnglish ? "No" : "Nee")}
                   />
                   <MiniStatus
                     label="SourceTag"
@@ -429,25 +448,25 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
                   />
                   <MiniStatus
                     label="Account"
-                    value={verification.verified.account ?? "None"}
+                    value={verification.verified.account ?? (isEnglish ? "None" : "Geen")}
                   />
                   <MiniStatus
                     label="Txid"
-                    value={verification.verified.txid ?? "None"}
+                    value={verification.verified.txid ?? (isEnglish ? "None" : "Geen")}
                   />
                 </div>
               ) : (
-                <MiniStatus label="Result" value="Not verified yet" />
+                <MiniStatus label={isEnglish ? "Result" : "Resultaat"} value={isEnglish ? "Not verified yet" : "Nog niet geverifieerd"} />
               )}
             </Panel>
 
-            <Panel title="Demo Route" icon={<Wallet size={18} />}>
+            <Panel title={isEnglish ? "Demo Route" : "Demoroute"} icon={<Wallet size={18} />}>
               <div className="space-y-3">
-                <InfoLine text="1. Connect Xaman in the Xaman Center." />
-                <InfoLine text="2. Return here and create proof." />
-                <InfoLine text="3. Verify after signing." />
-                <InfoLine text="4. Open Reward Ledger to show progress." />
-                <InfoLine text="5. Open SourceTag page to explain tracking." />
+                <InfoLine text={isEnglish ? "1. Connect Xaman in the Xaman Center." : "1. Koppel Xaman in het Xaman Center."} />
+                <InfoLine text={isEnglish ? "2. Return here and create proof." : "2. Kom hier terug en maak proof."} />
+                <InfoLine text={isEnglish ? "3. Verify after signing." : "3. Verifieer na ondertekening."} />
+                <InfoLine text={isEnglish ? "4. Open Reward Ledger to show progress." : "4. Open het beloningsoverzicht om voortgang te tonen."} />
+                <InfoLine text={isEnglish ? "5. Open the SourceTag page to explain tracking." : "5. Open de SourceTag-pagina om tracking uit te leggen."} />
               </div>
             </Panel>
           </div>
@@ -457,7 +476,23 @@ export function DailyCheckInTab({ walletAddress }: DailyCheckInTabProps) {
   );
 }
 
-function getErrorMessage(error: unknown) {
+function getActionTitle(actionId: MakeWavesActionId, isEnglish: boolean) {
+  if (isEnglish) {
+    return MAKE_WAVES_ACTIONS.find((action) => action.id === actionId)?.title ?? actionId;
+  }
+
+  const titles: Partial<Record<MakeWavesActionId, string>> = {
+    "daily-checkin": "Dagelijkse check-in",
+    "source-tag-proof": "SourceTag-proof",
+    "wallet-safety": "Walletveiligheid",
+    "academy-lesson": "Academyles",
+    "xrpl-verify": "XRPL-verificatie",
+  };
+
+  return titles[actionId] ?? MAKE_WAVES_ACTIONS.find((action) => action.id === actionId)?.title ?? actionId;
+}
+
+function getErrorMessage(error: unknown, isEnglish = true) {
   if (typeof error === "string") {
     return error;
   }
@@ -470,7 +505,7 @@ function getErrorMessage(error: unknown) {
     }
   }
 
-  return "Unknown Daily Check-In error.";
+  return isEnglish ? "Unknown Daily Check-In error." : "Onbekende fout bij de dagelijkse check-in.";
 }
 
 function Panel({

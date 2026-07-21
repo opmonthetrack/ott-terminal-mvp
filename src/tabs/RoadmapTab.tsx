@@ -54,72 +54,82 @@ type PendingVote = {
   createdAt: number;
 };
 
-const phaseOptions: PhaseOption[] = [
-  {
-    id: "academy-expansion",
-    phase: "Phase 2",
-    title: "Academy Expansion",
-    status: "Learn",
-    text: "More beginner-friendly XRPL lessons, short learning paths and proof-ready education flows.",
-    bullets: [
-      "XRPL basics for new users",
-      "Xaman safety and wallet habits",
-      "Completion proof route for Make Waves activity",
-    ],
-  },
-  {
-    id: "web2-license",
-    phase: "Phase 3",
-    title: "Web2 License Access",
-    status: "Fiat",
-    text: "A clear fiat/software license route for users and companies that are not ready to pay with crypto.",
-    bullets: [
-      "Business invoice or payment provider route",
-      "Access as software/service license",
-      "No automatic fiat-to-crypto conversion",
-    ],
-  },
-  {
-    id: "marketplace-merch",
-    phase: "Phase 4",
-    title: "Marketplace + Merch",
-    status: "Shop",
-    text: "OTT merch, digital access bundles and community products connected to the terminal story.",
-    bullets: [
-      "OTT product showcase",
-      "Access Pass holder perks where legally safe",
-      "Education-first commerce flow",
-    ],
-  },
-  {
-    id: "ai-research",
-    phase: "Phase 5",
-    title: "AI Research Assistant",
-    status: "AI",
-    text: "A guided research layer for XRPL news, ecosystem tracking, education and campaign preparation.",
-    bullets: [
-      "XRPL source research assistant",
-      "Newsroom and content support",
-      "Clear human review before publishing",
-    ],
-  },
-  {
-    id: "token-tools-review",
-    phase: "Phase 6",
-    title: "Token Tools + Legal Review",
-    status: "Legal",
-    text: "Careful token tooling only after real demand, product-market feedback and legal review.",
-    bullets: [
-      "Token Factory remains advanced/labs first",
-      "No token value promise",
-      "Legal-first utility design",
-    ],
-  },
+const PHASE_IDS: RoadmapVoteOptionId[] = [
+  "academy-expansion",
+  "web2-license",
+  "marketplace-merch",
+  "ai-research",
+  "token-tools-review",
 ];
 
+function getPhaseOptions(isEnglish: boolean): PhaseOption[] {
+  return [
+    {
+      id: "academy-expansion",
+      phase: isEnglish ? "Phase 2" : "Fase 2",
+      title: isEnglish ? "Academy Expansion" : "Academy-uitbreiding",
+      status: isEnglish ? "Learn" : "Leren",
+      text: isEnglish
+        ? "More beginner-friendly XRPL lessons, short learning paths and proof-ready education flows."
+        : "Meer beginnersvriendelijke XRPL-lessen, korte leerpaden en educatiestromen die klaar zijn voor proof.",
+      bullets: isEnglish
+        ? ["XRPL basics for new users", "Xaman safety and wallet habits", "Completion proof route for Make Waves activity"]
+        : ["XRPL-basis voor nieuwe gebruikers", "Xaman-veiligheid en goede walletgewoonten", "Afrondingsproof voor Make Waves-activiteit"],
+    },
+    {
+      id: "web2-license",
+      phase: isEnglish ? "Phase 3" : "Fase 3",
+      title: isEnglish ? "Web2 License Access" : "Toegang via Web2-licentie",
+      status: "Fiat",
+      text: isEnglish
+        ? "A clear fiat and software-license route for users and companies that are not ready to pay with crypto."
+        : "Een duidelijke fiat- en softwarelicentieroute voor gebruikers en bedrijven die nog niet met crypto willen betalen.",
+      bullets: isEnglish
+        ? ["Business invoice or payment-provider route", "Access as a software or service license", "No automatic fiat-to-crypto conversion"]
+        : ["Zakelijke factuur of route via een betaaldienstverlener", "Toegang als software- of servicelicentie", "Geen automatische omzetting van fiat naar crypto"],
+    },
+    {
+      id: "marketplace-merch",
+      phase: isEnglish ? "Phase 4" : "Fase 4",
+      title: isEnglish ? "Marketplace + Merch" : "Marktplaats + merchandise",
+      status: isEnglish ? "Shop" : "Winkel",
+      text: isEnglish
+        ? "OTT merchandise, digital access bundles and community products connected to the terminal story."
+        : "OTT-merchandise, digitale toegangsbundels en communityproducten die aansluiten op het verhaal van de terminal.",
+      bullets: isEnglish
+        ? ["OTT product showcase", "Access Pass holder benefits where legally safe", "Education-first commerce flow"]
+        : ["OTT-productpresentatie", "Voordelen voor Access Pass-houders waar dit juridisch veilig is", "Handelsstroom met educatie voorop"],
+    },
+    {
+      id: "ai-research",
+      phase: isEnglish ? "Phase 5" : "Fase 5",
+      title: isEnglish ? "AI Research Assistant" : "AI-onderzoeksassistent",
+      status: "AI",
+      text: isEnglish
+        ? "A guided research layer for XRPL news, ecosystem tracking, education and campaign preparation."
+        : "Een begeleide onderzoekslaag voor XRPL-nieuws, ecosysteemtracking, educatie en campagnevoorbereiding.",
+      bullets: isEnglish
+        ? ["XRPL source-research assistant", "Newsroom and content support", "Clear human review before publishing"]
+        : ["Assistent voor XRPL-bronnenonderzoek", "Ondersteuning voor Newsroom en content", "Duidelijke menselijke controle vóór publicatie"],
+    },
+    {
+      id: "token-tools-review",
+      phase: isEnglish ? "Phase 6" : "Fase 6",
+      title: isEnglish ? "Token Tools + Legal Review" : "Tokenhulpmiddelen + juridische toetsing",
+      status: isEnglish ? "Legal" : "Juridisch",
+      text: isEnglish
+        ? "Careful token tooling only after real demand, product-market feedback and legal review."
+        : "Zorgvuldige tokenhulpmiddelen pas na echte vraag, product-marktfeedback en juridische toetsing.",
+      bullets: isEnglish
+        ? ["Token Factory remains advanced and labs-first", "No promise of token value", "Utility design with legal review first"]
+        : ["Token Factory blijft eerst voor geavanceerde labs", "Geen belofte van tokenwaarde", "Utility-ontwerp met juridische toetsing voorop"],
+    },
+  ];
+}
+
 function createEmptyCounts() {
-  return phaseOptions.reduce<Record<RoadmapVoteOptionId, number>>((counts, option) => {
-    counts[option.id] = 0;
+  return PHASE_IDS.reduce<Record<RoadmapVoteOptionId, number>>((counts, id) => {
+    counts[id] = 0;
     return counts;
   }, {} as Record<RoadmapVoteOptionId, number>);
 }
@@ -205,6 +215,7 @@ function formatVoteTime(value: string | null) {
 export function RoadmapTab({ walletAddress = "guest", onNavigate }: RoadmapTabProps) {
   const { language } = useTerminalLanguage();
   const isEnglish = language === "en";
+  const phaseOptions = useMemo(() => getPhaseOptions(isEnglish), [isEnglish]);
   const isGuest = !walletAddress || walletAddress === "guest";
   const [voteStats, setVoteStats] = useState<RoadmapVoteStatsResponse | null>(null);
   const [pendingVote, setPendingVote] = useState<PendingVote | null>(() => loadPendingVote());
@@ -226,13 +237,23 @@ export function RoadmapTab({ walletAddress = "guest", onNavigate }: RoadmapTabPr
     return counts;
   }, [voteStats]);
 
+  const optionById = useMemo(
+    () => new Map(phaseOptions.map((option) => [option.id, option])),
+    [phaseOptions],
+  );
+  const localizeVoteTitle = (voteId: RoadmapVoteOptionId, fallback: string) =>
+    optionById.get(voteId)?.title ?? fallback;
+
   const totalActiveVotes = voteStats?.totals?.activeVerifiedVotes ?? 0;
   const totalVoteTransactions = voteStats?.totals?.verifiedVoteTransactions ?? 0;
   const verifiedWalletVote = voteStats?.walletVote ?? null;
   const selectedVoteId = verifiedWalletVote?.voteId ?? pendingVote?.voteId ?? null;
   const ranking = useMemo(() => {
     if (voteStats?.ranking?.length) {
-      return voteStats.ranking;
+      return voteStats.ranking.map((item) => ({
+        ...item,
+        title: optionById.get(item.id)?.title ?? item.title,
+      }));
     }
 
     return phaseOptions.map((option) => ({
@@ -240,9 +261,15 @@ export function RoadmapTab({ walletAddress = "guest", onNavigate }: RoadmapTabPr
       title: option.title,
       votes: voteCounts[option.id],
     }));
-  }, [voteCounts, voteStats]);
-  const leader = voteStats?.mostVoted ?? ranking[0] ?? null;
-  const leastVoted = voteStats?.leastVoted ?? ranking[ranking.length - 1] ?? null;
+  }, [optionById, phaseOptions, voteCounts, voteStats]);
+  const rawLeader = voteStats?.mostVoted ?? ranking[0] ?? null;
+  const rawLeastVoted = voteStats?.leastVoted ?? ranking[ranking.length - 1] ?? null;
+  const leader = rawLeader
+    ? { ...rawLeader, title: localizeVoteTitle(rawLeader.id, rawLeader.title) }
+    : null;
+  const leastVoted = rawLeastVoted
+    ? { ...rawLeastVoted, title: localizeVoteTitle(rawLeastVoted.id, rawLeastVoted.title) }
+    : null;
 
   async function refreshVoteStats(options?: { silent?: boolean }) {
     if (!options?.silent) {
@@ -265,8 +292,8 @@ export function RoadmapTab({ walletAddress = "guest", onNavigate }: RoadmapTabPr
         setPendingVote(null);
         setStatus(
           isEnglish
-            ? `Vote verified on XRPL for ${response.walletVote.title}. The live public ranking has been updated.`
-            : `Stem op XRPL geverifieerd voor ${response.walletVote.title}. De openbare ranglijst is bijgewerkt.`,
+            ? `Vote verified on XRPL for ${localizeVoteTitle(response.walletVote.voteId, response.walletVote.title)}. The live public ranking has been updated.`
+            : `Stem op XRPL geverifieerd voor ${localizeVoteTitle(response.walletVote.voteId, response.walletVote.title)}. De openbare ranglijst is bijgewerkt.`,
         );
       } else if (currentPendingVote) {
         setPendingVote(currentPendingVote);
@@ -278,8 +305,8 @@ export function RoadmapTab({ walletAddress = "guest", onNavigate }: RoadmapTabPr
       } else if (response.walletVote) {
         setStatus(
           isEnglish
-            ? `Your active verified vote is ${response.walletVote.title}. A newer signed vote will replace it.`
-            : `Je actieve geverifieerde stem is ${response.walletVote.title}. Een nieuwere ondertekende stem vervangt deze.`,
+            ? `Your active verified vote is ${localizeVoteTitle(response.walletVote.voteId, response.walletVote.title)}. A newer signed vote will replace it.`
+            : `Je actieve geverifieerde stem is ${localizeVoteTitle(response.walletVote.voteId, response.walletVote.title)}. Een nieuwere ondertekende stem vervangt deze.`,
         );
       } else {
         setStatus(
@@ -430,14 +457,30 @@ export function RoadmapTab({ walletAddress = "guest", onNavigate }: RoadmapTabPr
           <MetricCard
             icon={Trophy}
             label={isEnglish ? "Current Leader" : "Huidige Koploper"}
-            value={leader?.title ?? "No votes"}
-            text={leader ? `${leader.votes} verified vote${leader.votes === 1 ? "" : "s"}.` : "Waiting for the first vote."}
+            value={leader
+              ? localizeVoteTitle(leader.id, leader.title)
+              : isEnglish ? "No votes" : "Geen stemmen"}
+            text={leader
+              ? isEnglish
+                ? `${leader.votes} verified vote${leader.votes === 1 ? "" : "s"}.`
+                : `${leader.votes} geverifieerde stem${leader.votes === 1 ? "" : "men"}.`
+              : isEnglish
+                ? "Waiting for the first vote."
+                : "Wachten op de eerste stem."}
           />
           <MetricCard
             icon={Wallet}
             label={isEnglish ? "Your Active Vote" : "Jouw Actieve Stem"}
-            value={verifiedWalletVote?.title ?? (pendingVote ? "Pending Xaman" : "Not voted")}
-            text={isGuest ? "Xaman identifies the signing wallet." : shortWallet(walletAddress)}
+            value={verifiedWalletVote
+              ? localizeVoteTitle(verifiedWalletVote.voteId, verifiedWalletVote.title)
+              : pendingVote
+                ? isEnglish ? "Pending Xaman" : "Wachten op Xaman"
+                : isEnglish ? "Not voted" : "Nog niet gestemd"}
+            text={isGuest
+              ? isEnglish
+                ? "Xaman identifies the signing wallet."
+                : "Xaman identificeert de ondertekenende wallet."
+              : shortWallet(walletAddress)}
           />
         </div>
 
@@ -598,10 +641,10 @@ export function RoadmapTab({ walletAddress = "guest", onNavigate }: RoadmapTabPr
                       </span>
                       <div className="flex-1 min-w-0">
                         <p className="font-orbitron text-[10px] font-black uppercase truncate">
-                          {item.title}
+                          {localizeVoteTitle(item.id, item.title)}
                         </p>
                         <p className="font-mono text-[9px] uppercase tracking-widest text-black/35 mt-1">
-                          {item.votes} votes · {percent}%
+                          {item.votes} {isEnglish ? "votes" : "stemmen"} · {percent}%
                         </p>
                       </div>
                     </div>
@@ -612,11 +655,15 @@ export function RoadmapTab({ walletAddress = "guest", onNavigate }: RoadmapTabPr
               <div className="grid grid-cols-2 gap-2 mt-4">
                 <MiniStatus
                   label={isEnglish ? "Most" : "Meeste"}
-                  value={leader ? `${leader.title} · ${leader.votes}` : "No votes"}
+                  value={leader
+                    ? `${localizeVoteTitle(leader.id, leader.title)} · ${leader.votes}`
+                    : isEnglish ? "No votes" : "Geen stemmen"}
                 />
                 <MiniStatus
                   label={isEnglish ? "Least" : "Minste"}
-                  value={leastVoted ? `${leastVoted.title} · ${leastVoted.votes}` : "No votes"}
+                  value={leastVoted
+                    ? `${localizeVoteTitle(leastVoted.id, leastVoted.title)} · ${leastVoted.votes}`
+                    : isEnglish ? "No votes" : "Geen stemmen"}
                 />
               </div>
             </Panel>
@@ -639,7 +686,10 @@ export function RoadmapTab({ walletAddress = "guest", onNavigate }: RoadmapTabPr
 
               <div className="grid grid-cols-1 gap-2 mt-4">
                 <MiniStatus label="SourceTag" value={String(MAKE_WAVES_SOURCE_TAG)} />
-                <MiniStatus label={isEnglish ? "Proof Wallet" : "Proofwallet"} value={voteStats?.proof?.destinationWallet ?? "Loading from XRPL"} />
+                <MiniStatus
+                  label={isEnglish ? "Proof Wallet" : "Proofwallet"}
+                  value={voteStats?.proof?.destinationWallet ?? (isEnglish ? "Loading from XRPL" : "Laden vanaf XRPL")}
+                />
                 <MiniStatus label={isEnglish ? "Proof Amount" : "Proofbedrag"} value="1 drop" />
               </div>
             </Panel>
@@ -669,7 +719,7 @@ export function RoadmapTab({ walletAddress = "guest", onNavigate }: RoadmapTabPr
                   <div key={`${voteRecord.account}-${voteRecord.ledgerIndex}`} className="border border-black/10 bg-[#F7F8FC] p-3">
                     <div className="flex items-center justify-between gap-3">
                       <p className="font-orbitron text-[10px] font-black uppercase">
-                        {voteRecord.title}
+                        {localizeVoteTitle(voteRecord.voteId, voteRecord.title)}
                       </p>
                       <span className="font-mono text-[9px] text-black/35">
                         {formatVoteTime(voteRecord.timestamp)}
