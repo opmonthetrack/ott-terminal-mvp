@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - feature/academy-ai-profile-session
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
