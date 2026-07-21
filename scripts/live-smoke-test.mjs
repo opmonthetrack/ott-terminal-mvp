@@ -3,29 +3,28 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 const BASE_URL = (process.env.BASE_URL || "https://ott-terminal-mvp.vercel.app").replace(/\/$/, "");
-const ARTIFACT_DIR = path.resolve("artifacts/live-smoke");
-const TAB_SCREENSHOT_DIR = path.join(ARTIFACT_DIR, "tabs");
+const OUTPUT_DIR = path.resolve("artifacts/live-smoke");
+const SCREENSHOT_DIR = path.join(OUTPUT_DIR, "tabs");
 const runId = new Date().toISOString().replace(/[:.]/g, "-");
 
-await fs.mkdir(TAB_SCREENSHOT_DIR, { recursive: true });
+await fs.mkdir(SCREENSHOT_DIR, { recursive: true });
 
 const report = {
   runId,
   baseUrl: BASE_URL,
+  browser: "Chromium / Playwright",
   startedAt: new Date().toISOString(),
   finishedAt: null,
-  browser: "Chromium / Playwright",
-  home: null,
-  standalonePages: [],
-  apiChecks: [],
   tabs: [],
+  pages: [],
+  apiChecks: [],
+  fatalErrors: [],
   manualRequired: [
     "Xaman wallet connection signature and return",
-    "Daily Check-In signature and reward credit",
-    "Access Pass NFT scan using a real holder wallet",
-    "Founder NFT mint/send signature using the protected founder token",
+    "Daily Check-In signature and XP/OTT Credit verification",
+    "Access Pass NFT scan with a real holder wallet",
+    "Founder NFT mint/send signing with the protected founder token",
   ],
-  fatalErrors: [],
 };
 
 function slugify(value) {
@@ -36,129 +35,87 @@ function slugify(value) {
     .slice(0, 70);
 }
 
-function isCriticalConsoleMessage(message) {
-  const text = message.text();
-  return (
-    message.type() === "error" &&
-    !text.includes("favicon") &&
-    !text.includes("ResizeObserver loop") &&
-    !text.includes("net::ERR_ABORTED")
+function containsFatalText(text) {
+  return /Application Error|Failed to fetch dynamically imported module|ChunkLoadError|Something went wrong/i.test(
+    text,
   );
 }
 
-function isFatalText(text) {
-  return (
-    text.includes("Application Error") ||
-    text.includes("Failed to fetch dynamically imported module") ||
-    text.includes("ChunkLoadError") ||
-    text.includes("Something went wrong")
-  );
+async function bodyText(page, selector = "body") {
+  return page.locator(selector).innerText({ timeout: 10_000 }).catch(() => "");
 }
 
-async function waitForModule(page) {
+async function waitForTab(page) {
   await page.waitForTimeout(450);
   await page
     .getByText(/Loading terminal module/i)
     .waitFor({ state: "hidden", timeout: 12_000 })
     .catch(() => {});
-  await page.waitForTimeout(250);
+  await page.waitForTimeout(300);
 }
 
-async function screenshot(page, filename) {
-  const output = path.join(TAB_SCREENSHOT_DIR, filename);
-  await page.screenshot({ path: output, fullPage: false });
-  return path.relative(process.cwd(), output);
-}
-
-async function safeBodyText(page, selector = "body") {
-  try {
-    return await page.locator(selector).innerText({ timeout: 8_000 });
-  } catch {
-    return "";
-  }
-}
-
-async function directJsonCheck(page, name, url, options = {}) {
-  const result = await page.evaluate(
-    async ({ requestUrl, requestOptions }) => {
-      try {
-        const response = await fetch(requestUrl, requestOptions);
-        const text = await response.text();
-        let json = null;
-        try {
-          json = JSON.parse(text);
-        } catch {
-          json = null;
-        }
-        return {
-          ok: response.ok,
-          status: response.status,
-          contentType: response.headers.get("content-type"),
-          json,
-          text: text.slice(0, 1_000),
-        };
-      } catch (error) {
-        return {
-          ok: false,
-          status: 0,
-          error: error instanceof Error ? error.message : String(error),
-        };
-      }
-    },
-    { requestUrl: url, requestOptions: options },
-  );
-
-  const check = { name, url, ...result };
-  report.apiChecks.push(check);
-  return check;
+async function saveScreenshot(page, filename) {
+  const filePath = path.join(SCREENSHOT_DIR, filename);
+  await page.screenshot({ path: filePath, fullPage: false });
+  return path.relative(process.cwd(), filePath);
 }
 
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({
   viewport: { width: 1440, height: 1000 },
   serviceWorkers: "block",
-  ignoreHTTPSErrors: false,
 });
 const page = await context.newPage();
 
-let currentTab = "bootstrap";
-let tabConsoleErrors = [];
-let tabPageErrors = [];
-let tabFailedRequests = [];
-let tabBadResponses = [];
+let activeArea = "startup";
+let consoleErrors = [];
+let pageErrors = [];
+let failedRequests = [];
+let badResponses = [];
+
+function resetSignals(area) {
+  activeArea = area;
+  consoleErrors = [];
+  pageErrors = [];
+  failedRequests = [];
+  badResponses = [];
+}
 
 page.on("console", (message) => {
-  if (isCriticalConsoleMessage(message)) {
-    tabConsoleErrors.push({ tab: currentTab, text: message.text() });
+  const text = message.text();
+  if (
+    message.type() === "error" &&
+    !/favicon|ResizeObserver loop|net::ERR_ABORTED/i.test(text)
+  ) {
+    consoleErrors.push({ area: activeArea, text });
   }
 });
 
 page.on("pageerror", (error) => {
-  tabPageErrors.push({ tab: currentTab, text: error.message });
+  pageErrors.push({ area: activeArea, text: error.message });
 });
 
 page.on("requestfailed", (request) => {
   if (["document", "script", "xhr", "fetch"].includes(request.resourceType())) {
-    tabFailedRequests.push({
-      tab: currentTab,
+    failedRequests.push({
+      area: activeArea,
       url: request.url(),
       method: request.method(),
       resourceType: request.resourceType(),
-      failure: request.failure()?.errorText || "unknown",
+      error: request.failure()?.errorText || "unknown",
     });
   }
 });
 
 page.on("response", (response) => {
   const request = response.request();
-  const isSameOrigin = response.url().startsWith(BASE_URL);
   if (
-    isSameOrigin &&
+    response.url().startsWith(BASE_URL) &&
     response.status() >= 400 &&
     ["document", "script", "xhr", "fetch"].includes(request.resourceType())
   ) {
-    tabBadResponses.push({
-      tab: currentTab,
+    badResponses.push({
+      area: activeArea,
       url: response.url(),
       status: response.status(),
       resourceType: request.resourceType(),
@@ -166,51 +123,101 @@ page.on("response", (response) => {
   }
 });
 
-function resetTabSignals(label) {
-  currentTab = label;
-  tabConsoleErrors = [];
-  tabPageErrors = [];
-  tabFailedRequests = [];
-  tabBadResponses = [];
-}
-
-try {
-  resetTabSignals("home");
-  const homeUrl = `${BASE_URL}/?qa=${encodeURIComponent(runId)}`;
-  const homeResponse = await page.goto(homeUrl, {
+async function testPage(name, url, requiredText = []) {
+  resetSignals(name);
+  const response = await page.goto(url, {
     waitUntil: "domcontentloaded",
     timeout: 90_000,
   });
-  await waitForModule(page);
+  await waitForTab(page);
+  const text = await bodyText(page);
+  const lowerText = text.toLowerCase();
+  const missingText = requiredText.filter(
+    (value) => !lowerText.includes(value.toLowerCase()),
+  );
+  const screenshot = await saveScreenshot(page, `${slugify(name)}.png`);
+  const passed =
+    Boolean(response?.ok()) &&
+    !containsFatalText(text) &&
+    pageErrors.length === 0 &&
+    missingText.length === 0;
 
-  const homeText = await safeBodyText(page);
-  const homeShot = await screenshot(page, "00-home.png");
-  report.home = {
+  const result = {
+    name,
     url: page.url(),
-    status: homeResponse?.status() ?? null,
-    title: await page.title(),
-    screenshot: homeShot,
-    fatalText: isFatalText(homeText),
-    consoleErrors: [...tabConsoleErrors],
-    pageErrors: [...tabPageErrors],
-    failedRequests: [...tabFailedRequests],
-    badResponses: [...tabBadResponses],
+    httpStatus: response?.status() ?? null,
+    passed,
+    missingText,
+    screenshot,
+    consoleErrors: [...consoleErrors],
+    pageErrors: [...pageErrors],
+    failedRequests: [...failedRequests],
+    badResponses: [...badResponses],
   };
+  report.pages.push(result);
+  return result;
+}
 
-  if (!homeResponse?.ok() || report.home.fatalText || tabPageErrors.length > 0) {
-    report.fatalErrors.push("Production home page did not load cleanly.");
+async function apiCheck(name, requestUrl, requestOptions, validate) {
+  const response = await page.evaluate(
+    async ({ url, options }) => {
+      try {
+        const result = await fetch(url, options);
+        const text = await result.text();
+        let json = null;
+        try {
+          json = JSON.parse(text);
+        } catch {
+          json = null;
+        }
+        return {
+          transportOk: true,
+          ok: result.ok,
+          status: result.status,
+          json,
+          text: text.slice(0, 1_200),
+        };
+      } catch (error) {
+        return {
+          transportOk: false,
+          ok: false,
+          status: 0,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
+    },
+    { url: requestUrl, options: requestOptions },
+  );
+
+  const passed = validate(response);
+  const check = { name, url: requestUrl, passed, ...response };
+  report.apiChecks.push(check);
+  return check;
+}
+
+try {
+  const founderHome = await testPage(
+    "00-founder-home",
+    `${BASE_URL}/?founder=1&qa=${encodeURIComponent(runId)}`,
+    ["Home", "XRPL OnTheTrack Terminal"],
+  );
+
+  if (!founderHome.passed) {
+    report.fatalErrors.push("Founder-mode production home failed to load cleanly.");
   }
 
-  const enButton = page.getByRole("button", { name: "EN", exact: true });
+  const enButton = page.locator("aside").getByRole("button", { name: "EN", exact: true });
   if (await enButton.isVisible().catch(() => false)) {
     await enButton.click();
-    await page.waitForTimeout(200);
+    await page.waitForTimeout(250);
   }
 
-  const showLabsButton = page.getByRole("button", { name: /Show Founder \/ Labs/i });
+  const showLabsButton = page
+    .locator("aside")
+    .getByRole("button", { name: /Show Founder \/ Labs/i });
   if (await showLabsButton.isVisible().catch(() => false)) {
     await showLabsButton.click();
-    await page.waitForTimeout(250);
+    await page.waitForTimeout(300);
   }
 
   await page.locator("aside details").evaluateAll((details) => {
@@ -225,167 +232,157 @@ try {
       .filter(Boolean),
   );
 
+  for (const requiredFounderTab of ["Pitch Mode", "Submission Pack", "Smoke Test"]) {
+    if (!labels.includes(requiredFounderTab)) {
+      report.fatalErrors.push(`${requiredFounderTab} is not visible in founder mode.`);
+    }
+  }
+
   for (let index = 0; index < labels.length; index += 1) {
     const label = labels[index];
-    resetTabSignals(label);
-
-    const navButton = page
-      .locator("aside nav button")
-      .filter({ has: page.getByText(label, { exact: true }) })
-      .first();
+    resetSignals(label);
 
     const result = {
       order: index + 1,
       label,
-      status: "UNKNOWN",
+      passed: false,
       mode: "unknown",
-      headingFound: false,
       screenshot: null,
+      notes: [],
       consoleErrors: [],
       pageErrors: [],
       failedRequests: [],
       badResponses: [],
-      notes: [],
     };
 
     try {
-      await navButton.scrollIntoViewIfNeeded();
-      await navButton.click({ timeout: 10_000 });
-      await waitForModule(page);
+      const button = page
+        .locator("aside nav button")
+        .filter({ has: page.getByText(label, { exact: true }) })
+        .first();
+      await button.scrollIntoViewIfNeeded();
+      await button.click({ timeout: 10_000 });
+      await waitForTab(page);
 
-      const mainText = await safeBodyText(page, "main");
-      result.headingFound = mainText.toLowerCase().includes(label.toLowerCase());
+      const text = await bodyText(page, "main");
+      const scriptOrDocumentFailure = failedRequests.some((item) =>
+        ["script", "document"].includes(item.resourceType),
+      );
+      const serverFailure = badResponses.some((item) => item.status >= 500);
+      const fatalConsole = consoleErrors.some((item) =>
+        /Failed to fetch dynamically imported module|ChunkLoadError|Application Error/i.test(
+          item.text,
+        ),
+      );
 
-      if (isFatalText(mainText)) {
-        result.status = "FAIL";
-        result.mode = "fatal-render-error";
-        result.notes.push("Fatal application/chunk error text detected.");
-      } else if (mainText.includes("Locked Preview")) {
-        result.status = "PASS";
-        result.mode = "access-gate-preview";
-        result.notes.push("Premium module correctly protected for guest browser.");
-      } else {
-        result.status = "PASS";
-        result.mode = "module-rendered";
+      result.mode = text.includes("Locked Preview")
+        ? "access-gate-preview"
+        : "module-rendered";
+      result.passed =
+        !containsFatalText(text) &&
+        pageErrors.length === 0 &&
+        !scriptOrDocumentFailure &&
+        !serverFailure &&
+        !fatalConsole;
+
+      if (!text.toLowerCase().includes(label.toLowerCase())) {
+        result.notes.push("Exact tab label not present in main text; screenshot kept for review.");
       }
 
-      if (!result.headingFound) {
-        result.notes.push("Exact tab label was not found in rendered main content; screenshot retained for review.");
-      }
-
-      result.screenshot = await screenshot(
+      result.screenshot = await saveScreenshot(
         page,
         `${String(index + 1).padStart(2, "0")}-${slugify(label)}.png`,
       );
     } catch (error) {
-      result.status = "FAIL";
-      result.mode = "interaction-error";
       result.notes.push(error instanceof Error ? error.message : String(error));
-      result.screenshot = await screenshot(
+      result.screenshot = await saveScreenshot(
         page,
         `${String(index + 1).padStart(2, "0")}-${slugify(label)}-failed.png`,
       ).catch(() => null);
     }
 
-    result.consoleErrors = [...tabConsoleErrors];
-    result.pageErrors = [...tabPageErrors];
-    result.failedRequests = [...tabFailedRequests];
-    result.badResponses = [...tabBadResponses];
-
-    const criticalNetworkFailure = result.badResponses.some((item) => item.status >= 500);
-    const criticalScriptFailure = result.failedRequests.some(
-      (item) => item.resourceType === "script" || item.resourceType === "document",
-    );
-
-    if (
-      result.pageErrors.length > 0 ||
-      criticalNetworkFailure ||
-      criticalScriptFailure ||
-      result.consoleErrors.some((item) =>
-        /Failed to fetch dynamically imported module|ChunkLoadError|Application Error/i.test(item.text),
-      )
-    ) {
-      result.status = "FAIL";
-    }
-
+    result.consoleErrors = [...consoleErrors];
+    result.pageErrors = [...pageErrors];
+    result.failedRequests = [...failedRequests];
+    result.badResponses = [...badResponses];
     report.tabs.push(result);
   }
 
-  resetTabSignals("support-standalone");
-  const supportResponse = await page.goto(`${BASE_URL}/support-donation.html?qa=${runId}`, {
-    waitUntil: "domcontentloaded",
-    timeout: 90_000,
-  });
-  await page.waitForTimeout(2_000);
-  const supportText = await safeBodyText(page);
-  const supportScreenshot = await screenshot(page, "90-support-standalone.png");
-  report.standalonePages.push({
-    name: "Support donation page",
-    url: page.url(),
-    status: supportResponse?.status() ?? null,
-    passed:
-      Boolean(supportResponse?.ok()) &&
-      supportText.includes("Support OTT Terminal") &&
-      supportText.includes("Total collected") &&
-      !isFatalText(supportText),
-    screenshot: supportScreenshot,
-    consoleErrors: [...tabConsoleErrors],
-    pageErrors: [...tabPageErrors],
-    failedRequests: [...tabFailedRequests],
-    badResponses: [...tabBadResponses],
-  });
-
-  await directJsonCheck(page, "News API", `${BASE_URL}/api/news`);
-  await directJsonCheck(page, "Live support stats", `${BASE_URL}/api/support-payment`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "xrpl.getSupportStats" }),
-  });
-  await directJsonCheck(page, "Support invalid amount is rejected", `${BASE_URL}/api/support-payment`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      action: "xaman.createSupportPaymentPayload",
-      amountXrp: "0.123",
-    }),
-  });
-  await directJsonCheck(page, "Support valid Xaman payload creation", `${BASE_URL}/api/support-payment`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      action: "xaman.createSupportPaymentPayload",
-      amountXrp: "0.589",
-    }),
-  });
-
-  const tabFailures = report.tabs.filter((tab) => tab.status === "FAIL");
-  const standaloneFailures = report.standalonePages.filter((item) => !item.passed);
-  const newsApi = report.apiChecks.find((check) => check.name === "News API");
-  const statsApi = report.apiChecks.find((check) => check.name === "Live support stats");
-  const invalidAmount = report.apiChecks.find(
-    (check) => check.name === "Support invalid amount is rejected",
+  const supportPage = await testPage(
+    "90-support-standalone",
+    `${BASE_URL}/support-donation.html?qa=${runId}`,
+    ["Support OTT Terminal", "Total collected", "Live support proof"],
   );
-  const validPayload = report.apiChecks.find(
-    (check) => check.name === "Support valid Xaman payload creation",
+  if (!supportPage.passed) {
+    report.fatalErrors.push("Standalone support page failed its live browser check.");
+  }
+
+  const returnPage = await testPage(
+    "91-support-return-route",
+    `${BASE_URL}/?founder=1&support_payment_return=1&payload=qa-${runId}&amount=0.589`,
+    ["Home", "XRPL OnTheTrack Terminal"],
+  );
+  if (!returnPage.passed) {
+    report.fatalErrors.push("Support/Xaman return URL failed to reload the terminal cleanly.");
+  }
+
+  await apiCheck(
+    "News API",
+    `${BASE_URL}/api/news`,
+    { method: "GET" },
+    (response) => response.status === 200,
+  );
+  await apiCheck(
+    "Live support stats",
+    `${BASE_URL}/api/support-payment`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "xrpl.getSupportStats" }),
+    },
+    (response) => response.status === 200 && response.json?.ok === true,
+  );
+  await apiCheck(
+    "Unsupported support amount rejected",
+    `${BASE_URL}/api/support-payment`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "xaman.createSupportPaymentPayload",
+        amountXrp: "0.123",
+      }),
+    },
+    (response) => response.status === 400,
+  );
+  await apiCheck(
+    "Valid support Xaman payload",
+    `${BASE_URL}/api/support-payment`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "xaman.createSupportPaymentPayload",
+        amountXrp: "0.589",
+      }),
+    },
+    (response) =>
+      response.status === 200 &&
+      response.json?.ok === true &&
+      Boolean(
+        response.json?.payload?.next?.always ||
+          response.json?.payload?.next?.no_push_msg_received,
+      ),
   );
 
-  if (tabFailures.length > 0) {
-    report.fatalErrors.push(`${tabFailures.length} tab(s) failed to render cleanly.`);
+  const failedTabs = report.tabs.filter((tab) => !tab.passed);
+  const failedApiChecks = report.apiChecks.filter((check) => !check.passed);
+
+  if (failedTabs.length > 0) {
+    report.fatalErrors.push(`${failedTabs.length} tab(s) failed the live browser check.`);
   }
-  if (standaloneFailures.length > 0) {
-    report.fatalErrors.push(`${standaloneFailures.length} standalone page(s) failed.`);
-  }
-  if (!newsApi?.ok) {
-    report.fatalErrors.push("News API did not return a successful response.");
-  }
-  if (!statsApi?.ok || !statsApi?.json?.ok) {
-    report.fatalErrors.push("Live support statistics endpoint failed.");
-  }
-  if (invalidAmount?.status !== 400) {
-    report.fatalErrors.push("Support endpoint did not reject an unsupported amount.");
-  }
-  if (!validPayload?.ok || !validPayload?.json?.payload?.next) {
-    report.fatalErrors.push("Valid Xaman support payload creation failed.");
+  if (failedApiChecks.length > 0) {
+    report.fatalErrors.push(`${failedApiChecks.length} API check(s) failed.`);
   }
 } catch (error) {
   report.fatalErrors.push(error instanceof Error ? error.stack || error.message : String(error));
@@ -394,60 +391,60 @@ try {
   await browser.close();
 }
 
-const passedTabs = report.tabs.filter((tab) => tab.status === "PASS").length;
-const failedTabs = report.tabs.filter((tab) => tab.status === "FAIL").length;
-const renderedModules = report.tabs.filter((tab) => tab.mode === "module-rendered").length;
-const lockedPreviews = report.tabs.filter((tab) => tab.mode === "access-gate-preview").length;
+const passedTabs = report.tabs.filter((tab) => tab.passed).length;
+const failedTabs = report.tabs.filter((tab) => !tab.passed).length;
+const renderedTabs = report.tabs.filter((tab) => tab.mode === "module-rendered").length;
+const lockedTabs = report.tabs.filter((tab) => tab.mode === "access-gate-preview").length;
 
 const markdown = [
-  "# OTT Terminal Live Smoke Test",
+  "# OTT Terminal Live Production Smoke Test",
   "",
   `- Run: ${report.runId}`,
-  `- Production URL: ${report.baseUrl}`,
+  `- URL: ${report.baseUrl}`,
   `- Browser: ${report.browser}`,
   `- Tabs checked: ${report.tabs.length}`,
-  `- Passed tabs: ${passedTabs}`,
-  `- Failed tabs: ${failedTabs}`,
-  `- Modules rendered as guest: ${renderedModules}`,
-  `- Premium access gates confirmed: ${lockedPreviews}`,
+  `- Tabs passed: ${passedTabs}`,
+  `- Tabs failed: ${failedTabs}`,
+  `- Modules rendered: ${renderedTabs}`,
+  `- Correct locked previews: ${lockedTabs}`,
   `- Fatal findings: ${report.fatalErrors.length}`,
   "",
-  "## Tabs",
+  "## Tab results",
   "",
   "| # | Tab | Result | Mode | Notes |",
   "|---:|---|---|---|---|",
   ...report.tabs.map(
     (tab) =>
-      `| ${tab.order} | ${tab.label} | ${tab.status} | ${tab.mode} | ${tab.notes.join(" ").replaceAll("|", "\\|") || "—"} |`,
+      `| ${tab.order} | ${tab.label} | ${tab.passed ? "PASS" : "FAIL"} | ${tab.mode} | ${tab.notes.join(" ").replaceAll("|", "\\|") || "—"} |`,
   ),
   "",
-  "## Standalone pages",
+  "## Page checks",
   "",
-  ...report.standalonePages.map(
-    (item) => `- ${item.passed ? "PASS" : "FAIL"} — ${item.name} — HTTP ${item.status}`,
+  ...report.pages.map(
+    (item) =>
+      `- ${item.passed ? "PASS" : "FAIL"} — ${item.name} — HTTP ${item.httpStatus}${item.missingText.length ? ` — missing: ${item.missingText.join(", ")}` : ""}`,
   ),
   "",
   "## API checks",
   "",
   ...report.apiChecks.map(
-    (check) => `- ${check.ok ? "OK" : "CHECK"} — ${check.name} — HTTP ${check.status}`,
+    (item) => `- ${item.passed ? "PASS" : "FAIL"} — ${item.name} — HTTP ${item.status}`,
   ),
   "",
-  "## Manual signature checks still required",
+  "## Manual signature checks",
   "",
   ...report.manualRequired.map((item) => `- ${item}`),
   "",
   "## Fatal findings",
   "",
-  ...(report.fatalErrors.length > 0
+  ...(report.fatalErrors.length
     ? report.fatalErrors.map((item) => `- ${item}`)
     : ["- None"]),
   "",
 ].join("\n");
 
-await fs.writeFile(path.join(ARTIFACT_DIR, "report.json"), JSON.stringify(report, null, 2));
-await fs.writeFile(path.join(ARTIFACT_DIR, "report.md"), markdown);
-
+await fs.writeFile(path.join(OUTPUT_DIR, "report.json"), JSON.stringify(report, null, 2));
+await fs.writeFile(path.join(OUTPUT_DIR, "report.md"), markdown);
 console.log(markdown);
 
 if (report.fatalErrors.length > 0) {
