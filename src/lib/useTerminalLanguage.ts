@@ -5,7 +5,7 @@ import {
   type TerminalLanguage,
 } from "./terminalCopy";
 
-const LANGUAGE_STORAGE_KEY = "ott-terminal-language-v1";
+const LANGUAGE_STORAGE_KEY = "ott-terminal-language-v2";
 
 function getInitialLanguage(): TerminalLanguage {
   const saved =
@@ -17,14 +17,7 @@ function getInitialLanguage(): TerminalLanguage {
     return saved;
   }
 
-  const browserLanguage =
-    typeof navigator !== "undefined" ? navigator.language.toLowerCase() : "";
-
-  if (browserLanguage.startsWith("en")) {
-    return "en";
-  }
-
-  return "nl";
+  return "en";
 }
 
 export function useTerminalLanguage() {
@@ -34,6 +27,7 @@ export function useTerminalLanguage() {
 
   useEffect(() => {
     window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+    document.documentElement.lang = language;
     window.dispatchEvent(
       new CustomEvent("ott-terminal-language-change", {
         detail: { language },
