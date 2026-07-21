@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { ExternalLink, HeartHandshake, ShieldCheck, Sparkles, Wallet } from "lucide-react";
 import { OTTLogo, OTTProofBadge } from "../components/OTTLogo";
 import { MAKE_WAVES_SOURCE_TAG } from "../lib/makeWaves";
@@ -12,6 +13,19 @@ type SupportMetric = {
   text: string;
 };
 
+type SupportStats = {
+  totalXrp: string;
+  paymentCount: number;
+  uniqueSupporters: number;
+  publicMessageCount: number;
+};
+
+type SupportStatsResponse = {
+  ok: boolean;
+  stats?: SupportStats;
+  error?: string;
+};
+
 const supportItems = [
   "Promotion and advertising to bring new users to OTT Terminal and XRPL.",
   "Public source-code distribution and Make Waves SourceTag awareness.",
@@ -22,24 +36,75 @@ const supportItems = [
 export function SupportDonationTab() {
   const { language } = useTerminalLanguage();
   const isEnglish = language === "en";
+  const [supportStats, setSupportStats] = useState<SupportStats | null>(null);
+  const [statsStatus, setStatsStatus] = useState(
+    isEnglish ? "Loading validated XRPL support totals..." : "Gevalideerde XRPL-supporttotalen laden...",
+  );
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadSupportStats() {
+      try {
+        const response = await fetch("/api/support-payment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+          body: JSON.stringify({ action: "xrpl.getSupportStats" }),
+        });
+        const data = (await response.json()) as SupportStatsResponse;
+
+        if (!response.ok || !data.ok || !data.stats) {
+          throw new Error(data.error || "Support statistics unavailable.");
+        }
+
+        if (!active) {
+          return;
+        }
+
+        setSupportStats(data.stats);
+        setStatsStatus(
+          isEnglish
+            ? "Live total from validated XRPL support transactions."
+            : "Live totaal uit gevalideerde XRPL-supporttransacties.",
+        );
+      } catch {
+        if (!active) {
+          return;
+        }
+
+        setStatsStatus(
+          isEnglish
+            ? "Live XRPL total is temporarily unavailable. The payment route remains active."
+            : "Het live XRPL-totaal is tijdelijk niet beschikbaar. De betaalroute blijft actief.",
+        );
+      }
+    }
+
+    void loadSupportStats();
+
+    return () => {
+      active = false;
+    };
+  }, [isEnglish]);
 
   const metrics: SupportMetric[] = [
     {
-      label: "Support Wallet",
-      value: SUPPORT_WALLET,
-      text: isEnglish ? "Official OTT support wallet." : "Officiele OTT support wallet.",
+      label: isEnglish ? "Collected" : "Verzameld",
+      value: supportStats ? `${supportStats.totalXrp} XRP` : "Loading...",
+      text: isEnglish ? "Validated support payments." : "Gevalideerde supportbetalingen.",
+    },
+    {
+      label: isEnglish ? "Supporters" : "Supporters",
+      value: supportStats ? String(supportStats.uniqueSupporters) : "—",
+      text: supportStats
+        ? `${supportStats.paymentCount} ${isEnglish ? "payments" : "betalingen"}`
+        : statsStatus,
     },
     {
       label: "SourceTag",
       value: String(MAKE_WAVES_SOURCE_TAG),
       text: "Make Waves tracking tag.",
-    },
-    {
-      label: isEnglish ? "Purpose" : "Doel",
-      value: isEnglish ? "Promotion + onboarding" : "Promotie + onboarding",
-      text: isEnglish
-        ? "Funds reach, content and delivery."
-        : "Support voor bereik, content en delivery.",
     },
     {
       label: isEnglish ? "Rights" : "Rechten",
@@ -75,14 +140,14 @@ export function SupportDonationTab() {
               {isEnglish ? "Support the terminal." : "Support de terminal."}
               <br />
               <span className="bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] bg-clip-text text-transparent">
-                {isEnglish ? "Grow XRPL reach." : "Vergroot XRPL bereik."}
+                {isEnglish ? "Leave your mark." : "Laat je boodschap achter."}
               </span>
             </h1>
 
             <p className="font-mono text-sm xl:text-base text-black/60 max-w-3xl leading-relaxed">
               {isEnglish
-                ? "Support donations help fund promotion, advertising, public source-code distribution, XRPL education, community onboarding and continued terminal development. Donations are voluntary support only."
-                : "Supportdonaties helpen promotie, advertenties, verspreiding van de publieke sourcecode, XRPL educatie, community onboarding en verdere terminalontwikkeling. Donaties zijn alleen vrijwillige support."}
+                ? "Support donations help fund promotion, advertising, public source-code distribution, XRPL education, community onboarding and continued terminal development. Add an optional public name and message to the XRPL memo so OTT can feature your support later."
+                : "Supportdonaties helpen promotie, advertenties, verspreiding van de publieke sourcecode, XRPL-educatie, community-onboarding en verdere terminalontwikkeling. Voeg optioneel een publieke naam en boodschap toe aan de XRPL-memo, zodat OTT je support later kan uitlichten."}
             </p>
           </div>
 
@@ -94,6 +159,7 @@ export function SupportDonationTab() {
                   <MetricBox key={metric.label} metric={metric} />
                 ))}
               </div>
+              <p className="mt-4 font-mono text-[10px] leading-relaxed text-black/45">{statsStatus}</p>
             </div>
           </div>
         </div>
@@ -114,14 +180,14 @@ export function SupportDonationTab() {
                 <p className="font-mono text-xs text-black/60 leading-relaxed">
                   {isEnglish
                     ? "Donations are not investments. They do not create yield, profit rights, token rights, governance rights, equity, guaranteed access, or a guaranteed Access Pass NFT."
-                    : "Donaties zijn geen investeringen. Ze geven geen yield, winstrechten, tokenrechten, governance rechten, equity, gegarandeerde toegang of gegarandeerde Access Pass NFT."}
+                    : "Donaties zijn geen investeringen. Ze geven geen yield, winstrechten, tokenrechten, governance-rechten, equity, gegarandeerde toegang of gegarandeerde Access Pass NFT."}
                 </p>
               </div>
 
               <div className="space-y-2">
                 <InfoLine text={isEnglish ? "Voluntary support only." : "Alleen vrijwillige support."} />
-                <InfoLine text={isEnglish ? "No investment, yield or profit promise." : "Geen investering, yield of winstbelofte."} />
-                <InfoLine text={isEnglish ? "No guaranteed Access Pass or token rights." : "Geen gegarandeerde Access Pass of tokenrechten."} />
+                <InfoLine text={isEnglish ? "Live total comes from validated XRPL transactions." : "Het live totaal komt uit gevalideerde XRPL-transacties."} />
+                <InfoLine text={isEnglish ? "Optional public messages require explicit permission." : "Optionele publieke boodschappen vereisen expliciete toestemming."} />
                 <InfoLine text={isEnglish ? "Every payment uses the official wallet and SourceTag." : "Elke betaling gebruikt de officiele wallet en SourceTag."} />
               </div>
             </Panel>
@@ -134,10 +200,10 @@ export function SupportDonationTab() {
                 <ExternalLink size={17} />
                 <div>
                   <p className="font-orbitron text-xs font-black uppercase">
-                    {isEnglish ? "Choose XRP Support Amount" : "Kies XRP Supportbedrag"}
+                    {isEnglish ? "Support + Leave a Message" : "Support + Laat een Boodschap Achter"}
                   </p>
                   <p className="font-mono text-[10px] uppercase tracking-widest text-white/75">
-                    {isEnglish ? "Live Xaman payment buttons" : "Live Xaman betaalbuttons"}
+                    {isEnglish ? "Live total and Xaman buttons" : "Live totaal en Xaman-betaalbuttons"}
                   </p>
                 </div>
               </div>
@@ -166,14 +232,17 @@ export function SupportDonationTab() {
               <div className="flex items-center gap-2 mb-5">
                 <Wallet size={18} className="text-[#3898E8]" />
                 <p className="font-orbitron text-xs uppercase tracking-widest">
-                  {isEnglish ? "Support Details" : "Support Details"}
+                  {isEnglish ? "Live Support Details" : "Live Supportdetails"}
                 </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <MiniStatus label="Support Wallet" value={SUPPORT_WALLET} />
                 <MiniStatus label="SourceTag" value={String(MAKE_WAVES_SOURCE_TAG)} />
-                <MiniStatus label="Mode" value="Voluntary support" />
+                <MiniStatus
+                  label={isEnglish ? "Public Messages" : "Publieke Boodschappen"}
+                  value={supportStats ? String(supportStats.publicMessageCount) : "—"}
+                />
                 <MiniStatus label="Payment" value="Live Xaman fixed amounts" />
               </div>
             </Panel>
