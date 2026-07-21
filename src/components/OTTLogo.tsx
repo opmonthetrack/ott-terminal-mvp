@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 
-type LogoSize = "sm" | "md" | "lg" | "xl" | "hero";
+type LogoPreset = "sm" | "md" | "lg" | "xl" | "hero";
+type LogoSize = LogoPreset | number;
 
 type OTTLogoProps = {
   size?: LogoSize;
@@ -9,21 +10,28 @@ type OTTLogoProps = {
   className?: string;
 };
 
-const sizeClasses: Record<LogoSize, string> = {
-  sm: "w-9 h-9",
-  md: "w-12 h-12",
-  lg: "w-16 h-16",
-  xl: "w-24 h-24",
-  hero: "w-28 h-28 md:w-36 md:h-36 xl:w-44 xl:h-44",
+const sizeClasses: Record<LogoPreset, string> = {
+  sm: "h-9 w-9",
+  md: "h-12 w-12",
+  lg: "h-16 w-16",
+  xl: "h-24 w-24",
+  hero: "h-28 w-28 md:h-36 md:w-36 xl:h-44 xl:w-44",
 };
 
-const textSizeClasses: Record<LogoSize, string> = {
+const textSizeClasses: Record<LogoPreset, string> = {
   sm: "text-xs",
   md: "text-sm",
   lg: "text-base",
   xl: "text-xl",
   hero: "text-2xl md:text-3xl xl:text-4xl",
 };
+
+function getNumericTextSize(size: number) {
+  if (size <= 36) return "text-xs";
+  if (size <= 52) return "text-sm";
+  if (size <= 72) return "text-base";
+  return "text-xl";
+}
 
 export function OTTLogo({
   size = "md",
@@ -32,23 +40,28 @@ export function OTTLogo({
   className = "",
 }: OTTLogoProps) {
   const [imageFailed, setImageFailed] = useState(false);
+  const numericSize = typeof size === "number" ? Math.max(24, Math.min(size, 240)) : null;
+  const markClass = numericSize === null ? sizeClasses[size] : "";
+  const markStyle: CSSProperties | undefined = numericSize === null
+    ? undefined
+    : { width: numericSize, height: numericSize };
+  const textSizeClass = numericSize === null ? textSizeClasses[size] : getNumericTextSize(numericSize);
 
   return (
-    <div className={`flex items-center gap-3 ${className}`}>
+    <div className={`flex min-w-0 items-center gap-3 ${className}`}>
       <div
-        className={`${sizeClasses[size]} relative shrink-0 overflow-hidden border border-white/10 bg-black flex items-center justify-center`}
+        style={markStyle}
+        className={`${markClass} relative flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm`}
       >
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.16),_transparent_65%)]" />
-
         {!imageFailed ? (
           <img
             src="/logo.png"
             alt="OnTheTrack logo"
             onError={() => setImageFailed(true)}
-            className="relative z-10 w-full h-full object-contain p-1.5"
+            className="relative z-10 h-full w-full object-contain p-1"
           />
         ) : (
-          <span className="relative z-10 font-orbitron font-black text-white tracking-widest">
+          <span className="relative z-10 font-orbitron text-xs font-black tracking-widest text-slate-950">
             OTT
           </span>
         )}
@@ -56,13 +69,10 @@ export function OTTLogo({
 
       {showText && (
         <div className="min-w-0">
-          <p
-            className={`font-orbitron font-black uppercase tracking-widest leading-none ${textSizeClasses[size]}`}
-          >
+          <p className={`font-orbitron font-black uppercase leading-none tracking-widest text-slate-950 ${textSizeClass}`}>
             OnTheTrack
           </p>
-
-          <p className="font-mono text-[9px] md:text-[10px] uppercase tracking-[0.25em] text-white/35 mt-2 truncate">
+          <p className="mt-2 truncate font-mono text-[9px] uppercase tracking-[0.25em] text-slate-400 md:text-[10px]">
             {subtitle}
           </p>
         </div>
@@ -78,13 +88,7 @@ export function OTTLogoMark({
   size?: LogoSize;
   className?: string;
 }) {
-  return (
-    <OTTLogo
-      size={size}
-      showText={false}
-      className={className}
-    />
-  );
+  return <OTTLogo size={size} showText={false} className={className} />;
 }
 
 export function OTTProofBadge({
@@ -93,15 +97,13 @@ export function OTTProofBadge({
   sourceTag?: string;
 }) {
   return (
-    <div className="inline-flex items-center gap-3 border border-white/10 bg-white/[0.03] px-4 py-3">
+    <div className="inline-flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
       <OTTLogoMark size="sm" />
-
       <div>
-        <p className="font-mono text-[9px] uppercase tracking-[0.3em] text-white/35">
+        <p className="font-mono text-[9px] uppercase tracking-[0.3em] text-slate-400">
           OTT Proof Identity
         </p>
-
-        <p className="font-orbitron text-xs font-black uppercase tracking-widest">
+        <p className="font-orbitron text-xs font-black uppercase tracking-widest text-slate-950">
           SourceTag {sourceTag}
         </p>
       </div>
