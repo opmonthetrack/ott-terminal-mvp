@@ -2,14 +2,12 @@ import {
   cacheAcademyAccountCompletion,
   cacheAcademyAccountCompletions,
   getAcademyWalletProgressSummary,
-  loadAcademyAccountProgress,
   type AcademyAnswerAssessment,
   type AcademyModuleCompletion,
 } from "./academyProgressStore";
 import { ottSupabase } from "./ottAuth";
 
 const COURSE_VERSION = "1.0";
-const LESSON_VERSION = "1.0";
 
 type AcademyCompletionRow = {
   user_id: string;
@@ -91,84 +89,69 @@ export async function saveAccountAcademyCompletion(
     throw new Error("Every Academy answer must pass before account progress can be stored.");
   }
 
-  const client = requireClient();
-  const currentCache = loadAcademyAccountProgress(input.userId);
-  const existing = currentCache.completions[input.lessonId];
+  // The assessment endpoint must have written the trusted row already.
+  // The browser only reads it back and updates the local display cache.
+  const remote = await loadAccountAcademyCompletions(input.userId);
+  const verified = remote.find((item) => item.lessonId === input.lessonId);
 
-  if (existing && existing.overallScore >= input.overallScore) {
-    return existing;
+  if (!verified) {
+    throw new Error(
+      "The answers passed, but the trusted server did not store this course. Check the Supabase server configuration.",
+    );
   }
 
-  const completion: AcademyModuleCompletion = {
-    lessonId: input.lessonId,
+  cacheAcademyAccountCompletion(input.userId, {
+    ...verified,
     lessonTitle: input.lessonTitle,
-    walletAddress: input.sourceWallet || `account:${input.userId}`,
-    completedAt: input.completedAt,
-    xp: input.xp,
-    credits: input.credits,
-    overallScore: input.overallScore,
-    assessments: input.assessments,
-    assessmentMode: "ai",
-  };
-
-  const { error } = await client.from("academy_completions").upsert(
-    {
-      user_id: input.userId,
-      course_id: input.lessonId,
-      course_version: COURSE_VERSION,
-      lesson_version: LESSON_VERSION,
-      overall_score: input.overallScore,
-      xp: input.xp,
-      credits: input.credits,
-      assessments: input.assessments,
-      completed_at: new Date(input.completedAt).toISOString(),
-    },
-    { onConflict: "user_id,course_id,course_version" },
-  );
-
-  if (error) {
-    throw error;
-  }
-
-  cacheAcademyAccountCompletion(input.userId, completion);
-  return completion;
+  });
+  return verified;
 }
 
 export async function migrateLegacyWalletProgressToAccount(
   userId: string,
   walletAddress: string,
 ) {
+  const client = requireClient();
   const legacy = getAcademyWalletProgressSummary(walletAddress);
 
   if (!legacy.completions.length) {
     return 0;
   }
 
-  const remote = await loadAccountAcademyCompletions(userId);
-  const remoteByCourse = new Map(remote.map((item) => [item.lessonId, item]));
-  let migrated = 0;
+  const { data: existingRows, error: existingError } = await client
+    .from("academy_legacy_imports")
+    .select("course_id")
+    .eq("user_id", userId)
+    .eq("wallet_address", walletAddress);
 
-  for (const completion of legacy.completions) {
-    const existing = remoteByCourse.get(completion.lessonId);
-
-    if (existing && existing.overallScore >= completion.overallScore) {
-      continue;
-    }
-
-    await saveAccountAcademyCompletion({
-      userId,
-      lessonId: completion.lessonId,
-      lessonTitle: completion.lessonTitle,
-      completedAt: completion.completedAt,
-      xp: completion.xp,
-      credits: completion.credits,
-      overallScore: completion.overallScore,
-      assessments: completion.assessments,
-      sourceWallet: walletAddress,
-    });
-    migrated += 1;
+  if (existingError) {
+    throw existingError;
   }
 
-  await hydrateAccountAcademyCache(userId);
-  return migrated;
+  const existing = new Set((existingRows ?? []).map((row) => String(row.course_id)));
+  const imports = legacy.completions
+    .filter((completion) => !existing.has(completion.lessonId))
+    .map((completion) => ({
+      user_id: userId,
+      wallet_address: walletAddress,
+      course_id: completion.lessonId,
+      overall_score: completion.overallScore,
+      xp: completion.xp,
+      credits: completion.credits,
+      assessments: completion.assessments,
+      legacy_completed_at: new Date(completion.completedAt).toISOString(),
+      status: "needs_reassessment",
+    }));
+
+  if (!imports.length) {
+    return 0;
+  }
+
+  const { error } = await client.from("academy_legacy_imports").insert(imports);
+
+  if (error) {
+    throw error;
+  }
+
+  return imports.length;
 }
