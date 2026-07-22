@@ -26,15 +26,16 @@ export type AcademyAssessmentResponse = {
   error?: string;
 };
 
-export async function assessAcademyModule(input: {
-  lessonId: string;
-  language: "nl" | "en";
-  walletAddress: string;
-  answers: Array<{
-    taskId: string;
-    answer: string;
-  }>;
-}) {
+export type AcademyAnswerCheckResponse = {
+  ok: boolean;
+  mode?: "practice";
+  passScore?: number;
+  assessment?: AcademyAnswerAssessment;
+  assessedAt?: string;
+  error?: string;
+};
+
+async function authHeaders() {
   const session = ottSupabase
     ? (await ottSupabase.auth.getSession()).data.session
     : null;
@@ -46,13 +47,48 @@ export async function assessAcademyModule(input: {
     headers.Authorization = `Bearer ${session.access_token}`;
   }
 
+  return headers;
+}
+
+export async function assessAcademyModule(input: {
+  lessonId: string;
+  language: "nl" | "en";
+  walletAddress: string;
+  answers: Array<{
+    taskId: string;
+    answer: string;
+  }>;
+}) {
   const response = await fetch("/api/academy-assess", {
     method: "POST",
-    headers,
+    headers: await authHeaders(),
     body: JSON.stringify(input),
   });
 
   const data = (await response.json()) as AcademyAssessmentResponse;
+
+  if (!response.ok) {
+    throw data;
+  }
+
+  return data;
+}
+
+export async function checkAcademyAnswer(input: {
+  lessonId: string;
+  taskId: string;
+  question: string;
+  answer: string;
+  lessonContext: string;
+  language: "nl" | "en";
+}) {
+  const response = await fetch("/api/academy-check-answer", {
+    method: "POST",
+    headers: await authHeaders(),
+    body: JSON.stringify(input),
+  });
+
+  const data = (await response.json()) as AcademyAnswerCheckResponse;
 
   if (!response.ok) {
     throw data;
