@@ -1,19 +1,25 @@
 export const NFT_EDITION_REGISTRY = {
   accessPass: {
-    collectionId: "ott-access-pass-v1",
-    name: "OTT Access Pass",
+    collectionId: "ott-access-pass-alpha-v1",
+    name: "OTT Access Pass: Alpha",
+    edition: "Alpha",
     serialStart: 1,
     serialEnd: 500,
     serialDigits: 3,
-    purpose: "Access utility",
+    purpose: "OTT Terminal access utility",
+    metadataVersion: "1.0",
+    visualStatus: "approved-pending-publication",
   },
   foundationCertificate: {
     collectionId: "ott-xrpl-foundation-certificate-v1",
     name: "OTT XRPL Foundation Certificate",
+    edition: "Foundation",
     serialStart: 1,
     serialEnd: 5000,
     serialDigits: 4,
     purpose: "Verified Academy completion certificate",
+    metadataVersion: "1.0",
+    visualStatus: "design-pending",
   },
 } as const;
 
