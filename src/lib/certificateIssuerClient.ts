@@ -38,7 +38,7 @@ async function parseResponse(response: Response) {
 
 export async function loadCertificateIssuerQueue() {
   const token = await getSessionToken();
-  const response = await fetch("/api/admin-certificate-issuer", {
+  const response = await fetch("/api/certificate?scope=issuer", {
     method: "GET",
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -50,7 +50,7 @@ export async function runCertificateIssuerAction(
   action: CertificateIssuerAction,
 ) {
   const token = await getSessionToken();
-  const response = await fetch("/api/admin-certificate-issuer", {
+  const response = await fetch("/api/certificate?scope=issuer", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
