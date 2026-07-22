@@ -3,6 +3,29 @@ import { createClient } from "@supabase/supabase-js";
 const XAMAN_API_URL = "https://xumm.app/api/v1/platform/payload";
 const ISSUANCE_TYPE = "foundation-certificate";
 const SOURCE_TAG = 2606170002;
+const SELECT_FIELDS = [
+  "id",
+  "user_id",
+  "status",
+  "lifecycle_step",
+  "serial_number",
+  "wallet_address",
+  "qualification_score",
+  "qualification_course_count",
+  "metadata_uri",
+  "mint_payload_uuid",
+  "mint_transaction_hash",
+  "nftoken_id",
+  "offer_payload_uuid",
+  "offer_transaction_hash",
+  "transfer_offer_id",
+  "accept_payload_uuid",
+  "accept_transaction_hash",
+  "transaction_hash",
+  "error_message",
+  "created_at",
+  "updated_at",
+].join(",");
 
 type RequestLike = {
   method?: string;
@@ -11,9 +34,7 @@ type RequestLike = {
 };
 
 type ResponseLike = {
-  status: (code: number) => {
-    json: (body: unknown) => void;
-  };
+  status: (code: number) => { json: (body: unknown) => void };
 };
 
 type CertificateRow = {
@@ -40,22 +61,20 @@ type CertificateRow = {
   updated_at: string;
 };
 
-type XamanPayloadResult = {
+type XamanPayload = {
   uuid?: string;
-  meta?: { signed?: boolean; resolved?: boolean; cancelled?: boolean; expired?: boolean };
+  meta?: { signed?: boolean; resolved?: boolean };
   response?: { account?: string; txid?: string };
   next?: { always?: string; no_push_msg_received?: string };
   refs?: { qr_png?: string; qr_matrix?: string; websocket_status?: string };
   [key: string]: unknown;
 };
 
-type XrplTxResult = {
+type XrplResult = {
   validated?: boolean;
   tx_json?: Record<string, unknown>;
   tx?: Record<string, unknown>;
   meta?: Record<string, unknown>;
-  hash?: string;
-  ledger_index?: number;
   error?: string;
   error_message?: string;
 };
@@ -72,7 +91,7 @@ function getBearerToken(req: RequestLike) {
     : "";
 }
 
-function getString(value: unknown) {
+function stringValue(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
@@ -83,186 +102,129 @@ function textToHex(value: string) {
     .toUpperCase();
 }
 
-function isValidXrplAddress(value: string) {
+function isAddress(value: string) {
   return /^r[1-9A-HJ-NP-Za-km-z]{25,34}$/.test(value);
 }
 
-function isValidHash(value: string) {
+function isHash(value: string) {
   return /^[A-Fa-f0-9]{64}$/.test(value);
 }
 
-function isValidUuid(value: string) {
+function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
-function normalizePublicUrl(value: string | undefined) {
-  const clean = value?.trim().replace(/\/$/, "") ?? "";
-  if (!clean) return "https://ott-terminal-mvp.vercel.app";
-  return /^https?:\/\//i.test(clean) ? clean : `https://${clean}`;
+function publicUrl() {
+  const value = (
+    process.env.OTT_PUBLIC_APP_URL ||
+    process.env.VERCEL_PROJECT_PRODUCTION_URL ||
+    "https://ott-terminal-mvp.vercel.app"
+  ).trim().replace(/\/$/, "");
+  return /^https?:\/\//i.test(value) ? value : `https://${value}`;
 }
 
-function parseUInt32(value: string | undefined, fallback: number) {
-  const parsed = Number(value);
+function issuerWallet() {
+  const value = process.env.OTT_CERTIFICATE_ISSUER_WALLET?.trim() ?? "";
+  if (!isAddress(value)) throw new Error("OTT_CERTIFICATE_ISSUER_WALLET is missing or invalid.");
+  return value;
+}
+
+function network() {
+  const value = process.env.OTT_CERTIFICATE_XRPL_NETWORK?.trim().toUpperCase();
+  if (value !== "MAINNET" && value !== "TESTNET") {
+    throw new Error("Set OTT_CERTIFICATE_XRPL_NETWORK to MAINNET or TESTNET.");
+  }
+  return value;
+}
+
+function taxon() {
+  const parsed = Number(process.env.OTT_CERTIFICATE_NFT_TAXON ?? SOURCE_TAG);
   return Number.isInteger(parsed) && parsed >= 0 && parsed <= 4_294_967_295
     ? parsed
-    : fallback;
+    : SOURCE_TAG;
 }
 
-function parseMintFlags(value: string | undefined) {
-  const parsed = Number(value ?? "0");
+function mintFlags() {
+  const parsed = Number(process.env.OTT_CERTIFICATE_NFT_FLAGS ?? 0);
   const allowedMask = 1 | 2 | 8 | 16;
   if (!Number.isInteger(parsed) || parsed < 0 || (parsed & ~allowedMask) !== 0) {
-    throw new Error("OTT_CERTIFICATE_NFT_FLAGS contains unsupported NFT flags.");
+    throw new Error("OTT_CERTIFICATE_NFT_FLAGS contains unsupported flags.");
   }
   return parsed;
 }
 
-function formatSerial(serial: number) {
+function xamanHeaders() {
+  const key = process.env.XAMAN_API_KEY?.trim();
+  const secret = process.env.XAMAN_API_SECRET?.trim();
+  if (!key || !secret) throw new Error("Xaman issuer signing is not configured.");
+  return { "Content-Type": "application/json", "X-API-Key": key, "X-API-Secret": secret };
+}
+
+function rpcUrl() {
+  const value = process.env.XRPL_RPC_URL?.trim();
+  if (!value) throw new Error("XRPL_RPC_URL must match the selected certificate network.");
+  return value;
+}
+
+function serialLabel(serial: number) {
   return `#${String(serial).padStart(4, "0")}`;
 }
 
-function getXamanHeaders() {
-  const apiKey = process.env.XAMAN_API_KEY?.trim();
-  const apiSecret = process.env.XAMAN_API_SECRET?.trim();
-  if (!apiKey || !apiSecret) {
-    throw new Error("Xaman issuer signing is not configured on the server.");
-  }
-  return {
-    "Content-Type": "application/json",
-    "X-API-Key": apiKey,
-    "X-API-Secret": apiSecret,
-  };
+function adminAllowed(userId: string, email: string) {
+  const ids = new Set((process.env.OTT_MINT_ADMIN_USER_IDS ?? "").split(",").map((item) => item.trim()).filter(Boolean));
+  const emails = new Set((process.env.OTT_MINT_ADMIN_EMAILS ?? "").split(",").map((item) => item.trim().toLowerCase()).filter(Boolean));
+  return ids.has(userId) || Boolean(email && emails.has(email.toLowerCase()));
 }
 
-function getNetwork() {
-  const network = process.env.OTT_CERTIFICATE_XRPL_NETWORK?.trim().toUpperCase();
-  if (network !== "MAINNET" && network !== "TESTNET") {
-    throw new Error("Set OTT_CERTIFICATE_XRPL_NETWORK to MAINNET or TESTNET before creating issuer payloads.");
-  }
-  return network;
-}
-
-function getIssuerWallet() {
-  const issuerWallet = process.env.OTT_CERTIFICATE_ISSUER_WALLET?.trim() ?? "";
-  if (!isValidXrplAddress(issuerWallet)) {
-    throw new Error("OTT_CERTIFICATE_ISSUER_WALLET is missing or invalid.");
-  }
-  return issuerWallet;
-}
-
-function getAdminLists() {
-  const emails = new Set(
-    (process.env.OTT_MINT_ADMIN_EMAILS ?? "")
-      .split(",")
-      .map((value) => value.trim().toLowerCase())
-      .filter(Boolean),
-  );
-  const userIds = new Set(
-    (process.env.OTT_MINT_ADMIN_USER_IDS ?? "")
-      .split(",")
-      .map((value) => value.trim())
-      .filter(Boolean),
-  );
-  return { emails, userIds };
-}
-
-async function createXamanPayload(body: Record<string, unknown>) {
+async function createPayload(body: Record<string, unknown>) {
   const response = await fetch(XAMAN_API_URL, {
     method: "POST",
-    headers: getXamanHeaders(),
+    headers: xamanHeaders(),
     body: JSON.stringify(body),
   });
-  const payload = (await response.json()) as XamanPayloadResult;
-  if (!response.ok) {
-    throw new Error(`Xaman payload creation failed: ${JSON.stringify(payload).slice(0, 500)}`);
-  }
-  if (!payload.uuid || !isValidUuid(payload.uuid)) {
-    throw new Error("Xaman did not return a valid payload UUID.");
-  }
+  const payload = (await response.json()) as XamanPayload;
+  if (!response.ok) throw new Error(`Xaman payload creation failed: ${JSON.stringify(payload).slice(0, 500)}`);
+  if (!payload.uuid || !isUuid(payload.uuid)) throw new Error("Xaman did not return a valid payload UUID.");
   return payload;
 }
 
-async function getXamanPayload(uuid: string) {
-  const response = await fetch(`${XAMAN_API_URL}/${uuid}`, {
-    method: "GET",
-    headers: getXamanHeaders(),
-  });
-  const payload = (await response.json()) as XamanPayloadResult;
-  if (!response.ok) {
-    throw new Error(`Xaman payload lookup failed: ${JSON.stringify(payload).slice(0, 500)}`);
-  }
+async function getPayload(uuid: string) {
+  const response = await fetch(`${XAMAN_API_URL}/${uuid}`, { method: "GET", headers: xamanHeaders() });
+  const payload = (await response.json()) as XamanPayload;
+  if (!response.ok) throw new Error(`Xaman payload lookup failed: ${JSON.stringify(payload).slice(0, 500)}`);
   return payload;
 }
 
-async function fetchXrplTransaction(txHash: string) {
-  const rpcUrl = process.env.XRPL_RPC_URL?.trim();
-  if (!rpcUrl) {
-    throw new Error("XRPL_RPC_URL must be configured for the selected certificate network.");
-  }
-  const response = await fetch(rpcUrl, {
+async function getTransaction(hash: string) {
+  const response = await fetch(rpcUrl(), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      method: "tx",
-      params: [{ transaction: txHash, binary: false }],
-    }),
+    body: JSON.stringify({ method: "tx", params: [{ transaction: hash, binary: false }] }),
   });
-  const data = (await response.json()) as { result?: XrplTxResult; error?: string };
+  const data = (await response.json()) as { result?: XrplResult; error?: string };
   if (!response.ok || data.error || data.result?.error || !data.result) {
-    throw new Error("XRPL transaction lookup failed or the transaction is not available yet.");
+    throw new Error("XRPL transaction lookup failed or is not available yet.");
   }
   return data.result;
 }
 
-function readTx(result: XrplTxResult) {
+function transaction(result: XrplResult) {
   return result.tx_json ?? result.tx ?? {};
 }
 
-function readMeta(result: XrplTxResult) {
+function metadata(result: XrplResult) {
   return result.meta ?? {};
 }
 
-function getTransactionResult(meta: Record<string, unknown>) {
-  return getString(meta.TransactionResult);
-}
-
-function getMetaHash(meta: Record<string, unknown>, field: "nftoken_id" | "offer_id") {
-  const value = getString(meta[field]);
-  return isValidHash(value) ? value.toUpperCase() : "";
-}
-
-function assertValidatedSuccess(result: XrplTxResult) {
-  const meta = readMeta(result);
+function assertSuccess(result: XrplResult) {
+  const resultCode = stringValue(metadata(result).TransactionResult);
   if (!result.validated) throw new Error("The XRPL transaction is not validated yet.");
-  if (getTransactionResult(meta) !== "tesSUCCESS") {
-    throw new Error(`The XRPL transaction did not succeed (${getTransactionResult(meta) || "unknown"}).`);
-  }
+  if (resultCode !== "tesSUCCESS") throw new Error(`XRPL transaction failed (${resultCode || "unknown"}).`);
 }
 
-function certificateSelect() {
-  return [
-    "id",
-    "user_id",
-    "status",
-    "lifecycle_step",
-    "serial_number",
-    "wallet_address",
-    "qualification_score",
-    "qualification_course_count",
-    "metadata_uri",
-    "mint_payload_uuid",
-    "mint_transaction_hash",
-    "nftoken_id",
-    "offer_payload_uuid",
-    "offer_transaction_hash",
-    "transfer_offer_id",
-    "accept_payload_uuid",
-    "accept_transaction_hash",
-    "transaction_hash",
-    "error_message",
-    "created_at",
-    "updated_at",
-  ].join(",");
+function metadataHash(meta: Record<string, unknown>, key: "nftoken_id" | "offer_id") {
+  const value = stringValue(meta[key]).toUpperCase();
+  return isHash(value) ? value : "";
 }
 
 export default async function handler(req: RequestLike, res: ResponseLike) {
@@ -272,186 +234,125 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
 
   try {
     const supabaseUrl = process.env.SUPABASE_URL?.trim();
-    const serviceRoleKey = (
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY
-    )?.trim();
+    const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY)?.trim();
     const token = getBearerToken(req);
+    if (!supabaseUrl || !serviceKey) return res.status(503).json({ ok: false, error: "Trusted certificate storage is not configured." });
+    if (!token) return res.status(401).json({ ok: false, error: "Sign in with the authorized founder account." });
 
-    if (!supabaseUrl || !serviceRoleKey) {
-      return res.status(503).json({ ok: false, error: "Trusted certificate storage is not configured." });
-    }
-    if (!token) {
-      return res.status(401).json({ ok: false, error: "Sign in with the authorized founder account." });
-    }
-
-    const admin = createClient(supabaseUrl, serviceRoleKey, {
+    const admin = createClient(supabaseUrl, serviceKey, {
       auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
     });
     const { data: userData, error: userError } = await admin.auth.getUser(token);
-    if (userError || !userData.user) {
-      return res.status(401).json({ ok: false, error: "The founder account session could not be verified." });
-    }
-
-    const { emails, userIds } = getAdminLists();
-    const email = userData.user.email?.trim().toLowerCase() ?? "";
-    if (!userIds.has(userData.user.id) && (!email || !emails.has(email))) {
+    if (userError || !userData.user) return res.status(401).json({ ok: false, error: "Founder session could not be verified." });
+    if (!adminAllowed(userData.user.id, userData.user.email ?? "")) {
       return res.status(403).json({ ok: false, error: "This OTT account is not authorized for certificate issuance." });
     }
 
     if (req.method === "GET") {
       const { data, error } = await admin
         .from("nft_issuance_records")
-        .select(certificateSelect())
+        .select(SELECT_FIELDS)
         .eq("issuance_type", ISSUANCE_TYPE)
         .order("created_at", { ascending: true });
-      if (error) {
-        return res.status(500).json({ ok: false, error: "The certificate queue could not be loaded." });
-      }
+      if (error) return res.status(500).json({ ok: false, error: "The certificate queue could not be loaded." });
       return res.status(200).json({ ok: true, queue: data ?? [] });
     }
 
-    const action = getString(req.body?.action);
-    const claimId = getString(req.body?.claimId);
-    if (!claimId) {
-      return res.status(400).json({ ok: false, error: "claimId is required." });
-    }
+    const action = stringValue(req.body?.action);
+    const claimId = stringValue(req.body?.claimId);
+    if (!claimId) return res.status(400).json({ ok: false, error: "claimId is required." });
 
     const { data: claimData, error: claimError } = await admin
       .from("nft_issuance_records")
-      .select(certificateSelect())
+      .select(SELECT_FIELDS)
       .eq("id", claimId)
       .eq("issuance_type", ISSUANCE_TYPE)
       .maybeSingle();
-    if (claimError) {
-      return res.status(500).json({ ok: false, error: "The certificate claim could not be loaded." });
-    }
-    if (!claimData) {
-      return res.status(404).json({ ok: false, error: "Certificate claim not found." });
+    if (claimError) return res.status(500).json({ ok: false, error: "The certificate claim could not be loaded." });
+    if (!claimData) return res.status(404).json({ ok: false, error: "Certificate claim not found." });
+
+    const claim = claimData as unknown as CertificateRow;
+    if (!claim.wallet_address || !isAddress(claim.wallet_address)) {
+      return res.status(409).json({ ok: false, error: "The claim has no valid receiving wallet." });
     }
 
-    const claim = claimData as CertificateRow;
-    if (!claim.wallet_address || !isValidXrplAddress(claim.wallet_address)) {
-      return res.status(409).json({ ok: false, error: "The claim does not have a valid receiving wallet." });
-    }
-
-    const issuerWallet = getIssuerWallet();
-    const network = getNetwork();
-    const appUrl = normalizePublicUrl(
-      process.env.OTT_PUBLIC_APP_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL,
-    );
+    const issuer = issuerWallet();
+    const appUrl = publicUrl();
     const serialText = String(claim.serial_number).padStart(4, "0");
-    const serialLabel = formatSerial(claim.serial_number);
-    const metadataUri = `${appUrl}/api/academy-certificate-metadata?serial=${serialText}`;
-    if (new TextEncoder().encode(metadataUri).length > 256) {
-      return res.status(500).json({ ok: false, error: "The certificate metadata URI exceeds the XRPL 256-byte limit." });
+    const label = serialLabel(claim.serial_number);
+    const uri = `${appUrl}/api/academy-certificate-metadata?serial=${serialText}`;
+    if (new TextEncoder().encode(uri).length > 256) {
+      return res.status(500).json({ ok: false, error: "Certificate metadata URI exceeds 256 bytes." });
     }
 
     if (action === "create-mint") {
       if (!["reserved", "failed", "mint-signing"].includes(claim.lifecycle_step)) {
-        return res.status(409).json({ ok: false, error: `Mint cannot start from lifecycle step ${claim.lifecycle_step}.`, claim });
+        return res.status(409).json({ ok: false, error: `Mint cannot start from ${claim.lifecycle_step}.` });
       }
-
-      const taxon = parseUInt32(process.env.OTT_CERTIFICATE_NFT_TAXON, SOURCE_TAG);
-      const flags = parseMintFlags(process.env.OTT_CERTIFICATE_NFT_FLAGS);
-      const payload = await createXamanPayload({
+      const payload = await createPayload({
         txjson: {
           TransactionType: "NFTokenMint",
-          Account: issuerWallet,
-          NFTokenTaxon: taxon,
-          Flags: flags,
-          URI: textToHex(metadataUri),
-          Memos: [
-            {
-              Memo: {
-                MemoType: textToHex("OTT_FOUNDATION_CERTIFICATE"),
-                MemoData: textToHex(`OTT XRPL Foundation Certificate ${serialLabel}`),
-              },
-            },
-          ],
+          Account: issuer,
+          NFTokenTaxon: taxon(),
+          Flags: mintFlags(),
+          URI: textToHex(uri),
+          Memos: [{ Memo: { MemoType: textToHex("OTT_FOUNDATION_CERTIFICATE"), MemoData: textToHex(`OTT XRPL Foundation Certificate ${label}`) } }],
         },
         options: {
           submit: true,
-          force_network: network,
+          force_network: network(),
           return_url: {
-            app: `${appUrl}/?founder=1&certificate_mint_return=1&payload={id}`,
-            web: `${appUrl}/?founder=1&certificate_mint_return=1&payload={id}`,
+            app: `${appUrl}/?founder=1&issuer=1&certificate_mint_return=1&payload={id}`,
+            web: `${appUrl}/?founder=1&issuer=1&certificate_mint_return=1&payload={id}`,
           },
         },
         custom_meta: {
           identifier: `ott-foundation-mint-${claim.id}`,
-          instruction: `Mint ${serialLabel} to the OTT issuer account`,
-          blob: { claimId: claim.id, serial: serialLabel, stage: "mint", sourceTag: SOURCE_TAG },
+          instruction: `Mint ${label} to the OTT issuer account`,
+          blob: { claimId: claim.id, serial: label, stage: "mint", sourceTag: SOURCE_TAG },
         },
       });
-
       const { data, error } = await admin
         .from("nft_issuance_records")
-        .update({
-          status: "pending",
-          lifecycle_step: "mint-signing",
-          metadata_uri: metadataUri,
-          mint_payload_uuid: payload.uuid,
-          error_message: null,
-        })
+        .update({ status: "pending", lifecycle_step: "mint-signing", metadata_uri: uri, mint_payload_uuid: payload.uuid, error_message: null })
         .eq("id", claim.id)
-        .select(certificateSelect())
+        .select(SELECT_FIELDS)
         .single();
       if (error) throw error;
       return res.status(200).json({ ok: true, stage: "mint-signing", claim: data, payload });
     }
 
     if (action === "verify-mint") {
-      if (!claim.mint_payload_uuid) {
-        return res.status(409).json({ ok: false, error: "No mint payload has been created for this claim." });
-      }
-      const payload = await getXamanPayload(claim.mint_payload_uuid);
-      if (!payload.meta?.resolved) {
-        return res.status(202).json({ ok: true, pending: true, stage: "mint-signing", claim, payload });
-      }
+      if (!claim.mint_payload_uuid) return res.status(409).json({ ok: false, error: "No mint payload exists." });
+      const payload = await getPayload(claim.mint_payload_uuid);
+      if (!payload.meta?.resolved) return res.status(202).json({ ok: true, pending: true, stage: "mint-signing", claim, payload });
       if (!payload.meta.signed) {
         await admin.from("nft_issuance_records").update({ status: "failed", lifecycle_step: "failed", error_message: "Issuer declined the mint payload." }).eq("id", claim.id);
         return res.status(409).json({ ok: false, error: "Issuer declined the mint payload." });
       }
-
-      const txid = getString(payload.response?.txid).toUpperCase();
-      const signer = getString(payload.response?.account);
-      if (signer !== issuerWallet || !isValidHash(txid)) {
-        return res.status(409).json({ ok: false, error: "The mint payload signer or transaction hash does not match the configured issuer." });
+      const txid = stringValue(payload.response?.txid).toUpperCase();
+      if (stringValue(payload.response?.account) !== issuer || !isHash(txid)) {
+        return res.status(409).json({ ok: false, error: "Mint signer or transaction hash does not match the issuer." });
       }
-
-      const result = await fetchXrplTransaction(txid);
-      assertValidatedSuccess(result);
-      const tx = readTx(result);
-      const meta = readMeta(result);
-      const taxon = parseUInt32(process.env.OTT_CERTIFICATE_NFT_TAXON, SOURCE_TAG);
-      const flags = parseMintFlags(process.env.OTT_CERTIFICATE_NFT_FLAGS);
-      const nftokenId = getMetaHash(meta, "nftoken_id");
+      const result = await getTransaction(txid);
+      assertSuccess(result);
+      const tx = transaction(result);
+      const nftokenId = metadataHash(metadata(result), "nftoken_id");
       if (
-        getString(tx.TransactionType) !== "NFTokenMint" ||
-        getString(tx.Account) !== issuerWallet ||
-        Number(tx.NFTokenTaxon) !== taxon ||
-        Number(tx.Flags ?? 0) !== flags ||
-        getString(tx.URI).toUpperCase() !== textToHex(metadataUri)
+        stringValue(tx.TransactionType) !== "NFTokenMint" ||
+        stringValue(tx.Account) !== issuer ||
+        Number(tx.NFTokenTaxon) !== taxon() ||
+        Number(tx.Flags ?? 0) !== mintFlags() ||
+        stringValue(tx.URI).toUpperCase() !== textToHex(uri)
       ) {
-        return res.status(409).json({ ok: false, error: "The validated mint transaction does not match this certificate claim." });
+        return res.status(409).json({ ok: false, error: "Validated mint transaction does not match this claim." });
       }
-      if (!nftokenId) {
-        return res.status(502).json({ ok: false, error: "The validated XRPL response did not include nftoken_id." });
-      }
-
+      if (!nftokenId) return res.status(502).json({ ok: false, error: "Validated response did not include nftoken_id." });
       const { data, error } = await admin
         .from("nft_issuance_records")
-        .update({
-          status: "pending",
-          lifecycle_step: "minted",
-          metadata_uri: metadataUri,
-          mint_transaction_hash: txid,
-          nftoken_id: nftokenId,
-          minted_at: new Date().toISOString(),
-          error_message: null,
-        })
+        .update({ status: "pending", lifecycle_step: "minted", metadata_uri: uri, mint_transaction_hash: txid, nftoken_id: nftokenId, minted_at: new Date().toISOString(), error_message: null })
         .eq("id", claim.id)
-        .select(certificateSelect())
+        .select(SELECT_FIELDS)
         .single();
       if (error) throw error;
       return res.status(200).json({ ok: true, stage: "minted", claim: data, payload, xrpl: { txid, nftokenId } });
@@ -459,51 +360,37 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
 
     if (action === "create-offer") {
       if (claim.lifecycle_step !== "minted" || !claim.nftoken_id) {
-        return res.status(409).json({ ok: false, error: "The certificate must be validated as minted before creating the transfer offer." });
+        return res.status(409).json({ ok: false, error: "Certificate must be validated as minted first." });
       }
-
-      const payload = await createXamanPayload({
+      const payload = await createPayload({
         txjson: {
           TransactionType: "NFTokenCreateOffer",
-          Account: issuerWallet,
+          Account: issuer,
           NFTokenID: claim.nftoken_id,
           Amount: "0",
           Destination: claim.wallet_address,
           Flags: 1,
-          Memos: [
-            {
-              Memo: {
-                MemoType: textToHex("OTT_CERTIFICATE_TRANSFER"),
-                MemoData: textToHex(`Free targeted transfer for ${serialLabel}`),
-              },
-            },
-          ],
+          Memos: [{ Memo: { MemoType: textToHex("OTT_CERTIFICATE_TRANSFER"), MemoData: textToHex(`Free targeted transfer for ${label}`) } }],
         },
         options: {
           submit: true,
-          force_network: network,
+          force_network: network(),
           return_url: {
-            app: `${appUrl}/?founder=1&certificate_offer_return=1&payload={id}`,
-            web: `${appUrl}/?founder=1&certificate_offer_return=1&payload={id}`,
+            app: `${appUrl}/?founder=1&issuer=1&certificate_offer_return=1&payload={id}`,
+            web: `${appUrl}/?founder=1&issuer=1&certificate_offer_return=1&payload={id}`,
           },
         },
         custom_meta: {
           identifier: `ott-foundation-offer-${claim.id}`,
-          instruction: `Create the free targeted transfer offer for ${serialLabel}`,
-          blob: { claimId: claim.id, serial: serialLabel, stage: "offer", sourceTag: SOURCE_TAG },
+          instruction: `Create the free targeted transfer offer for ${label}`,
+          blob: { claimId: claim.id, serial: label, stage: "offer", sourceTag: SOURCE_TAG },
         },
       });
-
       const { data, error } = await admin
         .from("nft_issuance_records")
-        .update({
-          status: "pending",
-          lifecycle_step: "offer-signing",
-          offer_payload_uuid: payload.uuid,
-          error_message: null,
-        })
+        .update({ status: "pending", lifecycle_step: "offer-signing", offer_payload_uuid: payload.uuid, error_message: null })
         .eq("id", claim.id)
-        .select(certificateSelect())
+        .select(SELECT_FIELDS)
         .single();
       if (error) throw error;
       return res.status(200).json({ ok: true, stage: "offer-signing", claim: data, payload });
@@ -511,67 +398,45 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
 
     if (action === "verify-offer") {
       if (!claim.offer_payload_uuid || !claim.nftoken_id) {
-        return res.status(409).json({ ok: false, error: "No transfer-offer payload exists for this claim." });
+        return res.status(409).json({ ok: false, error: "No transfer-offer payload exists." });
       }
-      const payload = await getXamanPayload(claim.offer_payload_uuid);
-      if (!payload.meta?.resolved) {
-        return res.status(202).json({ ok: true, pending: true, stage: "offer-signing", claim, payload });
-      }
+      const payload = await getPayload(claim.offer_payload_uuid);
+      if (!payload.meta?.resolved) return res.status(202).json({ ok: true, pending: true, stage: "offer-signing", claim, payload });
       if (!payload.meta.signed) {
-        await admin.from("nft_issuance_records").update({ status: "failed", lifecycle_step: "failed", error_message: "Issuer declined the transfer-offer payload." }).eq("id", claim.id);
-        return res.status(409).json({ ok: false, error: "Issuer declined the transfer-offer payload." });
+        await admin.from("nft_issuance_records").update({ status: "failed", lifecycle_step: "failed", error_message: "Issuer declined the transfer offer." }).eq("id", claim.id);
+        return res.status(409).json({ ok: false, error: "Issuer declined the transfer offer." });
       }
-
-      const txid = getString(payload.response?.txid).toUpperCase();
-      const signer = getString(payload.response?.account);
-      if (signer !== issuerWallet || !isValidHash(txid)) {
-        return res.status(409).json({ ok: false, error: "The offer payload signer or transaction hash does not match the configured issuer." });
+      const txid = stringValue(payload.response?.txid).toUpperCase();
+      if (stringValue(payload.response?.account) !== issuer || !isHash(txid)) {
+        return res.status(409).json({ ok: false, error: "Offer signer or transaction hash does not match the issuer." });
       }
-
-      const result = await fetchXrplTransaction(txid);
-      assertValidatedSuccess(result);
-      const tx = readTx(result);
-      const meta = readMeta(result);
-      const offerId = getMetaHash(meta, "offer_id");
+      const result = await getTransaction(txid);
+      assertSuccess(result);
+      const tx = transaction(result);
+      const offerId = metadataHash(metadata(result), "offer_id");
       if (
-        getString(tx.TransactionType) !== "NFTokenCreateOffer" ||
-        getString(tx.Account) !== issuerWallet ||
-        getString(tx.NFTokenID).toUpperCase() !== claim.nftoken_id.toUpperCase() ||
-        getString(tx.Destination) !== claim.wallet_address ||
-        getString(tx.Amount) !== "0" ||
+        stringValue(tx.TransactionType) !== "NFTokenCreateOffer" ||
+        stringValue(tx.Account) !== issuer ||
+        stringValue(tx.NFTokenID).toUpperCase() !== claim.nftoken_id.toUpperCase() ||
+        stringValue(tx.Destination) !== claim.wallet_address ||
+        stringValue(tx.Amount) !== "0" ||
         Number(tx.Flags ?? 0) !== 1
       ) {
-        return res.status(409).json({ ok: false, error: "The validated transfer offer does not match this certificate claim." });
+        return res.status(409).json({ ok: false, error: "Validated transfer offer does not match this claim." });
       }
-      if (!offerId) {
-        return res.status(502).json({ ok: false, error: "The validated XRPL response did not include offer_id." });
-      }
-
+      if (!offerId) return res.status(502).json({ ok: false, error: "Validated response did not include offer_id." });
       const { data, error } = await admin
         .from("nft_issuance_records")
-        .update({
-          status: "pending",
-          lifecycle_step: "offer-created",
-          offer_transaction_hash: txid,
-          transfer_offer_id: offerId,
-          offer_created_at: new Date().toISOString(),
-          error_message: null,
-        })
+        .update({ status: "pending", lifecycle_step: "offer-created", offer_transaction_hash: txid, transfer_offer_id: offerId, offer_created_at: new Date().toISOString(), error_message: null })
         .eq("id", claim.id)
-        .select(certificateSelect())
+        .select(SELECT_FIELDS)
         .single();
       if (error) throw error;
       return res.status(200).json({ ok: true, stage: "offer-created", claim: data, payload, xrpl: { txid, offerId } });
     }
 
-    return res.status(400).json({
-      ok: false,
-      error: "Unknown action. Use create-mint, verify-mint, create-offer or verify-offer.",
-    });
+    return res.status(400).json({ ok: false, error: "Unknown action." });
   } catch (error) {
-    return res.status(500).json({
-      ok: false,
-      error: error instanceof Error ? error.message : "Unknown certificate issuer error.",
-    });
+    return res.status(500).json({ ok: false, error: error instanceof Error ? error.message : "Unknown issuer error." });
   }
 }
