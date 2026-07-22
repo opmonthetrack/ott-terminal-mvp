@@ -52,7 +52,7 @@ jobs:
           name: typescript-diagnostics
           path: |
             typescript-errors.txt
-            src/tabs/AcademyTabV3.tsx
+            api/certificate.ts
           if-no-files-found: ignore
           retention-days: 7
 
