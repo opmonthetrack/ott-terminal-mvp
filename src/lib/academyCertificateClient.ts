@@ -107,7 +107,7 @@ export async function reserveAcademyFoundationCertificate(walletAddress: string)
 
 export async function getAcademyFoundationCertificateStatus() {
   const token = await getSessionToken();
-  const response = await fetch("/api/academy-certificate-status", {
+  const response = await fetch("/api/certificate?scope=status", {
     method: "GET",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -119,7 +119,7 @@ export async function getAcademyFoundationCertificateStatus() {
 
 export async function createAcademyCertificateAcceptPayload() {
   const token = await getSessionToken();
-  const response = await fetch("/api/academy-certificate-transfer", {
+  const response = await fetch("/api/certificate?scope=transfer", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -133,7 +133,7 @@ export async function createAcademyCertificateAcceptPayload() {
 
 export async function verifyAcademyCertificateAcceptPayload() {
   const token = await getSessionToken();
-  const response = await fetch("/api/academy-certificate-transfer", {
+  const response = await fetch("/api/certificate?scope=transfer", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
