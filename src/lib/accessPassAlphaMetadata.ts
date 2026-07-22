@@ -6,7 +6,7 @@ export const ACCESS_PASS_ALPHA_VISUAL = {
   sourceWidth: 2048,
   sourceHeight: 2024,
   sourceFormat: "PNG",
-  sourceSha256: "pending-original-file-hash",
+  sourceSha256: "d55566bdf392b3703730d2a1792e10b6db8e6c2a27320fae85878f13d164effe",
   optimizedWidth: 1600,
   optimizedHeight: 1581,
   optimizedFormat: "WEBP",
