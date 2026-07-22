@@ -1,0 +1,107 @@
+name: Patch Access Pass integration
+
+on:
+  push:
+    branches:
+      - feature/access-pass-order-delivery
+    paths:
+      - .github/workflows/patch-access-pass-integration.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/access-pass-order-delivery
+          fetch-depth: 0
+
+      - name: Apply focused source patches
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          app_path = Path("src/App.tsx")
+          app = app_path.read_text()
+          old = '{activeTab === "accessgate" && <AccessGateTab walletAddress={walletAddress} />}'
+          new = '{activeTab === "accessgate" && <AccessGateTab walletAddress={walletAddress} onNavigate={navigateTo} />}'
+          if old not in app:
+              raise SystemExit("Expected AccessGateTab render line was not found")
+          app_path.write_text(app.replace(old, new, 1))
+
+          nft_path = Path("src/lib/accessNftPass.ts")
+          nft = nft_path.read_text()
+
+          old_constant = '''export const OTT_ACCESS_PASS_METADATA_URI =
+            import.meta.env.VITE_OTT_ACCESS_PASS_METADATA_URI ||
+            `ipfs://${OTT_ACCESS_PASS_METADATA_CID}`;
+
+          export const OTT_ACCESS_PASS_URI_KEYWORDS = ['''
+          new_constant = '''export const OTT_ACCESS_PASS_METADATA_URI =
+            import.meta.env.VITE_OTT_ACCESS_PASS_METADATA_URI ||
+            `ipfs://${OTT_ACCESS_PASS_METADATA_CID}`;
+
+          export const OTT_ACCESS_PASS_METADATA_BASE_URI =
+            import.meta.env.VITE_OTT_ACCESS_PASS_METADATA_BASE_URI ||
+            "/api/access-payment?scope=metadata&serial=";
+
+          export const OTT_ACCESS_PASS_URI_KEYWORDS = ['''
+          if old_constant not in nft:
+              raise SystemExit("Expected Access Pass metadata constant block was not found")
+          nft = nft.replace(old_constant, new_constant, 1)
+
+          old_return = '''  return OTT_ACCESS_PASS_URI_KEYWORDS.some((keyword) => {'''
+          new_return = '''  const dynamicMetadataBase = normalizeText(OTT_ACCESS_PASS_METADATA_BASE_URI);
+            const dynamicSerialMatch =
+              normalizedDecoded.includes(dynamicMetadataBase) &&
+              /[?&]serial=\\d{3}(?:&|$)/.test(normalizedDecoded);
+
+            if (dynamicSerialMatch) {
+              return true;
+            }
+
+            return OTT_ACCESS_PASS_URI_KEYWORDS.some((keyword) => {'''
+          if old_return not in nft:
+              raise SystemExit("Expected Access Pass URI keyword return was not found")
+          nft = nft.replace(old_return, new_return, 1)
+
+          old_normalize = '''}): OttAccessPassNft {
+            return {
+              nftokenId: input.NFTokenID ?? "unknown",
+              issuer: input.Issuer ?? "unknown",
+              taxon: input.NFTokenTaxon ?? 0,
+              uri: input.URI ?? "",
+              decodedUri: decodeNftUri(input.URI),
+              flags: input.Flags,
+              serial: input.nft_serial,
+            };
+          }'''
+          new_normalize = '''}): OttAccessPassNft {
+            const decodedUri = decodeNftUri(input.URI);
+            const editionMatch = decodedUri.match(/[?&]serial=(\\d{3})(?:&|$)/i);
+
+            return {
+              nftokenId: input.NFTokenID ?? "unknown",
+              issuer: input.Issuer ?? "unknown",
+              taxon: input.NFTokenTaxon ?? 0,
+              uri: input.URI ?? "",
+              decodedUri,
+              flags: input.Flags,
+              serial: editionMatch ? Number(editionMatch[1]) : input.nft_serial,
+            };
+          }'''
+          if old_normalize not in nft:
+              raise SystemExit("Expected normalizeNft block was not found")
+          nft_path.write_text(nft.replace(old_normalize, new_normalize, 1))
+          PY
+
+      - name: Commit focused patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/App.tsx src/lib/accessNftPass.ts
+          git commit -m "Connect Access Pass navigation and dynamic metadata scanner"
+          git push origin HEAD:feature/access-pass-order-delivery
