@@ -1,1 +1,1 @@
-export { AcademyTab } from "./AcademyTabV5";
+export { AcademyTab } from "./AcademyTabV6";
