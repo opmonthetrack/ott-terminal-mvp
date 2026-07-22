@@ -45,7 +45,7 @@ type ResponseLike = {
   };
 };
 
-type AdminClient = ReturnType<typeof createClient>;
+type AdminClient = ReturnType<typeof makeAdmin>;
 
 type CertificateRow = {
   id: string;
