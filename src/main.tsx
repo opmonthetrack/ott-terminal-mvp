@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { AcademyCoachPopup } from "./components/AcademyCoachPopup";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { CertificateIssuerConsole } from "./tabs/CertificateIssuerConsole";
 
@@ -48,6 +49,7 @@ createRoot(document.getElementById("root")!).render(
         <>
           <App />
           <PublicLegalFooter />
+          <AcademyCoachPopup />
         </>
       )}
     </ErrorBoundary>
