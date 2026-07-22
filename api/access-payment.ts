@@ -18,8 +18,22 @@ function queryValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] ?? "" : value ?? "";
 }
 
+function requiresExplicitNetwork(req: RequestLike) {
+  const scope = queryValue(req.query?.scope).toLowerCase();
+  return !["status", "metadata", "image"].includes(scope);
+}
+
 export default async function handler(req: RequestLike, res: ResponseLike) {
-  const isStatusRequest = queryValue(req.query?.scope).toLowerCase() === "status";
+  const scope = queryValue(req.query?.scope).toLowerCase();
+  const isStatusRequest = scope === "status";
+  const network = process.env.OTT_ACCESS_PASS_XRPL_NETWORK?.trim().toUpperCase() ?? "";
+
+  if (requiresExplicitNetwork(req) && network !== "TESTNET" && network !== "MAINNET") {
+    return res.status(503).json({
+      ok: false,
+      error: "Access Pass signing is safely disabled until OTT_ACCESS_PASS_XRPL_NETWORK is explicitly TESTNET or MAINNET.",
+    });
+  }
 
   if (!isStatusRequest) {
     return accessPassHandler(req, res);
