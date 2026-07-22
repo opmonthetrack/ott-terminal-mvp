@@ -9,13 +9,60 @@ import {
 
 export type OttAuthProvider = "google" | "apple" | "azure" | "github";
 
+export type OttAuthProviderOption = {
+  id: OttAuthProvider;
+  label: string;
+  enabled: boolean;
+  configurationKey: string;
+};
+
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim() ?? "";
 const supabaseKey =
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() ||
   import.meta.env.VITE_SUPABASE_ANON_KEY?.trim() ||
   "";
 
+function envFlag(name: string) {
+  const value = String(import.meta.env[name] ?? "").trim().toLowerCase();
+  return value === "true" || value === "1" || value === "yes" || value === "on";
+}
+
 export const isOttAuthConfigured = Boolean(supabaseUrl && supabaseKey);
+
+export const OTT_AUTH_PROVIDER_OPTIONS: OttAuthProviderOption[] = [
+  {
+    id: "google",
+    label: "Google",
+    enabled: isOttAuthConfigured && envFlag("VITE_AUTH_GOOGLE_ENABLED"),
+    configurationKey: "VITE_AUTH_GOOGLE_ENABLED",
+  },
+  {
+    id: "apple",
+    label: "Apple",
+    enabled: isOttAuthConfigured && envFlag("VITE_AUTH_APPLE_ENABLED"),
+    configurationKey: "VITE_AUTH_APPLE_ENABLED",
+  },
+  {
+    id: "azure",
+    label: "Microsoft",
+    enabled: isOttAuthConfigured && envFlag("VITE_AUTH_MICROSOFT_ENABLED"),
+    configurationKey: "VITE_AUTH_MICROSOFT_ENABLED",
+  },
+  {
+    id: "github",
+    label: "GitHub",
+    enabled: isOttAuthConfigured && envFlag("VITE_AUTH_GITHUB_ENABLED"),
+    configurationKey: "VITE_AUTH_GITHUB_ENABLED",
+  },
+];
+
+export function getEnabledOttAuthProviders() {
+  return OTT_AUTH_PROVIDER_OPTIONS.filter((provider) => provider.enabled);
+}
+
+export function isOttAuthProviderEnabled(provider: OttAuthProvider) {
+  return Boolean(OTT_AUTH_PROVIDER_OPTIONS.find((option) => option.id === provider)?.enabled);
+}
 
 export const ottSupabase: SupabaseClient | null = isOttAuthConfigured
   ? createClient(supabaseUrl, supabaseKey, {
@@ -43,6 +90,44 @@ function getRedirectUrl() {
   }
 
   return `${window.location.origin}${window.location.pathname}`;
+}
+
+export function getFriendlyOttAuthError(error: unknown, language: "en" | "nl") {
+  const fallback = language === "en" ? "The account action failed." : "De accountactie is mislukt.";
+  const raw = error instanceof Error
+    ? error.message
+    : typeof error === "object" && error !== null && "message" in error
+      ? String((error as { message?: unknown }).message ?? "")
+      : "";
+  const message = raw.toLowerCase();
+
+  if (message.includes("invalid login credentials")) {
+    return language === "en"
+      ? "The email address or password is incorrect."
+      : "Het e-mailadres of wachtwoord is onjuist.";
+  }
+  if (message.includes("email not confirmed")) {
+    return language === "en"
+      ? "Confirm your email address before signing in."
+      : "Bevestig eerst je e-mailadres voordat je inlogt.";
+  }
+  if (message.includes("user already registered")) {
+    return language === "en"
+      ? "An account already exists for this email address."
+      : "Er bestaat al een account voor dit e-mailadres.";
+  }
+  if (message.includes("provider") && message.includes("enabled")) {
+    return language === "en"
+      ? "This login provider has not been activated yet."
+      : "Deze inlogprovider is nog niet geactiveerd.";
+  }
+  if (message.includes("rate limit")) {
+    return language === "en"
+      ? "Too many attempts. Wait a moment and try again."
+      : "Te veel pogingen. Wacht even en probeer het opnieuw.";
+  }
+
+  return raw || fallback;
 }
 
 export async function getOttSession() {
@@ -111,6 +196,10 @@ export async function signInOttAccount(email: string, password: string) {
 }
 
 export async function signInOttProvider(provider: OttAuthProvider) {
+  if (!isOttAuthProviderEnabled(provider)) {
+    throw new Error("This login provider is not enabled.");
+  }
+
   const client = requireClient();
   const providerOptions = provider === "azure"
     ? {
