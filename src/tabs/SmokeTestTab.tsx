@@ -9,7 +9,6 @@ import {
   MinusCircle,
   RotateCcw,
   ShieldCheck,
-  Wallet,
   XCircle,
 } from "lucide-react";
 import { MAKE_WAVES_SOURCE_TAG } from "../lib/makeWaves";
@@ -422,7 +421,7 @@ export function SmokeTestTab({ walletAddress = "guest" }: SmokeTestTabProps) {
         </div>
 
         <div className="mt-7 space-y-5">
-          {filteredTests.map((test, index) => (
+          {filteredTests.map((test) => (
             <TestCard
               key={test.id}
               number={smokeTests.indexOf(test) + 1}
