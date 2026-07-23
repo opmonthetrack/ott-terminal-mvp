@@ -3,12 +3,30 @@ import type { AccessPassClaim, XamanAccessPayload } from "./accessPassOrderClien
 
 export type AccessPassIssuerAction = "create-mint" | "verify-mint" | "create-offer" | "verify-offer";
 
+export type AccessPassReadinessCheck = {
+  id: string;
+  label: string;
+  ok: boolean;
+  detail: string;
+  blocking: boolean;
+};
+
+export type AccessPassReadiness = {
+  ready: boolean;
+  safeToTest: boolean;
+  safeForMainnet: boolean;
+  network: string;
+  testnetValidated: boolean;
+  checks: AccessPassReadinessCheck[];
+};
+
 type IssuerResponse = {
   ok: boolean;
   stage?: string;
   queue?: AccessPassClaim[];
   claim?: AccessPassClaim;
   payload?: XamanAccessPayload;
+  readiness?: AccessPassReadiness;
   error?: string;
 };
 
@@ -30,6 +48,15 @@ async function parse(response: Response) {
   }
   if (!response.ok || !data.ok) throw data;
   return data;
+}
+
+export async function loadAccessPassReadiness() {
+  const response = await fetch("/api/access-payment?scope=readiness", {
+    method: "GET",
+    headers: await authHeaders(),
+    cache: "no-store",
+  });
+  return parse(response);
 }
 
 export async function loadAccessPassIssuerQueue() {
