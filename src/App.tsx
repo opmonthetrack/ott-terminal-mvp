@@ -631,7 +631,7 @@ export default function App() {
             {activeTab === "otttestnet" && <OTTTestnetTokenTab walletAddress={walletAddress} />}
             {activeTab === "partners" && <PartnerHubTab walletAddress={walletAddress} />}
             {activeTab === "truthdesk" && <TruthDeskTab walletAddress={walletAddress} />}
-            {activeTab === "accessgate" && <AccessGateTab walletAddress={walletAddress} />}
+            {activeTab === "accessgate" && <AccessGateTab walletAddress={walletAddress} onNavigate={navigateTo} />}
             {activeTab === "pitchmode" && <PitchModeTab walletAddress={walletAddress} />}
             {activeTab === "submission" && <SubmissionPackTab walletAddress={walletAddress} />}
             {activeTab === "smoketest" && <SmokeTestTab walletAddress={walletAddress} />}

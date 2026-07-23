@@ -69,6 +69,10 @@ export const OTT_ACCESS_PASS_METADATA_URI =
   import.meta.env.VITE_OTT_ACCESS_PASS_METADATA_URI ||
   `ipfs://${OTT_ACCESS_PASS_METADATA_CID}`;
 
+export const OTT_ACCESS_PASS_METADATA_BASE_URI =
+  import.meta.env.VITE_OTT_ACCESS_PASS_METADATA_BASE_URI ||
+  "/api/access-payment?scope=metadata&serial=";
+
 export const OTT_ACCESS_PASS_URI_KEYWORDS = [
   ...OTT_ACCESS_PASS_ACCEPTED_METADATA_CIDS,
   ...OTT_ACCESS_PASS_ACCEPTED_METADATA_CIDS.map((cid) => `ipfs://${cid}`),
@@ -313,6 +317,15 @@ function nftUriMatchesAccessPass(rawUri: string, decodedUri: string) {
     return true;
   }
 
+  const dynamicMetadataBase = normalizeText(OTT_ACCESS_PASS_METADATA_BASE_URI);
+  const dynamicSerialMatch =
+    normalizedDecoded.includes(dynamicMetadataBase) &&
+    /[?&]serial=\d{3}(?:&|$)/.test(normalizedDecoded);
+
+  if (dynamicSerialMatch) {
+    return true;
+  }
+
   return OTT_ACCESS_PASS_URI_KEYWORDS.some((keyword) => {
     const normalizedKeyword = normalizeText(keyword);
 
@@ -335,14 +348,17 @@ function normalizeNft(input: {
   Flags?: number;
   nft_serial?: number;
 }): OttAccessPassNft {
+  const decodedUri = decodeNftUri(input.URI);
+  const editionMatch = decodedUri.match(/[?&]serial=(\d{3})(?:&|$)/i);
+
   return {
     nftokenId: input.NFTokenID ?? "unknown",
     issuer: input.Issuer ?? "unknown",
     taxon: input.NFTokenTaxon ?? 0,
     uri: input.URI ?? "",
-    decodedUri: decodeNftUri(input.URI),
+    decodedUri,
     flags: input.Flags,
-    serial: input.nft_serial,
+    serial: editionMatch ? Number(editionMatch[1]) : input.nft_serial,
   };
 }
 
