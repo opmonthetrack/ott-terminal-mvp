@@ -1,1 +1,1 @@
-Apply the deterministic public routing and Xaman return patch once.
+Apply the deterministic public routing and Xaman return patch twice: remove the duplicate founder route.
