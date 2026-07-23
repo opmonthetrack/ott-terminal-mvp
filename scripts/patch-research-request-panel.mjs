@@ -22,4 +22,10 @@ if (!source.includes("<TokenResearchRequestPanel />")) {
 }
 
 fs.writeFileSync(file, source);
-console.log("Token research request panel integrated.");
+
+const panelFile = "src/components/TokenResearchRequestPanel.tsx";
+let panelSource = fs.readFileSync(panelFile, "utf8");
+panelSource = panelSource.replace("  CheckCircle2,\n", "");
+fs.writeFileSync(panelFile, panelSource);
+
+console.log("Token research request panel integrated and cleaned.");
