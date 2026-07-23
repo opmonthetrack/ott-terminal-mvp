@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   BadgeCheck,
   CheckCircle2,
+  Clock3,
   CreditCard,
   ExternalLink,
   Loader2,
@@ -54,6 +55,7 @@ export function AccessPassOrderPanel({ walletAddress = "guest", onNavigate }: Pr
   const hasWallet = VALID_WALLET.test(walletAddress);
   const [order, setOrder] = useState<AccessPassOrder | null>(null);
   const [claim, setClaim] = useState<AccessPassClaim | null>(null);
+  const [setupRequired, setSetupRequired] = useState(false);
   const [busy, setBusy] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -62,6 +64,7 @@ export function AccessPassOrderPanel({ walletAddress = "guest", onNavigate }: Pr
     if (!signedIn || authLoading) {
       setOrder(null);
       setClaim(null);
+      setSetupRequired(false);
       return;
     }
     if (!silent) setBusy("refresh");
@@ -69,6 +72,7 @@ export function AccessPassOrderPanel({ walletAddress = "guest", onNavigate }: Pr
       const response = await getAccessPassOrderStatus();
       setOrder(response.order ?? null);
       setClaim(response.claim ?? null);
+      setSetupRequired(Boolean(response.setupRequired));
       setError("");
     } catch (nextError) {
       if (!silent) setError(getMessage(nextError, en ? "Access Pass status could not be loaded." : "Access Pass-status kon niet worden geladen."));
@@ -130,6 +134,10 @@ export function AccessPassOrderPanel({ walletAddress = "guest", onNavigate }: Pr
   async function startPayment() {
     if (!signedIn) {
       onNavigate?.("wallet");
+      return;
+    }
+    if (setupRequired) {
+      setMessage(en ? "Access Pass activation is still being prepared." : "De activering van de Access Pass wordt nog voorbereid.");
       return;
     }
     if (!hasWallet) {
@@ -221,12 +229,20 @@ export function AccessPassOrderPanel({ walletAddress = "guest", onNavigate }: Pr
           <div className="max-w-3xl">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-700">OTT Access Pass Alpha</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-              {serial ? `${en ? "Your reserved pass" : "Jouw gereserveerde pass"} ${serial}` : (en ? "Verified purchase and delivery" : "Geverifieerde aankoop en levering")}
+              {serial
+                ? `${en ? "Your reserved pass" : "Jouw gereserveerde pass"} ${serial}`
+                : setupRequired
+                  ? (en ? "Activation is being prepared" : "Activering wordt voorbereid")
+                  : (en ? "Verified purchase and delivery" : "Geverifieerde aankoop en levering")}
             </h2>
             <p className="mt-4 text-sm leading-7 text-slate-600">
-              {en
-                ? "The server checks the validated XRPL payment before reserving one unique number from #001 to #500. Access unlocks only after the NFT is actually owned by the receiving wallet."
-                : "De server controleert de gevalideerde XRPL-betaling voordat één uniek nummer van #001 tot #500 wordt gereserveerd. Toegang opent pas wanneer de ontvangende wallet het NFT werkelijk bezit."}
+              {setupRequired
+                ? (en
+                  ? "The verified payment and NFT delivery system is being activated. No payment button is shown until database, TESTNET and issuer checks are complete."
+                  : "Het geverifieerde betaal- en NFT-leveringssysteem wordt geactiveerd. Er verschijnt geen betaalknop totdat database-, TESTNET- en issuercontroles gereed zijn.")
+                : en
+                  ? "The server checks the validated XRPL payment before reserving one unique number from #001 to #500. Access unlocks only after the NFT is actually owned by the receiving wallet."
+                  : "De server controleert de gevalideerde XRPL-betaling voordat één uniek nummer van #001 tot #500 wordt gereserveerd. Toegang opent pas wanneer de ontvangende wallet het NFT werkelijk bezit."}
             </p>
           </div>
           <button type="button" onClick={() => void refresh()} disabled={Boolean(busy)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold hover:bg-slate-100 disabled:opacity-50">
@@ -236,7 +252,7 @@ export function AccessPassOrderPanel({ walletAddress = "guest", onNavigate }: Pr
         </div>
 
         <div className="mt-8 grid gap-3 md:grid-cols-4">
-          <Step done={stageIndex > 0} current={stageIndex === 0} icon={CreditCard} label={en ? "1.589 XRP payment" : "1.589 XRP-betaling"} />
+          <Step done={stageIndex > 0} current={stageIndex === 0 && !setupRequired} icon={CreditCard} label={en ? "1.589 XRP payment" : "1.589 XRP-betaling"} />
           <Step done={stageIndex > 1} current={stageIndex === 1} icon={BadgeCheck} label={en ? "Serial reserved" : "Nummer gereserveerd"} />
           <Step done={stageIndex > 2} current={stageIndex === 2} icon={ShieldCheck} label={en ? "Founder delivery" : "Founderlevering"} />
           <Step done={issued} current={stageIndex === 3} icon={Wallet} label={en ? "Wallet ownership" : "Walletbezit"} />
@@ -247,7 +263,7 @@ export function AccessPassOrderPanel({ walletAddress = "guest", onNavigate }: Pr
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Metric label={en ? "Price" : "Prijs"} value="1.589 XRP" />
               <Metric label={en ? "Receiving wallet" : "Ontvangstwallet"} value={hasWallet ? `${walletAddress.slice(0, 8)}…${walletAddress.slice(-6)}` : "—"} />
-              <Metric label={en ? "Order status" : "Bestelstatus"} value={order?.status ?? (signedIn ? "not started" : "sign in")} />
+              <Metric label={en ? "Order status" : "Bestelstatus"} value={setupRequired ? (en ? "preparing" : "in voorbereiding") : order?.status ?? (signedIn ? "not started" : "sign in")} />
               <Metric label="Access Pass" value={serial || "#001–#500"} />
             </div>
             {message && <p className="mt-6 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm leading-6 text-blue-950">{message}</p>}
@@ -262,6 +278,12 @@ export function AccessPassOrderPanel({ walletAddress = "guest", onNavigate }: Pr
               <ActionLoading text={en ? "Checking account…" : "Account controleren…"} />
             ) : !signedIn ? (
               <ActionButton onClick={() => onNavigate?.("wallet")} icon={ShieldCheck} text={en ? "Sign in with OTT account" : "Inloggen met OTT-account"} />
+            ) : setupRequired ? (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-950">
+                <Clock3 size={26} />
+                <p className="mt-3 font-semibold">{en ? "Issuance is not open yet" : "Uitgifte is nog niet geopend"}</p>
+                <p className="mt-2 text-sm leading-6">{en ? "Payment remains disabled until the protected TESTNET and database setup is complete." : "Betalen blijft uitgeschakeld totdat de beveiligde TESTNET- en databaseconfiguratie gereed is."}</p>
+              </div>
             ) : !hasWallet ? (
               <ActionButton onClick={() => onNavigate?.("xaman")} icon={Wallet} text={en ? "Connect receiving wallet" : "Ontvangstwallet koppelen"} />
             ) : issued ? (
