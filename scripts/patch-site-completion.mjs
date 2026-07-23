@@ -43,6 +43,8 @@ if (!app.includes('id: "ottintelligence",\n          label: "OTT Intelligence"')
   app = replaceOnce(app, newsAnchor, newsWithIntelligence, "public OTT Intelligence menu item");
 }
 
+app = app.replace('        { id: "ottintelligence", label: "OTT Intelligence" },\n', "");
+
 if (!app.includes("function getInitialActiveTab()")) {
   const routeAnchor = `function getAllRouteItems(language: TerminalLanguage): MenuItem[] {
   return [...getCoreMenuGroups(language), ...getFounderMenuGroups(language)].flatMap(
