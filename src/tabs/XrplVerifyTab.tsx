@@ -16,6 +16,7 @@ import {
   Zap,
 } from "lucide-react";
 import { OTTLogo, OTTProofBadge } from "../components/OTTLogo";
+import { IssuerResearchAudit } from "../components/IssuerResearchAudit";
 import { MAKE_WAVES_SOURCE_TAG } from "../lib/makeWaves";
 import { useTerminalLanguage } from "../lib/useTerminalLanguage";
 
@@ -501,6 +502,8 @@ export function XrplVerifyTab({ walletAddress = "guest" }: XrplVerifyTabProps) {
           </div>
         </div>
       </section>
+
+      <IssuerResearchAudit />
     </div>
   );
 }
