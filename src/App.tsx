@@ -217,6 +217,13 @@ function getCoreMenuGroups(language: TerminalLanguage): MenuGroup[] {
             : "Zet geverifieerde informatie om in content.",
         },
         {
+          id: "ottintelligence",
+          label: "OTT Intelligence",
+          description: isEnglish
+            ? "Follow the terminal's verified research and operational signals."
+            : "Volg geverifieerd onderzoek en operationele signalen van de terminal.",
+        },
+        {
           id: "roadmap",
           label: isEnglish ? "Roadmap voting" : "Roadmap stemmen",
           description: isEnglish
@@ -295,6 +302,39 @@ function getAllRouteItems(language: TerminalLanguage): MenuItem[] {
   );
 }
 
+function getInitialActiveTab(): ActiveTab {
+  if (typeof window === "undefined") {
+    return "home";
+  }
+
+  const params = new URLSearchParams(window.location.search);
+
+  if (params.get("support_payment_return") === "1") {
+    return "support";
+  }
+
+  if (
+    params.get("access_payment_return") === "1" ||
+    params.get("access_accept_return") === "1"
+  ) {
+    return "accessgate";
+  }
+
+  const requestedTab = params.get("tab");
+  if (!requestedTab) {
+    return "home";
+  }
+
+  const founderMode = params.get("founder") === "1";
+  const allowedItems = founderMode
+    ? getAllRouteItems("en")
+    : getCoreMenuGroups("en").flatMap((group) => group.items);
+
+  return allowedItems.some((item) => item.id === requestedTab)
+    ? requestedTab as ActiveTab
+    : "home";
+}
+
 function getPrimaryNavigation(language: TerminalLanguage): Array<{
   id: ActiveTab;
   label: string;
@@ -312,7 +352,7 @@ function getPrimaryNavigation(language: TerminalLanguage): Array<{
 
 export default function App() {
   const [walletAddress, setWalletAddress] = useState<string>(() => getStoredWalletAddress());
-  const [activeTab, setActiveTab] = useState<ActiveTab>("home");
+  const [activeTab, setActiveTab] = useState<ActiveTab>(() => getInitialActiveTab());
   const [menuOpen, setMenuOpen] = useState(false);
   const [walletStatus, setWalletStatus] = useState("");
   const [accessUnlocked, setAccessUnlocked] = useState(() => getAccessUnlocked(walletAddress));
@@ -337,6 +377,27 @@ export default function App() {
   const activeItem = allRouteItems.find((item) => item.id === activeTab) ?? allRouteItems[0];
   const activeTabLocked = !accessUnlocked && !isFreeTab(activeTab);
   const accountName = getOttAccountName(user);
+
+  useEffect(() => {
+    const initialTab = activeTab;
+    const url = new URL(window.location.href);
+
+    if (initialTab !== "home" && !url.searchParams.has("tab")) {
+      url.searchParams.set("tab", initialTab);
+      window.history.replaceState({}, document.title, url.toString());
+    }
+
+    const syncFromHistory = () => setActiveTab(getInitialActiveTab());
+    window.addEventListener("popstate", syncFromHistory);
+
+    return () => window.removeEventListener("popstate", syncFromHistory);
+  }, []);
+
+  useEffect(() => {
+    document.title = activeTab === "home"
+      ? "OTT Terminal | XRPL learning platform"
+      : (activeItem?.label ?? "OTT") + " | OTT Terminal";
+  }, [activeItem?.label, activeTab]);
 
   useEffect(() => {
     const refreshAccess = () => setAccessUnlocked(getAccessUnlocked(walletAddress));
@@ -461,6 +522,14 @@ export default function App() {
     setAccessUnlocked(getAccessUnlocked(walletAddress));
     setActiveTab(target);
     setMenuOpen(false);
+
+    const url = new URL(window.location.href);
+    if (target === "home") {
+      url.searchParams.delete("tab");
+    } else {
+      url.searchParams.set("tab", target);
+    }
+    window.history.pushState({}, document.title, url.toString());
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
