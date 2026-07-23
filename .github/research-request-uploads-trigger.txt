@@ -1,1 +1,1 @@
-Integrate the persistent token research request and evidence upload panel.
+Apply the final research request panel cleanup.
