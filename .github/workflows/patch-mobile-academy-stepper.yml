@@ -1,11 +1,11 @@
-name: Patch mobile Academy stepper
+name: Patch research evidence scout
 
 on:
   push:
     branches:
-      - feature/mobile-academy-stepper
+      - feature/research-evidence-scout
     paths:
-      - .github/mobile-academy-stepper-trigger.txt
+      - .github/research-evidence-scout-trigger.txt
 
 permissions:
   contents: write
@@ -15,23 +15,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Checkout Academy branch
+      - name: Checkout evidence scout branch
         uses: actions/checkout@v4
         with:
-          ref: feature/mobile-academy-stepper
+          ref: feature/research-evidence-scout
           fetch-depth: 0
 
-      - name: Apply Academy stepper
-        run: node scripts/patch-mobile-academy-stepper.mjs
+      - name: Integrate evidence scout
+        run: node scripts/patch-research-evidence-scout.mjs
 
       - name: Verify route contract
         run: node scripts/audit-public-routes.mjs
 
-      - name: Commit Academy stepper
+      - name: Commit evidence scout integration
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/tabs/AcademyTabV4.tsx
-          git commit -m "Turn Academy lessons into mobile step flows"
-          git push origin HEAD:feature/mobile-academy-stepper
+          git add api/access-payment.ts src/server/researchReviewService.ts src/lib/researchReviewClient.ts src/tabs/FounderResearchReview.tsx
+          git commit -m "Link verified web sources to research scoring"
+          git push origin HEAD:feature/research-evidence-scout
