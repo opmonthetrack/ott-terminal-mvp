@@ -1,1 +1,1 @@
-Integrate the token research issuer audit into the existing OTT router and XRPL Verify page.
+Integrate the token research issuer audit now that the workflow is registered.
