@@ -1,11 +1,11 @@
-name: Patch research request uploads
+name: Patch mobile Academy stepper
 
 on:
   push:
     branches:
-      - feature/research-request-uploads
+      - feature/mobile-academy-stepper
     paths:
-      - .github/research-request-uploads-trigger.txt
+      - .github/mobile-academy-stepper-trigger.txt
 
 permissions:
   contents: write
@@ -15,23 +15,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Checkout upload branch
+      - name: Checkout Academy branch
         uses: actions/checkout@v4
         with:
-          ref: feature/research-request-uploads
+          ref: feature/mobile-academy-stepper
           fetch-depth: 0
 
-      - name: Integrate research request panel
-        run: node scripts/patch-research-request-panel.mjs
+      - name: Apply Academy stepper
+        run: node scripts/patch-mobile-academy-stepper.mjs
 
       - name: Verify route contract
         run: node scripts/audit-public-routes.mjs
 
-      - name: Commit research request panel
+      - name: Commit Academy stepper
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/tabs/XrplVerifyTab.tsx src/components/TokenResearchRequestPanel.tsx
-          git commit -m "Add persistent token research request uploads"
-          git push origin HEAD:feature/research-request-uploads
+          git add src/tabs/AcademyTabV4.tsx
+          git commit -m "Turn Academy lessons into mobile step flows"
+          git push origin HEAD:feature/mobile-academy-stepper
