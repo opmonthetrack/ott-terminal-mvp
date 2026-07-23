@@ -22,8 +22,10 @@ const supabaseKey =
   import.meta.env.VITE_SUPABASE_ANON_KEY?.trim() ||
   "";
 
-function envFlag(name: string) {
-  const value = String(import.meta.env[name] ?? "").trim().toLowerCase();
+function envFlag(name: string, defaultValue = false) {
+  const raw = String(import.meta.env[name] ?? "").trim();
+  if (!raw) return defaultValue;
+  const value = raw.toLowerCase();
   return value === "true" || value === "1" || value === "yes" || value === "on";
 }
 
@@ -33,7 +35,7 @@ export const OTT_AUTH_PROVIDER_OPTIONS: OttAuthProviderOption[] = [
   {
     id: "google",
     label: "Google",
-    enabled: isOttAuthConfigured && envFlag("VITE_AUTH_GOOGLE_ENABLED"),
+    enabled: isOttAuthConfigured && envFlag("VITE_AUTH_GOOGLE_ENABLED", true),
     configurationKey: "VITE_AUTH_GOOGLE_ENABLED",
   },
   {
@@ -89,7 +91,9 @@ function getRedirectUrl() {
     return undefined;
   }
 
-  return `${window.location.origin}${window.location.pathname}`;
+  const url = new URL(window.location.origin + window.location.pathname);
+  url.searchParams.set("tab", "wallet");
+  return url.toString();
 }
 
 export function getFriendlyOttAuthError(error: unknown, language: "en" | "nl") {
