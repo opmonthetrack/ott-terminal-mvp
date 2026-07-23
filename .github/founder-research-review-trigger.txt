@@ -1,1 +1,1 @@
-Integrate founder research review and the public neutral watchlist.
+Integrate founder research review now that the workflow is registered.
