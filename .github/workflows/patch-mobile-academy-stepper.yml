@@ -1,11 +1,11 @@
-name: Patch token research foundations
+name: Patch mobile Academy stepper
 
 on:
   push:
     branches:
-      - feature/token-research-foundations
+      - feature/mobile-academy-stepper
     paths:
-      - .github/token-research-foundations-trigger.txt
+      - .github/mobile-academy-stepper-trigger.txt
 
 permissions:
   contents: write
@@ -15,23 +15,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Checkout research branch
+      - name: Checkout Academy branch
         uses: actions/checkout@v4
         with:
-          ref: feature/token-research-foundations
+          ref: feature/mobile-academy-stepper
           fetch-depth: 0
 
-      - name: Integrate issuer research
-        run: node scripts/patch-token-research-foundations.mjs
+      - name: Apply Academy stepper
+        run: node scripts/patch-mobile-academy-stepper.mjs
 
       - name: Verify route contract
         run: node scripts/audit-public-routes.mjs
 
-      - name: Commit issuer research integration
+      - name: Commit Academy stepper
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add api/ott.ts src/tabs/XrplVerifyTab.tsx
-          git commit -m "Add live XRPL issuer research audit"
-          git push origin HEAD:feature/token-research-foundations
+          git add src/tabs/AcademyTabV4.tsx
+          git commit -m "Turn Academy lessons into mobile step flows"
+          git push origin HEAD:feature/mobile-academy-stepper
