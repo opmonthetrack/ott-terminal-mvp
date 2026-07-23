@@ -27,6 +27,8 @@ import {
   type ResearchQueueItem,
   type ResearchScoreItem,
 } from "../lib/researchReviewClient";
+import { ResearchEvidenceScout } from "../components/ResearchEvidenceScout";
+import type { ResearchWebSource } from "../lib/researchEvidenceScoutClient";
 import {
   calculateOttResearchScore,
   OTT_RESEARCH_CATEGORIES,
@@ -43,6 +45,7 @@ type EditableScore = {
   evidenceStatus: OttEvidenceStatus;
   rationale: string;
   evidenceIds: string[];
+  sourceIds: string[];
 };
 
 const evidenceStatuses: Array<{ id: OttEvidenceStatus; label: string }> = [
@@ -86,6 +89,7 @@ function makeEditableScores(scoreItems: ResearchScoreItem[]): EditableScore[] {
       evidenceStatus: saved?.evidence_status ?? "missing",
       rationale: saved?.rationale ?? "",
       evidenceIds: saved?.evidence_ids ?? [],
+      sourceIds: saved?.source_ids ?? [],
     };
   });
 }
@@ -96,6 +100,7 @@ export function FounderResearchReview() {
   const [selectedId, setSelectedId] = useState("");
   const [researchCase, setResearchCase] = useState<ResearchCase | null>(null);
   const [scores, setScores] = useState<EditableScore[]>(makeEditableScores([]));
+  const [webSources, setWebSources] = useState<ResearchWebSource[]>([]);
   const [reviewStatus, setReviewStatus] = useState("in-review");
   const [neutralConclusion, setNeutralConclusion] = useState("");
   const [founderReviewNote, setFounderReviewNote] = useState("");
@@ -168,7 +173,7 @@ export function FounderResearchReview() {
     awardedPoints: item.awardedPoints,
     evidenceStatus: item.evidenceStatus,
     rationale: item.rationale,
-    evidenceCount: item.evidenceIds.length,
+    evidenceCount: item.evidenceIds.length + item.sourceIds.length,
   }))), [scores]);
 
   const filteredQueue = useMemo(() => queue.filter((item) => {
@@ -188,6 +193,17 @@ export function FounderResearchReview() {
     setScores((current) => current.map((item) => item.categoryId === categoryId
       ? { ...item, ...patch }
       : item));
+  }
+
+  function toggleSource(categoryId: OttResearchCategoryId, sourceId: string) {
+    const current = scores.find((item) => item.categoryId === categoryId);
+    if (!current) return;
+    const selected = current.sourceIds.includes(sourceId);
+    updateScore(categoryId, {
+      sourceIds: selected
+        ? current.sourceIds.filter((id) => id !== sourceId)
+        : [...current.sourceIds, sourceId],
+    });
   }
 
   function toggleEvidence(categoryId: OttResearchCategoryId, evidenceId: string) {
@@ -303,6 +319,7 @@ export function FounderResearchReview() {
               <div className="space-y-6">
                 <CaseHeader researchCase={researchCase} />
                 <ScoreSummary score={scorePreview} />
+                <ResearchEvidenceScout requestId={researchCase.request.id} onSourcesChange={setWebSources} />
                 <EvidenceSection evidence={researchCase.evidence} onOpen={(id) => void openFounderEvidence(id)} busy={busy} />
 
                 <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-7">
@@ -313,7 +330,7 @@ export function FounderResearchReview() {
                   <div className="mt-6 space-y-4">
                     {OTT_RESEARCH_CATEGORIES.map((category) => {
                       const score = scores.find((item) => item.categoryId === category.id) as EditableScore;
-                      return <ScoreCategoryCard key={category.id} category={category} score={score} evidence={researchCase.evidence} expanded={expandedCategory === category.id} onToggle={() => setExpandedCategory((current) => current === category.id ? null : category.id)} onUpdate={(patch) => updateScore(category.id, patch)} onToggleEvidence={(evidenceId) => toggleEvidence(category.id, evidenceId)} />;
+                      return <ScoreCategoryCard key={category.id} category={category} score={score} evidence={researchCase.evidence} webSources={webSources} expanded={expandedCategory === category.id} onToggle={() => setExpandedCategory((current) => current === category.id ? null : category.id)} onUpdate={(patch) => updateScore(category.id, patch)} onToggleEvidence={(evidenceId) => toggleEvidence(category.id, evidenceId)} onToggleSource={(sourceId) => toggleSource(category.id, sourceId)} />;
                     })}
                   </div>
 
@@ -353,8 +370,8 @@ function EvidenceSection({ evidence, onOpen, busy }: { evidence: ResearchEvidenc
   return <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-7"><div className="flex items-center gap-3"><FileText className="text-blue-300" size={21} /><h2 className="text-xl font-semibold">Privé bewijsstukken ({evidence.length})</h2></div><div className="mt-5 grid gap-3 lg:grid-cols-2">{evidence.map((item) => <button key={item.id} type="button" onClick={() => onOpen(item.id)} disabled={busy === `evidence:${item.id}`} className="rounded-2xl border border-white/10 bg-slate-950/50 p-4 text-left hover:border-blue-300/40"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate font-semibold">{item.file_name}</p><p className="mt-1 text-xs text-slate-500">{item.evidence_kind} · {formatBytes(item.size_bytes)} · {new Date(item.created_at).toLocaleDateString()}</p></div><Eye className="shrink-0 text-blue-300" size={18} /></div>{item.notes && <p className="mt-3 text-xs leading-5 text-slate-400">{item.notes}</p>}</button>)}{evidence.length === 0 && <p className="rounded-2xl border border-amber-300/20 bg-amber-300/5 p-5 text-sm text-amber-100 lg:col-span-2">Geen bewijs aangeleverd. Kerncategorieën kunnen de score daarom niet boven 54% brengen.</p>}</div></section>;
 }
 
-function ScoreCategoryCard({ category, score, evidence, expanded, onToggle, onUpdate, onToggleEvidence }: { category: (typeof OTT_RESEARCH_CATEGORIES)[number]; score: EditableScore; evidence: ResearchEvidenceItem[]; expanded: boolean; onToggle: () => void; onUpdate: (patch: Partial<EditableScore>) => void; onToggleEvidence: (evidenceId: string) => void }) {
-  return <article className="rounded-2xl border border-white/10 bg-slate-950/50"><button type="button" onClick={onToggle} className="flex w-full items-center justify-between gap-4 p-4 text-left"><div><p className="font-semibold">{category.labelNl}</p><p className="mt-1 text-xs text-slate-500">{score.awardedPoints}/{category.maxPoints} punten · {score.evidenceStatus} · {score.evidenceIds.length} bewijs</p></div>{expanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}</button>{expanded && <div className="border-t border-white/10 p-4"><p className="text-sm leading-6 text-slate-400">{category.descriptionNl}</p><div className="mt-4 grid gap-4 md:grid-cols-[180px_220px_1fr]"><label><span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Punten</span><input type="number" min={0} max={category.maxPoints} value={score.awardedPoints} onChange={(event) => onUpdate({ awardedPoints: Math.max(0, Math.min(category.maxPoints, Number(event.target.value) || 0)) })} className="mt-2 w-full rounded-xl border border-white/15 bg-slate-900 px-4 py-3 text-sm" /></label><label><span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Bewijsstatus</span><select value={score.evidenceStatus} onChange={(event) => onUpdate({ evidenceStatus: event.target.value as OttEvidenceStatus })} className="mt-2 w-full rounded-xl border border-white/15 bg-slate-900 px-4 py-3 text-sm">{evidenceStatuses.map((status) => <option key={status.id} value={status.id}>{status.label}</option>)}</select></label><label><span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Onderbouwing</span><textarea value={score.rationale} onChange={(event) => onUpdate({ rationale: event.target.value.slice(0, 5000) })} rows={3} className="mt-2 w-full rounded-xl border border-white/15 bg-slate-900 px-4 py-3 text-sm leading-6" /></label></div><div className="mt-5"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Koppel bewijsstukken</p><div className="mt-3 grid gap-2 md:grid-cols-2">{evidence.map((item) => <label key={item.id} className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 ${score.evidenceIds.includes(item.id) ? "border-blue-400 bg-blue-400/10" : "border-white/10 bg-white/[0.02]"}`}><input type="checkbox" checked={score.evidenceIds.includes(item.id)} onChange={() => onToggleEvidence(item.id)} className="mt-1" /><span className="min-w-0"><span className="block truncate text-sm font-semibold">{item.file_name}</span><span className="mt-1 block text-xs text-slate-500">{item.evidence_kind}</span></span></label>)}{evidence.length === 0 && <p className="text-sm text-slate-500">Geen bewijs beschikbaar.</p>}</div></div></div>}</article>;
+function ScoreCategoryCard({ category, score, evidence, webSources, expanded, onToggle, onUpdate, onToggleEvidence, onToggleSource }: { category: (typeof OTT_RESEARCH_CATEGORIES)[number]; score: EditableScore; evidence: ResearchEvidenceItem[]; webSources: ResearchWebSource[]; expanded: boolean; onToggle: () => void; onUpdate: (patch: Partial<EditableScore>) => void; onToggleEvidence: (evidenceId: string) => void; onToggleSource: (sourceId: string) => void }) {
+  return <article className="rounded-2xl border border-white/10 bg-slate-950/50"><button type="button" onClick={onToggle} className="flex w-full items-center justify-between gap-4 p-4 text-left"><div><p className="font-semibold">{category.labelNl}</p><p className="mt-1 text-xs text-slate-500">{score.awardedPoints}/{category.maxPoints} punten · {score.evidenceStatus} · {score.evidenceIds.length + score.sourceIds.length} bewijs</p></div>{expanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}</button>{expanded && <div className="border-t border-white/10 p-4"><p className="text-sm leading-6 text-slate-400">{category.descriptionNl}</p><div className="mt-4 grid gap-4 md:grid-cols-[180px_220px_1fr]"><label><span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Punten</span><input type="number" min={0} max={category.maxPoints} value={score.awardedPoints} onChange={(event) => onUpdate({ awardedPoints: Math.max(0, Math.min(category.maxPoints, Number(event.target.value) || 0)) })} className="mt-2 w-full rounded-xl border border-white/15 bg-slate-900 px-4 py-3 text-sm" /></label><label><span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Bewijsstatus</span><select value={score.evidenceStatus} onChange={(event) => onUpdate({ evidenceStatus: event.target.value as OttEvidenceStatus })} className="mt-2 w-full rounded-xl border border-white/15 bg-slate-900 px-4 py-3 text-sm">{evidenceStatuses.map((status) => <option key={status.id} value={status.id}>{status.label}</option>)}</select></label><label><span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Onderbouwing</span><textarea value={score.rationale} onChange={(event) => onUpdate({ rationale: event.target.value.slice(0, 5000) })} rows={3} className="mt-2 w-full rounded-xl border border-white/15 bg-slate-900 px-4 py-3 text-sm leading-6" /></label></div><div className="mt-5"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Koppel bewijsstukken</p><div className="mt-3 grid gap-2 md:grid-cols-2">{evidence.map((item) => <label key={item.id} className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 ${score.evidenceIds.includes(item.id) ? "border-blue-400 bg-blue-400/10" : "border-white/10 bg-white/[0.02]"}`}><input type="checkbox" checked={score.evidenceIds.includes(item.id)} onChange={() => onToggleEvidence(item.id)} className="mt-1" /><span className="min-w-0"><span className="block truncate text-sm font-semibold">{item.file_name}</span><span className="mt-1 block text-xs text-slate-500">{item.evidence_kind}</span></span></label>)}{evidence.length === 0 && <p className="text-sm text-slate-500">Geen uploads beschikbaar.</p>}</div></div><div className="mt-5"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Koppel geverifieerde webbronnen</p><div className="mt-3 grid gap-2 md:grid-cols-2">{webSources.map((source) => { const verified = source.review_status === "verified"; return <label key={source.id} className={`flex items-start gap-3 rounded-xl border p-3 ${score.sourceIds.includes(source.id) ? "border-emerald-400 bg-emerald-400/10" : "border-white/10 bg-white/[0.02]"} ${verified ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}><input type="checkbox" checked={score.sourceIds.includes(source.id)} disabled={!verified} onChange={() => onToggleSource(source.id)} className="mt-1" /><span className="min-w-0"><span className="block truncate text-sm font-semibold">{source.title || source.domain}</span><span className="mt-1 block text-xs text-slate-500">{source.review_status} · {source.source_kind} · {source.authority_level}</span></span></label>; })}{webSources.length === 0 && <p className="text-sm text-slate-500">Geen webbronnen opgeslagen.</p>}</div></div></div>}</article>;
 }
 
 function WatchlistPublisher({ researchCase, score, status, setStatus, rationale, setRationale, evidenceSummary, setEvidenceSummary, displayOrder, setDisplayOrder, busy, onPublish, onUnpublish, setupRequired }: { researchCase: ResearchCase; score: number; status: string; setStatus: (value: string) => void; rationale: string; setRationale: (value: string) => void; evidenceSummary: string; setEvidenceSummary: (value: string) => void; displayOrder: number; setDisplayOrder: (value: number) => void; busy: string; onPublish: () => void; onUnpublish: () => void; setupRequired: boolean }) {

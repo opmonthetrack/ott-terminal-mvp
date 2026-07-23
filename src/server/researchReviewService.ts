@@ -28,6 +28,7 @@ type ScoreItemInput = {
   evidenceStatus: OttEvidenceStatus;
   rationale: string;
   evidenceIds: string[];
+  sourceIds: string[];
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -131,6 +132,7 @@ function parseScoreItems(value: unknown): ScoreItemInput[] {
       evidenceStatus: status,
       rationale: stringValue(raw?.rationale).slice(0, 5000),
       evidenceIds: stringArray(raw?.evidenceIds),
+      sourceIds: stringArray(raw?.sourceIds),
     };
   });
 }
@@ -266,6 +268,7 @@ async function handleFounderReview(req: RequestLike, res: ResponseLike) {
       }
 
       const evidenceIds = [...new Set(items.flatMap((item) => item.evidenceIds))];
+      const sourceIds = [...new Set(items.flatMap((item) => item.sourceIds))];
       if (evidenceIds.length > 0) {
         const { data, error } = await admin
           .from("research_evidence")
@@ -278,12 +281,31 @@ async function handleFounderReview(req: RequestLike, res: ResponseLike) {
         }
       }
 
+      if (sourceIds.length > 0) {
+        const { data, error } = await admin
+          .from("token_research_sources")
+          .select("id,request_id,review_status")
+          .in("id", sourceIds);
+        if (error) throw error;
+        const rows = (data ?? []) as unknown as Array<Record<string, unknown>>;
+        const invalid = rows.some((row) => (
+          String(row.request_id) !== requestId
+          || String(row.review_status) !== "verified"
+        ));
+        if (invalid || rows.length !== sourceIds.length) {
+          return res.status(400).json({
+            ok: false,
+            error: "Every linked web source must belong to this case and have founder status verified.",
+          });
+        }
+      }
+
       const scoreInputs: OttResearchScoreInput[] = items.map((item) => ({
         categoryId: item.categoryId,
         awardedPoints: item.awardedPoints,
         evidenceStatus: item.evidenceStatus,
         rationale: item.rationale,
-        evidenceCount: item.evidenceIds.length,
+        evidenceCount: item.evidenceIds.length + item.sourceIds.length,
       }));
       const result = calculateOttResearchScore(scoreInputs);
       const checkedAt = new Date().toISOString();
@@ -296,6 +318,7 @@ async function handleFounderReview(req: RequestLike, res: ResponseLike) {
         evidence_status: item.evidenceStatus,
         rationale: item.rationale,
         evidence_ids: item.evidenceIds,
+        source_ids: item.sourceIds,
         checked_at: checkedAt,
         checked_by: founder.id,
       }));

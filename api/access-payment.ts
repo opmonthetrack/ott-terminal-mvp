@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import accessPassHandler from "../src/server/accessPassService";
 import premiumAccessHandler from "../src/server/premiumAccessService";
 import researchReviewHandler from "../src/server/researchReviewService";
+import researchEvidenceScoutHandler from "../src/server/researchEvidenceScoutService";
 
 type RequestLike = {
   method?: string;
@@ -23,6 +24,7 @@ const EMPTY_UUID = "00000000-0000-4000-8000-000000000000";
 const XRPL_ADDRESS = /^r[1-9A-HJ-NP-Za-km-z]{25,34}$/;
 const PREMIUM_SCOPES = new Set(["grant-status", "wallet-link", "grants"]);
 const RESEARCH_SCOPES = new Set(["research-review", "watchlist"]);
+const EVIDENCE_SCOUT_SCOPES = new Set(["evidence-scout"]);
 
 function queryValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] ?? "" : value ?? "";
@@ -40,7 +42,7 @@ function bearer(req: RequestLike) {
 
 function requiresExplicitNetwork(req: RequestLike) {
   const scope = queryValue(req.query?.scope).toLowerCase();
-  return !["status", "metadata", "image", "readiness", ...PREMIUM_SCOPES, ...RESEARCH_SCOPES].includes(scope);
+  return !["status", "metadata", "image", "readiness", ...PREMIUM_SCOPES, ...RESEARCH_SCOPES, ...EVIDENCE_SCOUT_SCOPES].includes(scope);
 }
 
 function serverStorage() {
@@ -191,6 +193,10 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
   const network = process.env.OTT_ACCESS_PASS_XRPL_NETWORK?.trim().toUpperCase() ?? "";
   const rpcUrl = accessPassRpcUrl();
   const testnetValidated = process.env.OTT_ACCESS_PASS_TESTNET_VALIDATED?.trim().toLowerCase() === "true";
+
+  if (EVIDENCE_SCOUT_SCOPES.has(scope)) {
+    return researchEvidenceScoutHandler(req, res);
+  }
 
   if (RESEARCH_SCOPES.has(scope)) {
     return researchReviewHandler(req, res);

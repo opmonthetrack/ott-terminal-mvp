@@ -48,6 +48,7 @@ export type ResearchScoreItem = {
   evidence_status: OttEvidenceStatus;
   rationale: string;
   evidence_ids: string[];
+  source_ids: string[];
   checked_at?: string | null;
 };
 
@@ -161,6 +162,7 @@ export async function saveFounderResearchScore(input: {
     evidenceStatus: OttEvidenceStatus;
     rationale: string;
     evidenceIds: string[];
+    sourceIds: string[];
   }>;
 }) {
   const response = await fetch("/api/access-payment?scope=research-review", {
