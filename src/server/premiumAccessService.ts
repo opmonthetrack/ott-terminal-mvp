@@ -222,11 +222,11 @@ async function loadActiveGrantsForUser(admin: AdminClient, userId: string, walle
       .in("wallet_address", wallets)
       .eq("status", "active");
     if (error) throw error;
-    walletGrants = (data ?? []) as unknown as GrantRow[];
+    walletGrants = (data ?? []) as unknown as unknown as GrantRow[];
   }
 
   const unique = new Map<string, GrantRow>();
-  [...((userGrants ?? []) as unknown as GrantRow[]), ...walletGrants]
+  [...((userGrants ?? []) as unknown as unknown as GrantRow[]), ...walletGrants]
     .filter((grant) => activeNow(grant))
     .forEach((grant) => unique.set(grant.id, grant));
   return [...unique.values()];
@@ -257,7 +257,7 @@ async function handleGrantStatus(req: RequestLike, res: ResponseLike) {
       .eq("status", "verified");
     if (linkError) throw linkError;
 
-    const verifiedLinks = (links ?? []) as unknown as WalletLinkRow[];
+    const verifiedLinks = (links ?? []) as unknown as unknown as WalletLinkRow[];
     const verifiedWallets = verifiedLinks.map((link) => link.wallet_address);
     const walletLinked = Boolean(requestedWallet && verifiedWallets.includes(requestedWallet));
     const grants = await loadActiveGrantsForUser(admin, user.id, verifiedWallets);
@@ -513,7 +513,7 @@ async function handleFounderGrants(req: RequestLike, res: ResponseLike) {
         .order("created_at", { ascending: false })
         .limit(100);
       if (error) throw error;
-      const grants = (data ?? []) as unknown as GrantRow[];
+      const grants = (data ?? []) as unknown as unknown as GrantRow[];
       const userIds = [...new Set(grants.map((grant) => grant.target_user_id).filter((value): value is string => Boolean(value)))];
       const users = await Promise.all(userIds.map((id) => describeUser(admin, id)));
 
@@ -526,7 +526,7 @@ async function handleFounderGrants(req: RequestLike, res: ResponseLike) {
           .in("wallet_address", walletAddresses)
           .eq("status", "verified");
         if (linkError) throw linkError;
-        walletLinks = (links ?? []) as unknown as WalletLinkRow[];
+        walletLinks = (links ?? []) as unknown as unknown as WalletLinkRow[];
       }
 
       return res.status(200).json({ ok: true, grants, users: users.filter(Boolean), walletLinks });
@@ -546,7 +546,7 @@ async function handleFounderGrants(req: RequestLike, res: ResponseLike) {
           .eq("wallet_address", query)
           .eq("status", "verified");
         if (error) throw error;
-        const linkedUsers = await Promise.all(((links ?? []) as unknown as WalletLinkRow[]).map((link) => describeUser(admin, link.user_id)));
+        const linkedUsers = await Promise.all(((links ?? []) as unknown as unknown as WalletLinkRow[]).map((link) => describeUser(admin, link.user_id)));
         return res.status(200).json({
           ok: true,
           targets: [{ type: "wallet", walletAddress: query, linkedUsers: linkedUsers.filter(Boolean) }],
@@ -616,7 +616,7 @@ async function handleFounderGrants(req: RequestLike, res: ResponseLike) {
           .select("*")
           .single();
         if (error) throw error;
-        grant = data as unknown as GrantRow;
+        grant = data as unknown as unknown as GrantRow;
         eventType = "extended";
       } else {
         const { data, error } = await admin
@@ -634,7 +634,7 @@ async function handleFounderGrants(req: RequestLike, res: ResponseLike) {
           .select("*")
           .single();
         if (error) throw error;
-        grant = data as unknown as GrantRow;
+        grant = data as unknown as unknown as GrantRow;
       }
 
       const { error: eventError } = await admin.from("ott_access_grant_events").insert({
