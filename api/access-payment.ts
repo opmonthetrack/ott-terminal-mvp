@@ -44,6 +44,16 @@ function serverStorage() {
   return { url, key };
 }
 
+function accessPassRpcUrl() {
+  return process.env.OTT_ACCESS_PASS_XRPL_RPC_URL?.trim() || "";
+}
+
+function rpcMatchesNetwork(network: string, rpcUrl: string) {
+  if (!rpcUrl || (network !== "TESTNET" && network !== "MAINNET")) return false;
+  const testnetEndpoint = /(?:altnet|testnet|rippletest)/i.test(rpcUrl);
+  return network === "TESTNET" ? testnetEndpoint : !testnetEndpoint;
+}
+
 function adminAllowed(userId: string, email: string) {
   const ids = new Set(
     (process.env.OTT_MINT_ADMIN_USER_IDS ?? "")
@@ -93,11 +103,12 @@ async function handleReadiness(req: RequestLike, res: ResponseLike) {
 
   const network = process.env.OTT_ACCESS_PASS_XRPL_NETWORK?.trim().toUpperCase() || "UNSET";
   const networkExplicit = network === "TESTNET" || network === "MAINNET";
+  const rpcUrl = accessPassRpcUrl();
+  const rpcConsistent = rpcMatchesNetwork(network, rpcUrl);
   const testnetValidated = process.env.OTT_ACCESS_PASS_TESTNET_VALIDATED?.trim().toLowerCase() === "true";
   const mainnetGateOpen = network !== "MAINNET" || testnetValidated;
   const accessWallet = process.env.OTT_ACCESS_WALLET?.trim() || "";
   const issuerWallet = process.env.OTT_ACCESS_PASS_ISSUER_WALLET?.trim() || "";
-  const rpcUrl = process.env.OTT_ACCESS_PASS_XRPL_RPC_URL?.trim() || process.env.XRPL_RPC_URL?.trim() || "";
   const xamanConfigured = Boolean(process.env.XAMAN_API_KEY?.trim() && process.env.XAMAN_API_SECRET?.trim());
 
   const { error: orderTableError } = await admin
@@ -123,7 +134,14 @@ async function handleReadiness(req: RequestLike, res: ResponseLike) {
     readinessCheck("lifecycle", "NFT delivery lifecycle", lifecycleReady, lifecycleReady ? "Lifecycle columns found." : "Run the certificate delivery migration first."),
     readinessCheck("reservation", "Atomic serial reservation", reserveFunctionReady, reserveFunctionReady ? "Reservation function found." : "Run or repair reserve_ott_access_pass()."),
     readinessCheck("network", "Explicit XRPL network", networkExplicit, networkExplicit ? network : "Set OTT_ACCESS_PASS_XRPL_NETWORK to TESTNET first."),
-    readinessCheck("rpc", "XRPL RPC endpoint", Boolean(rpcUrl), rpcUrl ? "An explicit RPC endpoint is configured." : "Set an RPC endpoint matching the selected network."),
+    readinessCheck(
+      "rpc",
+      "Access Pass RPC matches network",
+      rpcConsistent,
+      rpcConsistent
+        ? `Dedicated ${network} RPC endpoint configured.`
+        : "Set OTT_ACCESS_PASS_XRPL_RPC_URL to an endpoint matching the selected network.",
+    ),
     readinessCheck("xaman", "Xaman server credentials", xamanConfigured, xamanConfigured ? "Signing payload service configured." : "Set XAMAN_API_KEY and XAMAN_API_SECRET."),
     readinessCheck("payment-wallet", "Access payment wallet", XRPL_ADDRESS.test(accessWallet), XRPL_ADDRESS.test(accessWallet) ? "Explicit destination wallet configured." : "Set a valid OTT_ACCESS_WALLET."),
     readinessCheck("issuer-wallet", "Access Pass issuer wallet", XRPL_ADDRESS.test(issuerWallet), XRPL_ADDRESS.test(issuerWallet) ? "Issuer account configured." : "Set a valid OTT_ACCESS_PASS_ISSUER_WALLET."),
@@ -166,6 +184,7 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
   const scope = queryValue(req.query?.scope).toLowerCase();
   const isStatusRequest = scope === "status";
   const network = process.env.OTT_ACCESS_PASS_XRPL_NETWORK?.trim().toUpperCase() ?? "";
+  const rpcUrl = accessPassRpcUrl();
   const testnetValidated = process.env.OTT_ACCESS_PASS_TESTNET_VALIDATED?.trim().toLowerCase() === "true";
 
   if (scope === "readiness") {
@@ -176,6 +195,13 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     return res.status(503).json({
       ok: false,
       error: "Access Pass signing is safely disabled until OTT_ACCESS_PASS_XRPL_NETWORK is explicitly TESTNET or MAINNET.",
+    });
+  }
+
+  if (requiresExplicitNetwork(req) && !rpcMatchesNetwork(network, rpcUrl)) {
+    return res.status(503).json({
+      ok: false,
+      error: "Access Pass signing is safely disabled because OTT_ACCESS_PASS_XRPL_RPC_URL is missing or does not match the selected XRPL network.",
     });
   }
 
