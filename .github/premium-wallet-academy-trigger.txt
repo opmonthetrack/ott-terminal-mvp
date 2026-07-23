@@ -1,1 +1,1 @@
-Integrate the premium Wallet Academy into AcademyTabV4.
+Integrate the premium Wallet Academy now that the workflow is registered.
