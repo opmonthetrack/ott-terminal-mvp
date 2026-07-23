@@ -1,1 +1,1 @@
-Apply the generic Xaman return UX patch once.
+Apply the generic Xaman return UX patch now that the workflow is registered.
