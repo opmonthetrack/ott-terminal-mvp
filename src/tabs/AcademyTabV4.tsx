@@ -48,6 +48,8 @@ import { NFT_EDITION_REGISTRY, formatEditionSerial } from "../lib/nftEditionRegi
 import { getOttAccountName } from "../lib/ottAuth";
 import { useOttAuthSession } from "../lib/useOttAuthSession";
 import { useTerminalLanguage } from "../lib/useTerminalLanguage";
+import { usePremiumAccess } from "../lib/usePremiumAccess";
+import { WalletGrantProofPanel } from "../components/WalletGrantProofPanel";
 import { WalletAcademyTracks } from "./WalletAcademyTracks";
 
 type AcademyTabProps = {
@@ -78,7 +80,10 @@ export function AcademyTab({ walletAddress = "guest", onNavigate }: AcademyTabPr
   const { user, signedIn, loading: authLoading } = useOttAuthSession();
   const isEnglish = language === "en";
   const hasWallet = isWalletAddress(walletAddress);
-  const accessUnlocked = hasWallet && isAccessVerified(loadAccessState(walletAddress));
+  const localAccessUnlocked = hasWallet && isAccessVerified(loadAccessState(walletAddress));
+  const premiumAccess = usePremiumAccess(hasWallet ? walletAddress : "");
+  const accessUnlocked = localAccessUnlocked || premiumAccess.entitlements.academyPremium;
+  const walletAcademyUnlocked = localAccessUnlocked || premiumAccess.entitlements.walletAcademy;
   const accountName = getOttAccountName(user);
   const ownerKey = user?.id
     ? `account:${user.id}`
@@ -484,11 +489,34 @@ export function AcademyTab({ walletAddress = "guest", onNavigate }: AcademyTabPr
       )}
 
       {view === "wallets" && (
-        <WalletAcademyTracks
-          isEnglish={isEnglish}
-          accessUnlocked={accessUnlocked}
-          onNavigate={onNavigate}
-        />
+        <>
+          <WalletGrantProofPanel
+            isEnglish={isEnglish}
+            signedIn={signedIn}
+            hasWallet={hasWallet}
+            walletAddress={hasWallet ? walletAddress : ""}
+            setupRequired={premiumAccess.setupRequired}
+            loading={premiumAccess.loading}
+            linkBusy={premiumAccess.linkBusy}
+            walletLinked={premiumAccess.walletLinked}
+            walletGrantAvailable={premiumAccess.walletGrantAvailable}
+            entitlements={premiumAccess.entitlements}
+            source={premiumAccess.source}
+            error={premiumAccess.error}
+            onStartProof={() => {
+              void premiumAccess.startWalletProof().catch(() => undefined);
+            }}
+            onRefresh={() => {
+              void premiumAccess.refresh();
+            }}
+            onNavigate={onNavigate}
+          />
+          <WalletAcademyTracks
+            isEnglish={isEnglish}
+            accessUnlocked={walletAcademyUnlocked}
+            onNavigate={onNavigate}
+          />
+        </>
       )}
 
       {view === "course" && (
