@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   validate:
-    name: TypeScript and production build
+    name: Routes, TypeScript and production build
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -38,6 +38,9 @@ jobs:
         # validation can run; regenerating and committing the lockfile remains a
         # separate dependency-maintenance task.
         run: npm install --no-audit --no-fund
+
+      - name: Audit all 17 public routes
+        run: npm run audit:routes
 
       - name: TypeScript validation
         shell: bash
@@ -65,3 +68,8 @@ jobs:
           test -f dist/index.html
           test -d dist/assets
           test -s dist/index.html
+          test -s dist/privacy.html
+          test -s dist/terms.html
+          test -s dist/robots.txt
+          test -s dist/sitemap.xml
+          test -s dist/manifest.webmanifest
