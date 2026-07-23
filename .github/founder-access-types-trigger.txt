@@ -1,0 +1,1 @@
+Apply literal Supabase selects and explicit server row types.
