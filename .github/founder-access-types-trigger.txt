@@ -1,1 +1,0 @@
-Apply literal Supabase selects now that the workflow is registered.
