@@ -57,6 +57,7 @@ export type XamanAccessPayload = {
 
 export type AccessPassResponse = {
   ok: boolean;
+  setupRequired?: boolean;
   stage?: string;
   pending?: boolean;
   alreadyPaid?: boolean;
