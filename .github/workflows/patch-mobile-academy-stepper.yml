@@ -1,11 +1,11 @@
-name: Fix founder access TypeScript
+name: Patch mobile Academy stepper
 
 on:
   push:
     branches:
-      - feature/founder-access-manager
+      - feature/mobile-academy-stepper
     paths:
-      - .github/founder-access-types-trigger.txt
+      - .github/mobile-academy-stepper-trigger.txt
 
 permissions:
   contents: write
@@ -15,20 +15,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Checkout founder access branch
+      - name: Checkout Academy branch
         uses: actions/checkout@v4
         with:
-          ref: feature/founder-access-manager
+          ref: feature/mobile-academy-stepper
           fetch-depth: 0
 
-      - name: Fix Supabase row typing
-        run: node scripts/fix-founder-access-types.mjs
+      - name: Apply Academy stepper
+        run: node scripts/patch-mobile-academy-stepper.mjs
 
-      - name: Commit TypeScript fixes
+      - name: Verify route contract
+        run: node scripts/audit-public-routes.mjs
+
+      - name: Commit Academy stepper
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/server/premiumAccessService.ts
-          git commit -m "Fix founder access Supabase row types"
-          git push origin HEAD:feature/founder-access-manager
+          git add src/tabs/AcademyTabV4.tsx
+          git commit -m "Turn Academy lessons into mobile step flows"
+          git push origin HEAD:feature/mobile-academy-stepper
