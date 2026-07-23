@@ -48,13 +48,14 @@ import { NFT_EDITION_REGISTRY, formatEditionSerial } from "../lib/nftEditionRegi
 import { getOttAccountName } from "../lib/ottAuth";
 import { useOttAuthSession } from "../lib/useOttAuthSession";
 import { useTerminalLanguage } from "../lib/useTerminalLanguage";
+import { WalletAcademyTracks } from "./WalletAcademyTracks";
 
 type AcademyTabProps = {
   walletAddress?: string;
   onNavigate?: (target: string) => void;
 };
 
-type AcademyView = "hub" | "library" | "course" | "certificate";
+type AcademyView = "hub" | "library" | "wallets" | "course" | "certificate";
 
 const MAX_ANSWER_LENGTH = 200;
 const MIN_ANSWER_LENGTH = 18;
@@ -482,6 +483,14 @@ export function AcademyTab({ walletAddress = "guest", onNavigate }: AcademyTabPr
         />
       )}
 
+      {view === "wallets" && (
+        <WalletAcademyTracks
+          isEnglish={isEnglish}
+          accessUnlocked={accessUnlocked}
+          onNavigate={onNavigate}
+        />
+      )}
+
       {view === "course" && (
         <CourseView
           isEnglish={isEnglish}
@@ -577,6 +586,9 @@ function AcademyHeader(props: HeaderProps) {
             </ViewButton>
             <ViewButton active={view === "library"} onClick={() => setView("library")}>
               {isEnglish ? "Library" : "Bibliotheek"}
+            </ViewButton>
+            <ViewButton active={view === "wallets"} onClick={() => setView("wallets")}>
+              {isEnglish ? "Wallet Academy" : "Wallet Academy"}
             </ViewButton>
             <ViewButton active={view === "certificate"} onClick={() => setView("certificate")}>
               {isEnglish ? "NFT certificate" : "NFT-certificaat"}
