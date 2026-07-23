@@ -1,10 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
 import accessPassHandler from "../src/server/accessPassService";
+import premiumAccessHandler from "../src/server/premiumAccessService";
 
 type RequestLike = {
   method?: string;
   headers?: Record<string, string | string[] | undefined>;
   query?: Record<string, string | string[] | undefined>;
+  body?: Record<string, unknown>;
   [key: string]: unknown;
 };
 
@@ -18,6 +20,7 @@ type ResponseLike = {
 
 const EMPTY_UUID = "00000000-0000-4000-8000-000000000000";
 const XRPL_ADDRESS = /^r[1-9A-HJ-NP-Za-km-z]{25,34}$/;
+const PREMIUM_SCOPES = new Set(["grant-status", "wallet-link", "grants"]);
 
 function queryValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] ?? "" : value ?? "";
@@ -35,7 +38,7 @@ function bearer(req: RequestLike) {
 
 function requiresExplicitNetwork(req: RequestLike) {
   const scope = queryValue(req.query?.scope).toLowerCase();
-  return !["status", "metadata", "image", "readiness"].includes(scope);
+  return !["status", "metadata", "image", "readiness", ...PREMIUM_SCOPES].includes(scope);
 }
 
 function serverStorage() {
@@ -186,6 +189,10 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
   const network = process.env.OTT_ACCESS_PASS_XRPL_NETWORK?.trim().toUpperCase() ?? "";
   const rpcUrl = accessPassRpcUrl();
   const testnetValidated = process.env.OTT_ACCESS_PASS_TESTNET_VALIDATED?.trim().toLowerCase() === "true";
+
+  if (PREMIUM_SCOPES.has(scope)) {
+    return premiumAccessHandler(req, res);
+  }
 
   if (scope === "readiness") {
     return handleReadiness(req, res);
