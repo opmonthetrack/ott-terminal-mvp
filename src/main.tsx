@@ -6,6 +6,7 @@ import { AcademyCoachPopup } from "./components/AcademyCoachPopup";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AccessPassIssuerConsole } from "./tabs/AccessPassIssuerConsole";
 import { CertificateIssuerConsole } from "./tabs/CertificateIssuerConsole";
+import { FounderAccessManager } from "./tabs/FounderAccessManager";
 
 // Suppress known extension injection errors
 window.addEventListener("unhandledrejection", (event) => {
@@ -24,6 +25,7 @@ const params = new URLSearchParams(window.location.search);
 const founderMode = params.get("founder") === "1";
 const showCertificateIssuer = founderMode && params.get("issuer") === "1";
 const showAccessPassIssuer = founderMode && params.get("accessissuer") === "1";
+const showAccessManager = founderMode && params.get("accessmanager") === "1";
 
 function PublicLegalFooter() {
   return (
@@ -46,7 +48,9 @@ function PublicLegalFooter() {
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ErrorBoundary>
-      {showAccessPassIssuer ? (
+      {showAccessManager ? (
+        <FounderAccessManager />
+      ) : showAccessPassIssuer ? (
         <AccessPassIssuerConsole />
       ) : showCertificateIssuer ? (
         <CertificateIssuerConsole />
