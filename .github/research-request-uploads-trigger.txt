@@ -1,1 +1,1 @@
-Apply the final research request panel cleanup.
+Run the complete research upload integration and component cleanup.
