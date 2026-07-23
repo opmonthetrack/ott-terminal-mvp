@@ -1,7 +1,9 @@
+import { createClient } from "@supabase/supabase-js";
 import accessPassHandler from "../src/server/accessPassService";
 
 type RequestLike = {
   method?: string;
+  headers?: Record<string, string | string[] | undefined>;
   query?: Record<string, string | string[] | undefined>;
   [key: string]: unknown;
 };
@@ -14,24 +16,173 @@ type ResponseLike = {
   };
 };
 
+const EMPTY_UUID = "00000000-0000-4000-8000-000000000000";
+const XRPL_ADDRESS = /^r[1-9A-HJ-NP-Za-km-z]{25,34}$/;
+
 function queryValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] ?? "" : value ?? "";
 }
 
+function header(req: RequestLike, name: string) {
+  const value = req.headers?.[name] ?? req.headers?.[name.toLowerCase()];
+  return Array.isArray(value) ? value[0] ?? "" : value ?? "";
+}
+
+function bearer(req: RequestLike) {
+  const value = header(req, "authorization");
+  return value.toLowerCase().startsWith("bearer ") ? value.slice(7).trim() : "";
+}
+
 function requiresExplicitNetwork(req: RequestLike) {
   const scope = queryValue(req.query?.scope).toLowerCase();
-  return !["status", "metadata", "image"].includes(scope);
+  return !["status", "metadata", "image", "readiness"].includes(scope);
+}
+
+function serverStorage() {
+  const url = process.env.SUPABASE_URL?.trim() || process.env.VITE_SUPABASE_URL?.trim() || "";
+  const key = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY)?.trim() || "";
+  return { url, key };
+}
+
+function adminAllowed(userId: string, email: string) {
+  const ids = new Set(
+    (process.env.OTT_MINT_ADMIN_USER_IDS ?? "")
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean),
+  );
+  const emails = new Set(
+    (process.env.OTT_MINT_ADMIN_EMAILS ?? "")
+      .split(",")
+      .map((item) => item.trim().toLowerCase())
+      .filter(Boolean),
+  );
+  return ids.has(userId) || Boolean(email && emails.has(email.toLowerCase()));
+}
+
+function readinessCheck(id: string, label: string, ok: boolean, detail: string, blocking = true) {
+  return { id, label, ok, detail, blocking };
+}
+
+async function handleReadiness(req: RequestLike, res: ResponseLike) {
+  if (req.method !== "GET") {
+    return res.status(405).json({ ok: false, error: "Use GET." });
+  }
+
+  const storage = serverStorage();
+  if (!storage.url || !storage.key) {
+    return res.status(503).json({
+      ok: false,
+      error: "Trusted Supabase server storage is not configured.",
+    });
+  }
+
+  const token = bearer(req);
+  if (!token) return res.status(401).json({ ok: false, error: "Sign in first." });
+
+  const admin = createClient(storage.url, storage.key, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
+  const { data: authData, error: authError } = await admin.auth.getUser(token);
+  if (authError || !authData.user) {
+    return res.status(401).json({ ok: false, error: "OTT account session could not be verified." });
+  }
+  if (!adminAllowed(authData.user.id, authData.user.email ?? "")) {
+    return res.status(403).json({ ok: false, error: "This OTT account is not authorized for Access Pass issuance." });
+  }
+
+  const network = process.env.OTT_ACCESS_PASS_XRPL_NETWORK?.trim().toUpperCase() || "UNSET";
+  const networkExplicit = network === "TESTNET" || network === "MAINNET";
+  const testnetValidated = process.env.OTT_ACCESS_PASS_TESTNET_VALIDATED?.trim().toLowerCase() === "true";
+  const mainnetGateOpen = network !== "MAINNET" || testnetValidated;
+  const accessWallet = process.env.OTT_ACCESS_WALLET?.trim() || "";
+  const issuerWallet = process.env.OTT_ACCESS_PASS_ISSUER_WALLET?.trim() || "";
+  const rpcUrl = process.env.OTT_ACCESS_PASS_XRPL_RPC_URL?.trim() || process.env.XRPL_RPC_URL?.trim() || "";
+  const xamanConfigured = Boolean(process.env.XAMAN_API_KEY?.trim() && process.env.XAMAN_API_SECRET?.trim());
+
+  const { error: orderTableError } = await admin
+    .from("access_pass_orders")
+    .select("id", { count: "exact", head: true });
+  const orderTableReady = !orderTableError;
+
+  const { error: lifecycleError } = await admin
+    .from("nft_issuance_records")
+    .select("lifecycle_step", { count: "exact", head: true });
+  const lifecycleReady = !lifecycleError;
+
+  const { error: reserveFunctionError } = await admin.rpc("reserve_ott_access_pass", {
+    p_order_id: EMPTY_UUID,
+  });
+  const reserveFunctionReady = Boolean(
+    reserveFunctionError?.message?.includes("Access Pass order not found"),
+  );
+
+  const checks = [
+    readinessCheck("supabase", "Trusted Supabase server", true, "Server-only secret storage is available."),
+    readinessCheck("order-table", "Access Pass order table", orderTableReady, orderTableReady ? "Migration table found." : "Run the Access Pass migration."),
+    readinessCheck("lifecycle", "NFT delivery lifecycle", lifecycleReady, lifecycleReady ? "Lifecycle columns found." : "Run the certificate delivery migration first."),
+    readinessCheck("reservation", "Atomic serial reservation", reserveFunctionReady, reserveFunctionReady ? "Reservation function found." : "Run or repair reserve_ott_access_pass()."),
+    readinessCheck("network", "Explicit XRPL network", networkExplicit, networkExplicit ? network : "Set OTT_ACCESS_PASS_XRPL_NETWORK to TESTNET first."),
+    readinessCheck("rpc", "XRPL RPC endpoint", Boolean(rpcUrl), rpcUrl ? "An explicit RPC endpoint is configured." : "Set an RPC endpoint matching the selected network."),
+    readinessCheck("xaman", "Xaman server credentials", xamanConfigured, xamanConfigured ? "Signing payload service configured." : "Set XAMAN_API_KEY and XAMAN_API_SECRET."),
+    readinessCheck("payment-wallet", "Access payment wallet", XRPL_ADDRESS.test(accessWallet), XRPL_ADDRESS.test(accessWallet) ? "Explicit destination wallet configured." : "Set a valid OTT_ACCESS_WALLET."),
+    readinessCheck("issuer-wallet", "Access Pass issuer wallet", XRPL_ADDRESS.test(issuerWallet), XRPL_ADDRESS.test(issuerWallet) ? "Issuer account configured." : "Set a valid OTT_ACCESS_PASS_ISSUER_WALLET."),
+    readinessCheck("founder", "Founder allowlist", true, "Current OTT account is authorized."),
+    readinessCheck(
+      "mainnet-gate",
+      "TESTNET proof before MAINNET",
+      mainnetGateOpen,
+      network === "MAINNET"
+        ? (testnetValidated ? "TESTNET validation has been explicitly recorded." : "MAINNET remains blocked until OTT_ACCESS_PASS_TESTNET_VALIDATED=true.")
+        : "TESTNET mode does not require a prior production proof.",
+    ),
+    readinessCheck(
+      "final-artwork",
+      "Final Access Pass artwork",
+      Boolean(process.env.OTT_ACCESS_PASS_IMAGE_URI?.trim()),
+      process.env.OTT_ACCESS_PASS_IMAGE_URI?.trim()
+        ? "Final public image URI configured."
+        : "Temporary generated artwork will be used until the final public image URI is set.",
+      false,
+    ),
+  ];
+
+  const ready = checks.filter((check) => check.blocking).every((check) => check.ok);
+
+  return res.status(200).json({
+    ok: true,
+    readiness: {
+      ready,
+      safeToTest: ready && network === "TESTNET",
+      safeForMainnet: ready && network === "MAINNET" && testnetValidated,
+      network,
+      testnetValidated,
+      checks,
+    },
+  });
 }
 
 export default async function handler(req: RequestLike, res: ResponseLike) {
   const scope = queryValue(req.query?.scope).toLowerCase();
   const isStatusRequest = scope === "status";
   const network = process.env.OTT_ACCESS_PASS_XRPL_NETWORK?.trim().toUpperCase() ?? "";
+  const testnetValidated = process.env.OTT_ACCESS_PASS_TESTNET_VALIDATED?.trim().toLowerCase() === "true";
+
+  if (scope === "readiness") {
+    return handleReadiness(req, res);
+  }
 
   if (requiresExplicitNetwork(req) && network !== "TESTNET" && network !== "MAINNET") {
     return res.status(503).json({
       ok: false,
       error: "Access Pass signing is safely disabled until OTT_ACCESS_PASS_XRPL_NETWORK is explicitly TESTNET or MAINNET.",
+    });
+  }
+
+  if (requiresExplicitNetwork(req) && network === "MAINNET" && !testnetValidated) {
+    return res.status(503).json({
+      ok: false,
+      error: "Access Pass MAINNET signing is safely disabled until the complete TESTNET lifecycle is validated and OTT_ACCESS_PASS_TESTNET_VALIDATED=true.",
     });
   }
 
