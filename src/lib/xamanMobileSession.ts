@@ -106,12 +106,19 @@ export function getXamanReturnState(): XamanReturnState {
   const payloadFromUrl = params.get("payload") || params.get("uuid");
   const actionFromUrl = parseMakeWavesActionId(params.get("action"));
   const targetFromUrl = parseReturnTarget(params.get("target"));
+  const returnTarget = targetFromUrl || session?.returnTarget || "wallet";
+
+  if (hasReturnedFromXaman) {
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", returnTarget);
+    window.history.replaceState({}, document.title, url.toString());
+  }
 
   return {
     hasReturnedFromXaman,
     payloadUuid: payloadFromUrl || session?.payloadUuid || null,
     actionId: actionFromUrl || session?.actionId || null,
-    returnTarget: targetFromUrl || session?.returnTarget || "wallet",
+    returnTarget,
   };
 }
 
@@ -141,7 +148,6 @@ export function cleanXamanReturnUrl() {
 
 export function isMobileDevice() {
   const userAgent = navigator.userAgent.toLowerCase();
-
   return /iphone|ipad|ipod|android|mobile/.test(userAgent);
 }
 
