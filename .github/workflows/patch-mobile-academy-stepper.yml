@@ -1,11 +1,11 @@
-name: Patch premium Wallet Academy
+name: Patch mobile Academy stepper
 
 on:
   push:
     branches:
-      - feature/premium-wallet-academy
+      - feature/mobile-academy-stepper
     paths:
-      - .github/premium-wallet-academy-trigger.txt
+      - .github/mobile-academy-stepper-trigger.txt
 
 permissions:
   contents: write
@@ -15,23 +15,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Checkout Wallet Academy branch
+      - name: Checkout Academy branch
         uses: actions/checkout@v4
         with:
-          ref: feature/premium-wallet-academy
+          ref: feature/mobile-academy-stepper
           fetch-depth: 0
 
-      - name: Integrate Wallet Academy
-        run: node scripts/patch-premium-wallet-academy.mjs
+      - name: Apply Academy stepper
+        run: node scripts/patch-mobile-academy-stepper.mjs
 
       - name: Verify route contract
         run: node scripts/audit-public-routes.mjs
 
-      - name: Commit Wallet Academy integration
+      - name: Commit Academy stepper
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add src/tabs/AcademyTabV4.tsx
-          git commit -m "Add premium Wallet Academy to Academy navigation"
-          git push origin HEAD:feature/premium-wallet-academy
+          git commit -m "Turn Academy lessons into mobile step flows"
+          git push origin HEAD:feature/mobile-academy-stepper
