@@ -64,15 +64,6 @@ const GRANT_SCOPES = new Set<GrantScope>([
   "research-pro",
   "all-premium",
 ]);
-const GRANT_FIELDS = [
-  "id", "target_user_id", "wallet_address", "access_scope", "status",
-  "starts_at", "expires_at", "reason", "granted_by", "revoked_by",
-  "revoked_at", "created_at", "updated_at",
-].join(",");
-const LINK_FIELDS = [
-  "id", "user_id", "wallet_address", "status", "xaman_payload_uuid",
-  "verified_at", "revoked_at", "error_message", "created_at", "updated_at",
-].join(",");
 
 function header(req: RequestLike, name: string) {
   const value = req.headers?.[name] ?? req.headers?.[name.toLowerCase()];
@@ -218,7 +209,7 @@ async function getXamanPayload(uuid: string) {
 async function loadActiveGrantsForUser(admin: AdminClient, userId: string, wallets: string[]) {
   const { data: userGrants, error: userError } = await admin
     .from("ott_access_grants")
-    .select(GRANT_FIELDS)
+    .select("*")
     .eq("target_user_id", userId)
     .eq("status", "active");
   if (userError) throw userError;
@@ -227,15 +218,15 @@ async function loadActiveGrantsForUser(admin: AdminClient, userId: string, walle
   if (wallets.length > 0) {
     const { data, error } = await admin
       .from("ott_access_grants")
-      .select(GRANT_FIELDS)
+      .select("*")
       .in("wallet_address", wallets)
       .eq("status", "active");
     if (error) throw error;
-    walletGrants = (data ?? []) as GrantRow[];
+    walletGrants = (data ?? []) as unknown as GrantRow[];
   }
 
   const unique = new Map<string, GrantRow>();
-  [...((userGrants ?? []) as GrantRow[]), ...walletGrants]
+  [...((userGrants ?? []) as unknown as GrantRow[]), ...walletGrants]
     .filter((grant) => activeNow(grant))
     .forEach((grant) => unique.set(grant.id, grant));
   return [...unique.values()];
@@ -261,12 +252,12 @@ async function handleGrantStatus(req: RequestLike, res: ResponseLike) {
     const requestedWallet = queryValue(req.query?.wallet).trim();
     const { data: links, error: linkError } = await admin
       .from("ott_wallet_links")
-      .select(LINK_FIELDS)
+      .select("*")
       .eq("user_id", user.id)
       .eq("status", "verified");
     if (linkError) throw linkError;
 
-    const verifiedLinks = (links ?? []) as WalletLinkRow[];
+    const verifiedLinks = (links ?? []) as unknown as WalletLinkRow[];
     const verifiedWallets = verifiedLinks.map((link) => link.wallet_address);
     const walletLinked = Boolean(requestedWallet && verifiedWallets.includes(requestedWallet));
     const grants = await loadActiveGrantsForUser(admin, user.id, verifiedWallets);
@@ -275,7 +266,7 @@ async function handleGrantStatus(req: RequestLike, res: ResponseLike) {
     if (requestedWallet && XRPL_ADDRESS.test(requestedWallet) && !walletLinked) {
       const { data, error } = await admin
         .from("ott_access_grants")
-        .select("id,starts_at,expires_at,status")
+        .select("*")
         .eq("wallet_address", requestedWallet)
         .eq("status", "active");
       if (error) throw error;
@@ -339,7 +330,7 @@ async function handleWalletLink(req: RequestLike, res: ResponseLike) {
     try {
       const { data, error } = await admin
         .from("ott_wallet_links")
-        .select(LINK_FIELDS)
+        .select("*")
         .eq("user_id", user.id)
         .order("updated_at", { ascending: false });
       if (error) throw error;
@@ -384,7 +375,7 @@ async function handleWalletLink(req: RequestLike, res: ResponseLike) {
           revoked_at: null,
           error_message: null,
         }, { onConflict: "user_id,wallet_address" })
-        .select(LINK_FIELDS)
+        .select("*")
         .single();
       if (error) throw error;
 
@@ -397,7 +388,7 @@ async function handleWalletLink(req: RequestLike, res: ResponseLike) {
 
       const { data: link, error: linkError } = await admin
         .from("ott_wallet_links")
-        .select(LINK_FIELDS)
+        .select("*")
         .eq("user_id", user.id)
         .eq("xaman_payload_uuid", payloadUuid)
         .single();
@@ -412,7 +403,7 @@ async function handleWalletLink(req: RequestLike, res: ResponseLike) {
           .from("ott_wallet_links")
           .update({ status: "failed", error_message: "Xaman SignIn request was rejected or expired." })
           .eq("id", link.id)
-          .select(LINK_FIELDS)
+          .select("*")
           .single();
         if (error) throw error;
         return res.status(400).json({ ok: false, error: "Xaman wallet proof was not signed.", walletLink: data });
@@ -440,7 +431,7 @@ async function handleWalletLink(req: RequestLike, res: ResponseLike) {
           error_message: null,
         })
         .eq("id", link.id)
-        .select(LINK_FIELDS)
+        .select("*")
         .single();
       if (error) throw error;
       return res.status(200).json({ ok: true, pending: false, walletLink: data, payload });
@@ -454,7 +445,7 @@ async function handleWalletLink(req: RequestLike, res: ResponseLike) {
         .update({ status: "revoked", revoked_at: new Date().toISOString() })
         .eq("user_id", user.id)
         .eq("wallet_address", walletAddress)
-        .select(LINK_FIELDS)
+        .select("*")
         .single();
       if (error) throw error;
       return res.status(200).json({ ok: true, walletLink: data });
@@ -472,9 +463,10 @@ async function findUserByEmail(admin: AdminClient, email: string) {
   for (let page = 1; page <= 10; page += 1) {
     const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 100 });
     if (error) throw error;
-    const found = data.users.find((user) => user.email?.toLowerCase() === expected);
+    const listedUsers = data.users as User[];
+    const found = listedUsers.find((listedUser) => listedUser.email?.toLowerCase() === expected);
     if (found) return found;
-    if (data.users.length < 100) break;
+    if (listedUsers.length < 100) break;
   }
   return null;
 }
@@ -517,11 +509,11 @@ async function handleFounderGrants(req: RequestLike, res: ResponseLike) {
     if (req.method === "GET") {
       const { data, error } = await admin
         .from("ott_access_grants")
-        .select(GRANT_FIELDS)
+        .select("*")
         .order("created_at", { ascending: false })
         .limit(100);
       if (error) throw error;
-      const grants = (data ?? []) as GrantRow[];
+      const grants = (data ?? []) as unknown as GrantRow[];
       const userIds = [...new Set(grants.map((grant) => grant.target_user_id).filter((value): value is string => Boolean(value)))];
       const users = await Promise.all(userIds.map((id) => describeUser(admin, id)));
 
@@ -530,11 +522,11 @@ async function handleFounderGrants(req: RequestLike, res: ResponseLike) {
       if (walletAddresses.length > 0) {
         const { data: links, error: linkError } = await admin
           .from("ott_wallet_links")
-          .select(LINK_FIELDS)
+          .select("*")
           .in("wallet_address", walletAddresses)
           .eq("status", "verified");
         if (linkError) throw linkError;
-        walletLinks = (links ?? []) as WalletLinkRow[];
+        walletLinks = (links ?? []) as unknown as WalletLinkRow[];
       }
 
       return res.status(200).json({ ok: true, grants, users: users.filter(Boolean), walletLinks });
@@ -550,11 +542,11 @@ async function handleFounderGrants(req: RequestLike, res: ResponseLike) {
       if (XRPL_ADDRESS.test(query)) {
         const { data: links, error } = await admin
           .from("ott_wallet_links")
-          .select(LINK_FIELDS)
+          .select("*")
           .eq("wallet_address", query)
           .eq("status", "verified");
         if (error) throw error;
-        const linkedUsers = await Promise.all(((links ?? []) as WalletLinkRow[]).map((link) => describeUser(admin, link.user_id)));
+        const linkedUsers = await Promise.all(((links ?? []) as unknown as WalletLinkRow[]).map((link) => describeUser(admin, link.user_id)));
         return res.status(200).json({
           ok: true,
           targets: [{ type: "wallet", walletAddress: query, linkedUsers: linkedUsers.filter(Boolean) }],
@@ -605,7 +597,7 @@ async function handleFounderGrants(req: RequestLike, res: ResponseLike) {
 
       let existingQuery = admin
         .from("ott_access_grants")
-        .select(GRANT_FIELDS)
+        .select("*")
         .eq("access_scope", accessScope)
         .eq("status", "active");
       existingQuery = targetUserId
@@ -621,10 +613,10 @@ async function handleFounderGrants(req: RequestLike, res: ResponseLike) {
           .from("ott_access_grants")
           .update({ starts_at: startsAt, expires_at: expiresAt, reason })
           .eq("id", existing.id)
-          .select(GRANT_FIELDS)
+          .select("*")
           .single();
         if (error) throw error;
-        grant = data as GrantRow;
+        grant = data as unknown as GrantRow;
         eventType = "extended";
       } else {
         const { data, error } = await admin
@@ -639,10 +631,10 @@ async function handleFounderGrants(req: RequestLike, res: ResponseLike) {
             reason,
             granted_by: founder.id,
           })
-          .select(GRANT_FIELDS)
+          .select("*")
           .single();
         if (error) throw error;
-        grant = data as GrantRow;
+        grant = data as unknown as GrantRow;
       }
 
       const { error: eventError } = await admin.from("ott_access_grant_events").insert({
@@ -664,7 +656,7 @@ async function handleFounderGrants(req: RequestLike, res: ResponseLike) {
         .update({ status: "revoked", revoked_by: founder.id, revoked_at: revokedAt })
         .eq("id", grantId)
         .eq("status", "active")
-        .select(GRANT_FIELDS)
+        .select("*")
         .single();
       if (error) throw error;
       const { error: eventError } = await admin.from("ott_access_grant_events").insert({
