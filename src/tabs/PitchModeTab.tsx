@@ -15,7 +15,6 @@ import {
   PlayCircle,
   Route,
   ShieldCheck,
-  Sparkles,
   Users,
   Wallet,
   Waves,
