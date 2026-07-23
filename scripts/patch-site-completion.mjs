@@ -127,7 +127,7 @@ if (!app.includes('window.addEventListener("popstate", syncFromHistory);')) {
   useEffect(() => {
     document.title = activeTab === "home"
       ? "OTT Terminal | XRPL learning platform"
-      : \\`${'${activeItem?.label ?? "OTT"}'} | OTT Terminal\\`;
+      : (activeItem?.label ?? "OTT") + " | OTT Terminal";
   }, [activeItem?.label, activeTab]);
 
   useEffect(() => {
