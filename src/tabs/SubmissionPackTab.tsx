@@ -1,42 +1,40 @@
-import { useMemo, useState } from "react";
-import type { ElementType } from "react";
+import { useMemo, useState, type ElementType } from "react";
 import {
   BadgeCheck,
-  BookOpen,
-  Brain,
   CheckCircle2,
   ClipboardCheck,
   Copy,
+  ExternalLink,
   FileText,
   Film,
   Fingerprint,
   Github,
   Globe2,
-  Lightbulb,
+  HeartHandshake,
   Link2,
-  Megaphone,
-  Newspaper,
+  ListChecks,
   Rocket,
   ShieldCheck,
-  Sparkles,
+  Smartphone,
   Timer,
   Video,
+  Wallet,
 } from "lucide-react";
-import { FounderNftMintConsole } from "../components/FounderNftMintConsole";
 import { MAKE_WAVES_SOURCE_TAG } from "../lib/makeWaves";
 
 type SubmissionPackTabProps = {
   walletAddress?: string;
 };
 
-type DeliverableStatus = "ready" | "needs-link" | "needs-polish";
+type DeliverableStatus = "ready" | "manual" | "blocked";
 
 type Deliverable = {
   id: string;
   title: string;
   status: DeliverableStatus;
   description: string;
-  action: string;
+  nextAction: string;
+  href: string;
   icon: ElementType;
 };
 
@@ -47,493 +45,376 @@ type CopyBlock = {
   icon: ElementType;
 };
 
-type Metric = {
-  label: string;
-  value: string;
-  text: string;
-  icon: ElementType;
-};
-
 const TERMINAL_URL = "https://ott-terminal-mvp.vercel.app";
 const REPO_URL = "https://github.com/opmonthetrack/ott-terminal-mvp";
 
 const deliverables: Deliverable[] = [
   {
     id: "live-project",
-    title: "Live Project",
+    title: "Live production project",
     status: "ready",
-    description:
-      "Vercel live link naar XRPL OnTheTrack Terminal. Demo route: Home → XRPL Intelligence → Newsroom → Xaman Activation → Daily Check-In → Reward Ledger → Access Gate → Pitch Mode.",
-    action: `Use live URL: ${TERMINAL_URL}`,
+    description: "The public terminal is deployed with 17 customer routes, account-first entry, legal files and URL-aware navigation.",
+    nextAction: "Use the production URL in every submission field and demo description.",
+    href: TERMINAL_URL,
     icon: Globe2,
   },
   {
     id: "source-code",
-    title: "Source Code",
+    title: "Public source repository",
     status: "ready",
-    description:
-      "GitHub repository met React/Vite frontend, api/ott.ts proof router, api/nft.ts founder mint router, Xaman flows, reward ledger en social newsroom.",
-    action: `Use repo URL: ${REPO_URL}`,
+    description: "The repository contains the React/Vite app, consolidated Vercel functions, Supabase migrations, route audit and protected Xaman/XRPL delivery flows.",
+    nextAction: "Link directly to the repository and reference the green quality checks.",
+    href: REPO_URL,
     icon: Github,
   },
   {
+    id: "route-quality",
+    title: "17-route quality contract",
+    status: "ready",
+    description: "CI rejects missing or duplicated public routes and verifies TypeScript, production build and public legal/discovery files.",
+    nextAction: "Show Launch Control as operational proof rather than describing an old static checklist.",
+    href: "/?founder=1&tab=launch",
+    icon: ListChecks,
+  },
+  {
+    id: "account-entry",
+    title: "Email and Google account entry",
+    status: "manual",
+    description: "The launch provider and account return routing are built. One real Google login remains a human end-to-end proof.",
+    nextAction: "Record a short Google login and return-to-Account clip using an allowed test user.",
+    href: "/?tab=wallet",
+    icon: BadgeCheck,
+  },
+  {
+    id: "pitch",
+    title: "Current two-minute pitch",
+    status: "ready",
+    description: "Pitch Mode now separates live functions, protected TESTNET functions and claims that must never be made.",
+    nextAction: "Rehearse the six timed steps and open the linked proof page for each step.",
+    href: "/?founder=1&tab=pitchmode",
+    icon: Timer,
+  },
+  {
     id: "demo-video",
-    title: "2-Min Demo Video",
-    status: "needs-polish",
-    description:
-      "Gebruik Pitch Mode: live intelligence, source-first explanation, Newsroom, Xaman proof, XP/OTT Credits, Access Gate and founder story.",
-    action: "Record after final smoke test pass.",
+    title: "Final two-minute video",
+    status: "manual",
+    description: "The script and demo route are ready, but the final recording, captions and public video URL require a human recording session.",
+    nextAction: "Record only after the human Smoke Test has no Fail items.",
+    href: "/?founder=1&tab=smoketest",
     icon: Film,
   },
   {
-    id: "mint-console",
-    title: "Founder NFT Mint Console",
-    status: "ready",
-    description:
-      "Founder-only NFTokenMint payload creator for OTT Access Pass. It creates a Xaman payload only; no automatic payment or access unlock runs here.",
-    action: "Mint one controlled Access Pass first, then verify it through Access Gate scanner.",
+    id: "support-voting",
+    title: "Verified participation proof",
+    status: "manual",
+    description: "Xaman-backed roadmap voting and fixed 0.589, 1.589 and 2.589 XRP support are live with validated public totals.",
+    nextAction: "Capture one controlled vote and one controlled support transaction as evidence.",
+    href: "/?tab=roadmap",
+    icon: HeartHandshake,
+  },
+  {
+    id: "academy-certificate",
+    title: "Academy certificate delivery",
+    status: "blocked",
+    description: "Qualification, serial reservation and protected mint/offer/accept delivery are built, but a complete configured TESTNET lifecycle is still required.",
+    nextAction: "Complete a qualified learner claim and document exact wallet ownership on TESTNET.",
+    href: "/?founder=1&issuer=1",
     icon: BadgeCheck,
+  },
+  {
+    id: "access-pass",
+    title: "Access Pass #001–#500",
+    status: "blocked",
+    description: "Payment validation, atomic serial reservation and NFT ownership unlock are live in protected code. Customer payment remains closed until readiness is green.",
+    nextAction: "Run migration and full TESTNET payment → mint → offer → accept → ownership proof before any MAINNET activation.",
+    href: "/?founder=1&accessissuer=1",
+    icon: Wallet,
+  },
+  {
+    id: "human-qa",
+    title: "Human Smoke Test evidence",
+    status: "manual",
+    description: "The current QA runner stores Pass, Fail, Blocked and Todo states with evidence notes across refreshes.",
+    nextAction: "Complete all guest, account, mobile, Xaman, content and transaction checks; copy the final QA report.",
+    href: "/?founder=1&tab=smoketest",
+    icon: ClipboardCheck,
   },
   {
     id: "legal",
-    title: "Legal-Safe Positioning",
+    title: "Legal-safe public position",
     status: "ready",
-    description:
-      "Education-first, no custody, no broker, no yield provider, no trade execution, no token value promise and no trading signals.",
-    action: "Use this exact wording in pitch, submission, NFT utility copy and social copy.",
+    description: "Privacy, Terms and product copy separate education and utility from custody, brokerage, trading, yield and guaranteed NFT value.",
+    nextAction: "Use the same wording in the submission form, video description and every social launch post.",
+    href: "/terms.html",
     icon: ShieldCheck,
   },
   {
-    id: "proof",
-    title: "SourceTag Proof",
-    status: "ready",
-    description:
-      "Make Waves proof identity is SourceTag 2606170002. Daily Proof, Xaman Center, Reward Ledger and SourceTag pages explain the proof loop.",
-    action: "Mention SourceTag during demo and show it in proof and NFT settings.",
-    icon: Fingerprint,
-  },
-  {
-    id: "academy",
-    title: "XRPL Academy",
-    status: "ready",
-    description:
-      "Academy deep catalog explains XRPL, wallets, payments, DeFi, stablecoins, tokenization, DID, coding and AI agents through free and premium routes.",
-    action: "Show free modules first, then premium depth and Certificate NFT coming soon.",
-    icon: BookOpen,
-  },
-  {
-    id: "access-gate",
-    title: "Access Gate Scanner",
-    status: "ready",
-    description:
-      "Access Gate checks account_nfts for exact issuer, taxon and metadata CID. Minting is now founder-controlled, not customer-automatic.",
-    action: "Use scanner after mint to prove the Access Pass can unlock the matching wallet.",
-    icon: BadgeCheck,
+    id: "mobile-proof",
+    title: "Mobile and Xaman return proof",
+    status: "manual",
+    description: "URL-aware return routing is built for OAuth, support, Access and general Xaman sessions. Real mobile screenshots remain required.",
+    nextAction: "Record one same-device Xaman deep-link return and one mobile menu walkthrough.",
+    href: "/?tab=xaman",
+    icon: Smartphone,
   },
 ];
 
 const copyBlocks: CopyBlock[] = [
   {
     id: "one-liner",
-    title: "One-Liner",
-    icon: Lightbulb,
-    text:
-      "XRPL OnTheTrack Terminal is an education-first Make Waves terminal that turns live XRPL intelligence into learning, source verification, Xaman proof, XP and utility access through controlled NFT passes.",
+    title: "One-liner",
+    icon: Rocket,
+    text: "XRPL OnTheTrack Terminal is an account-first learning, intelligence and verified-action platform that helps people understand XRPL before connecting a wallet or signing on-ledger actions.",
   },
   {
     id: "short-description",
-    title: "Short Description",
-    icon: BookOpen,
-    text:
-      "XRPL OnTheTrack Terminal helps users understand XRPL before taking action. The live MVP combines XRPL Intelligence, OTT Intelligence, Social Newsroom, Xaman self-custody proof, SourceTag proof, Reward Ledger XP/OTT Credits, XRPL Academy, scanner-based Access Gate and founder-controlled OTT Access Pass minting. It does not custody funds, does not act as broker, does not provide yield and does not execute trades.",
+    title: "Short product description",
+    icon: FileText,
+    text: `OTT Terminal combines 17 public routes for XRPL learning, source-led intelligence, social content preparation, wallet safety and transparent participation. Visitors can explore as guests or save progress through email or Google. Xaman is used only when proof is needed, including roadmap voting, daily proof and fixed support actions linked to SourceTag ${MAKE_WAVES_SOURCE_TAG}.`,
   },
   {
-    id: "live-demo",
-    title: "Live Demo Route",
+    id: "submission-summary",
+    title: "Submission summary",
+    icon: ClipboardCheck,
+    text: `For Make Waves, TruthOnTheTrack built a live XRPL terminal that connects onboarding, education, source verification and on-ledger participation. The app has a CI-enforced 17-route public shell, persistent Academy progress, XRPL Intelligence, Newsroom and analysis tools, Google/email accounts, Xaman-backed voting and support, plus protected NFT delivery systems. Access Pass and Foundation Certificate delivery are built but remain gated until database and TESTNET readiness are proven before MAINNET activation.`,
+  },
+  {
+    id: "demo-route",
+    title: "Two-minute demo route",
     icon: Video,
-    text:
-      "Home → XRPL Intelligence → Newsroom → Xaman Activation → Daily Check-In proof → Reward Ledger XP/OTT Credits → Access Gate scanner → Founder NFT Mint Console → Pitch Mode. This route shows free learning, user onboarding, self-custody proof, controlled utility access and legal-safe boundaries.",
+    text: "Home guest/account choice → Account with Google → Academy progress → XRPL Intelligence source item → Xaman-backed Roadmap vote → validated Support totals → Access safety gate → Launch Control readiness → close with legal-safe boundaries.",
   },
   {
-    id: "launch-x-post",
-    title: "Launch X Post",
-    icon: Megaphone,
-    text:
-      `🌊 Live now: XRPL OnTheTrack Terminal\n\nA source-first XRPL terminal built for Make Waves.\n\nFree to learn.\nXaman to prove.\nPass to unlock.\n\nFollow live XRPL intelligence, understand the context, connect Xaman, prove actions with SourceTag ${MAKE_WAVES_SOURCE_TAG}, earn XP and use controlled utility access passes.\n\n${TERMINAL_URL}\n\nEducation only — no custody, no broker, no yield, no trading signals.\n\n#XRPL #XRP #Ripple #Xaman #MakeWaves #OnTheTrack`,
+    id: "technical-proof",
+    title: "Technical proof line",
+    icon: Link2,
+    text: "Every pull request runs a 17-route contract audit, TypeScript validation, a production Vite build and required public-file checks. Xaman return routes preserve the correct page, support totals count validated XRPL transactions, and Access Pass issuance validates payment, serial reservation, mint, targeted offer, acceptance and final wallet ownership.",
   },
   {
-    id: "linkedin-post",
-    title: "LinkedIn Post",
-    icon: Newspaper,
-    text:
-      `I am building XRPL OnTheTrack Terminal for the XRPL Commons Make Waves challenge.\n\nThe goal is simple: help users understand XRPL before taking action.\n\nThe live MVP combines XRPL Intelligence, beginner-friendly analysis, a Social Newsroom, Xaman self-custody proof, SourceTag ${MAKE_WAVES_SOURCE_TAG}, Reward Ledger XP, Academy learning routes and controlled OTT Access Pass utility.\n\nThe model is:\nFree to Learn\nXaman to Prove\nPass to Unlock\n\nThis is education-first infrastructure. No custody, no brokerage, no yield, no trading signals and no token value promise.\n\nLive terminal: ${TERMINAL_URL}`,
-  },
-  {
-    id: "whatsapp-status",
-    title: "WhatsApp Status",
-    icon: Globe2,
-    text:
-      `I launched a live XRPL learning + intelligence terminal for Make Waves 🌊\n\nFree to learn. Xaman to prove. Pass to unlock.\n\nCheck it here: ${TERMINAL_URL}\n\nEducation only. No investment advice.`,
-  },
-  {
-    id: "community-invite",
-    title: "XRPL Community Invite",
+    id: "launch-x",
+    title: "Launch post for X",
     icon: Fingerprint,
-    text:
-      `XRPL builders, educators and community members: I would love feedback on XRPL OnTheTrack Terminal.\n\nIt is a live Make Waves MVP focused on source-first XRPL intelligence, safe onboarding, Xaman proof, SourceTag ${MAKE_WAVES_SOURCE_TAG}, XP/OTT Credits, Academy learning routes and controlled Access Pass utility.\n\nThe terminal is not trying to be a broker, exchange or yield app. It is a guided education/proof layer for users who need context before action.\n\nLive: ${TERMINAL_URL}\nRepo: ${REPO_URL}`,
+    text: `🌊 XRPL OnTheTrack Terminal is live.
+
+Learn before you sign.
+Explore as a guest or use email/Google to save progress.
+Connect Xaman only when an on-ledger action needs proof.
+
+✅ XRPL learning + intelligence
+✅ Xaman-backed voting
+✅ Transparent XRP support
+✅ SourceTag ${MAKE_WAVES_SOURCE_TAG}
+✅ Protected NFT utility delivery
+
+${TERMINAL_URL}
+
+Education and utility only. No custody, brokerage, yield or guaranteed NFT value.
+
+#XRPL #XRP #Xaman #MakeWaves #OnTheTrack`,
   },
   {
-    id: "nft-utility-line",
-    title: "NFT Utility Line",
+    id: "linkedin",
+    title: "LinkedIn launch post",
+    icon: Globe2,
+    text: `I have built XRPL OnTheTrack Terminal as a live account-first learning and verified-action platform for the XRP Ledger ecosystem.
+
+A visitor can start as a guest, create an OTT account with email or Google, follow source-led XRPL intelligence, save Academy progress and connect Xaman only when an action requires an on-ledger signature.
+
+The current terminal includes 17 public routes, transparent roadmap voting, fixed XRP support with validated totals, SourceTag ${MAKE_WAVES_SOURCE_TAG}, and protected NFT delivery architecture. Access Pass and certificate delivery remain safely gated until complete TESTNET validation is documented before MAINNET activation.
+
+Live: ${TERMINAL_URL}
+Source: ${REPO_URL}
+
+No custody, brokerage, trade execution, yield or guaranteed value promise.`,
+  },
+  {
+    id: "whatsapp",
+    title: "WhatsApp status",
+    icon: Smartphone,
+    text: `I built a live XRPL learning + verified-action terminal 🌊
+
+Start as a guest or with Google/email.
+Learn first. Use Xaman only when proof is needed.
+
+${TERMINAL_URL}
+
+Education + utility only.`,
+  },
+  {
+    id: "community",
+    title: "XRPL community invite",
     icon: BadgeCheck,
-    text:
-      "OTT Access Pass is a utility access pass for XRPL OnTheTrack Terminal services. It is not an investment, not a yield product, not a resale value promise and not a token value promise. Access is based on exact issuer, taxon and metadata match.",
+    text: `XRPL builders, educators and community members: I would value practical feedback on XRPL OnTheTrack Terminal.
+
+Please test the guest onboarding, Academy flow, Intelligence source layer, Xaman-backed roadmap voting and transparent support page. Protected NFT delivery remains TESTNET-gated until the complete payment and ownership lifecycle is proven.
+
+Live: ${TERMINAL_URL}
+Repo: ${REPO_URL}
+SourceTag: ${MAKE_WAVES_SOURCE_TAG}`,
   },
   {
-    id: "compliance",
-    title: "Safe Compliance Line",
+    id: "support-line",
+    title: "Support transparency line",
+    icon: HeartHandshake,
+    text: "Support is voluntary and uses fixed 0.589, 1.589 or 2.589 XRP Xaman payments. Only validated XRPL transactions with the official destination, SourceTag and support memo count in the public total. Support creates no investment, governance, token, equity or guaranteed access rights.",
+  },
+  {
+    id: "access-line",
+    title: "Access Pass utility line",
+    icon: Wallet,
+    text: "OTT Access Pass Alpha is utility access only. The protected flow reserves one unique serial from #001 to #500 after exact payment validation and unlocks only after the connected wallet owns the exact NFT. Customer payment remains disabled until database and TESTNET readiness are green, and MAINNET requires explicit recorded TESTNET evidence.",
+  },
+  {
+    id: "certificate-line",
+    title: "Certificate line",
+    icon: BadgeCheck,
+    text: "The OTT XRPL Foundation Certificate is proof of verified Academy completion, not an investment or value promise. Qualification, issuer mint, targeted transfer offer, learner acceptance and final wallet ownership must all be validated.",
+  },
+  {
+    id: "safe-line",
+    title: "Safe compliance line",
     icon: ShieldCheck,
-    text:
-      "The Terminal is education-first. It does not custody funds, does not act as broker, does not provide yield and does not execute trades. XP and OTT Credits are internal progress/utility signals, not tradable tokens or value promises. NFT passes are utility access only.",
+    text: "OTT Terminal provides education, research and utility workflows. It does not collect seed phrases, custody funds, act as broker or exchange, execute trades, provide yield, promise profit or guarantee NFT resale value. Human review remains required before public content publication and production activation.",
   },
   {
-    id: "close",
-    title: "Closing Line",
-    icon: Sparkles,
-    text:
-      "This is not another wallet dashboard. It is a guided XRPL intelligence, education, proof and utility access layer built by TruthOnTheTrack to help users, builders and partners move safely OnTheTrack.",
+    id: "closing",
+    title: "Closing line",
+    icon: Rocket,
+    text: "OTT Terminal gives XRPL users one clear track from curiosity to understanding, and from understanding to verified participation—without forcing a wallet before they are ready.",
   },
 ];
 
-export function SubmissionPackTab({
-  walletAddress = "guest",
-}: SubmissionPackTabProps) {
+export function SubmissionPackTab({ walletAddress = "guest" }: SubmissionPackTabProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
-
-  const readyCount = deliverables.filter(
-    (deliverable) => deliverable.status === "ready"
-  ).length;
-
-  const metrics: Metric[] = [
-    {
-      label: "Deliverables",
-      value: `${readyCount}/${deliverables.length}`,
-      text: "Ready now.",
-      icon: BadgeCheck,
-    },
-    {
-      label: "Demo",
-      value: "2 min",
-      text: "Pitch mode.",
-      icon: Timer,
-    },
-    {
-      label: "SourceTag",
-      value: String(MAKE_WAVES_SOURCE_TAG),
-      text: "Proof ID.",
-      icon: Fingerprint,
-    },
-    {
-      label: "Wallet",
-      value: walletAddress === "guest" ? "Guest" : "Connected",
-      text: "Demo state.",
-      icon: Link2,
-    },
-  ];
+  const counts = useMemo(() => ({
+    ready: deliverables.filter((item) => item.status === "ready").length,
+    manual: deliverables.filter((item) => item.status === "manual").length,
+    blocked: deliverables.filter((item) => item.status === "blocked").length,
+  }), []);
 
   const fullSubmissionText = useMemo(
     () => copyBlocks.map((block) => `${block.title}\n${block.text}`).join("\n\n"),
-    []
+    [],
   );
 
   async function copyText(id: string, text: string) {
     await navigator.clipboard.writeText(text);
     setCopiedId(id);
-
     window.setTimeout(() => setCopiedId(null), 1600);
   }
 
   return (
-    <div className="min-h-screen bg-white text-[#080808]">
-      <div className="relative overflow-hidden border border-black/10 bg-white p-6 mb-6">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_#3898E8,_transparent_35%)]" />
-
-        <div className="relative z-10 grid grid-cols-12 gap-6 items-center">
-          <div className="col-span-12 xl:col-span-8">
-            <div className="flex items-center gap-2 mb-4 text-black/55">
-              <Rocket size={18} />
-
-              <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
-                Submission Pack
+    <div className="min-h-screen bg-white text-slate-950">
+      <section className="border-b border-slate-200 bg-[radial-gradient(circle_at_90%_0%,rgba(56,152,232,0.14),transparent_34%),radial-gradient(circle_at_0%_100%,rgba(200,56,136,0.12),transparent_34%),#fff]">
+        <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-16">
+          <div className="flex flex-col gap-8 xl:flex-row xl:items-start xl:justify-between">
+            <div className="max-w-3xl">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-blue-700"><Rocket size={17} /> Current Submission Pack</div>
+              <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">Submission evidence and launch copy that match the live product.</h1>
+              <p className="mt-5 text-base leading-7 text-slate-600">
+                Ready means it exists and can be linked. Manual means a human recording or transaction is still required. Blocked means a protected TESTNET lifecycle must be completed before the claim can become production-ready.
               </p>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <button type="button" onClick={() => void copyText("all", fullSubmissionText)} className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800">
+                  {copiedId === "all" ? <CheckCircle2 size={17} /> : <Copy size={17} />}{copiedId === "all" ? "Copied" : "Copy all submission copy"}
+                </button>
+                <a href="/?founder=1&tab=pitchmode" className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 hover:bg-slate-50">Pitch Mode <ExternalLink size={17} /></a>
+                <a href="/?founder=1&tab=smoketest" className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 hover:bg-slate-50">Smoke Test <ExternalLink size={17} /></a>
+              </div>
             </div>
 
-            <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
-              Make Waves Submission + Founder Mint Room
-            </h2>
-
-            <p className="font-mono text-sm text-black/55 max-w-3xl leading-relaxed">
-              Alles voor de Make Waves inzending, launch en gecontroleerde OTT Access Pass minting:
-              live route, GitHub, demo video, pitch copy, SourceTag proof, legal-safe wording,
-              user promo copy en founder-only NFT payloads.
-            </p>
+            <div className="grid w-full grid-cols-2 gap-3 xl:max-w-sm">
+              <Metric icon={BadgeCheck} label="Ready" value={String(counts.ready)} />
+              <Metric icon={Film} label="Manual proof" value={String(counts.manual)} />
+              <Metric icon={ShieldCheck} label="Blocked" value={String(counts.blocked)} />
+              <Metric icon={Link2} label="Wallet" value={walletAddress === "guest" ? "Guest" : "Connected"} />
+            </div>
           </div>
+        </div>
+      </section>
 
-          <div className="col-span-12 xl:col-span-4 grid grid-cols-2 gap-3">
-            {metrics.map((metric) => (
-              <MetricBox key={metric.label} metric={metric} />
+      <main className="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14">
+        <section>
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">Deliverable status</p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight">What can be submitted today—and what still needs proof.</h2>
+          </div>
+          <div className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {deliverables.map((deliverable) => <DeliverableCard key={deliverable.id} deliverable={deliverable} />)}
+          </div>
+        </section>
+
+        <section className="mt-12">
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">Copy library</p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight">Current product wording, ready to copy.</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-600">Every block distinguishes live functionality from TESTNET-gated delivery and preserves the legal-safe utility position.</p>
+          </div>
+          <div className="mt-7 grid gap-5 xl:grid-cols-2">
+            {copyBlocks.map((block) => (
+              <CopyCard key={block.id} block={block} copied={copiedId === block.id} onCopy={() => void copyText(block.id, block.text)} />
             ))}
           </div>
-        </div>
-      </div>
+        </section>
 
-      <FounderNftMintConsole walletAddress={walletAddress} />
-
-      <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-12 xl:col-span-4">
-          <div className="border border-black/10 bg-white p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <ClipboardCheck size={18} className="text-[#3898E8]" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Deliverable Checklist
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {deliverables.map((deliverable) => (
-                <DeliverableCard key={deliverable.id} deliverable={deliverable} />
-              ))}
-            </div>
+        <section className="mt-12 rounded-3xl border border-slate-200 bg-slate-50 p-6 sm:p-8">
+          <div className="flex items-center gap-3"><Link2 className="text-blue-700" size={21} /><h2 className="text-xl font-semibold">Official submission links</h2></div>
+          <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <OfficialLink label="Live terminal" href={TERMINAL_URL} icon={Globe2} />
+            <OfficialLink label="GitHub repository" href={REPO_URL} icon={Github} />
+            <OfficialLink label="Launch Control" href="/?founder=1&tab=launch" icon={ListChecks} />
+            <OfficialLink label="Pitch Mode" href="/?founder=1&tab=pitchmode" icon={Video} />
           </div>
-        </div>
-
-        <div className="col-span-12 xl:col-span-5 space-y-4">
-          <div className="border border-black/10 bg-white p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <FileText size={18} className="text-[#3898E8]" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Copy Blocks
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              {copyBlocks.map((block) => (
-                <CopyBlockCard
-                  key={block.id}
-                  block={block}
-                  copied={copiedId === block.id}
-                  onCopy={() => copyText(block.id, block.text)}
-                />
-              ))}
-            </div>
+          <div className="mt-6 rounded-2xl border border-blue-100 bg-blue-50 p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-blue-700">Proof identity</p>
+            <p className="mt-2 text-sm leading-6 text-slate-700">Make Waves SourceTag: <strong>{MAKE_WAVES_SOURCE_TAG}</strong>. Use the full value consistently; do not shorten it to 2606 in submission evidence.</p>
           </div>
-        </div>
-
-        <div className="col-span-12 xl:col-span-3 space-y-4">
-          <Panel title="Demo Recording Order" icon={Video}>
-            <div className="space-y-3">
-              <StepLine number="01" text="Open Home: Free to Learn / Xaman to Prove / Pass to Unlock." />
-              <StepLine number="02" text="Open XRPL Intelligence: source-first live feed." />
-              <StepLine number="03" text="Open Newsroom: generate and copy social draft." />
-              <StepLine number="04" text="Open Xaman Activation: onboarding without pressure." />
-              <StepLine number="05" text="Open Daily Check-In: create and sign proof." />
-              <StepLine number="06" text="Open Reward Ledger: XP + OTT Credits." />
-              <StepLine number="07" text="Open Access Gate: scan exact Access Pass NFT." />
-              <StepLine number="08" text="Show Founder Mint Console: controlled mint payload." />
-              <StepLine number="09" text="Open Pitch Mode: finish with founder story." />
-            </div>
-          </Panel>
-
-          <Panel title="Full Text" icon={Copy}>
-            <button
-              onClick={() => copyText("full", fullSubmissionText)}
-              className="w-full bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] text-white p-4 text-left hover:brightness-95 transition-all"
-            >
-              <p className="font-orbitron text-xs font-black uppercase mb-2">
-                {copiedId === "full" ? "Copied" : "Copy All"}
-              </p>
-
-              <p className="font-mono text-[10px] text-white/75 uppercase">
-                Submission + launch copy pack
-              </p>
-            </button>
-          </Panel>
-
-          <Panel title="Red Flag Avoidance" icon={ShieldCheck}>
-            <div className="space-y-3">
-              <InfoLine text="Do not say XP or Credits have cash value." />
-              <InfoLine text="Do not say NFT pass has investment, resale or yield value." />
-              <InfoLine text="Do not say Newsroom output is financial advice or trading signal." />
-              <InfoLine text="Do not promise profit, token value or guaranteed adoption." />
-              <InfoLine text="Say education-first, source-first, self-custody and proof before trust." />
-            </div>
-          </Panel>
-
-          <Panel title="Final Links" icon={Globe2}>
-            <div className="space-y-3">
-              <StepLine number="APP" text={TERMINAL_URL} />
-              <StepLine number="GIT" text={REPO_URL} />
-              <StepLine number="TAG" text={String(MAKE_WAVES_SOURCE_TAG)} />
-            </div>
-          </Panel>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Panel({
-  title,
-  icon: Icon,
-  children,
-}: {
-  title: string;
-  icon: ElementType;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="border border-black/10 bg-white p-6">
-      <div className="flex items-center gap-2 mb-5">
-        <Icon size={18} className="text-[#3898E8]" />
-
-        <p className="font-orbitron text-xs uppercase tracking-widest">
-          {title}
-        </p>
-      </div>
-
-      {children}
+        </section>
+      </main>
     </div>
   );
 }
 
 function DeliverableCard({ deliverable }: { deliverable: Deliverable }) {
   const Icon = deliverable.icon;
-
+  const status = deliverableStatus(deliverable.status);
   return (
-    <div className="border border-black/10 bg-[#F7F8FC] p-4">
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <Icon size={18} className="text-[#3898E8]" />
-
-        <StatusBadge status={deliverable.status} />
+    <article className={`rounded-3xl border p-5 ${status.card}`}>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-900 shadow-sm"><Icon size={21} /></div>
+        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${status.badge}`}>{status.label}</span>
       </div>
-
-      <p className="font-orbitron text-xs font-black uppercase mb-2">
-        {deliverable.title}
-      </p>
-
-      <p className="font-mono text-xs text-black/55 leading-relaxed mb-3">
-        {deliverable.description}
-      </p>
-
-      <div className="border border-black/10 bg-white p-3">
-        <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
-          Action
-        </p>
-
-        <p className="font-mono text-xs text-black/55 leading-relaxed break-words">
-          {deliverable.action}
-        </p>
-      </div>
-    </div>
+      <h3 className="mt-5 text-lg font-semibold">{deliverable.title}</h3>
+      <p className="mt-2 text-sm leading-6 text-slate-600">{deliverable.description}</p>
+      <div className="mt-5 rounded-2xl border border-black/5 bg-white/70 p-4"><p className="text-xs font-semibold uppercase tracking-[0.13em] text-slate-500">Next action</p><p className="mt-2 text-sm leading-6 text-slate-700">{deliverable.nextAction}</p></div>
+      <a href={deliverable.href} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-900">Open evidence <ExternalLink size={15} /></a>
+    </article>
   );
 }
 
-function CopyBlockCard({
-  block,
-  copied,
-  onCopy,
-}: {
-  block: CopyBlock;
-  copied: boolean;
-  onCopy: () => void;
-}) {
+function CopyCard({ block, copied, onCopy }: { block: CopyBlock; copied: boolean; onCopy: () => void }) {
   const Icon = block.icon;
-
   return (
-    <div className="border border-black/10 bg-[#F7F8FC] p-5">
-      <div className="flex items-start justify-between gap-4 mb-4">
-        <div className="flex items-center gap-2">
-          <Icon size={18} className="text-[#3898E8]" />
-
-          <p className="font-orbitron text-xs font-bold uppercase">
-            {block.title}
-          </p>
-        </div>
-
-        <button
-          onClick={onCopy}
-          className="border border-black/10 px-3 py-2 font-mono text-[10px] uppercase text-black/55 hover:text-black hover:bg-white transition-all"
-        >
-          {copied ? "Copied" : "Copy"}
-        </button>
+    <article className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-6">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-white"><Icon size={19} /></div><h3 className="font-semibold">{block.title}</h3></div>
+        <button type="button" onClick={onCopy} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">{copied ? <CheckCircle2 size={15} /> : <Copy size={15} />}{copied ? "Copied" : "Copy"}</button>
       </div>
-
-      <p className="font-mono text-sm text-black/55 leading-relaxed whitespace-pre-line">
-        {block.text}
-      </p>
-    </div>
+      <pre className="mt-5 whitespace-pre-wrap break-words rounded-2xl border border-slate-100 bg-slate-50 p-4 font-sans text-sm leading-7 text-slate-700">{block.text}</pre>
+    </article>
   );
 }
 
-function StatusBadge({ status }: { status: DeliverableStatus }) {
-  const label =
-    status === "ready"
-      ? "Ready"
-      : status === "needs-link"
-        ? "Needs Link"
-        : "Needs Polish";
-
-  return (
-    <div className="border border-black/10 bg-[#F7F8FC] px-3 py-1">
-      <p className="font-mono text-[9px] uppercase tracking-widest text-black/55">
-        {label}
-      </p>
-    </div>
-  );
+function OfficialLink({ label, href, icon: Icon }: { label: string; href: string; icon: ElementType }) {
+  return <a href={href} target="_blank" rel="noreferrer" className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-sm font-semibold text-slate-800 hover:border-blue-300 hover:bg-blue-50"><span className="flex items-center gap-3"><Icon size={18} className="text-blue-700" />{label}</span><ExternalLink size={15} /></a>;
 }
 
-function StepLine({ number, text }: { number: string; text: string }) {
-  return (
-    <div className="flex items-start gap-3 border border-black/10 bg-[#F7F8FC] p-3">
-      <p className="font-orbitron text-xs font-black text-[#C83888] shrink-0">
-        {number}
-      </p>
-
-      <p className="font-mono text-xs text-black/55 leading-relaxed break-words">{text}</p>
-    </div>
-  );
+function Metric({ icon: Icon, label, value }: { icon: ElementType; label: string; value: string }) {
+  return <div className="rounded-2xl border border-slate-200 bg-white/90 p-4"><Icon size={18} className="text-blue-700" /><p className="mt-3 text-xs text-slate-500">{label}</p><p className="mt-1 break-all text-lg font-semibold">{value}</p></div>;
 }
 
-function MetricBox({ metric }: { metric: Metric }) {
-  const Icon = metric.icon;
-
-  return (
-    <div className="border border-black/10 bg-[#F7F8FC]/60 p-4">
-      <Icon size={18} className="text-[#3898E8] mb-3" />
-
-      <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
-        {metric.label}
-      </p>
-
-      <p className="font-orbitron text-sm font-black uppercase mb-1 break-all">
-        {metric.value}
-      </p>
-
-      <p className="font-mono text-[10px] text-black/35 uppercase">
-        {metric.text}
-      </p>
-    </div>
-  );
-}
-
-function InfoLine({ text }: { text: string }) {
-  return (
-    <div className="flex items-start gap-2">
-      <CheckCircle2 size={14} className="text-black/55 mt-0.5 shrink-0" />
-
-      <p className="font-mono text-xs text-black/55 leading-relaxed">{text}</p>
-    </div>
-  );
+function deliverableStatus(status: DeliverableStatus) {
+  if (status === "ready") return { label: "Ready", card: "border-emerald-200 bg-emerald-50/40", badge: "bg-emerald-100 text-emerald-800" };
+  if (status === "manual") return { label: "Manual proof", card: "border-blue-200 bg-blue-50/35", badge: "bg-blue-100 text-blue-800" };
+  return { label: "Blocked", card: "border-amber-200 bg-amber-50/45", badge: "bg-amber-100 text-amber-800" };
 }
