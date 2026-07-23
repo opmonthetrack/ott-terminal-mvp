@@ -18,6 +18,7 @@ import {
 import { OTTLogo, OTTProofBadge } from "../components/OTTLogo";
 import { IssuerResearchAudit } from "../components/IssuerResearchAudit";
 import { TokenResearchRequestPanel } from "../components/TokenResearchRequestPanel";
+import { PublicResearchWatchlist } from "../components/PublicResearchWatchlist";
 import { MAKE_WAVES_SOURCE_TAG } from "../lib/makeWaves";
 import { useTerminalLanguage } from "../lib/useTerminalLanguage";
 
@@ -505,6 +506,7 @@ export function XrplVerifyTab({ walletAddress = "guest" }: XrplVerifyTabProps) {
       </section>
 
       <IssuerResearchAudit />
+      <PublicResearchWatchlist />
       <TokenResearchRequestPanel />
     </div>
   );
