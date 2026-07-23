@@ -1,27 +1,25 @@
-import { useMemo, useState } from "react";
-import type { ElementType } from "react";
+import { useEffect, useMemo, useState, type ElementType } from "react";
 import {
   AlertTriangle,
-  BadgeCheck,
   CheckCircle2,
   ClipboardCheck,
   Copy,
   ExternalLink,
-  Fingerprint,
-  ListChecks,
-  PlayCircle,
+  Filter,
+  MinusCircle,
   RotateCcw,
   ShieldCheck,
-  Sparkles,
   XCircle,
 } from "lucide-react";
 import { MAKE_WAVES_SOURCE_TAG } from "../lib/makeWaves";
+import { useOttAuthSession } from "../lib/useOttAuthSession";
 
 type SmokeTestTabProps = {
   walletAddress?: string;
 };
 
-type TestStatus = "todo" | "pass" | "fail";
+type TestStatus = "todo" | "pass" | "fail" | "blocked";
+type FilterStatus = "all" | TestStatus;
 
 type TestItem = {
   id: string;
@@ -29,280 +27,320 @@ type TestItem = {
   title: string;
   expected: string;
   risk: string;
-  action?: string;
+  action: string;
+  href: string;
+  requirement: "guest" | "account" | "wallet" | "founder";
 };
 
-type Metric = {
-  label: string;
-  value: string;
-  text: string;
-  icon: ElementType;
+type SavedSmokeState = {
+  statuses: Record<string, TestStatus>;
+  notes: Record<string, string>;
+  updatedAt: string;
 };
 
-const TERMINAL_URL = "https://ott-terminal-mvp.vercel.app";
-const NEWS_API_URL = "https://ott-terminal-mvp.vercel.app/api/news";
+const STORAGE_KEY = "ott-current-smoke-test-v3";
 
 const smokeTests: TestItem[] = [
   {
-    id: "guest-flow",
-    area: "Public",
-    title: "Guest flow works without Xaman",
-    expected:
-      "Guest user can open Home, XRPL Intelligence, Newsroom, Xaman Activation, Academy and Access Gate without application errors.",
-    risk: "New users hit a wallet wall before they understand the product.",
-    action: "Open as guest → Home → XRPL Intelligence → Newsroom → Xaman Activation → Academy → Access Gate.",
+    id: "public-navigation",
+    area: "Navigation",
+    title: "All 17 public routes open correctly",
+    expected: "Every public menu item opens its own page, the active title is correct, direct ?tab= links work and browser back/forward stays synchronized.",
+    risk: "Visitors encounter blank pages, duplicate routes or return to Home after a refresh.",
+    action: "Open the public menu, visit all route chips in Launch Control, refresh several pages and use browser back/forward.",
+    href: "/?founder=1&tab=launch",
+    requirement: "guest",
   },
   {
-    id: "home-access-model",
-    area: "Landing",
-    title: "Home explains the access model",
-    expected:
-      "Home clearly shows Free to Learn, Xaman to Prove and Pass to Unlock. Xaman is not required to start learning.",
-    risk: "Users think the app is only for existing crypto users or only for paid access.",
-    action: "Open Home → check the primary CTA cards and product structure copy.",
+    id: "responsive-layout",
+    area: "Responsive",
+    title: "Desktop and mobile navigation remain usable",
+    expected: "Top navigation, mobile menu, dialogs, cards and long wallet/hash values fit without horizontal overflow or hidden actions.",
+    risk: "The product works on desktop but is unusable inside a mobile browser or Xaman return flow.",
+    action: "Test approximately 390px, 768px and desktop widths. Open the menu, account dialog, Academy lesson and transaction pages.",
+    href: "/",
+    requirement: "guest",
   },
   {
-    id: "dashboard-intel",
-    area: "Dashboard",
-    title: "Daily Intelligence Snapshot loads",
-    expected:
-      "Dashboard shows top signal, live item count, SourceTag, source health, top buckets and quick actions to XRPL Intelligence / Newsroom / OTT Intelligence.",
-    risk: "Dashboard fetch or navigation target is broken. Daily snapshot is not demo-ready.",
-    action: "Open Dashboard → refresh snapshot → open top source → test quick actions.",
+    id: "guest-learning",
+    area: "Guest",
+    title: "A guest can learn without a wallet",
+    expected: "Home, Academy, wallet education, network explorer, Intelligence, Newsroom, Support and Access information open without requiring Xaman.",
+    risk: "New visitors hit a crypto wallet wall before understanding the terminal.",
+    action: "Use a private browser window, continue as guest and follow the Learn and Explore routes.",
+    href: "/?tab=home",
+    requirement: "guest",
   },
   {
-    id: "xrpl-intelligence",
-    area: "Intel",
-    title: "XRPL Intelligence live feed works",
-    expected:
-      "XRPL Intelligence opens, /api/news items appear, buckets work, selected item shows source, confidence, why it matters and Open Source works.",
-    risk: "newsClient/API mismatch, empty feed or low-quality sources return to the UI.",
-    action: "Open XRPL Intelligence → refresh → click bucket → open source.",
+    id: "account-google",
+    area: "Account",
+    title: "Email and Google account flows return to Account",
+    expected: "Email sign-in/create/reset and Google OAuth show friendly errors, never expose raw provider JSON and return to ?tab=wallet after confirmation.",
+    risk: "Users authenticate successfully but land on Home, see a raw error or cannot continue their profile.",
+    action: "Complete one email flow and one real Google sign-in using an allowed Google test user.",
+    href: "/?tab=wallet",
+    requirement: "account",
   },
   {
-    id: "newsroom-social",
-    area: "Social",
-    title: "Newsroom drafts and buttons work",
-    expected:
-      "Newsroom shows X, LinkedIn, Instagram, Facebook, Medium, TikTok, WhatsApp and YouTube modes. Copy Output, Open Source and Open Platform work.",
-    risk: "Beautiful UI without working sharing flow; user acquisition loses value.",
-    action: "Open Newsroom → select item → select X/LinkedIn/WhatsApp/TikTok → copy → open platform.",
+    id: "academy-progress",
+    area: "Academy",
+    title: "Learning progress survives refresh and account return",
+    expected: "Lessons, explanations, glossary, sources and knowledge checks work; authenticated progress is restored and certificate qualification is calculated from verified completion.",
+    risk: "The Academy looks complete but loses progress or awards readiness without earned completion.",
+    action: "Finish a lesson, refresh, sign out/in and verify the progress and score summary.",
+    href: "/?tab=academy",
+    requirement: "account",
   },
   {
-    id: "ott-intelligence",
-    area: "AI Studio",
-    title: "OTT Intelligence analysis works",
-    expected:
-      "OTT Intelligence loads /api/news and shows Builder Lens, Beginner Explain, Risk Context, Content Angle and Verify Checklist.",
-    risk: "Analysis layer is empty or not connected to intelligence feed.",
-    action: "Open OTT Intelligence → select item → test all analysis modes → copy analysis.",
+    id: "intelligence-feed",
+    area: "Intelligence",
+    title: "Dashboard and XRPL Intelligence load current source items",
+    expected: "The Dashboard and Intelligence pages return items from /api/news, label fallback clearly, show source confidence and open the original source.",
+    risk: "The daily product surface is empty, stale or presents fallback content as verified live reporting.",
+    action: "Refresh Dashboard and XRPL Intelligence, change buckets and open at least two source links.",
+    href: "/?tab=intel",
+    requirement: "guest",
   },
   {
-    id: "xaman-activation",
-    area: "Onboarding",
-    title: "Xaman Activation guide is clear",
-    expected:
-      "Xaman Activation explains why activation is needed, self activation, existing-user support and OTT assisted activation coming soon without custody or broker claims.",
-    risk: "New Dutch/non-technical users do not understand wallet activation.",
-    action: "Open Xaman Activation → read the activation options and safety checklist.",
+    id: "content-studio",
+    area: "Content",
+    title: "Newsroom and OTT Intelligence produce usable output",
+    expected: "A selected source can produce platform-specific drafts and analysis modes; copy and source buttons work without inventing unsupported facts.",
+    risk: "The UI appears functional while content output, clipboard or source grounding is broken.",
+    action: "Test X, LinkedIn, WhatsApp and one OTT Intelligence analysis mode, then copy both outputs.",
+    href: "/?tab=news",
+    requirement: "guest",
   },
   {
-    id: "xaman-center",
+    id: "xaman-connect",
     area: "Xaman",
-    title: "Xaman Center connects/signs",
-    expected:
-      "Xaman Center opens, SourceTag route is visible, payload/deeplink/QR fallback works and wallet can return connected.",
-    risk: "xamanClient or mobile session import breaks the proof route.",
-    action: "Open Xaman Center → create payload → sign or verify connected wallet route.",
+    title: "Desktop QR and mobile deep-link connection work",
+    expected: "Xaman payload creation, QR, same-device deep link, return routing and connected wallet persistence work without asking for a seed phrase.",
+    risk: "The core signing route fails on the device type most visitors use.",
+    action: "Test once on desktop with QR and once on mobile with Xaman installed; refresh after return.",
+    href: "/?tab=xaman",
+    requirement: "wallet",
   },
   {
-    id: "daily-checkin",
+    id: "proof-rewards",
     area: "Proof",
-    title: "Daily Check-In proof works",
-    expected:
-      "Create Xaman Proof Payload works, signed payload returns or verifies, SourceTag 2606170002 stays visible and no duplicate rewards are added.",
-    risk: "api/ott action, xamanClient or MakeWaves action mismatch.",
-    action: "Open Daily Check-In → create payload → sign in Xaman → return/verify.",
+    title: "Daily proof is validated before rewards appear",
+    expected: `A signed Daily Check-In uses SourceTag ${MAKE_WAVES_SOURCE_TAG}, returns to the correct page and adds the configured XP/credit event only once.`,
+    risk: "Unsigned, mismatched or repeated payloads create local rewards or confusing duplicate records.",
+    action: "Sign one Daily Check-In, verify it, inspect Reward Ledger, then repeat verification to test idempotency.",
+    href: "/?tab=checkin",
+    requirement: "wallet",
   },
   {
-    id: "xp-credits",
-    area: "Rewards",
-    title: "XP and OTT Credits are credited",
-    expected:
-      "After a valid signed proof, Reward Ledger shows +10 XP and +1 OTT Credit for Daily Check-In, or the correct action-specific reward.",
-    risk: "Pitch proof works but retention loop is invisible, making the demo weaker.",
-    action: "After signing Daily Check-In → open Reward Ledger → confirm XP / OTT Credits / proof event.",
+    id: "roadmap-voting",
+    area: "Voting",
+    title: "Roadmap votes require Xaman and update public totals",
+    expected: "A vote creates a signing transaction, validates the returned hash and visibly updates totals so visitors can compare options.",
+    risk: "Voting is only a local button click or the public result does not match validated transactions.",
+    action: "Vote once, sign in Xaman, verify after return and compare the option totals.",
+    href: "/?tab=roadmap",
+    requirement: "wallet",
   },
   {
-    id: "source-tag",
-    area: "Proof",
-    title: "SourceTag page loads",
-    expected:
-      "SourceTag page explains Make Waves identity, verification, support coming soon and SourceTag 2606170002 without active payment claims.",
-    risk: "Old donation/payment wording or verifier confusion returns.",
-    action: "Open SourceTag page → verify copy and optional tx hash flow if available.",
+    id: "support-payment",
+    area: "Support",
+    title: "0.589, 1.589 and 2.589 XRP support works",
+    expected: "Each fixed amount creates the correct Xaman payment, SourceTag and memo; only validated transactions appear in totals and public text requires explicit consent.",
+    risk: "A wrong amount, wallet, consent state or unvalidated payment is counted publicly.",
+    action: "Open all three amount choices. Complete one controlled payment and verify the live counter after ledger validation.",
+    href: "/?tab=support",
+    requirement: "wallet",
   },
   {
-    id: "academy",
-    area: "Education",
-    title: "Academy deep catalog loads",
-    expected:
-      "Free modules, premium depth, AI agents route and Certificate NFT coming soon are visible and legal-safe.",
-    risk: "Academy import/state breaks or premium language overpromises.",
-    action: "Open Academy → switch free/premium/certificate views.",
-  },
-  {
-    id: "access-gate",
+    id: "access-gate-safety",
     area: "Access",
-    title: "Access Gate payment and scanner flow loads",
-    expected:
-      "Access Gate shows free public access, Xaman onboarding, the active 1.589 XRP service-payment page, manual founder delivery and the NFT scanner. No automatic mint or unlock runs after payment.",
-    risk: "Payment, manual NFT delivery and scanner copy become inconsistent or non-Xaman users feel blocked.",
-    action: "Open Access Gate as guest and connected wallet → confirm payment, delivery and scanner copy.",
+    title: "Access Gate never charges before readiness is green",
+    expected: "Before protected setup is complete, the page shows preparation status with no payment button. When ready, the customer sees the verified four-stage delivery flow.",
+    risk: "A customer pays while migration, issuer or TESTNET configuration is incomplete.",
+    action: "Inspect Access as guest, account-only and connected wallet; compare it with founder Access readiness.",
+    href: "/?tab=accessgate",
+    requirement: "account",
   },
   {
-    id: "pitch-mode",
-    area: "Demo",
-    title: "Pitch Mode works",
-    expected:
-      "2-minute Make Waves demo script opens, steps work and Copy Full Script works.",
-    risk: "PitchModeTab import, icon or clipboard issue.",
-    action: "Show Founder / Labs → Pitch Mode → run script steps → copy full script.",
+    id: "access-pass-testnet",
+    area: "Access NFT",
+    title: "Complete Access Pass #001–#500 lifecycle on TESTNET",
+    expected: "Exact 1.589 XRP payment validation reserves one unique serial, founder mint and targeted offer validate, customer accepts and exact NFT ownership unlocks access.",
+    risk: "Serial duplication, wrong network, wrong signer, wrong NFT or payment-only access bypass reaches production.",
+    action: "Use dedicated TESTNET payment and issuer accounts: payment → reserve → mint → offer → accept → account_nfts ownership.",
+    href: "/?founder=1&accessissuer=1",
+    requirement: "founder",
   },
   {
-    id: "submission-pack",
-    area: "Submission",
-    title: "Submission Pack works",
-    expected:
-      "Make Waves checklist, copy blocks, launch X post, LinkedIn post, WhatsApp status, TikTok hook, XRPL invite and red flag avoidance are visible.",
-    risk: "User acquisition copy is not ready for launch week.",
-    action: "Open Submission Pack → copy Launch X Post, LinkedIn Post, WhatsApp Status and XRPL Community Invite.",
+    id: "certificate-delivery",
+    area: "Certificate NFT",
+    title: "Qualified Academy certificate reaches the learner wallet",
+    expected: "Only a qualified account can reserve a serial; founder mint/offer and learner acceptance validate before status becomes issued.",
+    risk: "Certificates are issued without qualification or marked delivered before actual wallet ownership.",
+    action: "Use a completed Academy account and run the protected certificate issuer lifecycle end to end.",
+    href: "/?founder=1&issuer=1",
+    requirement: "founder",
   },
   {
-    id: "founder-labs",
+    id: "return-routing",
+    area: "Returns",
+    title: "OAuth and Xaman returns stay on the correct page",
+    expected: "Google returns to Account; support returns to Support; Access payment/accept returns to Access; proof and vote sessions preserve their target in ?tab=.",
+    risk: "A successful external action appears lost because the terminal silently opens Home.",
+    action: "Complete or cancel one action from each return type and refresh the resulting URL.",
+    href: "/?tab=wallet",
+    requirement: "wallet",
+  },
+  {
+    id: "legal-discovery",
+    area: "Public files",
+    title: "Legal, SEO and install files are public",
+    expected: "Privacy, Terms, robots.txt, sitemap.xml, manifest and social metadata are reachable and use the production URL.",
+    risk: "OAuth review, search discovery, social sharing or install behavior looks incomplete.",
+    action: "Open each public file and inspect a shared homepage preview on one social platform.",
+    href: "/privacy.html",
+    requirement: "guest",
+  },
+  {
+    id: "founder-boundary",
     area: "Founder",
-    title: "Founder tools stay behind Labs",
-    expected:
-      "Pitch Mode, Submission Pack and Smoke Test are hidden from normal users and visible after Show Founder / Labs.",
-    risk: "Normal users see internal QA/pitch tools and the app feels unfinished.",
-    action: "Reload app → confirm hidden → click Show Founder / Labs → confirm visible.",
+    title: "Internal tools remain outside the normal customer menu",
+    expected: "Pitch, Submission, Smoke Test, Launch Control and issuer queues require founder URLs; normal users see only the 17 public routes.",
+    risk: "Customers see unfinished labs, operational controls or issuer actions.",
+    action: "Compare the normal app with ?founder=1 and attempt both issuer URLs while signed out.",
+    href: "/?founder=1&tab=launch",
+    requirement: "founder",
   },
   {
-    id: "legal-safe",
-    area: "Legal",
-    title: "Legal and coming-soon boundaries are clear",
-    expected:
-      "Certificate NFT, XRP/RLUSD support, donations and Web2 license are clearly future/coming soon. The active Access Pass payment is presented only as a utility service payment with manual NFT delivery, never as an investment product.",
-    risk: "Jury/user thinks there is active brokerage, yield, token value promise, paid minting or financial advice.",
-    action: "Read Home, SourceTag, Academy, Access Gate, Submission Pack and Newsroom copy for hype/legal issues.",
+    id: "pitch-submission",
+    area: "Delivery",
+    title: "Pitch Mode and Submission Pack match the current product",
+    expected: "The two-minute story, demo order, claims, screenshots and launch copy describe active features accurately and do not call live features coming soon.",
+    risk: "The pitch contradicts the product or makes unsafe investment, yield, custody or guaranteed-value claims.",
+    action: "Run Pitch Mode from start to finish and review every Submission Pack copy block against the live app.",
+    href: "/?founder=1&tab=pitchmode",
+    requirement: "founder",
   },
 ];
 
-const quickRouteSteps = [
-  "Home → explain Free to Learn / Xaman to Prove / Pass to Unlock",
-  "XRPL Intelligence → refresh feed → open source",
-  "Newsroom → select item → copy social draft → open platform",
-  "OTT Intelligence → analysis mode → copy analysis",
-  "Xaman Activation → explain wallet onboarding for new users",
-  "Daily Check-In → create proof → sign in Xaman → return/verify",
-  "Reward Ledger → confirm XP / OTT Credits",
-  "Access Gate → 1.589 XRP service payment + manual NFT delivery + scanner unlock",
-  "Pitch Mode → 2-minute demo",
-  "Submission Pack → launch promo copy",
-];
+function blankStatuses() {
+  return smokeTests.reduce<Record<string, TestStatus>>((result, test) => {
+    result[test.id] = "todo";
+    return result;
+  }, {});
+}
 
-export function SmokeTestTab({ walletAddress = "guest" }: SmokeTestTabProps) {
-  const [statuses, setStatuses] = useState<Record<string, TestStatus>>(() =>
-    smokeTests.reduce<Record<string, TestStatus>>((accumulator, test) => {
-      accumulator[test.id] = "todo";
-      return accumulator;
-    }, {})
-  );
-  const [copied, setCopied] = useState(false);
+function loadSavedState(): SavedSmokeState {
+  if (typeof window === "undefined") {
+    return { statuses: blankStatuses(), notes: {}, updatedAt: "" };
+  }
 
-  const counts = useMemo(() => {
-    const values = Object.values(statuses);
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { statuses: blankStatuses(), notes: {}, updatedAt: "" };
+    const parsed = JSON.parse(raw) as Partial<SavedSmokeState>;
+    const statuses = blankStatuses();
+
+    for (const test of smokeTests) {
+      const value = parsed.statuses?.[test.id];
+      if (value === "todo" || value === "pass" || value === "fail" || value === "blocked") {
+        statuses[test.id] = value;
+      }
+    }
 
     return {
-      total: smokeTests.length,
+      statuses,
+      notes: parsed.notes ?? {},
+      updatedAt: parsed.updatedAt ?? "",
+    };
+  } catch {
+    return { statuses: blankStatuses(), notes: {}, updatedAt: "" };
+  }
+}
+
+export function SmokeTestTab({ walletAddress = "guest" }: SmokeTestTabProps) {
+  const { user, signedIn } = useOttAuthSession();
+  const [saved, setSaved] = useState<SavedSmokeState>(loadSavedState);
+  const [filter, setFilter] = useState<FilterStatus>("all");
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+  }, [saved]);
+
+  const counts = useMemo(() => {
+    const values = smokeTests.map((test) => saved.statuses[test.id] ?? "todo");
+    return {
+      total: values.length,
       pass: values.filter((status) => status === "pass").length,
       fail: values.filter((status) => status === "fail").length,
+      blocked: values.filter((status) => status === "blocked").length,
       todo: values.filter((status) => status === "todo").length,
     };
-  }, [statuses]);
+  }, [saved.statuses]);
 
-  const buildState =
-    counts.fail > 0 ? "Needs Fix" : counts.todo > 0 ? "Testing" : "Ready";
+  const filteredTests = useMemo(
+    () => smokeTests.filter((test) => filter === "all" || saved.statuses[test.id] === filter),
+    [filter, saved.statuses],
+  );
 
   const readiness = Math.round((counts.pass / counts.total) * 100);
-
-  const metrics: Metric[] = [
-    {
-      label: "Build State",
-      value: buildState,
-      text: "Manual QA state.",
-      icon: buildState === "Ready" ? ShieldCheck : AlertTriangle,
-    },
-    {
-      label: "Readiness",
-      value: `${readiness}%`,
-      text: `${counts.pass}/${counts.total} passed.`,
-      icon: CheckCircle2,
-    },
-    {
-      label: "Failed",
-      value: String(counts.fail),
-      text: "Fix red only.",
-      icon: XCircle,
-    },
-    {
-      label: "SourceTag",
-      value: String(MAKE_WAVES_SOURCE_TAG),
-      text: "Must match live.",
-      icon: Fingerprint,
-    },
-  ];
+  const verdict = counts.fail > 0
+    ? "Needs fixes"
+    : counts.blocked > 0
+      ? "Blocked by prerequisites"
+      : counts.todo > 0
+        ? "Human QA in progress"
+        : "Human QA passed";
 
   const reportText = useMemo(() => {
-    const lines = smokeTests.map((test, index) => {
-      const status = statuses[test.id].toUpperCase();
-
-      return `${index + 1}. ${status} — ${test.area} — ${test.title}\nExpected: ${test.expected}\nAction: ${test.action ?? "Manual check."}`;
-    });
+    const lines = smokeTests.flatMap((test, index) => [
+      `${index + 1}. ${(saved.statuses[test.id] ?? "todo").toUpperCase()} — ${test.area} — ${test.title}`,
+      `Expected: ${test.expected}`,
+      `Action: ${test.action}`,
+      `Note: ${saved.notes[test.id]?.trim() || "—"}`,
+      "",
+    ]);
 
     return [
-      "XRPL OnTheTrack Terminal — Make Waves Final QA Report",
-      `Wallet: ${walletAddress}`,
+      "XRPL OnTheTrack Terminal — Human Smoke Test Report",
+      `Generated: ${new Date().toISOString()}`,
+      `Last saved: ${saved.updatedAt || "not yet"}`,
+      `OTT account: ${user?.email ?? "not signed in"}`,
+      `XRPL wallet: ${walletAddress}`,
       `SourceTag: ${MAKE_WAVES_SOURCE_TAG}`,
+      `Verdict: ${verdict}`,
       `Readiness: ${readiness}%`,
       `Passed: ${counts.pass}/${counts.total}`,
       `Failed: ${counts.fail}`,
+      `Blocked: ${counts.blocked}`,
       `Todo: ${counts.todo}`,
-      "",
-      "Final demo route:",
-      ...quickRouteSteps.map((step, index) => `${index + 1}. ${step}`),
       "",
       "Checks:",
       ...lines,
-      "",
-      "Launch guardrails: education only, no custody, no broker, no yield, no trade execution, no token value promise, no financial advice, human review before posting.",
+      "Guardrails: education and utility only; no custody, seed collection, brokerage, yield, price promise, guaranteed resale value or financial advice.",
     ].join("\n");
-  }, [counts, readiness, statuses, walletAddress]);
+  }, [counts, readiness, saved, user?.email, verdict, walletAddress]);
 
   function setStatus(testId: string, status: TestStatus) {
-    setStatuses((current) => ({
+    setSaved((current) => ({
       ...current,
-      [testId]: status,
+      statuses: { ...current.statuses, [testId]: status },
+      updatedAt: new Date().toISOString(),
+    }));
+  }
+
+  function setNote(testId: string, note: string) {
+    setSaved((current) => ({
+      ...current,
+      notes: { ...current.notes, [testId]: note },
+      updatedAt: new Date().toISOString(),
     }));
   }
 
   function resetTests() {
-    setStatuses(
-      smokeTests.reduce<Record<string, TestStatus>>((accumulator, test) => {
-        accumulator[test.id] = "todo";
-        return accumulator;
-      }, {})
-    );
+    setSaved({ statuses: blankStatuses(), notes: {}, updatedAt: new Date().toISOString() });
+    setFilter("all");
     setCopied(false);
   }
 
@@ -313,316 +351,177 @@ export function SmokeTestTab({ walletAddress = "guest" }: SmokeTestTabProps) {
   }
 
   return (
-    <div className="min-h-screen bg-white text-[#080808]">
-      <div className="relative overflow-hidden border border-black/10 bg-white p-6 mb-6">
-        <div className="absolute inset-0 opacity-[0.08] bg-[radial-gradient(circle_at_top_right,_#3898E8,_transparent_34%),radial-gradient(circle_at_bottom_left,_#C83888,_transparent_32%)]" />
-
-        <div className="relative z-10 grid grid-cols-12 gap-6 items-center">
-          <div className="col-span-12 xl:col-span-8">
-            <div className="flex items-center gap-2 mb-4 text-black/55">
-              <ListChecks size={18} />
-
-              <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
-                Final QA / Pitch / Launch Readiness
+    <div className="min-h-screen bg-white text-slate-950">
+      <section className="border-b border-slate-200 bg-[radial-gradient(circle_at_90%_0%,rgba(56,152,232,0.14),transparent_34%),radial-gradient(circle_at_0%_100%,rgba(200,56,136,0.12),transparent_34%),#fff]">
+        <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-16">
+          <div className="flex flex-col gap-8 xl:flex-row xl:items-start xl:justify-between">
+            <div className="max-w-3xl">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-blue-700">
+                <ClipboardCheck size={17} /> Founder human QA
+              </div>
+              <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">Test the product people actually use now.</h1>
+              <p className="mt-5 text-base leading-7 text-slate-600">
+                Launch Control performs automated endpoint checks. This runner records the human account, wallet, mobile, copy and transaction tests that automation cannot honestly approve.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <a href="/?founder=1&tab=launch" className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800">
+                  Open Launch Control <ExternalLink size={17} />
+                </a>
+                <button type="button" onClick={() => void copyReport()} className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 hover:bg-slate-50">
+                  {copied ? <CheckCircle2 size={17} /> : <Copy size={17} />}{copied ? "Copied" : "Copy QA report"}
+                </button>
+                <button type="button" onClick={resetTests} className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 hover:bg-slate-50">
+                  <RotateCcw size={17} /> Reset
+                </button>
+              </div>
+              <p className="mt-4 text-xs text-slate-500">
+                Account: {signedIn ? user?.email : "not signed in"} · Wallet: {walletAddress} · Saved locally: {saved.updatedAt ? new Date(saved.updatedAt).toLocaleString() : "not yet"}
               </p>
             </div>
 
-            <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
-              Make Waves Smoke Test
-            </h2>
-
-            <p className="font-mono text-sm text-black/55 max-w-3xl leading-relaxed">
-              Gebruik deze tab vlak vóór demo-opname, pitch en promotieposts. Test de live route:
-              public onboarding → intelligence → social output → Xaman proof → XP/Credits → access model → submission copy.
-              Markeer pass/fail en fix alleen rode punten.
-            </p>
+            <div className={`w-full rounded-3xl border p-6 xl:max-w-sm ${counts.fail ? "border-rose-200 bg-rose-50" : counts.blocked ? "border-amber-200 bg-amber-50" : counts.todo ? "border-blue-200 bg-blue-50" : "border-emerald-200 bg-emerald-50"}`}>
+              <div className="flex items-start gap-3">
+                {counts.fail ? <XCircle className="text-rose-700" size={28} /> : counts.blocked ? <AlertTriangle className="text-amber-700" size={28} /> : <ShieldCheck className={counts.todo ? "text-blue-700" : "text-emerald-700"} size={28} />}
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Current verdict</p>
+                  <p className="mt-1 text-xl font-semibold">{verdict}</p>
+                  <p className="mt-2 text-sm text-slate-600">{readiness}% passed</p>
+                </div>
+              </div>
+              <div className="mt-6 grid grid-cols-2 gap-3">
+                <Summary label="Pass" value={counts.pass} />
+                <Summary label="Fail" value={counts.fail} />
+                <Summary label="Blocked" value={counts.blocked} />
+                <Summary label="Todo" value={counts.todo} />
+              </div>
+            </div>
           </div>
+        </div>
+      </section>
 
-          <div className="col-span-12 xl:col-span-4 grid grid-cols-2 gap-3">
-            {metrics.map((metric) => (
-              <MetricBox key={metric.label} metric={metric} />
+      <main className="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">Test queue</p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight">{filteredTests.length} visible checks</h2>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Filter size={17} className="text-slate-500" />
+            {(["all", "todo", "pass", "fail", "blocked"] as FilterStatus[]).map((value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setFilter(value)}
+                className={`rounded-full px-4 py-2 text-xs font-semibold capitalize ${filter === value ? "bg-slate-950 text-white" : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}
+              >
+                {value}
+              </button>
             ))}
           </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-12 xl:col-span-8">
-          <div className="border border-black/10 bg-white p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <ClipboardCheck size={18} className="text-[#3898E8]" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Manual Test Checklist
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {smokeTests.map((test) => (
-                <TestCard
-                  key={test.id}
-                  test={test}
-                  status={statuses[test.id]}
-                  onPass={() => setStatus(test.id, "pass")}
-                  onFail={() => setStatus(test.id, "fail")}
-                  onReset={() => setStatus(test.id, "todo")}
-                />
-              ))}
-            </div>
-          </div>
+        <div className="mt-7 space-y-5">
+          {filteredTests.map((test) => (
+            <TestCard
+              key={test.id}
+              number={smokeTests.indexOf(test) + 1}
+              test={test}
+              status={saved.statuses[test.id] ?? "todo"}
+              note={saved.notes[test.id] ?? ""}
+              onStatus={(status) => setStatus(test.id, status)}
+              onNote={(note) => setNote(test.id, note)}
+            />
+          ))}
+          {filteredTests.length === 0 && (
+            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-10 text-center text-sm text-slate-600">No tests match this filter.</div>
+          )}
         </div>
-
-        <div className="col-span-12 xl:col-span-4 space-y-4">
-          <Panel title="Demo Order" icon={PlayCircle}>
-            <div className="space-y-3">
-              {quickRouteSteps.map((step, index) => (
-                <StepLine key={step} number={String(index + 1).padStart(2, "0")} text={step} />
-              ))}
-            </div>
-          </Panel>
-
-          <Panel title="Report" icon={Copy}>
-            <button
-              onClick={copyReport}
-              className="w-full bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] text-white p-4 text-left hover:brightness-95 transition-all mb-3"
-            >
-              <p className="font-orbitron text-xs font-black uppercase mb-2">
-                {copied ? "Copied" : "Copy QA Report"}
-              </p>
-
-              <p className="font-mono text-[10px] text-white/75 uppercase">
-                Use before deploy / demo / social
-              </p>
-            </button>
-
-            <button
-              onClick={resetTests}
-              className="w-full border border-black/10 bg-[#F7F8FC] p-4 text-left hover:bg-[#D84858]/10 transition-all"
-            >
-              <RotateCcw size={18} className="text-[#3898E8] mb-3" />
-
-              <p className="font-orbitron text-xs font-bold uppercase mb-2">
-                Reset Checklist
-              </p>
-
-              <p className="font-mono text-[10px] text-black/35 uppercase">
-                Start smoke test again
-              </p>
-            </button>
-          </Panel>
-
-          <Panel title="Go / No-Go" icon={Sparkles}>
-            <div className="border border-black/10 bg-[#F7F8FC] p-4">
-              <p className="font-mono text-xs text-black/55 leading-relaxed">
-                {counts.fail > 0
-                  ? "No-Go: fix failed items first. Touch only the file causing the red result."
-                  : counts.todo > 0
-                    ? "Testing: finish all todo checks before recording, pitching or posting."
-                    : "Go: app is ready for demo recording, pitch and launch promotion posts."}
-              </p>
-            </div>
-          </Panel>
-
-          <Panel title="Final Legal / Social Check" icon={ShieldCheck}>
-            <div className="space-y-3">
-              <StepLine number="A" text="No custody, no broker, no yield, no trade execution." />
-              <StepLine number="B" text="XP and OTT Credits are internal progress/utility signals." />
-              <StepLine number="C" text="No token value, conversion, profit or adoption promise." />
-              <StepLine number="D" text="Certificate NFT, Web2 license and XRP/RLUSD support are coming soon only." />
-              <StepLine number="E" text="Newsroom and promo drafts need human review before posting." />
-            </div>
-          </Panel>
-
-          <Panel title="Live URLs" icon={ExternalLink}>
-            <div className="space-y-3">
-              <UrlLine label="Terminal" url={TERMINAL_URL} />
-              <UrlLine label="News API" url={NEWS_API_URL} />
-            </div>
-          </Panel>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Panel({
-  title,
-  icon: Icon,
-  children,
-}: {
-  title: string;
-  icon: ElementType;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="border border-black/10 bg-white p-6">
-      <div className="flex items-center gap-2 mb-5">
-        <Icon size={18} className="text-[#3898E8]" />
-
-        <p className="font-orbitron text-xs uppercase tracking-widest">
-          {title}
-        </p>
-      </div>
-
-      {children}
+      </main>
     </div>
   );
 }
 
 function TestCard({
+  number,
   test,
   status,
-  onPass,
-  onFail,
-  onReset,
+  note,
+  onStatus,
+  onNote,
 }: {
+  number: number;
   test: TestItem;
   status: TestStatus;
-  onPass: () => void;
-  onFail: () => void;
-  onReset: () => void;
+  note: string;
+  onStatus: (status: TestStatus) => void;
+  onNote: (note: string) => void;
 }) {
-  return (
-    <div
-      className={`border p-5 transition-all ${
-        status === "pass"
-          ? "border-[#3898E8]/30 bg-[#3898E8]/10"
-          : status === "fail"
-            ? "border-[#D84858]/30 bg-[#D84858]/10"
-            : "border-black/10 bg-[#F7F8FC]"
-      }`}
-    >
-      <div className="grid grid-cols-12 gap-4 items-start">
-        <div className="col-span-12 xl:col-span-8">
-          <div className="flex items-center gap-2 mb-3">
-            <StatusIcon status={status} />
+  const style = statusStyle(status);
+  const StatusIcon = style.icon;
 
-            <p className="font-mono text-[10px] text-black/35 uppercase tracking-[0.25em]">
-              {test.area}
-            </p>
+  return (
+    <article className={`rounded-3xl border p-5 sm:p-7 ${style.card}`}>
+      <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-950 text-xs font-semibold text-white">{number}</span>
+            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600">{test.area}</span>
+            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 capitalize">{test.requirement}</span>
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${style.badge}`}><StatusIcon size={14} />{style.label}</span>
           </div>
 
-          <h3 className="font-orbitron text-sm font-black uppercase mb-3">
-            {test.title}
-          </h3>
+          <h3 className="mt-5 text-xl font-semibold tracking-tight">{test.title}</h3>
+          <div className="mt-5 grid gap-4 lg:grid-cols-3">
+            <Detail title="Expected" text={test.expected} />
+            <Detail title="Risk" text={test.risk} tone="risk" />
+            <Detail title="Test action" text={test.action} tone="action" />
+          </div>
 
-          <p className="font-mono text-xs text-black/55 leading-relaxed mb-3">
-            {test.expected}
-          </p>
+          <label className="mt-5 block">
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Evidence or note</span>
+            <textarea
+              value={note}
+              onChange={(event) => onNote(event.target.value)}
+              rows={2}
+              placeholder="Device, account, transaction hash, screenshot reference or problem…"
+              className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            />
+          </label>
+        </div>
 
-          {test.action && (
-            <div className="border border-black/10 bg-white p-3 mb-3">
-              <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
-                Action
-              </p>
-
-              <p className="font-mono text-xs text-black/55 leading-relaxed">
-                {test.action}
-              </p>
-            </div>
-          )}
-
-          <div className="border border-black/10 bg-white p-3">
-            <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
-              Risk if red
-            </p>
-
-            <p className="font-mono text-xs text-black/55 leading-relaxed">
-              {test.risk}
-            </p>
+        <div className="w-full space-y-3 xl:w-60">
+          <a href={test.href} target="_blank" rel="noreferrer" className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800">
+            Open test <ExternalLink size={16} />
+          </a>
+          <div className="grid grid-cols-2 gap-2">
+            <StatusButton label="Pass" active={status === "pass"} onClick={() => onStatus("pass")} tone="pass" />
+            <StatusButton label="Fail" active={status === "fail"} onClick={() => onStatus("fail")} tone="fail" />
+            <StatusButton label="Blocked" active={status === "blocked"} onClick={() => onStatus("blocked")} tone="blocked" />
+            <StatusButton label="Todo" active={status === "todo"} onClick={() => onStatus("todo")} tone="todo" />
           </div>
         </div>
-
-        <div className="col-span-12 xl:col-span-4 grid grid-cols-3 gap-2">
-          <SmallButton label="Pass" onClick={onPass} />
-          <SmallButton label="Fail" onClick={onFail} />
-          <SmallButton label="Todo" onClick={onReset} />
-        </div>
       </div>
-    </div>
+    </article>
   );
 }
 
-function StatusIcon({ status }: { status: TestStatus }) {
-  if (status === "pass") {
-    return <CheckCircle2 size={16} className="text-[#3898E8]" />;
-  }
-
-  if (status === "fail") {
-    return <XCircle size={16} className="text-[#D84858]" />;
-  }
-
-  return <BadgeCheck size={16} className="text-black/25" />;
+function Detail({ title, text, tone = "default" }: { title: string; text: string; tone?: "default" | "risk" | "action" }) {
+  const classes = tone === "risk" ? "border-rose-100 bg-rose-50" : tone === "action" ? "border-blue-100 bg-blue-50" : "border-slate-200 bg-white";
+  return <div className={`rounded-2xl border p-4 ${classes}`}><p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{title}</p><p className="mt-2 text-sm leading-6 text-slate-700">{text}</p></div>;
 }
 
-function SmallButton({
-  label,
-  onClick,
-}: {
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="border border-black/10 bg-white p-3 text-center hover:bg-[#F7F8FC] transition-all"
-    >
-      <p className="font-mono text-[10px] uppercase text-black/55">{label}</p>
-    </button>
-  );
+function StatusButton({ label, active, onClick, tone }: { label: string; active: boolean; onClick: () => void; tone: TestStatus }) {
+  const activeClass = tone === "pass" ? "border-emerald-600 bg-emerald-600 text-white" : tone === "fail" ? "border-rose-600 bg-rose-600 text-white" : tone === "blocked" ? "border-amber-600 bg-amber-600 text-white" : "border-slate-700 bg-slate-700 text-white";
+  return <button type="button" onClick={onClick} className={`rounded-xl border px-3 py-2.5 text-xs font-semibold ${active ? activeClass : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"}`}>{label}</button>;
 }
 
-function StepLine({ number, text }: { number: string; text: string }) {
-  return (
-    <div className="flex items-start gap-3 border border-black/10 bg-[#F7F8FC] p-3">
-      <p className="font-orbitron text-xs font-black text-[#C83888] shrink-0">
-        {number}
-      </p>
-
-      <p className="font-mono text-xs text-black/55 leading-relaxed">{text}</p>
-    </div>
-  );
+function Summary({ label, value }: { label: string; value: number }) {
+  return <div className="rounded-2xl border border-black/5 bg-white/70 p-4"><p className="text-xs text-slate-500">{label}</p><p className="mt-1 text-2xl font-semibold">{value}</p></div>;
 }
 
-function UrlLine({ label, url }: { label: string; url: string }) {
-  return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noreferrer"
-      className="flex items-center justify-between gap-3 border border-black/10 bg-[#F7F8FC] p-3 hover:bg-white transition-all"
-    >
-      <div>
-        <p className="font-orbitron text-[10px] font-bold uppercase mb-1">
-          {label}
-        </p>
-
-        <p className="font-mono text-[10px] text-black/35 break-all">{url}</p>
-      </div>
-
-      <ExternalLink size={15} className="text-[#3898E8] shrink-0" />
-    </a>
-  );
-}
-
-function MetricBox({ metric }: { metric: Metric }) {
-  const Icon = metric.icon;
-
-  return (
-    <div className="border border-black/10 bg-[#F7F8FC]/60 p-4">
-      <Icon size={18} className="text-[#3898E8] mb-3" />
-
-      <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
-        {metric.label}
-      </p>
-
-      <p className="font-orbitron text-sm font-black uppercase mb-1 break-all">
-        {metric.value}
-      </p>
-
-      <p className="font-mono text-[10px] text-black/35 uppercase">
-        {metric.text}
-      </p>
-    </div>
-  );
+function statusStyle(status: TestStatus): { label: string; card: string; badge: string; icon: ElementType } {
+  if (status === "pass") return { label: "Pass", card: "border-emerald-200 bg-emerald-50/30", badge: "bg-emerald-100 text-emerald-800", icon: CheckCircle2 };
+  if (status === "fail") return { label: "Fail", card: "border-rose-200 bg-rose-50/40", badge: "bg-rose-100 text-rose-800", icon: XCircle };
+  if (status === "blocked") return { label: "Blocked", card: "border-amber-200 bg-amber-50/40", badge: "bg-amber-100 text-amber-800", icon: AlertTriangle };
+  return { label: "Todo", card: "border-slate-200 bg-white", badge: "bg-slate-100 text-slate-700", icon: MinusCircle };
 }
