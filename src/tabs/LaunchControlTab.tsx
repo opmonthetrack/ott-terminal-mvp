@@ -1,570 +1,600 @@
-import { useState } from "react";
-import type { ElementType } from "react";
+import { useCallback, useEffect, useMemo, useState, type ElementType } from "react";
 import {
   Activity,
   BadgeCheck,
-  CalendarCheck,
   CheckCircle2,
-  ClipboardCheck,
-  Code2,
-  Flag,
-  Gauge,
-  GitBranch,
+  CircleAlert,
+  CircleX,
+  Clock3,
+  Database,
+  ExternalLink,
+  FileCheck2,
   Globe2,
-  Layers,
-  Presentation,
+  HeartHandshake,
+  KeyRound,
+  ListChecks,
+  Loader2,
+  Newspaper,
+  RefreshCcw,
   Rocket,
+  Route,
+  Server,
   ShieldCheck,
-  Sparkles,
-  Target,
-  Terminal,
-  Trophy,
-  Users,
   Wallet,
   Waves,
-  Zap,
 } from "lucide-react";
+import {
+  getEnabledOttAuthProviders,
+  getFriendlyOttAuthError,
+  isOttAuthConfigured,
+} from "../lib/ottAuth";
+import {
+  loadAccessPassReadiness,
+  type AccessPassReadiness,
+} from "../lib/accessPassIssuerClient";
+import { loadCertificateIssuerQueue } from "../lib/certificateIssuerClient";
+import { fetchXrplIntelligence } from "../lib/newsClient";
+import { useOttAuthSession } from "../lib/useOttAuthSession";
 
-type LaunchArea = {
+const PUBLIC_ROUTE_IDS = [
+  "home",
+  "dashboard",
+  "wallet",
+  "academy",
+  "xamanactivation",
+  "network",
+  "intel",
+  "news",
+  "ottintelligence",
+  "roadmap",
+  "support",
+  "xaman",
+  "xrplverify",
+  "source",
+  "checkin",
+  "rewardledger",
+  "accessgate",
+] as const;
+
+const PUBLIC_FILES = [
+  "/privacy.html",
+  "/terms.html",
+  "/robots.txt",
+  "/sitemap.xml",
+  "/manifest.webmanifest",
+] as const;
+
+const SOURCE_TAG = 2606170002;
+
+type AuditStatus = "checking" | "pass" | "warning" | "blocked";
+type AuditCategory = "public" | "services" | "protected";
+
+type AuditCheck = {
   id: string;
+  category: AuditCategory;
   title: string;
-  status: string;
-  text: string;
+  detail: string;
+  status: AuditStatus;
   icon: ElementType;
 };
 
-type ChecklistItem = {
-  title: string;
-  status: string;
-  text: string;
+type SupportStatsResponse = {
+  ok?: boolean;
+  stats?: {
+    totalXrp?: string;
+    paymentCount?: number;
+    uniqueSupporters?: number;
+  };
+  error?: string;
 };
 
-type Milestone = {
+type ManualTest = {
   title: string;
-  date: string;
-  status: string;
-  text: string;
-};
-
-type LaunchRule = {
-  title: string;
-  status: string;
-  text: string;
+  detail: string;
+  href: string;
+  status: "ready" | "requires-account" | "requires-wallet";
   icon: ElementType;
 };
 
-const launchAreas: LaunchArea[] = [
+function baseChecks(input: {
+  signedIn: boolean;
+  authLoading: boolean;
+}): AuditCheck[] {
+  const googleVisible = getEnabledOttAuthProviders().some((provider) => provider.id === "google");
+
+  return [
+    {
+      id: "shell",
+      category: "public",
+      title: "Production shell",
+      detail: `OTT Terminal loaded from ${window.location.origin}.`,
+      status: "pass",
+      icon: Globe2,
+    },
+    {
+      id: "routes",
+      category: "public",
+      title: "17 public routes",
+      detail: "The build contract contains 17 unique public menu items with render routes.",
+      status: "pass",
+      icon: Route,
+    },
+    {
+      id: "legal",
+      category: "public",
+      title: "Legal, crawler and app files",
+      detail: "Checking privacy, terms, robots, sitemap and web app manifest.",
+      status: "checking",
+      icon: FileCheck2,
+    },
+    {
+      id: "auth",
+      category: "public",
+      title: "OTT account authentication",
+      detail: isOttAuthConfigured
+        ? "Supabase browser authentication is configured."
+        : "Supabase browser authentication variables are missing.",
+      status: isOttAuthConfigured ? "pass" : "blocked",
+      icon: KeyRound,
+    },
+    {
+      id: "google",
+      category: "public",
+      title: "Google login button",
+      detail: googleVisible
+        ? "Google is visible as the launch OAuth provider. A real sign-in remains a manual end-to-end test."
+        : "Google is hidden. Check Supabase browser variables or VITE_AUTH_GOOGLE_ENABLED.",
+      status: googleVisible ? "warning" : "blocked",
+      icon: BadgeCheck,
+    },
+    {
+      id: "account",
+      category: "protected",
+      title: "Founder account session",
+      detail: input.authLoading
+        ? "The account session is still being resolved."
+        : input.signedIn
+          ? "An OTT account session is active. Founder allowlists are checked per protected endpoint."
+          : "Sign in with the founder OTT account to audit protected delivery flows.",
+      status: input.authLoading ? "checking" : input.signedIn ? "pass" : "blocked",
+      icon: ShieldCheck,
+    },
+    {
+      id: "news",
+      category: "services",
+      title: "XRPL Intelligence feed",
+      detail: "Checking /api/news and its source response.",
+      status: "checking",
+      icon: Newspaper,
+    },
+    {
+      id: "support",
+      category: "services",
+      title: "Support payments and ledger totals",
+      detail: "Checking the validated XRPL support counter.",
+      status: "checking",
+      icon: HeartHandshake,
+    },
+    {
+      id: "source-tag",
+      category: "services",
+      title: "Make Waves SourceTag",
+      detail: `The public contract uses SourceTag ${SOURCE_TAG}.`,
+      status: "pass",
+      icon: Waves,
+    },
+    {
+      id: "support-amounts",
+      category: "services",
+      title: "Support amount contract",
+      detail: "0.589, 1.589 and 2.589 XRP are protected by the route audit.",
+      status: "pass",
+      icon: ListChecks,
+    },
+    {
+      id: "access-pass",
+      category: "protected",
+      title: "Access Pass #001–#500",
+      detail: input.signedIn
+        ? "Checking database, TESTNET, Xaman, wallets and founder readiness."
+        : "Founder sign-in is required for readiness diagnostics.",
+      status: input.signedIn ? "checking" : "blocked",
+      icon: Wallet,
+    },
+    {
+      id: "certificate",
+      category: "protected",
+      title: "Foundation Certificate delivery",
+      detail: input.signedIn
+        ? "Checking the protected certificate issuer queue."
+        : "Founder sign-in is required for issuer diagnostics.",
+      status: input.signedIn ? "checking" : "blocked",
+      icon: Database,
+    },
+  ];
+}
+
+const manualTests: ManualTest[] = [
   {
-    id: "demo",
-    title: "Demo Flow",
-    status: "Build",
-    text: "Maak een sterke 2 minuten demo waarin login, dashboard, check-in, source tag 2606 en modules logisch openen.",
+    title: "Google account login",
+    detail: "Complete one real Google sign-in and confirm return to Account & Profile.",
+    href: "/?tab=wallet",
+    status: "requires-account",
+    icon: KeyRound,
+  },
+  {
+    title: "Xaman wallet connection",
+    detail: "Connect on desktop by QR and on mobile by deep link; never enter a seed phrase.",
+    href: "/?tab=xaman",
+    status: "requires-wallet",
+    icon: Wallet,
+  },
+  {
+    title: "Roadmap vote",
+    detail: "Sign one vote in Xaman and verify public vote totals update after validation.",
+    href: "/?tab=roadmap",
+    status: "requires-wallet",
+    icon: ListChecks,
+  },
+  {
+    title: "Support payment",
+    detail: "Test a fixed Xaman amount and confirm it appears in validated ledger totals.",
+    href: "/?tab=support",
+    status: "requires-wallet",
+    icon: HeartHandshake,
+  },
+  {
+    title: "Access Pass TESTNET lifecycle",
+    detail: "Payment → serial → mint → offer → accept → ownership. MAINNET remains locked first.",
+    href: "/?tab=accessgate",
+    status: "requires-wallet",
+    icon: ShieldCheck,
+  },
+  {
+    title: "Access Pass issuer queue",
+    detail: "Review readiness and sign only when every blocking check is green.",
+    href: "/?founder=1&accessissuer=1",
+    status: "requires-account",
+    icon: Database,
+  },
+  {
+    title: "Certificate issuer queue",
+    detail: "Review Academy certificate claims and the protected Xaman delivery lifecycle.",
+    href: "/?founder=1&issuer=1",
+    status: "requires-account",
+    icon: BadgeCheck,
+  },
+  {
+    title: "Founder smoke test",
+    detail: "Run the final guided page and transaction checks before a public demo.",
+    href: "/?founder=1&tab=smoketest",
+    status: "ready",
     icon: Rocket,
   },
-  {
-    id: "mainnet",
-    title: "Mainnet Readiness",
-    status: "Next",
-    text: "Bereid veilige mainnet acties voor via Xaman, backend payloads en duidelijke user confirmations.",
-    icon: Globe2,
-  },
-  {
-    id: "metrics",
-    title: "User Metrics",
-    status: "2606",
-    text: "Track daily check-ins, active users, source tag 2606 activity en demo conversion signals.",
-    icon: Users,
-  },
-  {
-    id: "pitch",
-    title: "Pitch Deck",
-    status: "Deck",
-    text: "Vertaal de terminal naar probleem, oplossing, doelgroep, XRPL waarde, traction en roadmap.",
-    icon: Presentation,
-  },
-  {
-    id: "qa",
-    title: "QA / Bug Fix",
-    status: "Safety",
-    text: "Check Vercel build, imports, routes, responsive layout, wallet warnings en broken states.",
-    icon: ShieldCheck,
-  },
-  {
-    id: "release",
-    title: "Release Plan",
-    status: "Launch",
-    text: "Plan weekly builds, social posts, feature drops, demo updates en community feedback loops.",
-    icon: CalendarCheck,
-  },
-];
-
-const checklist: ChecklistItem[] = [
-  {
-    title: "Vercel Build Green",
-    status: "Required",
-    text: "Geen unused imports, geen missing files, correcte named exports en case-sensitive paths.",
-  },
-  {
-    title: "Demo Route Stable",
-    status: "Required",
-    text: "Login, dashboard, Daily Check-In, Source Tag en module navigation moeten foutloos werken.",
-  },
-  {
-    title: "Source Tag Story",
-    status: "2606",
-    text: "Maak duidelijk waarom source tag 2606 belangrijk is voor Make Waves active user tracking.",
-  },
-  {
-    title: "Wallet Safety Visible",
-    status: "Safety",
-    text: "No seed phrase, no private key en Xaman confirmation later moeten overal duidelijk blijven.",
-  },
-  {
-    title: "Pitch Deck Ready",
-    status: "Deck",
-    text: "Maak slides met probleem, oplossing, demo, traction, mainnet path, roadmap en ask.",
-  },
-  {
-    title: "Two Minute Script",
-    status: "Demo",
-    text: "Schrijf een korte demo voice-over zodat de pitch strak en professioneel klinkt.",
-  },
-];
-
-const milestones: Milestone[] = [
-  {
-    title: "MVP Shell",
-    date: "Now",
-    status: "Built",
-    text: "Complete clickable frontend with dashboard, modules, XP, profile, intel and marketplace.",
-  },
-  {
-    title: "Source Tag Proof",
-    date: "Next",
-    status: "2606",
-    text: "Connect active user flow to source tag 2606 and explain the metric clearly.",
-  },
-  {
-    title: "Xaman Payloads",
-    date: "Backend",
-    status: "Build",
-    text: "Move from debug mode to safe backend-generated Xaman payloads.",
-  },
-  {
-    title: "Live Demo",
-    date: "Pitch",
-    status: "Prepare",
-    text: "Record or present a clean 2 minute walkthrough of the terminal.",
-  },
-];
-
-const rules: LaunchRule[] = [
-  {
-    title: "Safety Before Hype",
-    status: "Rule",
-    text: "Geen beloftes over winst, prijs of gegarandeerde uitkomsten. Focus op utility.",
-    icon: ShieldCheck,
-  },
-  {
-    title: "Show Working UI",
-    status: "Demo",
-    text: "Laat de terminal klikken en voelen als een echt product, niet alleen als idee.",
-    icon: Terminal,
-  },
-  {
-    title: "Keep Build Green",
-    status: "Dev",
-    text: "Elke nieuwe module moet Vercel groen houden met correcte imports en exports.",
-    icon: GitBranch,
-  },
-  {
-    title: "Explain 2606",
-    status: "Make Waves",
-    text: "Source tag 2606 moet simpel worden uitgelegd als tracking laag voor activiteit.",
-    icon: Waves,
-  },
-];
-
-const roadmap = [
-  "Launch Control koppelen aan App.tsx",
-  "Dashboard samenvatting uitbreiden",
-  "2 minuten demo script schrijven",
-  "Pitch deck structuur maken",
-  "Xaman backend plan maken",
-  "Source tag 2606 mainnet proof bouwen",
-  "Active user metrics opslaan",
-  "Final demo polish doen",
 ];
 
 export function LaunchControlTab() {
-  const [selectedArea, setSelectedArea] = useState<LaunchArea>(launchAreas[0]);
-  const [selectedMilestone, setSelectedMilestone] = useState<Milestone>(
-    milestones[0]
-  );
+  const { signedIn, loading: authLoading, user } = useOttAuthSession();
+  const [checks, setChecks] = useState<AuditCheck[]>(() => baseChecks({ signedIn, authLoading }));
+  const [accessReadiness, setAccessReadiness] = useState<AccessPassReadiness | null>(null);
+  const [running, setRunning] = useState(false);
+  const [lastRun, setLastRun] = useState<string>("");
 
-  const SelectedAreaIcon = selectedArea.icon;
+  const updateCheck = useCallback((id: string, patch: Partial<AuditCheck>) => {
+    setChecks((current) => current.map((check) => check.id === id ? { ...check, ...patch } : check));
+  }, []);
+
+  const runAudit = useCallback(async () => {
+    if (authLoading) return;
+
+    setRunning(true);
+    setChecks(baseChecks({ signedIn, authLoading }));
+    setAccessReadiness(null);
+
+    const legalPromise = Promise.all(
+      PUBLIC_FILES.map(async (path) => {
+        const response = await fetch(path, { cache: "no-store" });
+        return { path, ok: response.ok };
+      }),
+    );
+
+    const newsPromise = fetchXrplIntelligence({ limit: 5 });
+
+    const supportPromise = fetch("/api/support-payment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      cache: "no-store",
+      body: JSON.stringify({ action: "xrpl.getSupportStats" }),
+    }).then(async (response) => {
+      const data = await response.json() as SupportStatsResponse;
+      if (!response.ok || !data.ok || !data.stats) {
+        throw new Error(data.error || "Support statistics endpoint failed.");
+      }
+      return data;
+    });
+
+    const accessPromise = signedIn ? loadAccessPassReadiness() : Promise.resolve(null);
+    const certificatePromise = signedIn ? loadCertificateIssuerQueue() : Promise.resolve(null);
+
+    const [legalResult, newsResult, supportResult, accessResult, certificateResult] = await Promise.allSettled([
+      legalPromise,
+      newsPromise,
+      supportPromise,
+      accessPromise,
+      certificatePromise,
+    ]);
+
+    if (legalResult.status === "fulfilled") {
+      const failed = legalResult.value.filter((item) => !item.ok).map((item) => item.path);
+      updateCheck("legal", {
+        status: failed.length ? "blocked" : "pass",
+        detail: failed.length
+          ? `Missing or unavailable: ${failed.join(", ")}.`
+          : "Privacy, terms, robots, sitemap and web app manifest are publicly reachable.",
+      });
+    } else {
+      updateCheck("legal", { status: "blocked", detail: "Public legal and discovery files could not be verified." });
+    }
+
+    if (newsResult.status === "fulfilled") {
+      const response = newsResult.value;
+      updateCheck("news", {
+        status: response.items.length === 0 ? "blocked" : response.fallback ? "warning" : "pass",
+        detail: response.items.length === 0
+          ? "The intelligence endpoint responded without items."
+          : `${response.items.length} items returned${response.fallback ? "; fallback sources are active" : "; live source collection is active"}.`,
+      });
+    } else {
+      updateCheck("news", {
+        status: "blocked",
+        detail: newsResult.reason instanceof Error ? newsResult.reason.message : "XRPL Intelligence could not be loaded.",
+      });
+    }
+
+    if (supportResult.status === "fulfilled") {
+      const stats = supportResult.value.stats;
+      updateCheck("support", {
+        status: "pass",
+        detail: `${stats?.paymentCount ?? 0} validated payments, ${stats?.uniqueSupporters ?? 0} supporters, ${stats?.totalXrp ?? "0"} XRP total.`,
+      });
+    } else {
+      updateCheck("support", {
+        status: "blocked",
+        detail: supportResult.reason instanceof Error ? supportResult.reason.message : "Support statistics could not be loaded.",
+      });
+    }
+
+    if (signedIn) {
+      if (accessResult.status === "fulfilled" && accessResult.value?.readiness) {
+        const readiness = accessResult.value.readiness;
+        setAccessReadiness(readiness);
+        const blocking = readiness.checks.filter((check) => check.blocking && !check.ok);
+        updateCheck("access-pass", {
+          status: readiness.safeForMainnet || readiness.safeToTest ? "pass" : "blocked",
+          detail: readiness.safeForMainnet
+            ? "MAINNET readiness is green after recorded TESTNET validation."
+            : readiness.safeToTest
+              ? "TESTNET readiness is green; MAINNET remains intentionally locked."
+              : blocking.length
+                ? `Blocked: ${blocking.map((check) => check.label).join(", ")}.`
+                : "Access Pass readiness is incomplete.",
+        });
+      } else if (accessResult.status === "rejected") {
+        updateCheck("access-pass", {
+          status: "blocked",
+          detail: getFriendlyOttAuthError(accessResult.reason, "en"),
+        });
+      }
+
+      if (certificateResult.status === "fulfilled" && certificateResult.value) {
+        updateCheck("certificate", {
+          status: "pass",
+          detail: `Protected issuer endpoint responded; ${certificateResult.value.queue?.length ?? 0} certificate claims are in the queue.`,
+        });
+      } else if (certificateResult.status === "rejected") {
+        const reason = certificateResult.reason as { error?: string } | Error;
+        const detail = reason instanceof Error
+          ? reason.message
+          : typeof reason?.error === "string"
+            ? reason.error
+            : "Certificate issuer endpoint could not be verified.";
+        updateCheck("certificate", { status: "blocked", detail });
+      }
+    }
+
+    setLastRun(new Date().toISOString());
+    setRunning(false);
+  }, [authLoading, signedIn, updateCheck]);
+
+  useEffect(() => {
+    void runAudit();
+  }, [runAudit]);
+
+  const summary = useMemo(() => ({
+    pass: checks.filter((check) => check.status === "pass").length,
+    warning: checks.filter((check) => check.status === "warning").length,
+    blocked: checks.filter((check) => check.status === "blocked").length,
+    checking: checks.filter((check) => check.status === "checking").length,
+  }), [checks]);
+
+  const launchReady = summary.blocked === 0 && summary.checking === 0;
 
   return (
-    <div className="p-6 bg-black min-h-screen text-white">
-      <div className="relative overflow-hidden border border-white/10 bg-white/[0.02] p-6 mb-6">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_white,_transparent_35%)]" />
-
-        <div className="relative z-10 grid grid-cols-12 gap-6 items-center">
-          <div className="col-span-12 xl:col-span-8">
-            <div className="flex items-center gap-2 mb-4 text-white/45">
-              <Flag size={17} />
-
-              <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
-                Launch Control
-              </p>
-            </div>
-
-            <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
-              Make The MVP Demo Ready
-            </h2>
-
-            <p className="font-mono text-sm text-white/45 max-w-3xl leading-relaxed">
-              De launch-laag van OTT Terminal. Hier beheer je demo readiness,
-              Vercel build health, source tag 2606 proof, pitch deck, active
-              users, Xaman roadmap en final polish.
-            </p>
-          </div>
-
-          <div className="col-span-12 xl:col-span-4 grid grid-cols-2 gap-3">
-            <StatBox icon={Gauge} label="Build" value="Green" />
-            <StatBox icon={Waves} label="Source Tag" value="2606" />
-            <StatBox icon={Trophy} label="Challenge" value="Make Waves" />
-            <StatBox icon={Zap} label="Demo" value="2 Min" />
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-12 xl:col-span-4 space-y-4">
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Layers size={18} className="text-white/60" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Launch Areas
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {launchAreas.map((area) => (
-                <AreaButton
-                  key={area.id}
-                  area={area}
-                  active={selectedArea.id === area.id}
-                  onClick={() => setSelectedArea(area)}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="col-span-12 xl:col-span-5 space-y-4">
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
-                  Selected Launch Area
-                </p>
-
-                <h3 className="font-orbitron text-xl font-black uppercase">
-                  {selectedArea.title}
-                </h3>
+    <div className="min-h-screen bg-white text-slate-950">
+      <section className="border-b border-slate-200 bg-[radial-gradient(circle_at_90%_0%,rgba(56,152,232,0.14),transparent_34%),radial-gradient(circle_at_0%_100%,rgba(200,56,136,0.12),transparent_34%),#fff]">
+        <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-16">
+          <div className="flex flex-col gap-8 xl:flex-row xl:items-start xl:justify-between">
+            <div className="max-w-3xl">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-blue-700">
+                <Activity size={17} /> Founder Launch Control
               </div>
-
-              <SelectedAreaIcon size={22} className="text-white/60" />
-            </div>
-
-            <p className="font-mono text-sm text-white/45 leading-relaxed mb-5">
-              {selectedArea.text}
-            </p>
-
-            <MiniStatus label="Status" value={selectedArea.status} />
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
-                  Demo Checklist
-                </p>
-
-                <h3 className="font-orbitron text-xl font-black uppercase">
-                  Ready To Present
-                </h3>
+              <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
+                Live readiness, not a static checklist.
+              </h1>
+              <p className="mt-5 text-base leading-7 text-slate-600">
+                This page checks the deployed public shell, live server routes and protected issuer flows. Wallet signatures and Google OAuth remain deliberate manual end-to-end tests.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => void runAudit()}
+                  disabled={running || authLoading}
+                  className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
+                >
+                  {running ? <Loader2 className="animate-spin" size={18} /> : <RefreshCcw size={18} />}
+                  Run full audit
+                </button>
+                <a
+                  href="/?founder=1&tab=smoketest"
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+                >
+                  Open smoke test <ExternalLink size={17} />
+                </a>
               </div>
-
-              <ClipboardCheck size={20} className="text-white/60" />
-            </div>
-
-            <div className="space-y-3">
-              {checklist.map((item) => (
-                <ChecklistRow key={item.title} item={item} />
-              ))}
-            </div>
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Target size={18} className="text-white/60" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Milestone Tracker
+              <p className="mt-4 text-xs text-slate-500">
+                {lastRun
+                  ? `Last audit: ${new Date(lastRun).toLocaleString()} · Account: ${user?.email ?? "not signed in"}`
+                  : "Audit has not completed yet."}
               </p>
             </div>
 
-            <div className="space-y-3">
-              {milestones.map((milestone) => (
-                <MilestoneRow
-                  key={milestone.title}
-                  milestone={milestone}
-                  active={selectedMilestone.title === milestone.title}
-                  onClick={() => setSelectedMilestone(milestone)}
-                />
+            <div className={`w-full rounded-3xl border p-6 xl:max-w-sm ${launchReady ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}>
+              <div className="flex items-center gap-3">
+                {launchReady ? <CheckCircle2 className="text-emerald-700" size={28} /> : <CircleAlert className="text-amber-700" size={28} />}
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Current verdict</p>
+                  <p className="mt-1 text-xl font-semibold">{launchReady ? "Automated checks green" : "Action still required"}</p>
+                </div>
+              </div>
+              <div className="mt-6 grid grid-cols-2 gap-3">
+                <Summary label="Passed" value={summary.pass} />
+                <Summary label="Review" value={summary.warning} />
+                <Summary label="Blocked" value={summary.blocked} />
+                <Summary label="Checking" value={summary.checking} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <main className="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14">
+        <AuditSection title="Public shell" description="Visitor-facing routes, accounts and public files." checks={checks.filter((check) => check.category === "public")} />
+        <AuditSection title="Live services" description="Public server routes and on-ledger reporting." checks={checks.filter((check) => check.category === "services")} />
+        <AuditSection title="Protected delivery" description="Founder-only readiness and NFT issuer endpoints." checks={checks.filter((check) => check.category === "protected")} />
+
+        {accessReadiness && (
+          <section className="mt-10 rounded-3xl border border-slate-200 bg-slate-50 p-6 sm:p-8">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">Access Pass diagnostics</p>
+                <h2 className="mt-2 text-2xl font-semibold">Network: {accessReadiness.network}</h2>
+                <p className="mt-2 text-sm text-slate-600">TESTNET proof recorded: {accessReadiness.testnetValidated ? "yes" : "no"}. MAINNET remains gated by the server.</p>
+              </div>
+              <a href="/?founder=1&accessissuer=1" className="inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-900">Open issuer readiness <ExternalLink size={16} /></a>
+            </div>
+            <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {accessReadiness.checks.map((check) => (
+                <div key={check.id} className={`rounded-2xl border p-4 ${check.ok ? "border-emerald-200 bg-white" : check.blocking ? "border-rose-200 bg-rose-50" : "border-amber-200 bg-amber-50"}`}>
+                  <div className="flex items-start gap-3">
+                    {check.ok ? <CheckCircle2 className="mt-0.5 shrink-0 text-emerald-700" size={18} /> : <CircleAlert className={`mt-0.5 shrink-0 ${check.blocking ? "text-rose-700" : "text-amber-700"}`} size={18} />}
+                    <div>
+                      <p className="text-sm font-semibold">{check.label}</p>
+                      <p className="mt-1 text-xs leading-5 text-slate-600">{check.detail}</p>
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
+          </section>
+        )}
+
+        <section className="mt-10">
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">Manual end-to-end tests</p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight">Human approval is still required here.</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-600">These actions open external account or wallet approval screens, so an automated green badge would be misleading.</p>
           </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <p className="font-orbitron text-2xl font-black uppercase mb-2">
-              {selectedMilestone.title}
-            </p>
-
-            <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-4">
-              {selectedMilestone.date} • {selectedMilestone.status}
-            </p>
-
-            <p className="font-mono text-sm text-white/45 leading-relaxed">
-              {selectedMilestone.text}
-            </p>
+          <div className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {manualTests.map((test) => <ManualTestCard key={test.title} test={test} />)}
           </div>
-        </div>
+        </section>
 
-        <div className="col-span-12 xl:col-span-3 space-y-4">
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <ShieldCheck size={18} className="text-white/60" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Launch Rules
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {rules.map((rule) => (
-                <RuleCard key={rule.title} rule={rule} />
-              ))}
+        <section className="mt-10 rounded-3xl border border-slate-200 bg-white p-6 sm:p-8">
+          <div className="flex items-center gap-3">
+            <Route className="text-blue-700" size={22} />
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Public route contract</p>
+              <h2 className="mt-1 text-xl font-semibold">17 visitor routes</h2>
             </div>
           </div>
-
-          <div className="border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Rocket size={18} className="text-white/60" />
-
-              <p className="font-orbitron text-xs uppercase tracking-widest">
-                Roadmap
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {roadmap.map((item) => (
-                <RoadmapLine key={item} label={item} />
-              ))}
-            </div>
+          <div className="mt-6 flex flex-wrap gap-2">
+            {PUBLIC_ROUTE_IDS.map((routeId) => (
+              <a key={routeId} href={`/?tab=${routeId}`} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800">
+                {routeId}
+              </a>
+            ))}
           </div>
-        </div>
+        </section>
+      </main>
+    </div>
+  );
+}
 
-        <div className="col-span-12 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <FeatureBox icon={Activity} title="Metrics" text="Active users" />
-          <FeatureBox icon={Code2} title="Build" text="Vercel green" />
-          <FeatureBox icon={BadgeCheck} title="Proof" text="2606 activity" />
-          <FeatureBox icon={Wallet} title="Xaman" text="Backend later" />
-        </div>
+function AuditSection({ title, description, checks }: { title: string; description: string; checks: AuditCheck[] }) {
+  return (
+    <section className="mt-10 first:mt-0">
+      <div>
+        <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
+        <p className="mt-2 text-sm text-slate-600">{description}</p>
       </div>
-    </div>
-  );
-}
-
-function StatBox({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: ElementType;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="border border-white/10 bg-black/60 p-4">
-      <Icon size={18} className="text-white/60 mb-3" />
-
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
-        {label}
-      </p>
-
-      <p className="font-orbitron text-sm font-black uppercase">{value}</p>
-    </div>
-  );
-}
-
-function AreaButton({
-  area,
-  active,
-  onClick,
-}: {
-  area: LaunchArea;
-  active: boolean;
-  onClick: () => void;
-}) {
-  const Icon = area.icon;
-
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full border p-4 text-left transition-all ${
-        active
-          ? "border-white/30 bg-white/[0.08]"
-          : "border-white/10 bg-black hover:bg-white/[0.03]"
-      }`}
-    >
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Icon size={16} className="text-white/60" />
-
-          <p className="font-orbitron text-xs font-bold uppercase">
-            {area.title}
-          </p>
-        </div>
-
-        <p className="font-mono text-[10px] text-white/35 uppercase">
-          {area.status}
-        </p>
+      <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {checks.map((check) => <AuditCard key={check.id} check={check} />)}
       </div>
-    </button>
+    </section>
   );
 }
 
-function ChecklistRow({ item }: { item: ChecklistItem }) {
-  return (
-    <div className="border border-white/10 bg-black p-4">
-      <div className="flex items-center justify-between gap-4 mb-2">
-        <p className="font-orbitron text-sm font-bold uppercase">
-          {item.title}
-        </p>
+function AuditCard({ check }: { check: AuditCheck }) {
+  const Icon = check.icon;
+  const status = statusStyle(check.status);
+  const StatusIcon = status.icon;
 
-        <p className="font-mono text-[10px] text-white/45 uppercase">
-          {item.status}
-        </p>
+  return (
+    <article className={`rounded-3xl border p-5 ${status.card}`}>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-800"><Icon size={21} /></div>
+        <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${status.badge}`}><StatusIcon className={check.status === "checking" ? "animate-spin" : ""} size={14} />{status.label}</span>
       </div>
-
-      <p className="font-mono text-[10px] text-white/40 leading-relaxed">
-        {item.text}
-      </p>
-    </div>
+      <h3 className="mt-5 text-lg font-semibold">{check.title}</h3>
+      <p className="mt-2 text-sm leading-6 text-slate-600">{check.detail}</p>
+    </article>
   );
 }
 
-function MilestoneRow({
-  milestone,
-  active,
-  onClick,
-}: {
-  milestone: Milestone;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full border p-4 text-left transition-all ${
-        active
-          ? "border-white/30 bg-white/[0.08]"
-          : "border-white/10 bg-black hover:bg-white/[0.03]"
-      }`}
-    >
-      <div className="flex items-center justify-between gap-4 mb-2">
-        <p className="font-orbitron text-sm font-bold uppercase">
-          {milestone.title}
-        </p>
+function ManualTestCard({ test }: { test: ManualTest }) {
+  const Icon = test.icon;
+  const label = test.status === "ready" ? "Open" : test.status === "requires-account" ? "Account" : "Wallet";
 
-        <p className="font-mono text-[10px] text-white/45 uppercase">
-          {milestone.status}
-        </p>
+  return (
+    <a href={test.href} className="group rounded-3xl border border-slate-200 bg-white p-5 hover:border-blue-300 hover:shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-white"><Icon size={21} /></div>
+        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{label}</span>
       </div>
-
-      <p className="font-mono text-[10px] text-white/35 uppercase">
-        {milestone.date}
-      </p>
-    </button>
+      <h3 className="mt-5 font-semibold group-hover:text-blue-800">{test.title}</h3>
+      <p className="mt-2 text-sm leading-6 text-slate-600">{test.detail}</p>
+      <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-blue-700">Open test <ExternalLink size={15} /></div>
+    </a>
   );
 }
 
-function MiniStatus({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="border border-white/10 bg-black p-4">
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
-        {label}
-      </p>
-
-      <p className="font-orbitron text-sm font-black uppercase">{value}</p>
-    </div>
-  );
+function Summary({ label, value }: { label: string; value: number }) {
+  return <div className="rounded-2xl border border-black/5 bg-white/70 p-4"><p className="text-xs text-slate-500">{label}</p><p className="mt-1 text-2xl font-semibold">{value}</p></div>;
 }
 
-function RuleCard({ rule }: { rule: LaunchRule }) {
-  const Icon = rule.icon;
-
-  return (
-    <div className="border border-white/10 bg-black p-4">
-      <div className="flex items-start justify-between mb-3">
-        <Icon size={17} className="text-white/60" />
-
-        <p className="font-mono text-[10px] text-white/30 uppercase">
-          {rule.status}
-        </p>
-      </div>
-
-      <p className="font-orbitron text-xs font-bold uppercase mb-2">
-        {rule.title}
-      </p>
-
-      <p className="font-mono text-[10px] text-white/40 leading-relaxed">
-        {rule.text}
-      </p>
-    </div>
-  );
-}
-
-function RoadmapLine({ label }: { label: string }) {
-  return (
-    <div className="border border-white/10 bg-black p-3 flex items-center gap-2">
-      <CheckCircle2 size={14} className="text-white/60" />
-
-      <p className="font-mono text-xs text-white/50">{label}</p>
-    </div>
-  );
-}
-
-function FeatureBox({
-  icon: Icon,
-  title,
-  text,
-}: {
-  icon: ElementType;
-  title: string;
-  text: string;
-}) {
-  return (
-    <div className="border border-white/10 bg-white/[0.02] p-5">
-      <Icon size={19} className="text-white/60 mb-4" />
-
-      <p className="font-orbitron text-sm font-bold uppercase mb-2">{title}</p>
-
-      <p className="font-mono text-xs text-white/40">{text}</p>
-    </div>
-  );
+function statusStyle(status: AuditStatus): { label: string; card: string; badge: string; icon: ElementType } {
+  if (status === "pass") return { label: "Pass", card: "border-emerald-200 bg-emerald-50/40", badge: "bg-emerald-100 text-emerald-800", icon: CheckCircle2 };
+  if (status === "warning") return { label: "Manual review", card: "border-amber-200 bg-amber-50/40", badge: "bg-amber-100 text-amber-800", icon: CircleAlert };
+  if (status === "blocked") return { label: "Blocked", card: "border-rose-200 bg-rose-50/50", badge: "bg-rose-100 text-rose-800", icon: CircleX };
+  return { label: "Checking", card: "border-slate-200 bg-slate-50", badge: "bg-slate-200 text-slate-700", icon: Loader2 };
 }
