@@ -1,1 +1,1 @@
-Run the complete research upload integration and component cleanup.
+Retry the complete research upload integration now that the workflow is registered.
