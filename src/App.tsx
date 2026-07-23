@@ -290,7 +290,6 @@ function getFounderMenuGroups(language: TerminalLanguage): MenuGroup[] {
         { id: "rewardpolicy", label: isEnglish ? "Reward policy" : "Beloningsbeleid" },
         { id: "ai", label: "AI Hub" },
         { id: "defi", label: "DeFi" },
-        { id: "ottintelligence", label: "OTT Intelligence" },
       ],
     },
   ];
