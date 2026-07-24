@@ -29,6 +29,9 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Prepare evidence directory
+        run: mkdir -p artifacts/hardening-patch
+
       - name: Regenerate dependency lockfile
         run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
 
@@ -39,12 +42,16 @@ jobs:
         run: npm ci --no-audit --no-fund
 
       - name: Validate routes, TypeScript and production build
-        run: npm run quality
+        id: quality
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run quality 2>&1 | tee artifacts/hardening-patch/quality.log
 
       - name: Record changed files
         if: always()
         run: |
-          mkdir -p artifacts/hardening-patch
           git diff --name-only > artifacts/hardening-patch/changed-files.txt
           cp package-lock.json artifacts/hardening-patch/package-lock.json
           while IFS= read -r file; do
@@ -53,6 +60,7 @@ jobs:
               cp "$file" "artifacts/hardening-patch/$file"
             fi
           done < artifacts/hardening-patch/changed-files.txt
+          echo "quality_outcome=${{ steps.quality.outcome }}" > artifacts/hardening-patch/status.txt
 
       - name: Upload validated hardening patch
         if: always()
@@ -62,3 +70,7 @@ jobs:
           path: artifacts/hardening-patch
           if-no-files-found: error
           retention-days: 7
+
+      - name: Enforce quality success
+        if: always() && steps.quality.outcome != 'success'
+        run: exit 1
