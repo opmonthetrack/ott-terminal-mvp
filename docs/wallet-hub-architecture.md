@@ -19,6 +19,15 @@ An XRPL account is the public ledger identity. A wallet is one possible signing 
 - MetaMask XRPL Snap
 - Ledger hardware transport
 
+## Dependency boundary
+
+The first provider-neutral build pins the official packages through `package.json` and the committed npm lockfile:
+
+- `@crossmarkio/sdk` — browser-extension sign-in and transaction approval
+- `@gemwallet/api` — installation, address and network provider methods
+
+WalletConnect is intentionally not installed until OTT has a Reown project ID and a controlled XRPL namespace test. MetaMask Snap and Ledger are also kept out of the production bundle until their isolated connector review is complete.
+
 ## Wallet profile
 
 The common profile reads validated public XRPL data:
