@@ -1,0 +1,53 @@
+name: Apply release hardening
+
+on:
+  push:
+    branches:
+      - agent/full-release-hardening-20260724
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  harden:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout hardening branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/full-release-hardening-20260724
+          fetch-depth: 0
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Regenerate dependency lockfile
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+
+      - name: Apply controlled source migration
+        run: node scripts/apply-release-hardening.mjs
+
+      - name: Prove clean installation
+        run: npm ci --no-audit --no-fund
+
+      - name: Validate routes, TypeScript and production build
+        run: npm run quality
+
+      - name: Commit validated hardening changes
+        run: |
+          if git diff --quiet; then
+            echo "No hardening changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json src .github/workflows/platform-quality.yml
+          git commit -m "Apply release accessibility and language hardening [skip ci]"
+          git push origin HEAD:agent/full-release-hardening-20260724
