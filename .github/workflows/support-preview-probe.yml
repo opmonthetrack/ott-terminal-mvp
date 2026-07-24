@@ -1,0 +1,94 @@
+name: Support preview probe
+
+on:
+  push:
+    branches:
+      - agent/xrpl-wallet-hub-20260724
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      SUPPORT_API: https://ott-terminal-mvp-git-agent-xrpl-wallet-hub-20260724-onthetrack.vercel.app/api/support-payment
+    steps:
+      - name: Wait for latest Vercel preview API
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/support-preview-probe
+          for attempt in {1..60}; do
+            code=$(curl -sS -o artifacts/support-preview-probe/stats.json -w '%{http_code}' \
+              -X POST "$SUPPORT_API" \
+              -H 'Content-Type: application/json' \
+              --data '{"action":"xrpl.getSupportStats"}' || true)
+            if [ "$code" = "200" ]; then
+              exit 0
+            fi
+            echo "Preview API attempt $attempt returned HTTP $code"
+            sleep 5
+          done
+          cat artifacts/support-preview-probe/stats.json || true
+          exit 1
+
+      - name: Validate stats contract
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const data = JSON.parse(fs.readFileSync('artifacts/support-preview-probe/stats.json', 'utf8'));
+          if (data.ok !== true) throw new Error(`Stats response is not ok: ${JSON.stringify(data)}`);
+          if (!/^r[1-9A-HJ-NP-Za-km-z]{25,34}$/.test(data.supportWallet || '')) throw new Error('Server support wallet is missing or invalid.');
+          if (data.sourceTag !== 2606170002) throw new Error('Unexpected Make Waves SourceTag.');
+          if (typeof data.stats?.scanComplete !== 'boolean') throw new Error('scanComplete disclosure is missing.');
+          if (data.stats?.scanLimit !== 1000) throw new Error('Unexpected support scan limit.');
+          NODE
+
+      - name: Create unsigned 0.589 XRP Xaman request
+        shell: bash
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o artifacts/support-preview-probe/create-0589.json -w '%{http_code}' \
+            -X POST "$SUPPORT_API" \
+            -H 'Content-Type: application/json' \
+            --data '{"action":"xaman.createSupportPaymentPayload","amountXrp":"0.589","supporterName":"","publicMessage":"","publicConsent":false}')
+          test "$code" = "200"
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const stats = JSON.parse(fs.readFileSync('artifacts/support-preview-probe/stats.json', 'utf8'));
+          const data = JSON.parse(fs.readFileSync('artifacts/support-preview-probe/create-0589.json', 'utf8'));
+          if (data.ok !== true) throw new Error(`Create response is not ok: ${JSON.stringify(data)}`);
+          if (data.support?.amountXrp !== '0.589') throw new Error('Wrong XRP amount.');
+          if (data.support?.amountDrops !== '589000') throw new Error('Wrong drops amount.');
+          if (data.support?.destinationWallet !== stats.supportWallet) throw new Error('Visible/server destination mismatch.');
+          if (data.sourceTag !== 2606170002) throw new Error('Wrong SourceTag.');
+          const next = data.payload?.next?.always || data.payload?.next?.no_push_msg_received;
+          if (typeof next !== 'string' || !next.startsWith('http')) throw new Error('Xaman signing URL is missing.');
+          NODE
+
+      - name: Reject unsupported amount
+        shell: bash
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o artifacts/support-preview-probe/reject-100.json -w '%{http_code}' \
+            -X POST "$SUPPORT_API" \
+            -H 'Content-Type: application/json' \
+            --data '{"action":"xaman.createSupportPaymentPayload","amountXrp":"1.00"}')
+          test "$code" = "400"
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const data = JSON.parse(fs.readFileSync('artifacts/support-preview-probe/reject-100.json', 'utf8'));
+          if (data.ok !== false || !String(data.error || '').includes('Unsupported')) throw new Error('Unsupported amount was not rejected correctly.');
+          NODE
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ott-support-preview-probe
+          path: artifacts/support-preview-probe
+          if-no-files-found: error
+          retention-days: 7
