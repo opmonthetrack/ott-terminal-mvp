@@ -36,7 +36,9 @@ jobs:
         run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
 
       - name: Apply controlled source migration
-        run: node scripts/apply-release-hardening.mjs
+        run: |
+          node scripts/apply-release-hardening.mjs
+          node scripts/fix-release-hardening-output.mjs
 
       - name: Prove clean installation
         run: npm ci --no-audit --no-fund
@@ -69,6 +71,7 @@ jobs:
           name: validated-release-hardening-patch
           path: artifacts/hardening-patch
           if-no-files-found: error
+          include-hidden-files: true
           retention-days: 7
 
       - name: Enforce quality success
