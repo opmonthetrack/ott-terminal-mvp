@@ -72,6 +72,7 @@ const SEARCH_FOCUSES = new Set([
   "market-data",
   "general",
 ]);
+const LINKED_SOURCE_ERROR = "Unlink this web source from every score category and save the review before changing its status or deleting it.";
 
 function queryValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] ?? "" : value ?? "";
@@ -89,6 +90,14 @@ function bearer(req: RequestLike) {
 
 function stringValue(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error
+    ? error.message
+    : typeof error === "object" && error !== null && "message" in error
+      ? String((error as { message?: unknown }).message ?? "")
+      : String(error ?? "");
 }
 
 function makeAdmin() {
@@ -119,12 +128,34 @@ async function founderContext(req: RequestLike) {
 }
 
 function setupError(error: unknown) {
-  const message = error instanceof Error
-    ? error.message
-    : typeof error === "object" && error !== null && "message" in error
-      ? String((error as { message?: unknown }).message ?? "")
-      : String(error ?? "");
-  return /token_research_sources|source_ids|schema cache|does not exist/i.test(message);
+  return /token_research_sources|source_ids|schema cache|does not exist/i.test(errorMessage(error));
+}
+
+function linkedSourceError(error: unknown) {
+  return /OTT_RESEARCH_SOURCE_LINKED|unlink this web source/i.test(errorMessage(error));
+}
+
+function reviewValidationError(
+  reviewStatus: ReviewStatus,
+  authorityLevel: AuthorityLevel,
+  summary: string,
+) {
+  if (reviewStatus !== "candidate" && summary.length < 20) {
+    return "A reviewed source needs a concrete founder summary of at least 20 characters.";
+  }
+  if (reviewStatus === "verified" && authorityLevel === "unverified") {
+    return "A verified source must have an official, primary or secondary authority level.";
+  }
+  return "";
+}
+
+async function linkedScoreCategories(admin: AdminClient, sourceId: string) {
+  const { data, error } = await admin
+    .from("token_research_score_items")
+    .select("category_id")
+    .contains("source_ids", [sourceId]);
+  if (error) throw error;
+  return (data ?? []).map((row) => String((row as Record<string, unknown>).category_id));
 }
 
 function canonicalizeUrl(raw: string) {
@@ -310,6 +341,8 @@ export default async function researchEvidenceScoutHandler(req: RequestLike, res
       if (!SOURCE_KINDS.has(sourceKind)) return res.status(400).json({ ok: false, error: "Invalid source kind." });
       if (!AUTHORITY_LEVELS.has(authorityLevel)) return res.status(400).json({ ok: false, error: "Invalid authority level." });
       if (!REVIEW_STATUSES.has(reviewStatus)) return res.status(400).json({ ok: false, error: "Invalid review status." });
+      const validationError = reviewValidationError(reviewStatus, authorityLevel, summary);
+      if (validationError) return res.status(400).json({ ok: false, error: validationError });
       let canonicalUrl: string;
       try {
         canonicalUrl = canonicalizeUrl(rawUrl);
@@ -352,6 +385,11 @@ export default async function researchEvidenceScoutHandler(req: RequestLike, res
       if (!SOURCE_KINDS.has(sourceKind) || !AUTHORITY_LEVELS.has(authorityLevel) || !REVIEW_STATUSES.has(reviewStatus)) {
         return res.status(400).json({ ok: false, error: "Invalid source review fields." });
       }
+      const validationError = reviewValidationError(reviewStatus, authorityLevel, summary);
+      if (validationError) return res.status(400).json({ ok: false, error: validationError });
+      if (reviewStatus !== "verified" && (await linkedScoreCategories(admin, sourceId)).length > 0) {
+        return res.status(409).json({ ok: false, error: LINKED_SOURCE_ERROR });
+      }
       const reviewedAt = reviewStatus === "candidate" ? null : new Date().toISOString();
       const { data, error } = await admin
         .from("token_research_sources")
@@ -374,6 +412,9 @@ export default async function researchEvidenceScoutHandler(req: RequestLike, res
     if (action === "delete") {
       const sourceId = stringValue(req.body?.sourceId);
       if (!UUID.test(sourceId)) return res.status(400).json({ ok: false, error: "Invalid source ID." });
+      if ((await linkedScoreCategories(admin, sourceId)).length > 0) {
+        return res.status(409).json({ ok: false, error: LINKED_SOURCE_ERROR });
+      }
       const { error } = await admin.from("token_research_sources").delete().eq("id", sourceId);
       if (error) throw error;
       return res.status(200).json({ ok: true });
@@ -382,6 +423,7 @@ export default async function researchEvidenceScoutHandler(req: RequestLike, res
     return res.status(400).json({ ok: false, error: "Unknown evidence-scout action." });
   } catch (error) {
     if (setupError(error)) return res.status(200).json({ ok: true, setupRequired: true, sources: [] });
-    return res.status(500).json({ ok: false, error: error instanceof Error ? error.message : "Evidence scout action failed." });
+    if (linkedSourceError(error)) return res.status(409).json({ ok: false, error: LINKED_SOURCE_ERROR });
+    return res.status(500).json({ ok: false, error: errorMessage(error) || "Evidence scout action failed." });
   }
 }

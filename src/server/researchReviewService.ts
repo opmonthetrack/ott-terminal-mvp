@@ -131,8 +131,8 @@ function parseScoreItems(value: unknown): ScoreItemInput[] {
       awardedPoints: awarded,
       evidenceStatus: status,
       rationale: stringValue(raw?.rationale).slice(0, 5000),
-      evidenceIds: stringArray(raw?.evidenceIds),
-      sourceIds: stringArray(raw?.sourceIds),
+      evidenceIds: [...new Set(stringArray(raw?.evidenceIds))],
+      sourceIds: [...new Set(stringArray(raw?.sourceIds))],
     };
   });
 }
@@ -296,6 +296,34 @@ async function handleFounderReview(req: RequestLike, res: ResponseLike) {
           return res.status(400).json({
             ok: false,
             error: "Every linked web source must belong to this case and have founder status verified.",
+          });
+        }
+      }
+
+      for (const item of items) {
+        const evidenceCount = item.evidenceIds.length + item.sourceIds.length;
+        if (item.awardedPoints > 0 && evidenceCount === 0) {
+          return res.status(400).json({
+            ok: false,
+            error: `${item.categoryId} cannot receive points without linked evidence.`,
+          });
+        }
+        if (item.evidenceStatus === "missing" && evidenceCount > 0) {
+          return res.status(400).json({
+            ok: false,
+            error: `${item.categoryId} has linked evidence and cannot be marked missing.`,
+          });
+        }
+        if (item.evidenceStatus !== "missing" && evidenceCount === 0) {
+          return res.status(400).json({
+            ok: false,
+            error: `${item.categoryId} needs linked evidence for status ${item.evidenceStatus}.`,
+          });
+        }
+        if ((item.awardedPoints > 0 || item.evidenceStatus !== "missing") && item.rationale.length < 20) {
+          return res.status(400).json({
+            ok: false,
+            error: `${item.categoryId} needs a concrete rationale of at least 20 characters.`,
           });
         }
       }

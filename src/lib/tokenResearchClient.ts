@@ -230,7 +230,12 @@ export async function deleteTokenResearchEvidence(evidence: TokenResearchEvidenc
     .from("research_evidence")
     .delete()
     .eq("id", evidence.id);
-  if (deleteError) throw deleteError;
+  if (deleteError) {
+    if (/OTT_RESEARCH_EVIDENCE_LINKED/i.test(deleteError.message)) {
+      throw new Error("Dit bewijs is gekoppeld aan een founderscore. Ontkoppel het eerst en sla de review opnieuw op.");
+    }
+    throw deleteError;
+  }
 
   const { error: storageError } = await client.storage
     .from("research-evidence")
