@@ -56,8 +56,8 @@ jobs:
           cat artifacts/release-smoke-audit/preview.log
           exit 1
 
-      - name: Run 68-screen UI UX language and WCAG audit
-        run: node scripts/release-smoke-audit.mjs
+      - name: Run precise 68-screen UI UX language and WCAG audit
+        run: node scripts/release-smoke-audit-v2.mjs
         env:
           AUDIT_BASE_URL: http://127.0.0.1:4173
           AUDIT_OUTPUT_DIR: artifacts/release-smoke-audit
