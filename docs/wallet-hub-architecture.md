@@ -42,16 +42,25 @@ The common profile reads validated public XRPL data:
 - checks and deposit preauthorization
 - account domain and flags
 
+## Public wallet testing release gate
+
+A user receives a one-time, account-bound ledger challenge. The challenge binds the authenticated OTT account, selected provider, connected classic address, destination, exact amount, Make Waves SourceTag and memo. A copied transaction hash cannot complete another user's challenge.
+
+The user test reaches 100% only after the transaction is validated with `tesSUCCESS` and every expected ledger field matches. The public provider percentage combines the technical connector gate with unique validated community tests. A Wallet Tester Pass can be reserved only when both the user's test and the provider certification equal 100%.
+
+The percentage is evidence-based and must not be described as AI certainty. AI may summarize verified results, but database constraints and ledger validation determine certification and NFT eligibility.
+
 ## NFT scale
 
 - Genesis Access Pass: #001–#500, preserved as limited founding edition
 - Public Access Pass: up to 100,000 serials
+- Wallet Tester Pass: up to 100,000 serials, gated by a validated wallet integration test
 - XRPL Foundation Certificate: up to 50,000 serials
 - Wallet Foundation Certificate: up to 100,000 serials
 - Wallet Security Certificate: up to 100,000 serials
 - Wallet Operations Certificate: up to 100,000 serials
 
-Academy credentials are non-transferable in the OTT product model and require verified completion plus validated wallet ownership before issuance.
+Academy credentials are non-transferable in the OTT product model and require verified completion plus validated wallet ownership before issuance. A database reservation or button click is not an on-ledger NFT mint; issuance still requires an issuer transaction, validated hash and recorded NFTokenID.
 
 ## Security
 
