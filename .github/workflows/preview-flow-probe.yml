@@ -1,4 +1,4 @@
-name: Preview flow probe
+name: Public flow probe
 
 on:
   pull_request:
@@ -35,17 +35,17 @@ jobs:
           npm install --no-save --no-package-lock playwright
           npx playwright install --with-deps chromium
 
-      - name: Probe ready Vercel preview without signing
+      - name: Probe public production without signing
         run: node scripts/preview-flow-probe.mjs
         env:
-          AUDIT_BASE_URL: https://ott-terminal-mvp-git-agent-full-release-harde-7397fa-onthetrack.vercel.app
-          AUDIT_OUTPUT_DIR: artifacts/preview-flow-probe
+          AUDIT_BASE_URL: https://ott-terminal-mvp.vercel.app
+          AUDIT_OUTPUT_DIR: artifacts/public-flow-probe
 
       - name: Upload probe evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ott-preview-flow-probe
-          path: artifacts/preview-flow-probe
+          name: ott-public-flow-probe
+          path: artifacts/public-flow-probe
           if-no-files-found: error
           retention-days: 14
