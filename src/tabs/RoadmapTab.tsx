@@ -216,7 +216,7 @@ export function RoadmapTab({ walletAddress = "guest", onNavigate }: Props) {
         </div>
       </section>
 
-      <main data-page-region="true" className="mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-16">
+      <div data-page-region="true" className="mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-16">
         <div className="grid gap-8 xl:grid-cols-[1fr_360px]">
           <section>
             <div className="flex items-center justify-between gap-4">
@@ -273,7 +273,7 @@ export function RoadmapTab({ walletAddress = "guest", onNavigate }: Props) {
         </div>
 
         {message && <p role="status" className="mt-8 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">{message}</p>}
-      </main>
+      </div>
     </div>
   );
 }
