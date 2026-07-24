@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/critical-smoke-audit-20260724
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
