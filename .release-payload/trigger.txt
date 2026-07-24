@@ -1,1 +1,1 @@
-Trigger the controlled public wallet testing release.
+Trigger the corrected controlled public wallet testing release.
