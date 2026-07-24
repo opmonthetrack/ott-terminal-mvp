@@ -28,7 +28,11 @@ jobs:
             .release-payload/chunk0304.b64 \
             .release-payload/chunk0506.b64 \
             .release-payload/chunk0708.b64 \
-            | base64 --decode > /tmp/ott-public-wallet-release.tar.gz
+            | tr -d '\r\n' > /tmp/ott-public-wallet-release.b64
+          test "$(wc -c < /tmp/ott-public-wallet-release.b64)" -eq 76860
+          echo "ec861d4c28dc8c1d74608ba4ed0a61aeaea882471b66d791ff273b62ab1f4f0e  /tmp/ott-public-wallet-release.b64" | sha256sum --check
+          base64 --decode /tmp/ott-public-wallet-release.b64 > /tmp/ott-public-wallet-release.tar.gz
+          echo "d2c5f980c41ac4f59780a8dc50ddd088b30f91e51544281f41f005a7c79033e6  /tmp/ott-public-wallet-release.tar.gz" | sha256sum --check
           tar -xzf /tmp/ott-public-wallet-release.tar.gz
 
       - name: Remove temporary release files
