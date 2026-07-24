@@ -5,7 +5,7 @@ import {
   type OttEvidenceStatus,
   type OttResearchCategoryId,
   type OttResearchScoreInput,
-} from "../lib/ottResearchScore";
+} from "../lib/ottResearchScore.js";
 
 type RequestLike = {
   method?: string;
