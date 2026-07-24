@@ -1,0 +1,64 @@
+name: Language control audit
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install reproducibly
+        run: npm ci --no-audit --no-fund
+
+      - name: Validate production build
+        run: npm run quality
+
+      - name: Install Chromium
+        run: |
+          npm install --no-save --no-package-lock playwright
+          npx playwright install --with-deps chromium
+
+      - name: Start production preview
+        run: |
+          mkdir -p artifacts/language-control-audit
+          npm run preview -- --host 127.0.0.1 --port 4173 > artifacts/language-control-audit/preview.log 2>&1 &
+          for attempt in {1..40}; do
+            if curl --fail --silent http://127.0.0.1:4173 >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat artifacts/language-control-audit/preview.log
+          exit 1
+
+      - name: Compare EN and NL visible controls
+        run: node scripts/language-control-audit.mjs
+        env:
+          AUDIT_BASE_URL: http://127.0.0.1:4173
+          AUDIT_OUTPUT_DIR: artifacts/language-control-audit
+
+      - name: Upload language evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ott-language-control-audit
+          path: artifacts/language-control-audit
+          if-no-files-found: error
+          retention-days: 7
