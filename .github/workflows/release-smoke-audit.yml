@@ -1,0 +1,72 @@
+name: Release smoke audit
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+      - "agent/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install reproducibly
+        run: npm ci --no-audit --no-fund
+
+      - name: Build production bundle
+        run: npm run quality
+
+      - name: Install browser audit tools
+        run: |
+          npm install --no-save --no-package-lock playwright @axe-core/playwright
+          npx playwright install --with-deps chromium
+
+      - name: Start production preview
+        run: |
+          mkdir -p artifacts/release-smoke-audit
+          npm run preview -- --host 127.0.0.1 --port 4173 > artifacts/release-smoke-audit/preview.log 2>&1 &
+          for attempt in {1..40}; do
+            if curl --fail --silent http://127.0.0.1:4173 >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat artifacts/release-smoke-audit/preview.log
+          exit 1
+
+      - name: Run 68-screen UI UX language and WCAG audit
+        run: node scripts/release-smoke-audit.mjs
+        env:
+          AUDIT_BASE_URL: http://127.0.0.1:4173
+          AUDIT_OUTPUT_DIR: artifacts/release-smoke-audit
+
+      - name: Upload audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ott-release-smoke-audit
+          path: artifacts/release-smoke-audit
+          if-no-files-found: error
+          retention-days: 14
