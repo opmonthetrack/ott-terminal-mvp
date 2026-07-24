@@ -4,22 +4,23 @@ on:
   push:
     branches:
       - agent/full-release-hardening-20260724
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   harden:
-    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
     steps:
-      - name: Checkout hardening branch
+      - name: Checkout proposed changes
         uses: actions/checkout@v4
         with:
-          ref: agent/full-release-hardening-20260724
           fetch-depth: 0
 
       - name: Use Node.js 22
@@ -40,14 +41,24 @@ jobs:
       - name: Validate routes, TypeScript and production build
         run: npm run quality
 
-      - name: Commit validated hardening changes
+      - name: Record changed files
+        if: always()
         run: |
-          if git diff --quiet; then
-            echo "No hardening changes to commit."
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package-lock.json src .github/workflows/platform-quality.yml
-          git commit -m "Apply release accessibility and language hardening [skip ci]"
-          git push origin HEAD:agent/full-release-hardening-20260724
+          mkdir -p artifacts/hardening-patch
+          git diff --name-only > artifacts/hardening-patch/changed-files.txt
+          cp package-lock.json artifacts/hardening-patch/package-lock.json
+          while IFS= read -r file; do
+            if [ -f "$file" ]; then
+              mkdir -p "artifacts/hardening-patch/$(dirname "$file")"
+              cp "$file" "artifacts/hardening-patch/$file"
+            fi
+          done < artifacts/hardening-patch/changed-files.txt
+
+      - name: Upload validated hardening patch
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validated-release-hardening-patch
+          path: artifacts/hardening-patch
+          if-no-files-found: error
+          retention-days: 7
