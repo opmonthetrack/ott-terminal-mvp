@@ -1,0 +1,32 @@
+name: Export wallet release source
+
+on:
+  pull_request:
+    branches:
+      - agent/full-release-hardening-20260724
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    if: github.head_ref == 'agent/xrpl-wallet-hub-20260724' || github.ref_name == 'agent/xrpl-wallet-hub-20260724'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout wallet release branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/xrpl-wallet-hub-20260724
+          fetch-depth: 0
+
+      - name: Create source archive
+        run: |
+          git archive --format=zip --output=ott-wallet-release-source.zip HEAD
+
+      - name: Upload source archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: ott-wallet-release-source
+          path: ott-wallet-release-source.zip
+          retention-days: 1

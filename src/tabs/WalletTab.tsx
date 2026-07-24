@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ElementType } from "react";
+import { WalletHub } from "../components/WalletHub";
 import {
   Apple,
   Award,
@@ -42,9 +43,17 @@ import {
 } from "../lib/nftIssuanceStore";
 import { useOttAuthSession } from "../lib/useOttAuthSession";
 import { useTerminalLanguage } from "../lib/useTerminalLanguage";
+import type { WalletProviderId, WalletVerificationMethod, XrplNetwork } from "../lib/walletRegistry";
 
 type WalletTabProps = {
   walletAddress?: string;
+  onWalletConnected?: (
+    address: string,
+    providerId: WalletProviderId,
+    network: XrplNetwork,
+    verificationMethod: WalletVerificationMethod,
+  ) => void;
+  onNavigate?: (target: string) => void;
   onDisconnect?: () => void;
 };
 
@@ -149,7 +158,7 @@ function loadWalletSnapshot(walletAddress: string) {
   });
 }
 
-export function WalletTab({ walletAddress = "guest", onDisconnect }: WalletTabProps) {
+export function WalletTab({ walletAddress = "guest", onWalletConnected, onNavigate, onDisconnect }: WalletTabProps) {
   const { language } = useTerminalLanguage();
   const isEnglish = language === "en";
   const { user, loading: authLoading, signedIn } = useOttAuthSession();
@@ -411,6 +420,16 @@ export function WalletTab({ walletAddress = "guest", onDisconnect }: WalletTabPr
           </div>
         </div>
 
+        <div className="mt-8">
+          <WalletHub
+            walletAddress={walletAddress}
+            onWalletConnected={onWalletConnected}
+            onUseXaman={() => onNavigate?.("xaman")}
+            onOpenAcademy={() => onNavigate?.("academy")}
+            onDisconnect={onDisconnect}
+          />
+        </div>
+
         <section className="mt-8 rounded-3xl border border-slate-200 p-6 sm:p-8">
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <div>
@@ -440,7 +459,7 @@ export function WalletTab({ walletAddress = "guest", onDisconnect }: WalletTabPr
             />
             <EditionCard
               title={NFT_ISSUANCE_LIMITS["foundation-certificate"].label}
-              range="#0001–#5000"
+              range="#00001–#50000"
               nextSerial={certificate.nextSerial ? formatNftSerial("foundation-certificate", certificate.nextSerial) : "Full"}
               issued={certificate.issued}
               reserved={certificate.reserved}

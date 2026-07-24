@@ -1,6 +1,12 @@
 import { ottSupabase } from "./ottAuth";
 
-export type NftIssuanceType = "access-pass" | "foundation-certificate";
+export type NftIssuanceType =
+  | "access-pass"
+  | "public-access-pass"
+  | "foundation-certificate"
+  | "wallet-foundation-certificate"
+  | "wallet-security-certificate"
+  | "wallet-operations-certificate";
 export type NftIssuanceStatus = "eligible" | "reserved" | "pending" | "issued" | "failed";
 
 export type NftIssuanceRecord = {
@@ -17,12 +23,68 @@ export type NftIssuanceRecord = {
   updatedAt: string;
 };
 
-export const NFT_ISSUANCE_LIMITS: Record<NftIssuanceType, { max: number; width: number; label: string }> = {
-  "access-pass": { max: 500, width: 3, label: "OTT Access Pass" },
-  "foundation-certificate": { max: 5000, width: 4, label: "OTT XRPL Foundation Certificate" },
+export type NftCollectionConfig = {
+  max: number;
+  width: number;
+  label: string;
+  edition: "genesis" | "public" | "academy";
+  transferable: boolean;
+  purpose: string;
 };
 
-const LOCAL_KEY = "ott-nft-issuance-records-v1";
+export const NFT_ISSUANCE_LIMITS: Record<NftIssuanceType, NftCollectionConfig> = {
+  "access-pass": {
+    max: 500,
+    width: 3,
+    label: "OTT Genesis Access Pass",
+    edition: "genesis",
+    transferable: true,
+    purpose: "Limited founding access edition. Existing #001–#500 scarcity is preserved.",
+  },
+  "public-access-pass": {
+    max: 100_000,
+    width: 6,
+    label: "OTT Public Access Pass",
+    edition: "public",
+    transferable: true,
+    purpose: "Scalable wallet-neutral access for the public XRPL learning platform.",
+  },
+  "foundation-certificate": {
+    max: 50_000,
+    width: 5,
+    label: "OTT XRPL Foundation Certificate",
+    edition: "academy",
+    transferable: false,
+    purpose: "Proof of completion for the broad XRPL foundation curriculum.",
+  },
+  "wallet-foundation-certificate": {
+    max: 100_000,
+    width: 6,
+    label: "OTT Wallet Foundation Certificate",
+    edition: "academy",
+    transferable: false,
+    purpose: "Proof that the learner understands accounts, addresses, reserves and custody models.",
+  },
+  "wallet-security-certificate": {
+    max: 100_000,
+    width: 6,
+    label: "OTT Wallet Security Certificate",
+    edition: "academy",
+    transferable: false,
+    purpose: "Proof of security, recovery, payload review and phishing knowledge.",
+  },
+  "wallet-operations-certificate": {
+    max: 100_000,
+    width: 6,
+    label: "OTT XRPL Wallet Operations Certificate",
+    edition: "academy",
+    transferable: false,
+    purpose: "Proof of Testnet practice with tokens, trustlines, DEX, AMM and NFTs.",
+  },
+};
+
+const LOCAL_KEY = "ott-nft-issuance-records-v2";
+const LEGACY_LOCAL_KEY = "ott-nft-issuance-records-v1";
 
 function readLocal(): NftIssuanceRecord[] {
   if (typeof window === "undefined") {
@@ -30,8 +92,14 @@ function readLocal(): NftIssuanceRecord[] {
   }
 
   try {
-    const parsed = JSON.parse(window.localStorage.getItem(LOCAL_KEY) ?? "[]") as NftIssuanceRecord[];
-    return Array.isArray(parsed) ? parsed : [];
+    const current = window.localStorage.getItem(LOCAL_KEY);
+    const legacy = window.localStorage.getItem(LEGACY_LOCAL_KEY);
+    const parsed = JSON.parse(current ?? legacy ?? "[]") as NftIssuanceRecord[];
+    const records = Array.isArray(parsed) ? parsed : [];
+    if (!current && legacy) {
+      window.localStorage.setItem(LOCAL_KEY, JSON.stringify(records));
+    }
+    return records;
   } catch {
     return [];
   }
@@ -39,7 +107,7 @@ function readLocal(): NftIssuanceRecord[] {
 
 function writeLocal(records: NftIssuanceRecord[]) {
   if (typeof window !== "undefined") {
-    window.localStorage.setItem(LOCAL_KEY, JSON.stringify(records.slice(0, 1000)));
+    window.localStorage.setItem(LOCAL_KEY, JSON.stringify(records.slice(0, 5000)));
   }
 }
 
@@ -146,4 +214,12 @@ export function getNftIssuanceSummary(type: NftIssuanceType) {
     available: Math.max(0, max - issued - reserved),
     nextSerial: getNextLocalSerial(type),
   };
+}
+
+export function getScalableNftCollectionSummary() {
+  return Object.entries(NFT_ISSUANCE_LIMITS).map(([type, config]) => ({
+    type: type as NftIssuanceType,
+    ...config,
+    ...getNftIssuanceSummary(type as NftIssuanceType),
+  }));
 }
