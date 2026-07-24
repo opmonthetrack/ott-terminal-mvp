@@ -50,6 +50,10 @@ The user test reaches 100% only after the transaction is validated with `tesSUCC
 
 The percentage is evidence-based and must not be described as AI certainty. AI may summarize verified results, but database constraints and ledger validation determine certification and NFT eligibility.
 
+## Audit semantics
+
+The shell owns the single document `<main>` landmark. Individual tabs use content containers and sections inside that landmark. The Roadmap tab was corrected after the strict 68-screen audit detected a nested main landmark; its replacement passed the normal route, TypeScript and production-build gate before commit.
+
 ## NFT scale
 
 - Genesis Access Pass: #001–#500, preserved as limited founding edition
