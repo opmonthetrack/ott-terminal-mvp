@@ -1,0 +1,9 @@
+expected_size=76860
+actual_size=67200
+expected_base64_sha256=ec861d4c28dc8c1d74608ba4ed0a61aeaea882471b66d791ff273b62ab1f4f0e
+actual_base64_sha256=b19cdaff2fce9844c8133aab62ef2a2e970fa7783a3eef70adbc961a8941842d
+chunk00_size=9600
+chunk0102_size=19200
+chunk0304_size=19200
+chunk0506_size=19200
+chunk0708_size=0
