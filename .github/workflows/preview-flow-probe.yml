@@ -1,6 +1,9 @@
 name: Preview flow probe
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - agent/full-release-hardening-20260724
