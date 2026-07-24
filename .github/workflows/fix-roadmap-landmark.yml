@@ -1,0 +1,58 @@
+name: Fix Roadmap landmark
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.head_ref == 'agent/xrpl-wallet-hub-20260724' || github.ref_name == 'agent/xrpl-wallet-hub-20260724'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout release branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/xrpl-wallet-hub-20260724
+          fetch-depth: 0
+
+      - name: Replace nested main landmark
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const path = 'src/tabs/RoadmapTab.tsx';
+          const source = fs.readFileSync(path, 'utf8');
+          const opening = '<main data-page-region="true" className="mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-16">';
+          const closing = '      </main>\n    </div>\n  );';
+          if (!source.includes(opening) || !source.includes(closing)) {
+            throw new Error('Roadmap landmark anchors were not found.');
+          }
+          const updated = source
+            .replace(opening, '<div data-page-region="true" className="mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-16">')
+            .replace(closing, '      </div>\n    </div>\n  );');
+          fs.writeFileSync(path, updated);
+          NODE
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Validate correction
+        run: |
+          npm ci --ignore-scripts
+          npm run quality
+
+      - name: Commit correction and remove workflow
+        run: |
+          rm -f .github/workflows/fix-roadmap-landmark.yml
+          git config user.name "ott-quality-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -m "Fix Roadmap main landmark semantics"
+          git push origin HEAD:agent/xrpl-wallet-hub-20260724
