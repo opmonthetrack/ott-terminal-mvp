@@ -386,6 +386,8 @@ export default function App() {
       "XAMAN PAYMENT": "XAMAN-BETALING",
       "Free": "Gratis",
       "Verify Access": "Toegang verifiëren",
+      "Refresh": "Vernieuwen",
+      "Open X Post": "X-bericht openen",
     };
 
     const applyAccessibilityFallbacks = () => {
