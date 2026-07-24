@@ -1,8 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
-import accessPassHandler from "../src/server/accessPassService";
-import premiumAccessHandler from "../src/server/premiumAccessService";
-import researchReviewHandler from "../src/server/researchReviewService";
-import researchEvidenceScoutHandler from "../src/server/researchEvidenceScoutService";
+import accessPassHandler from "../src/server/accessPassService.js";
+import premiumAccessHandler from "../src/server/premiumAccessService.js";
+import researchReviewHandler from "../src/server/researchReviewService.js";
+import researchEvidenceScoutHandler from "../src/server/researchEvidenceScoutService.js";
 
 type RequestLike = {
   method?: string;
