@@ -1,0 +1,46 @@
+name: Live Public Smoke Audit
+
+on:
+  push:
+    branches:
+      - agent/critical-smoke-audit-20260724
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install audit dependencies
+        run: |
+          npm install --no-audit --no-fund
+          npm install --no-save playwright @axe-core/playwright
+          npx playwright install --with-deps chromium
+
+      - name: Audit live production
+        run: node scripts/live-public-smoke-audit.mjs
+        env:
+          AUDIT_BASE_URL: https://ott-terminal-mvp.vercel.app
+          AUDIT_OUTPUT_DIR: artifacts/live-public-smoke-audit
+
+      - name: Upload live evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ott-live-public-smoke-audit
+          path: artifacts/live-public-smoke-audit
+          if-no-files-found: error
+          retention-days: 14
