@@ -1,0 +1,87 @@
+name: Critical Smoke Audit
+
+on:
+  push:
+    branches:
+      - agent/critical-smoke-audit-20260724
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install application dependencies
+        run: npm ci
+
+      - name: Run route audit, TypeScript and production build
+        id: quality
+        continue-on-error: true
+        run: |
+          mkdir -p artifacts/critical-smoke-audit
+          set -o pipefail
+          npm run quality 2>&1 | tee artifacts/critical-smoke-audit/quality.log
+
+      - name: Install browser audit dependencies
+        if: always()
+        run: |
+          npm install --no-save playwright @axe-core/playwright
+          npx playwright install --with-deps chromium
+
+      - name: Start production preview
+        if: always()
+        run: |
+          if [ ! -d dist ]; then
+            npm run build
+          fi
+          npm run preview -- --host 127.0.0.1 --port 4173 > artifacts/critical-smoke-audit/preview.log 2>&1 &
+          for attempt in {1..40}; do
+            if curl --fail --silent http://127.0.0.1:4173 >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat artifacts/critical-smoke-audit/preview.log
+          exit 1
+
+      - name: Run desktop, mobile, language and accessibility smoke audit
+        if: always()
+        continue-on-error: true
+        run: node scripts/critical-smoke-audit.mjs
+        env:
+          AUDIT_BASE_URL: http://127.0.0.1:4173
+
+      - name: Record workflow status
+        if: always()
+        run: |
+          {
+            echo "quality_outcome=${{ steps.quality.outcome }}"
+            echo "commit=${GITHUB_SHA}"
+            echo "branch=${GITHUB_REF_NAME}"
+          } > artifacts/critical-smoke-audit/workflow-status.txt
+
+      - name: Upload audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ott-critical-smoke-audit
+          path: artifacts/critical-smoke-audit
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Fail when core quality checks failed
+        if: always() && steps.quality.outcome != 'success'
+        run: exit 1
