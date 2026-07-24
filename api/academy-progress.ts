@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import {
   ACADEMY_COURSES,
   ACADEMY_NFT_MINIMUM_AVERAGE,
-} from "../src/lib/academyCourseCatalog";
+} from "../src/lib/academyCourseCatalog.js";
 
 const COURSE_VERSION = "1.0";
 const ANSWER_PASS_SCORE = 70;
