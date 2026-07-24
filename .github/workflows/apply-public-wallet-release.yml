@@ -29,8 +29,30 @@ jobs:
             .release-payload/chunk0506.b64 \
             .release-payload/chunk0708.b64 \
             | tr -d '\r\n' > /tmp/ott-public-wallet-release.b64
-          test "$(wc -c < /tmp/ott-public-wallet-release.b64)" -eq 76860
-          echo "ec861d4c28dc8c1d74608ba4ed0a61aeaea882471b66d791ff273b62ab1f4f0e  /tmp/ott-public-wallet-release.b64" | sha256sum --check
+
+          actual_size="$(wc -c < /tmp/ott-public-wallet-release.b64)"
+          actual_hash="$(sha256sum /tmp/ott-public-wallet-release.b64 | cut -d' ' -f1)"
+          {
+            echo "expected_size=76860"
+            echo "actual_size=${actual_size}"
+            echo "expected_base64_sha256=ec861d4c28dc8c1d74608ba4ed0a61aeaea882471b66d791ff273b62ab1f4f0e"
+            echo "actual_base64_sha256=${actual_hash}"
+            echo "chunk00_size=$(tr -d '\r\n' < .release-payload/chunk00.b64 | wc -c)"
+            echo "chunk0102_size=$(tr -d '\r\n' < .release-payload/chunk0102.b64 | wc -c)"
+            echo "chunk0304_size=$(tr -d '\r\n' < .release-payload/chunk0304.b64 | wc -c)"
+            echo "chunk0506_size=$(tr -d '\r\n' < .release-payload/chunk0506.b64 | wc -c)"
+            echo "chunk0708_size=$(tr -d '\r\n' < .release-payload/chunk0708.b64 | wc -c)"
+          } > .release-payload/diagnostics.txt
+
+          if [ "${actual_size}" != "76860" ] || [ "${actual_hash}" != "ec861d4c28dc8c1d74608ba4ed0a61aeaea882471b66d791ff273b62ab1f4f0e" ]; then
+            git config user.name "ott-quality-bot"
+            git config user.email "actions@users.noreply.github.com"
+            git add .release-payload/diagnostics.txt
+            git commit -m "Record public wallet release payload mismatch" || true
+            git push origin HEAD:agent/xrpl-wallet-hub-20260724
+            exit 1
+          fi
+
           base64 --decode /tmp/ott-public-wallet-release.b64 > /tmp/ott-public-wallet-release.tar.gz
           echo "d2c5f980c41ac4f59780a8dc50ddd088b30f91e51544281f41f005a7c79033e6  /tmp/ott-public-wallet-release.tar.gz" | sha256sum --check
           tar -xzf /tmp/ott-public-wallet-release.tar.gz
