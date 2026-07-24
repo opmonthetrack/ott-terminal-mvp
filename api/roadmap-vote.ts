@@ -172,14 +172,12 @@ function getVoteMemo(voteId: string) {
   return `${ROADMAP_VOTE_MEMO_PREFIX} | ${ROADMAP_VOTE_CYCLE} | ${voteId}`;
 }
 
-function getVoteReturnUrl(voteId: string) {
+function getVoteReturnUrl(_voteId: string) {
   return (
     `${OTT_PUBLIC_APP_URL}/?ott_xaman_return=1` +
     `&payload={id}` +
     `&action=roadmap-vote` +
-    `&target=roadmap` +
-    `&vote=${encodeURIComponent(voteId)}` +
-    `&sourceTag=${MAKE_WAVES_SOURCE_TAG}`
+    `&target=roadmap`
   );
 }
 
@@ -251,20 +249,12 @@ async function createXamanVotePayload(body: RequestBody) {
         },
       },
       custom_meta: {
-        identifier: `ott-roadmap-vote-${ROADMAP_VOTE_CYCLE}-${voteId}`,
-        instruction: `Vote for ${option.title}. This sends 1 drop as on-chain proof and creates no governance, token or financial rights.`,
+        identifier: `ott-vote-${voteId}`,
+        instruction: `OTT roadmap vote: ${option.title}`,
         blob: {
-          mode: "ott-roadmap-vote",
-          brand: "XRPL OnTheTrack Terminal",
           actionId: "roadmap-vote",
-          returnTarget: "roadmap",
-          cycle: ROADMAP_VOTE_CYCLE,
           voteId,
-          voteTitle: option.title,
           sourceTag: MAKE_WAVES_SOURCE_TAG,
-          destinationWallet: ROADMAP_VOTE_WALLET,
-          amountDrops: ROADMAP_VOTE_AMOUNT_DROPS,
-          memoText,
         },
       },
     }),

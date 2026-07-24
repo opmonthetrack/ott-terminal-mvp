@@ -327,7 +327,7 @@ export function WalletTab({ walletAddress = "guest", onDisconnect }: WalletTabPr
         </div>
       </section>
 
-      <main className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
+      <div data-page-region="true" className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
         {authStatus && (
           <div className="mb-6 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-950">
             {authStatus}
@@ -467,7 +467,7 @@ export function WalletTab({ walletAddress = "guest", onDisconnect }: WalletTabPr
             text={isEnglish ? "Wallet ownership is proven only for a specific on-chain action." : "Walletbezit wordt alleen bewezen voor een specifieke on-chain actie."}
           />
         </section>
-      </main>
+      </div>
     </div>
   );
 }

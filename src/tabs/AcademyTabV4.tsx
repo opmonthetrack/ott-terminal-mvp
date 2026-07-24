@@ -681,7 +681,7 @@ function AcademyHub(props: HubProps) {
   } = props;
 
   return (
-    <main className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
+    <div data-page-region="true" className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
       <section className="rounded-3xl border border-slate-200 bg-slate-50 p-6 sm:p-8">
         <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
           <div className="max-w-2xl">
@@ -772,7 +772,7 @@ function AcademyHub(props: HubProps) {
           })}
         </div>
       </section>
-    </main>
+    </div>
   );
 }
 
@@ -788,7 +788,7 @@ function AcademyLibrary(props: LibraryProps) {
   const { isEnglish, query, setQuery, courses, onOpenCourse } = props;
 
   return (
-    <main className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
+    <div data-page-region="true" className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
       <div className="max-w-3xl">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
           XRPL Library
@@ -856,7 +856,7 @@ function AcademyLibrary(props: LibraryProps) {
           </div>
         )}
       </div>
-    </main>
+    </div>
   );
 }
 
@@ -1185,7 +1185,7 @@ function CourseView(props: CourseViewProps) {
   }
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-6 sm:px-8 sm:py-10">
+    <div data-page-region="true" className="mx-auto max-w-4xl px-4 py-6 sm:px-8 sm:py-10">
       <button
         type="button"
         onClick={onBack}
@@ -1269,7 +1269,7 @@ function CourseView(props: CourseViewProps) {
           </p>
         )}
       </nav>
-    </main>
+    </div>
   );
 }
 
@@ -1422,7 +1422,7 @@ function CertificateView(props: CertificateProps) {
           : isEnglish ? "Complete requirements" : "Voltooi de voorwaarden";
 
   return (
-    <main className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
+    <div data-page-region="true" className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
       <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
         <section>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
@@ -1518,7 +1518,7 @@ function CertificateView(props: CertificateProps) {
           </div>
         </aside>
       </div>
-    </main>
+    </div>
   );
 }
 

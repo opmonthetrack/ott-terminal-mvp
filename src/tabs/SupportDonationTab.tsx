@@ -167,19 +167,19 @@ export function SupportDonationTab() {
         </div>
       </section>
 
-      <main className="mx-auto grid max-w-7xl gap-6 px-5 py-12 sm:px-8 lg:grid-cols-[1fr_380px] lg:py-16">
+      <div data-page-region="true" className="mx-auto grid max-w-7xl gap-6 px-5 py-12 sm:px-8 lg:grid-cols-[1fr_380px] lg:py-16">
         <section className="rounded-3xl border border-slate-200 p-6 sm:p-8">
           <div className="flex items-start gap-4">
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-pink-50 text-pink-700"><Wallet size={22} /></span>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-pink-700">Xaman payment</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-pink-700">{en ? "Xaman payment" : "Xaman-betaling"}</p>
               <h2 className="mt-2 text-2xl font-semibold">{en ? "Choose your support amount" : "Kies je supportbedrag"}</h2>
             </div>
           </div>
 
           <div className="mt-7 grid gap-3 sm:grid-cols-3">
             {AMOUNTS.map((amount) => (
-              <button key={amount} type="button" onClick={() => setSelectedAmount(amount)} className={`rounded-2xl border px-5 py-5 text-left transition ${selectedAmount === amount ? "border-slate-950 bg-slate-950 text-white shadow-lg" : "border-slate-200 bg-white hover:border-slate-400"}`}>
+              <button key={amount} type="button" aria-pressed={selectedAmount === amount} aria-label={`${amount} XRP`} onClick={() => setSelectedAmount(amount)} className={`rounded-2xl border px-5 py-5 text-left transition ${selectedAmount === amount ? "border-slate-950 bg-slate-950 text-white shadow-lg" : "border-slate-200 bg-white hover:border-slate-400"}`}>
                 <p className="text-2xl font-semibold">{amount}</p>
                 <p className={`mt-1 text-xs ${selectedAmount === amount ? "text-slate-300" : "text-slate-500"}`}>XRP</p>
               </button>
@@ -237,7 +237,7 @@ export function SupportDonationTab() {
             </div>
           </section>
         </aside>
-      </main>
+      </div>
     </div>
   );
 }
