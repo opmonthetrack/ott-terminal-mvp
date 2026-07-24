@@ -4,13 +4,16 @@ on:
   push:
     branches:
       - agent/full-release-hardening-20260724
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
 
 jobs:
   commit-hardened-source:
-    if: github.actor != 'github-actions[bot]'
+    if: github.actor != 'github-actions[bot]' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
