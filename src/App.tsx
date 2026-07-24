@@ -23,6 +23,7 @@ import {
 } from "./lib/xamanMobileSession";
 import { useTerminalLanguage } from "./lib/useTerminalLanguage";
 import type { TerminalLanguage } from "./lib/terminalCopy";
+import type { WalletProviderId, WalletVerificationMethod, XrplNetwork } from "./lib/walletRegistry";
 import {
   clearWalletSession,
   getStoredWalletAddress,
@@ -589,8 +590,13 @@ export default function App() {
     }
   }
 
-  function connectWallet(address: string) {
-    saveWalletSession(address);
+  function connectWallet(
+    address: string,
+    providerId: WalletProviderId = "xaman",
+    network: XrplNetwork = "mainnet",
+    verificationMethod: WalletVerificationMethod = "signed",
+  ) {
+    saveWalletSession({ walletAddress: address, providerId, network, verificationMethod });
     setWalletAddress(address);
     setActiveTab("wallet");
     setMenuOpen(false);
@@ -674,7 +680,14 @@ export default function App() {
             {activeTab === "xaman" && <XamanCenterTab walletAddress={walletAddress} onWalletConnected={connectWallet} />}
             {activeTab === "xrplverify" && <XrplVerifyTab walletAddress={walletAddress} />}
             {activeTab === "network" && <NetworkState />}
-            {activeTab === "wallet" && <WalletTab walletAddress={walletAddress} onDisconnect={disconnectWallet} />}
+            {activeTab === "wallet" && (
+              <WalletTab
+                walletAddress={walletAddress}
+                onWalletConnected={connectWallet}
+                onNavigate={navigateTo}
+                onDisconnect={disconnectWallet}
+              />
+            )}
             {activeTab === "portfolio" && <PortfolioTab walletAddress={walletAddress} />}
             {activeTab === "ecosystem" && <EcosystemTab />}
             {activeTab === "validator" && <ValidatorTab />}
