@@ -378,6 +378,55 @@ export default function App() {
   const accountName = getOttAccountName(user);
 
   useEffect(() => {
+    const dutchFallbacks: Record<string, string> = {
+      "Privacy Policy": "Privacybeleid",
+      "Terms of Use": "Gebruiksvoorwaarden",
+      "OTT COMMAND DASHBOARD": "OTT-DAGOVERZICHT",
+      "DAILY INTELLIGENCE SNAPSHOT": "DAGELIJKSE INTELLIGENCE-MOMENTOPNAME",
+      "XAMAN PAYMENT": "XAMAN-BETALING",
+      "Free": "Gratis",
+      "Verify Access": "Toegang verifiëren",
+    };
+
+    const applyAccessibilityFallbacks = () => {
+      document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
+        "input, textarea, select",
+      ).forEach((control) => {
+        const hasName = control.hasAttribute("aria-label") ||
+          control.hasAttribute("aria-labelledby") ||
+          Boolean(control.id && document.querySelector(`label[for="${CSS.escape(control.id)}"]`)) ||
+          Boolean(control.closest("label"));
+
+        if (!hasName) {
+          const fallback = control.getAttribute("placeholder") ||
+            control.getAttribute("name") ||
+            (language === "en" ? "Input field" : "Invoerveld");
+          control.setAttribute("aria-label", fallback);
+        }
+      });
+
+      if (language !== "nl") return;
+
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      let node = walker.nextNode();
+      while (node) {
+        const value = node.nodeValue ?? "";
+        const trimmed = value.trim();
+        const replacement = dutchFallbacks[trimmed];
+        if (replacement) {
+          node.nodeValue = value.replace(trimmed, replacement);
+        }
+        node = walker.nextNode();
+      }
+    };
+
+    applyAccessibilityFallbacks();
+    const observer = new MutationObserver(applyAccessibilityFallbacks);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [activeTab, language]);
+
+  useEffect(() => {
     const initialTab = activeTab;
     const url = new URL(window.location.href);
 
@@ -556,6 +605,9 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-white text-[#111827] selection:bg-[#2563EB]/15">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-white focus:px-4 focus:py-3 focus:text-slate-950 focus:shadow-lg">
+        {language === "en" ? "Skip to main content" : "Ga naar de hoofdinhoud"}
+      </a>
       <TopNavigation
         activeTab={activeTab}
         accountName={accountName}
@@ -587,7 +639,10 @@ export default function App() {
         />
       )}
 
-      <main className="min-h-[calc(100vh-72px)] bg-white">
+      <main id="main-content" className="min-h-[calc(100vh-72px)] bg-white" tabIndex={-1}>
+        {(["news", "ottintelligence"] as ActiveTab[]).includes(activeTab) && (
+          <h1 className="sr-only">{activeItem?.label ?? "OTT Terminal"}</h1>
+        )}
         {activeTab !== "home" && (
           <div className="border-b border-slate-200 bg-white">
             <div className="mx-auto max-w-7xl px-5 py-4 sm:px-8">
@@ -707,6 +762,7 @@ function TopNavigation({
                 key={item.id}
                 type="button"
                 onClick={() => onNavigate(item.id)}
+                  aria-current={activeTab === item.id ? "page" : undefined}
                 className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                   selected
                     ? "bg-slate-100 text-slate-950"
@@ -721,10 +777,11 @@ function TopNavigation({
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
-          <div className="hidden items-center rounded-lg border border-slate-200 p-1 sm:flex">
+          <div className="flex items-center rounded-lg border border-slate-200 p-1">
             <button
               type="button"
               onClick={() => setLanguage("en")}
+              aria-pressed={language === "en"}
               className={`rounded-md px-2.5 py-1.5 text-[11px] font-semibold ${
                 language === "en" ? "bg-slate-900 text-white" : "text-slate-500"
               }`}
@@ -734,6 +791,7 @@ function TopNavigation({
             <button
               type="button"
               onClick={() => setLanguage("nl")}
+              aria-pressed={language === "nl"}
               className={`rounded-md px-2.5 py-1.5 text-[11px] font-semibold ${
                 language === "nl" ? "bg-slate-900 text-white" : "text-slate-500"
               }`}
@@ -780,6 +838,7 @@ function TopNavigation({
               key={item.id}
               type="button"
               onClick={() => onNavigate(item.id)}
+                  aria-current={activeTab === item.id ? "page" : undefined}
               className={`flex flex-1 flex-col items-center gap-1 rounded-lg py-2 text-[11px] font-medium ${
                 selected ? "bg-slate-100 text-slate-950" : "text-slate-500"
               }`}
@@ -821,18 +880,53 @@ function AllToolsMenu({
 }) {
   const walletConnected = Boolean(walletAddress && walletAddress !== "guest");
 
+  useEffect(() => {
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const dialog = document.getElementById("all-tools-dialog");
+    const focusable = dialog?.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    );
+    focusable?.[0]?.focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab" || !focusable?.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    dialog?.addEventListener("keydown", onKeyDown);
+    return () => {
+      dialog?.removeEventListener("keydown", onKeyDown);
+      previous?.focus();
+    };
+  }, [onClose]);
+
   return (
     <div
+      id="all-tools-dialog"
       className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/30 p-3 backdrop-blur-sm sm:p-6"
       role="dialog"
       aria-modal="true"
+      aria-labelledby="all-tools-title"
     >
-      <button type="button" className="absolute inset-0" onClick={onClose} aria-label="Close menu" />
+      <button type="button" className="absolute inset-0" onClick={onClose} aria-label={language === "en" ? "Close menu" : "Menu sluiten"} />
 
       <div className="relative mx-auto my-3 max-w-5xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl sm:my-8">
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-5 sm:px-7">
           <div>
-            <h2 className="text-xl font-semibold tracking-tight text-slate-950">
+            <h2 id="all-tools-title" className="text-xl font-semibold tracking-tight text-slate-950">
               {language === "en" ? "Explore OTT" : "Ontdek OTT"}
             </h2>
             <p className="mt-1 text-sm text-slate-500">
@@ -861,6 +955,7 @@ function AllToolsMenu({
                     key={item.id}
                     type="button"
                     onClick={() => onNavigate(item.id)}
+                  aria-current={activeTab === item.id ? "page" : undefined}
                     className={`rounded-xl border p-4 text-left transition-colors ${
                       activeTab === item.id
                         ? "border-blue-200 bg-blue-50"
@@ -901,6 +996,7 @@ function AllToolsMenu({
               <button
                 type="button"
                 onClick={() => setLanguage("en")}
+              aria-pressed={language === "en"}
                 className={`rounded-lg px-3 py-2 text-xs font-semibold ${
                   language === "en"
                     ? "bg-slate-900 text-white"
@@ -912,6 +1008,7 @@ function AllToolsMenu({
               <button
                 type="button"
                 onClick={() => setLanguage("nl")}
+              aria-pressed={language === "nl"}
                 className={`rounded-lg px-3 py-2 text-xs font-semibold ${
                   language === "nl"
                     ? "bg-slate-900 text-white"
@@ -1019,7 +1116,7 @@ function RouteLoadingState({ language }: { language: TerminalLanguage }) {
 
 function StatusBanner({ text }: { text: string }) {
   return (
-    <div className="fixed left-1/2 top-24 z-[60] -translate-x-1/2 rounded-lg border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-slate-700 shadow-lg">
+    <div role="status" aria-live="polite" className="fixed left-1/2 top-24 z-[60] -translate-x-1/2 rounded-lg border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-slate-700 shadow-lg">
       {text}
     </div>
   );

@@ -54,3 +54,88 @@ textarea,
 select {
   font: inherit;
 }
+
+
+/* OTT release hardening: accessibility and unified interface */
+:root {
+  --ott-text: #0f172a;
+  --ott-muted: #475569;
+  --ott-subtle: #334155;
+  --ott-focus: #1d4ed8;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  line-height: 1.5;
+}
+
+.font-orbitron,
+.font-mono {
+  font-family: var(--font-sans) !important;
+}
+
+[class*="uppercase"] {
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+
+[class*="text-black/"] ,
+[class*="text-slate-400"],
+[class*="text-slate-500"],
+[class*="text-gray-400"],
+[class*="text-gray-500"] {
+  color: var(--ott-muted) !important;
+}
+
+[class*="bg-black"] [class*="text-black/"],
+[class*="bg-slate-9"] [class*="text-slate-"],
+[class*="bg-[#080808]"] [class*="text-black/"],
+[class*="bg-[#111827]"] [class*="text-slate-"] {
+  color: #e2e8f0 !important;
+}
+
+[class*="text-transparent"] {
+  color: var(--ott-text) !important;
+  -webkit-text-fill-color: var(--ott-text) !important;
+  background-image: none !important;
+}
+
+button,
+[role="button"] {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid var(--ott-focus) !important;
+  outline-offset: 3px !important;
+}
+
+input, textarea, select {
+  min-height: 44px;
+}
+
+.text-\[10px\],
+.text-\[11px\] {
+  font-size: 0.8125rem !important;
+  line-height: 1.35rem !important;
+}
+
+@media (max-width: 640px) {
+  header > div:first-child {
+    gap: 0.5rem;
+  }
+
+  header [aria-pressed] {
+    padding-inline: 0.625rem !important;
+  }
+}

@@ -129,7 +129,7 @@ export function AccessPassIssuerConsole() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-5 py-10 sm:px-8">
+      <div data-page-region="true" className="mx-auto max-w-7xl px-5 py-10 sm:px-8">
         <ReadinessPanel readiness={readiness} loading={loading} />
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -186,7 +186,7 @@ export function AccessPassIssuerConsole() {
             );
           })}
         </section>
-      </main>
+      </div>
     </div>
   );
 }

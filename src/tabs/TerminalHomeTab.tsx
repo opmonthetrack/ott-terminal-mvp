@@ -238,9 +238,42 @@ function WelcomeChoice({
   onContinueGuest: () => void;
   onClose: () => void;
 }) {
+  useEffect(() => {
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const dialog = document.getElementById("welcome-choice-dialog");
+    const focusable = dialog?.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    );
+    focusable?.[0]?.focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab" || !focusable?.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    dialog?.addEventListener("keydown", onKeyDown);
+    return () => {
+      dialog?.removeEventListener("keydown", onKeyDown);
+      previous?.focus();
+    };
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
-      <button type="button" className="absolute inset-0" onClick={onClose} aria-label="Close" />
+    <div id="welcome-choice-dialog" className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="welcome-choice-title">
+      <button type="button" className="absolute inset-0" onClick={onClose} aria-label={isEnglish ? "Close welcome" : "Welkom sluiten"} />
       <section className="relative w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl sm:p-8">
         <button
           type="button"
@@ -257,7 +290,7 @@ function WelcomeChoice({
         <p className="mt-6 text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
           {isEnglish ? "Welcome to OTT" : "Welkom bij OTT"}
         </p>
-        <h2 className="mt-3 text-3xl font-semibold tracking-tight">
+        <h2 id="welcome-choice-title" className="mt-3 text-3xl font-semibold tracking-tight">
           {isEnglish ? "How would you like to begin?" : "Hoe wil je beginnen?"}
         </h2>
         <p className="mt-4 text-sm leading-6 text-slate-600">

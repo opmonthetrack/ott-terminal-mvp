@@ -140,7 +140,7 @@ function TokenResearchView({ isEnglish }: { isEnglish: boolean }) {
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
+    <div data-page-region="true" className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
       <div className="grid gap-8 lg:grid-cols-[0.82fr_1.18fr]">
         <section className="rounded-3xl border border-slate-200 p-6 sm:p-8">
           <div className="flex items-start justify-between gap-4">
@@ -225,7 +225,7 @@ function TokenResearchView({ isEnglish }: { isEnglish: boolean }) {
           <ResearchEmptyState isEnglish={isEnglish} />
         )}
       </div>
-    </main>
+    </div>
   );
 }
 
@@ -381,7 +381,7 @@ function DirectoryView({ isEnglish }: { isEnglish: boolean }) {
   const selected = entries.find((entry) => entry.id === selectedId) ?? entries[0];
 
   return (
-    <main className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
+    <div data-page-region="true" className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
       <div className="max-w-3xl">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
           {isEnglish ? "Learn before visiting" : "Leer vóór doorsturen"}
@@ -439,7 +439,7 @@ function DirectoryView({ isEnglish }: { isEnglish: boolean }) {
 
         {selected && <DirectoryDetail entry={selected} isEnglish={isEnglish} />}
       </div>
-    </main>
+    </div>
   );
 }
 
@@ -539,7 +539,7 @@ function EvidenceView({ isEnglish }: { isEnglish: boolean }) {
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
+    <div data-page-region="true" className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
       <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr]">
         <section className="rounded-3xl border border-slate-200 p-6 sm:p-8">
           <div className="flex items-start justify-between gap-4">
@@ -666,7 +666,7 @@ function EvidenceView({ isEnglish }: { isEnglish: boolean }) {
         <TrustCard icon={Layers} title={isEnglish ? "Version-ready" : "Klaar voor versies"} text={isEnglish ? "Each upload receives a unique path and timestamp for later comparison." : "Elke upload krijgt een uniek pad en tijdstip voor latere vergelijking."} />
         <TrustCard icon={ShieldCheck} title={isEnglish ? "Evidence, not endorsement" : "Bewijs, geen aanbeveling"} text={isEnglish ? "A document records a claim; it does not make that claim true." : "Een document registreert een claim; het maakt die claim niet automatisch waar."} />
       </section>
-    </main>
+    </div>
   );
 }
 

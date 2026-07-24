@@ -102,7 +102,7 @@ export function WalletAcademyTracks({
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8 sm:px-8 sm:py-12">
+    <div data-page-region="true" className="mx-auto max-w-6xl px-4 py-8 sm:px-8 sm:py-12">
       <section className="rounded-3xl border border-slate-200 bg-[radial-gradient(circle_at_90%_0%,rgba(59,130,246,0.12),transparent_35%),#fff] p-6 sm:p-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-3xl">
@@ -308,7 +308,7 @@ export function WalletAcademyTracks({
           </div>
         </nav>
       )}
-    </main>
+    </div>
   );
 }
 

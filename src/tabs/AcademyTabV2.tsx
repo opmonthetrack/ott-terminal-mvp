@@ -466,7 +466,7 @@ export function AcademyTab({ walletAddress = "guest", onNavigate }: AcademyTabPr
       {status && <div className="border-b border-blue-100 bg-blue-50"><div className="mx-auto max-w-6xl px-5 py-3 text-sm text-blue-900 sm:px-8">{status}</div></div>}
 
       {view === "hub" && (
-        <main className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
+        <div data-page-region="true" className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
           <section className="rounded-3xl border border-slate-200 bg-slate-50 p-6 sm:p-8">
             <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
               <div className="max-w-2xl">
@@ -503,11 +503,11 @@ export function AcademyTab({ walletAddress = "guest", onNavigate }: AcademyTabPr
               })}
             </div>
           </section>
-        </main>
+        </div>
       )}
 
       {view === "library" && (
-        <main className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
+        <div data-page-region="true" className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
           <div className="max-w-3xl">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">XRPL Library</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight">{isEnglish ? "Search the Academy encyclopedia." : "Doorzoek de Academy-encyclopedie."}</h2>
@@ -538,11 +538,11 @@ export function AcademyTab({ walletAddress = "guest", onNavigate }: AcademyTabPr
             })}
             {libraryCourses.length === 0 && <p className="rounded-2xl border border-slate-200 p-6 text-sm text-slate-600">{isEnglish ? "No library results found." : "Geen resultaten gevonden in de bibliotheek."}</p>}
           </div>
-        </main>
+        </div>
       )}
 
       {view === "course" && (
-        <main className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
+        <div data-page-region="true" className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
           <button type="button" onClick={() => setView("hub")} className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-950"><ChevronLeft size={17} />{isEnglish ? "Back to courses" : "Terug naar cursussen"}</button>
           <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_320px]">
             <section>
@@ -609,11 +609,11 @@ export function AcademyTab({ walletAddress = "guest", onNavigate }: AcademyTabPr
               </div>
             </aside>
           </div>
-        </main>
+        </div>
       )}
 
       {view === "certificate" && (
-        <main className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
+        <div data-page-region="true" className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
           <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
             <section>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">{isEnglish ? "Final Academy achievement" : "Definitieve Academy-prestatie"}</p>
@@ -632,7 +632,7 @@ export function AcademyTab({ walletAddress = "guest", onNavigate }: AcademyTabPr
             </section>
             <aside className="rounded-3xl border border-slate-200 bg-slate-950 p-7 text-white"><Award size={32} className="text-blue-300" /><p className="mt-8 text-xs font-semibold uppercase tracking-[0.18em] text-blue-300">{isEnglish ? "Certificate edition" : "Certificaat-editie"}</p><p className="mt-3 text-3xl font-semibold">#0001–#5000</p><p className="mt-4 text-sm leading-6 text-slate-300">{isEnglish ? "Reserved · artwork, metadata, final assessment and claim service still need to be completed." : "Gereserveerd · artwork, metadata, eindtoets en claimservice moeten nog worden voltooid."}</p></aside>
           </div>
-        </main>
+        </div>
       )}
     </div>
   );

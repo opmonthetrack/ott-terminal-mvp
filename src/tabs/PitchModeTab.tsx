@@ -206,7 +206,7 @@ export function PitchModeTab({ walletAddress = "guest" }: PitchModeTabProps) {
         </div>
       </section>
 
-      <main className="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14">
+      <div data-page-region="true" className="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14">
         <div className="grid gap-6 xl:grid-cols-[330px_1fr_320px]">
           <aside className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
             <div className="flex items-center gap-3">
@@ -298,7 +298,7 @@ export function PitchModeTab({ walletAddress = "guest" }: PitchModeTabProps) {
             />
           </aside>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
