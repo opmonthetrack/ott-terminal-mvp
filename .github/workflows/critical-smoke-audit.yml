@@ -27,14 +27,22 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Install application dependencies
-        run: npm ci
+      - name: Prepare evidence directory
+        run: mkdir -p artifacts/critical-smoke-audit
+
+      - name: Test reproducible clean install
+        id: clean_install
+        continue-on-error: true
+        run: npm ci 2>&1 | tee artifacts/critical-smoke-audit/npm-ci.log
+
+      - name: Install declared dependencies for continued audit
+        if: steps.clean_install.outcome != 'success'
+        run: npm install --no-audit --no-fund 2>&1 | tee artifacts/critical-smoke-audit/npm-install-fallback.log
 
       - name: Run route audit, TypeScript and production build
         id: quality
         continue-on-error: true
         run: |
-          mkdir -p artifacts/critical-smoke-audit
           set -o pipefail
           npm run quality 2>&1 | tee artifacts/critical-smoke-audit/quality.log
 
@@ -45,12 +53,14 @@ jobs:
           npx playwright install --with-deps chromium
 
       - name: Start production preview
+        id: preview
         if: always()
+        continue-on-error: true
         run: |
           if [ ! -d dist ]; then
             npm run build
           fi
-          npm run preview -- --host 127.0.0.1 --port 4173 > artifacts/critical-smoke-audit/preview.log 2>&1 &
+          nohup npm run preview -- --host 127.0.0.1 --port 4173 > artifacts/critical-smoke-audit/preview.log 2>&1 &
           for attempt in {1..40}; do
             if curl --fail --silent http://127.0.0.1:4173 >/dev/null; then
               exit 0
@@ -61,7 +71,8 @@ jobs:
           exit 1
 
       - name: Run desktop, mobile, language and accessibility smoke audit
-        if: always()
+        id: browser_audit
+        if: always() && steps.preview.outcome == 'success'
         continue-on-error: true
         run: node scripts/critical-smoke-audit.mjs
         env:
@@ -71,7 +82,10 @@ jobs:
         if: always()
         run: |
           {
+            echo "clean_install_outcome=${{ steps.clean_install.outcome }}"
             echo "quality_outcome=${{ steps.quality.outcome }}"
+            echo "preview_outcome=${{ steps.preview.outcome }}"
+            echo "browser_audit_outcome=${{ steps.browser_audit.outcome }}"
             echo "commit=${GITHUB_SHA}"
             echo "branch=${GITHUB_REF_NAME}"
           } > artifacts/critical-smoke-audit/workflow-status.txt
@@ -85,6 +99,6 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Fail when core quality checks failed
-        if: always() && steps.quality.outcome != 'success'
+      - name: Fail on release-blocking audit outcomes
+        if: always() && (steps.clean_install.outcome != 'success' || steps.quality.outcome != 'success' || steps.preview.outcome != 'success' || steps.browser_audit.outcome != 'success')
         run: exit 1
