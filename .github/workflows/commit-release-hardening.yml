@@ -30,13 +30,19 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Regenerate and apply validated hardening
+      - name: Regenerate dependency lockfile
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+
+      - name: Apply source hardening
         run: |
-          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
           node scripts/apply-release-hardening.mjs
           node scripts/fix-release-hardening-output.mjs
-          npm ci --no-audit --no-fund
-          npm run quality
+
+      - name: Prove clean installation
+        run: npm ci --no-audit --no-fund
+
+      - name: Validate routes, TypeScript and build
+        run: npm run quality
 
       - name: Commit source and lockfile
         run: |
