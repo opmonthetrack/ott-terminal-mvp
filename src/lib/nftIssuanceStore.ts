@@ -3,6 +3,7 @@ import { ottSupabase } from "./ottAuth";
 export type NftIssuanceType =
   | "access-pass"
   | "public-access-pass"
+  | "wallet-tester-pass"
   | "foundation-certificate"
   | "wallet-foundation-certificate"
   | "wallet-security-certificate"
@@ -48,6 +49,14 @@ export const NFT_ISSUANCE_LIMITS: Record<NftIssuanceType, NftCollectionConfig> =
     edition: "public",
     transferable: true,
     purpose: "Scalable wallet-neutral access for the public XRPL learning platform.",
+  },
+  "wallet-tester-pass": {
+    max: 100_000,
+    width: 6,
+    label: "OTT Wallet Tester Pass",
+    edition: "academy",
+    transferable: false,
+    purpose: "Recognition for a server-validated wallet integration test after the connector reaches 100% OTT verification.",
   },
   "foundation-certificate": {
     max: 50_000,

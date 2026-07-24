@@ -1,13 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
-  BadgeCheck,
   BookOpen,
-  CheckCircle2,
   Copy,
   ExternalLink,
   Eye,
-  Layers3,
   Loader2,
   Network,
   RefreshCcw,
@@ -15,8 +12,8 @@ import {
   Unplug,
   Wallet,
 } from "lucide-react";
-import { getScalableNftCollectionSummary } from "../lib/nftIssuanceStore";
 import { useTerminalLanguage } from "../lib/useTerminalLanguage";
+import { WalletTestingPanel } from "./WalletTestingPanel";
 import { WALLET_PROVIDER_GUIDES } from "../lib/walletAcademy";
 import { connectWalletProvider } from "../lib/walletConnectors";
 import {
@@ -88,7 +85,6 @@ export function WalletHub({
     storedSession?.walletAddress === connectedAddress &&
     storedSession.verificationMethod !== "read-only",
   );
-  const nftCollections = useMemo(() => getScalableNftCollectionSummary(), []);
 
   useEffect(() => {
     setSelectedProviderId(connectedProviderId || "xaman");
@@ -389,40 +385,9 @@ export function WalletHub({
         </div>
       )}
 
-      <div className="mt-8 rounded-3xl border border-slate-200 p-6 sm:p-8">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <div className="flex items-center gap-3 text-blue-700">
-              <Layers3 size={21} />
-              <p className="text-sm font-semibold">{isEnglish ? "Scalable NFT credentials" : "Schaalbare NFT-credentials"}</p>
-            </div>
-            <h3 className="mt-3 text-2xl font-semibold text-slate-950">
-              {isEnglish ? "Genesis stays scarce. Public access and Academy can grow." : "Genesis blijft schaars. Publieke toegang en Academy kunnen groeien."}
-            </h3>
-          </div>
-          <button type="button" onClick={onOpenAcademy} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-            <BookOpen size={17} />
-            {isEnglish ? "Open Wallet Academy" : "Open Wallet Academy"}
-          </button>
-        </div>
-
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {nftCollections.map((collection) => (
-            <article key={collection.type} className="rounded-2xl bg-slate-50 p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-slate-950">{collection.label}</p>
-                  <p className="mt-1 text-xs text-slate-500">{collection.edition}</p>
-                </div>
-                {collection.transferable ? <BadgeCheck className="text-blue-700" size={20} /> : <CheckCircle2 className="text-emerald-600" size={20} />}
-              </div>
-              <p className="mt-4 text-2xl font-semibold text-slate-950">{collection.max.toLocaleString()}</p>
-              <p className="mt-1 text-xs text-slate-500">{isEnglish ? "maximum serial capacity" : "maximale serienummercapaciteit"}</p>
-              <p className="mt-4 text-sm leading-6 text-slate-600">{collection.purpose}</p>
-            </article>
-          ))}
-        </div>
-      </div>
+      {connectedAddress && ownershipVerified && (
+        <WalletTestingPanel walletAddress={connectedAddress} providerId={connectedProviderId} />
+      )}
     </section>
   );
 }

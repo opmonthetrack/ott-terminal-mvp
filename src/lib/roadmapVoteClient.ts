@@ -57,6 +57,9 @@ export type RoadmapVoteStatsResponse = {
     uniqueWallets: number;
     verifiedVoteTransactions: number;
     scannedAccountTransactions: number;
+    scanComplete?: boolean;
+    pagesScanned?: number;
+    scanLimit?: number;
   };
   counts?: Partial<Record<RoadmapVoteOptionId, number>>;
   ranking?: RoadmapVoteRankingItem[];

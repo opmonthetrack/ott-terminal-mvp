@@ -10,6 +10,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { AccessPassOrderPanel } from "../components/AccessPassOrderPanel";
+import { NftCollectionGallery } from "../components/NftCollectionGallery";
 import { OTTLogoMark } from "../components/OTTLogo";
 import {
   clearAccessState,
@@ -171,6 +172,7 @@ export function AccessGateTab({ walletAddress = "guest", onNavigate }: AccessGat
         </div>
       </section>
 
+      <NftCollectionGallery compact />
       <AccessPassOrderPanel walletAddress={walletAddress} onNavigate={onNavigate} />
     </div>
   );
