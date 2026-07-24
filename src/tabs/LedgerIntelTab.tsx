@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
+  ArrowLeft,
   ArrowUpRight,
   BadgeCheck,
   CheckCircle2,
-  Clock,
+  ChevronLeft,
+  ChevronRight,
   FileSearch,
   Loader2,
   Newspaper,
@@ -12,12 +14,16 @@ import {
   Search,
   ShieldCheck,
 } from "lucide-react";
+import { OttCategoryTabs, type OttCategoryTabItem } from "../components/OttCategoryTabs";
+import {
+  OTT_VISUAL_LANGUAGE,
+  getOttVisualKey,
+  type OttVisualKey,
+} from "../lib/ottVisualLanguage";
 import {
   fetchXrplIntelligence,
   formatIntelDate,
   getConfidenceLabel,
-  getIntelBucketItems,
-  getIntelBuckets,
   getSourceTypeLabel,
   type XrplIntelItem,
   type XrplIntelResponse,
@@ -26,6 +32,15 @@ import { useTerminalLanguage } from "../lib/useTerminalLanguage";
 import { DeFiTab } from "./DeFiTab";
 
 type ExploreView = "intelligence" | "research";
+
+const SOURCE_PAGE_SIZE = 6;
+const CORE_SOURCE_CATEGORIES: OttVisualKey[] = [
+  "all",
+  "xls",
+  "cbdc",
+  "xrpl-core",
+  "iso-20022",
+];
 
 export function LedgerIntelTab() {
   const { language } = useTerminalLanguage();
@@ -82,11 +97,14 @@ export function LedgerIntelTab() {
 
 function IntelligenceFeed({ isEnglish }: { isEnglish: boolean }) {
   const emptyItem = useMemo(() => createEmptyItem(isEnglish), [isEnglish]);
+  const sourcePanelRef = useRef<HTMLElement | null>(null);
+  const detailPanelRef = useRef<HTMLElement | null>(null);
   const [data, setData] = useState<XrplIntelResponse | null>(null);
   const [items, setItems] = useState<XrplIntelItem[]>([]);
-  const [selectedBucket, setSelectedBucket] = useState("All");
+  const [selectedCategory, setSelectedCategory] = useState<OttVisualKey>("all");
   const [selectedItem, setSelectedItem] = useState<XrplIntelItem>(emptyItem);
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -99,8 +117,9 @@ function IntelligenceFeed({ isEnglish }: { isEnglish: boolean }) {
       const response = await fetchXrplIntelligence({ limit: 36 });
       setData(response);
       setItems(response.items);
-      setSelectedBucket("All");
+      setSelectedCategory("all");
       setSelectedItem(response.items[0] ?? emptyItem);
+      setPage(0);
     } catch (loadError) {
       setError(
         loadError instanceof Error
@@ -125,24 +144,96 @@ function IntelligenceFeed({ isEnglish }: { isEnglish: boolean }) {
     }
   }, [emptyItem]);
 
-  const bucketStats = useMemo(() => getIntelBuckets(items), [items]);
-  const bucketItems = useMemo(
-    () => getIntelBucketItems(items, selectedBucket),
-    [items, selectedBucket],
+  useEffect(() => {
+    setPage(0);
+  }, [query, selectedCategory]);
+
+  const sourceTabs = useMemo<OttCategoryTabItem[]>(() => {
+    const counts: Record<OttVisualKey, number> = {
+      all: items.length,
+      xls: 0,
+      cbdc: 0,
+      "xrpl-core": 0,
+      "iso-20022": 0,
+      other: 0,
+    };
+
+    for (const item of items) {
+      const key = getItemVisualKey(item);
+      if (key !== "all") counts[key] += 1;
+    }
+
+    const tabs = CORE_SOURCE_CATEGORIES.map((key) => ({
+      id: key,
+      label: OTT_VISUAL_LANGUAGE[key].shortLabel,
+      count: counts[key],
+    }));
+
+    if (counts.other > 0) {
+      tabs.push({
+        id: "other",
+        label: isEnglish ? "Other" : "Overig",
+        count: counts.other,
+      });
+    }
+
+    return tabs;
+  }, [isEnglish, items]);
+
+  const categoryItems = useMemo(
+    () => filterItemsByCategory(items, selectedCategory),
+    [items, selectedCategory],
   );
+
   const visibleItems = useMemo(() => {
     const normalized = query.trim().toLowerCase();
-    if (!normalized) return bucketItems;
+    if (!normalized) return categoryItems;
 
-    return bucketItems.filter((item) =>
+    return categoryItems.filter((item) =>
       [item.title, item.source, item.description, item.whyItMatters, ...item.tags]
         .join(" ")
         .toLowerCase()
         .includes(normalized),
     );
-  }, [bucketItems, query]);
+  }, [categoryItems, query]);
+
+  const totalPages = Math.max(1, Math.ceil(visibleItems.length / SOURCE_PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
+  const pageItems = visibleItems.slice(
+    safePage * SOURCE_PAGE_SIZE,
+    safePage * SOURCE_PAGE_SIZE + SOURCE_PAGE_SIZE,
+  );
   const officialCount = items.filter((item) => item.officialSource).length;
   const reviewCount = items.filter((item) => item.needsConfirmation).length;
+
+  function jumpTo(element: HTMLElement | null) {
+    if (!element) return;
+    window.requestAnimationFrame(() => {
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
+  function selectCategory(id: string) {
+    const category = id as OttVisualKey;
+    const nextItems = filterItemsByCategory(items, category);
+    setSelectedCategory(category);
+    setSelectedItem(nextItems[0] ?? emptyItem);
+    setQuery("");
+    setPage(0);
+    jumpTo(sourcePanelRef.current);
+  }
+
+  function selectItem(item: XrplIntelItem) {
+    setSelectedItem(item);
+    if (window.matchMedia("(max-width: 1023px)").matches) {
+      jumpTo(detailPanelRef.current);
+    }
+  }
+
+  function changePage(nextPage: number) {
+    setPage(Math.min(totalPages - 1, Math.max(0, nextPage)));
+    jumpTo(sourcePanelRef.current);
+  }
 
   return (
     <main className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
@@ -159,14 +250,45 @@ function IntelligenceFeed({ isEnglish }: { isEnglish: boolean }) {
         </div>
       )}
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[0.72fr_1.28fr]">
-        <section className="rounded-3xl border border-slate-200 p-5 sm:p-6">
+      <section className="mt-8 rounded-3xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
+              {isEnglish ? "Jump directly" : "Spring direct"}
+            </p>
+            <h2 className="mt-2 text-xl font-semibold">
+              {isEnglish ? "Choose a source category" : "Kies een broncategorie"}
+            </h2>
+          </div>
+          <p className="text-xs text-slate-500">
+            {isEnglish ? "The count is shown inside every tab." : "Het aantal staat in iedere tab."}
+          </p>
+        </div>
+        <div className="mt-4">
+          <OttCategoryTabs
+            items={sourceTabs}
+            selectedId={selectedCategory}
+            isEnglish={isEnglish}
+            onSelect={selectCategory}
+            disabled={loading || refreshing}
+          />
+        </div>
+      </section>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-[0.72fr_1.28fr]">
+        <section
+          ref={sourcePanelRef}
+          id="ott-source-results"
+          className="scroll-mt-4 rounded-3xl border border-slate-200 p-5 sm:p-6"
+        >
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
                 {isEnglish ? "Source feed" : "Bronfeed"}
               </p>
-              <h2 className="mt-2 text-xl font-semibold">{isEnglish ? "Select an item" : "Selecteer een item"}</h2>
+              <h2 className="mt-2 text-xl font-semibold">
+                {OTT_VISUAL_LANGUAGE[selectedCategory].shortLabel} · {visibleItems.length}
+              </h2>
             </div>
             <button
               type="button"
@@ -189,34 +311,22 @@ function IntelligenceFeed({ isEnglish }: { isEnglish: boolean }) {
             />
           </label>
 
-          <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
-            {bucketStats.map((bucket) => (
-              <button
-                key={bucket.bucket}
-                type="button"
-                onClick={() => {
-                  const nextItems = getIntelBucketItems(items, bucket.bucket);
-                  setSelectedBucket(bucket.bucket);
-                  setSelectedItem(nextItems[0] ?? emptyItem);
-                }}
-                className={`shrink-0 rounded-full px-3 py-2 text-xs font-semibold ${selectedBucket === bucket.bucket ? "bg-slate-950 text-white" : "bg-slate-100 text-slate-600"}`}
-              >
-                {bucket.bucket} · {bucket.count}
-              </button>
-            ))}
+          <div className="mt-4 flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-500">
+            <span>{isEnglish ? "Page" : "Pagina"} {safePage + 1}/{totalPages}</span>
+            <span>{pageItems.length} {isEnglish ? "shown" : "zichtbaar"}</span>
           </div>
 
-          <div className="mt-4 max-h-[680px] space-y-3 overflow-y-auto pr-1">
+          <div className="mt-4 space-y-3">
             {loading ? (
               <div className="flex min-h-52 items-center justify-center">
                 <Loader2 className="animate-spin text-slate-400" size={23} />
               </div>
-            ) : visibleItems.length > 0 ? (
-              visibleItems.map((item) => (
+            ) : pageItems.length > 0 ? (
+              pageItems.map((item) => (
                 <button
                   key={`${item.link}-${item.title}`}
                   type="button"
-                  onClick={() => setSelectedItem(item)}
+                  onClick={() => selectItem(item)}
                   className={`w-full rounded-2xl border p-4 text-left transition ${selectedItem.link === item.link ? "border-blue-500 bg-blue-50" : "border-slate-200 hover:border-slate-300"}`}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -235,9 +345,45 @@ function IntelligenceFeed({ isEnglish }: { isEnglish: boolean }) {
               </p>
             )}
           </div>
+
+          {visibleItems.length > SOURCE_PAGE_SIZE && (
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => changePage(safePage - 1)}
+                disabled={safePage === 0}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold hover:bg-slate-50 disabled:opacity-35"
+              >
+                <ChevronLeft size={17} />
+                {isEnglish ? "Previous" : "Vorige"}
+              </button>
+              <button
+                type="button"
+                onClick={() => changePage(safePage + 1)}
+                disabled={safePage >= totalPages - 1}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-35"
+              >
+                {isEnglish ? "Next" : "Volgende"}
+                <ChevronRight size={17} />
+              </button>
+            </div>
+          )}
         </section>
 
-        <article className="rounded-3xl border border-slate-200 p-6 sm:p-8">
+        <article
+          ref={detailPanelRef}
+          id="ott-source-detail"
+          className="scroll-mt-4 rounded-3xl border border-slate-200 p-6 sm:p-8"
+        >
+          <button
+            type="button"
+            onClick={() => jumpTo(sourcePanelRef.current)}
+            className="mb-5 inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 lg:hidden"
+          >
+            <ArrowLeft size={15} />
+            {isEnglish ? "Back to source feed" : "Terug naar bronfeed"}
+          </button>
+
           <div className="flex flex-wrap items-center gap-2">
             <SourceBadge label={selectedItem.officialSource ? (isEnglish ? "Official source" : "Officiële bron") : (isEnglish ? "Secondary source" : "Secundaire bron")} verified={selectedItem.officialSource} />
             <SourceBadge label={getSourceTypeLabel(selectedItem.sourceType)} />
@@ -300,6 +446,20 @@ function IntelligenceFeed({ isEnglish }: { isEnglish: boolean }) {
       </div>
     </main>
   );
+}
+
+function getItemVisualKey(item: XrplIntelItem): OttVisualKey {
+  return getOttVisualKey([
+    item.bucket,
+    item.category,
+    item.signalType,
+    ...item.tags,
+  ].join(" "));
+}
+
+function filterItemsByCategory(items: XrplIntelItem[], category: OttVisualKey) {
+  if (category === "all") return items;
+  return items.filter((item) => getItemVisualKey(item) === category);
 }
 
 function createEmptyItem(isEnglish: boolean): XrplIntelItem {
