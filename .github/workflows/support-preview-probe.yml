@@ -11,10 +11,14 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: support-preview-probe-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 8
     env:
       SUPPORT_API: https://ott-terminal-mvp-git-agent-xrpl-wallet-hub-20260724-onthetrack.vercel.app/api/support-payment
     steps:
@@ -23,13 +27,19 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p artifacts/support-preview-probe
-          for attempt in {1..60}; do
+          for attempt in {1..36}; do
             code=$(curl -sS -o artifacts/support-preview-probe/stats.json -w '%{http_code}' \
               -X POST "$SUPPORT_API" \
               -H 'Content-Type: application/json' \
               --data '{"action":"xrpl.getSupportStats"}' || true)
+            echo "$code" > artifacts/support-preview-probe/http-status.txt
             if [ "$code" = "200" ]; then
               exit 0
+            fi
+            if [ "$code" = "401" ] || [ "$code" = "403" ]; then
+              echo "The Vercel preview is protected and cannot be probed by an external GitHub runner." | tee artifacts/support-preview-probe/blocker.txt
+              cat artifacts/support-preview-probe/stats.json || true
+              exit 2
             fi
             echo "Preview API attempt $attempt returned HTTP $code"
             sleep 5
