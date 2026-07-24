@@ -1,0 +1,49 @@
+name: Apply roadmap vote fix
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout hardening branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/full-release-hardening-20260724
+          fetch-depth: 0
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Apply focused roadmap fix
+        run: node scripts/fix-roadmap-vote-payload.mjs
+
+      - name: Install reproducibly
+        run: npm ci --no-audit --no-fund
+
+      - name: Validate routes TypeScript and production build
+        run: npm run quality
+
+      - name: Commit API fix
+        run: |
+          if git diff --quiet api/roadmap-vote.ts; then
+            echo "No roadmap API change remains."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add api/roadmap-vote.ts
+          git commit -m "Reduce Xaman roadmap vote payload size [skip ci]"
+          git push origin HEAD:agent/full-release-hardening-20260724
