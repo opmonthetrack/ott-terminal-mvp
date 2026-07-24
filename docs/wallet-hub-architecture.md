@@ -66,6 +66,21 @@ The shell owns the single document `<main>` landmark. Individual tabs use conten
 
 Academy credentials are non-transferable in the OTT product model and require verified completion plus validated wallet ownership before issuance. A database reservation or button click is not an on-ledger NFT mint; issuance still requires an issuer transaction, validated hash and recorded NFTokenID.
 
+## Hardened support payment contract
+
+The public support page and server use one shared contract:
+
+- only `0.589`, `1.589` and `2.589` XRP are accepted;
+- the support destination is returned by the server and is not hardcoded in the visible page;
+- every payment includes Make Waves SourceTag `2606170002` and the OTT support memo;
+- a returned Xaman signature is not presented as a completed payment until the XRPL transaction has `validated = true`, `tesSUCCESS`, the exact destination, an allowed amount and the required SourceTag and memo;
+- the public total counts the same strict transaction contract;
+- the ledger scan reports when its 1,000-transaction window is incomplete;
+- public supporter names are not republished automatically and require their transaction hash to be included in the server-side reviewed allowlist;
+- support-stat scans use a short server cache and payload creation has an instance-level request limit.
+
+The request limit is an initial abuse-control layer for the Vercel serverless instance. A distributed rate limiter should be added before high-volume traffic is expected.
+
 ## Security
 
 - OTT never requests a seed phrase or private key.
