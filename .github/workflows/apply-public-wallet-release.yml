@@ -66,7 +66,8 @@ jobs:
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
           const manifest = JSON.parse(fs.readFileSync('.ott-release-delete.json', 'utf8'));
-          for (const path of manifest) {
+          const paths = Array.isArray(manifest) ? manifest : (manifest.delete ?? []);
+          for (const path of paths) {
             fs.rmSync(path, { recursive: true, force: true });
           }
           NODE
