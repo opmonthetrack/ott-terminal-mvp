@@ -103,6 +103,12 @@ body {
   color: var(--ott-muted) !important;
 }
 
+/* Some legacy tabs still carry the old hardcoded accent class. */
+[class~="text-[#3898E8]"],
+[class~="text-[#3898e8]"] {
+  color: var(--ott-blue) !important;
+}
+
 /* Legacy dark panels are converted to light panels by the imported override.
    Their former light foreground must therefore also become a dark readable tone. */
 [class*="bg-black"] [class*="text-black/"],
