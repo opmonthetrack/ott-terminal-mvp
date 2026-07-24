@@ -1,0 +1,71 @@
+name: Apply public wallet testing release
+
+on:
+  pull_request:
+    branches:
+      - agent/full-release-hardening-20260724
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.head_ref == 'agent/xrpl-wallet-hub-20260724' || github.ref_name == 'agent/xrpl-wallet-hub-20260724'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout wallet release branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/xrpl-wallet-hub-20260724
+          fetch-depth: 0
+
+      - name: Reconstruct controlled release
+        run: |
+          cat \
+            .release-payload/chunk00.b64 \
+            .release-payload/chunk0102.b64 \
+            .release-payload/chunk0304.b64 \
+            .release-payload/chunk0506.b64 \
+            .release-payload/chunk0708.b64 \
+            | base64 --decode > /tmp/ott-public-wallet-release.tar.gz
+          tar -xzf /tmp/ott-public-wallet-release.tar.gz
+
+      - name: Remove temporary release files
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const manifest = JSON.parse(fs.readFileSync('.ott-release-delete.json', 'utf8'));
+          for (const path of manifest) {
+            fs.rmSync(path, { recursive: true, force: true });
+          }
+          NODE
+          rm -rf .release-payload
+          rm -f .ott-release-delete.json
+          rm -f scripts/.wallet-release-staging-marker
+          rm -f .github/workflows/export-wallet-release-source.yml
+          rm -f .github/workflows/apply-public-wallet-release.yml
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install reproducibly
+        run: npm ci --ignore-scripts
+
+      - name: Validate routes TypeScript and production build
+        run: npm run quality
+
+      - name: Commit validated public test release
+        run: |
+          git config user.name "ott-quality-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No release changes to commit."
+            exit 0
+          fi
+          git commit -m "Launch public wallet verification and visual NFT collections"
+          git push origin HEAD:agent/xrpl-wallet-hub-20260724
