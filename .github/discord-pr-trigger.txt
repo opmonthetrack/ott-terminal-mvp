@@ -1,0 +1,1 @@
+Open the Discord authentication pull request and run validation.
