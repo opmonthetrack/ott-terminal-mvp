@@ -15,6 +15,7 @@ import {
   LogIn,
   LogOut,
   Mail,
+  MessageCircle,
   RefreshCcw,
   Save,
   ShieldCheck,
@@ -77,6 +78,7 @@ const providerIcons: Record<OttAuthProvider, ElementType> = {
   apple: Apple,
   azure: Building2,
   github: Github,
+  discord: MessageCircle,
 };
 
 function isLikelyXrplAddress(value: string) {
