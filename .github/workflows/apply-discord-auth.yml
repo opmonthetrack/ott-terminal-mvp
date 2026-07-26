@@ -33,14 +33,29 @@ jobs:
       - name: Apply Discord patch
         run: node scripts/apply-discord-auth-patch.mjs
 
-      - name: Clean install
-        run: npm ci
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
 
       - name: Run release quality gate
         run: npm run quality
 
       - name: Remove one-time patch files
-        run: rm scripts/apply-discord-auth-patch.mjs .github/workflows/apply-discord-auth.yml .github/discord-auth-trigger.txt .github/discord-pr-trigger.txt
+        shell: bash
+        run: |
+          rm -f \
+            scripts/apply-discord-auth-patch.mjs \
+            .github/workflows/apply-discord-auth.yml \
+            .github/discord-auth-trigger.txt \
+            .github/discord-pr-trigger.txt \
+            .github/discord-pr-ready.txt \
+            docs/auth-discord.md \
+            docs/auth-provider-status.md \
+            docs/discord-rollout.md \
+            docs/discord-oauth-scope.md \
+            docs/discord-auth-complete.md \
+            docs/discord-auth-pr.md \
+            docs/discord-pr-final.md \
+            docs/discord-ready.md
 
       - name: Commit validated Discord support
         run: |
