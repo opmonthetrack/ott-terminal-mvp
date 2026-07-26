@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/auth-discord-20260726
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -15,9 +18,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - name: Check out branch
+      - name: Check out source branch
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.head_ref || github.ref_name }}
           fetch-depth: 0
 
       - name: Set up Node.js
@@ -40,8 +44,9 @@ jobs:
 
       - name: Commit validated Discord support
         run: |
+          BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "Add Discord account login"
-          git push origin HEAD:agent/auth-discord-20260726
+          git push origin HEAD:"${BRANCH}"
