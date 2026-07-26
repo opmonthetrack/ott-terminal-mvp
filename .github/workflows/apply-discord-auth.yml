@@ -40,7 +40,7 @@ jobs:
         run: npm run quality
 
       - name: Remove one-time patch files
-        run: rm scripts/apply-discord-auth-patch.mjs .github/workflows/apply-discord-auth.yml .github/discord-auth-trigger.txt
+        run: rm scripts/apply-discord-auth-patch.mjs .github/workflows/apply-discord-auth.yml .github/discord-auth-trigger.txt .github/discord-pr-trigger.txt
 
       - name: Commit validated Discord support
         run: |
