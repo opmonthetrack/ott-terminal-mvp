@@ -212,9 +212,9 @@ export function NewsTab() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-[#080808]">
-      <div className="p-6">
-        <div className="relative overflow-hidden border border-black/10 bg-white p-6 mb-6">
+    <div className="ott-core-tab min-h-screen bg-white text-slate-950">
+      <div className="ott-core-content">
+        <div className="ott-core-hero-card relative overflow-hidden border border-black/10 bg-white">
           <div className="absolute inset-0 opacity-[0.08] bg-[radial-gradient(circle_at_top_right,_#3898E8,_transparent_34%),radial-gradient(circle_at_bottom_left,_#C83888,_transparent_32%)]" />
 
           <div className="relative z-10 grid grid-cols-12 gap-6 items-center">

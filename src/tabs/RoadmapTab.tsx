@@ -400,8 +400,9 @@ export function RoadmapTab({ walletAddress = "guest", onNavigate }: RoadmapTabPr
   }
 
   return (
-    <div className="min-h-screen bg-white text-[#080808]">
-      <section className="relative overflow-hidden border-b border-black/10 bg-[radial-gradient(circle_at_82%_12%,rgba(200,56,136,0.16),transparent_32%),radial-gradient(circle_at_12%_88%,rgba(56,152,232,0.16),transparent_34%),#ffffff] p-4 md:p-8 xl:p-10">
+    <div className="ott-core-tab min-h-screen bg-white text-slate-950">
+      <section className="relative overflow-hidden border-b border-black/10 bg-[radial-gradient(circle_at_82%_12%,rgba(200,56,136,0.16),transparent_32%),radial-gradient(circle_at_12%_88%,rgba(56,152,232,0.16),transparent_34%),#ffffff]">
+        <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
           <div className="text-[#080808]">
             <OTTLogo
@@ -438,9 +439,10 @@ export function RoadmapTab({ walletAddress = "guest", onNavigate }: RoadmapTabPr
               : "Elke stem vereist een via Xaman ondertekende XRPL Mainnet-transactie met SourceTag 2606170002 en de gekozen roadmapfase in de memo. Per wallet telt één actieve stem; een nieuwere geverifieerde stem vervangt de vorige keuze."}
           </p>
         </div>
+        </div>
       </section>
 
-      <section className="p-4 md:p-8 xl:p-10 bg-white">
+      <section className="bg-white">
         <div className="grid grid-cols-12 gap-4 mb-6">
           <MetricCard
             icon={Radio}

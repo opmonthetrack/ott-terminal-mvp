@@ -134,9 +134,9 @@ export function SupportDonationTab() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-slate-950">
+    <div className="ott-core-tab min-h-screen bg-white text-slate-950">
       <section className="relative overflow-hidden border-b border-slate-200 bg-[radial-gradient(circle_at_15%_20%,rgba(56,152,232,0.18),transparent_30%),radial-gradient(circle_at_85%_15%,rgba(200,56,136,0.18),transparent_32%),#fff]">
-        <div className="mx-auto grid max-w-7xl gap-10 px-5 py-14 sm:px-8 lg:grid-cols-[1fr_390px] lg:items-center lg:py-20">
+        <div className="mx-auto grid max-w-6xl gap-10 px-5 py-14 sm:px-8 lg:grid-cols-[1fr_390px] lg:items-center lg:py-20">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-pink-700">OTT Support</p>
             <h1 className="mt-4 max-w-4xl text-4xl font-semibold tracking-tight sm:text-6xl">
@@ -167,7 +167,7 @@ export function SupportDonationTab() {
         </div>
       </section>
 
-      <main className="mx-auto grid max-w-7xl gap-6 px-5 py-12 sm:px-8 lg:grid-cols-[1fr_380px] lg:py-16">
+      <main className="mx-auto grid max-w-6xl gap-6 px-5 py-12 sm:px-8 lg:grid-cols-[1fr_380px] lg:py-16">
         <section className="rounded-3xl border border-slate-200 p-6 sm:p-8">
           <div className="flex items-start gap-4">
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-pink-50 text-pink-700"><Wallet size={22} /></span>

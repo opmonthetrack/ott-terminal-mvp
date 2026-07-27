@@ -203,7 +203,7 @@ export function RewardLedgerTab({
   }
 
   return (
-    <div className="min-h-screen bg-white text-[#080808]">
+    <div className="ott-core-tab min-h-screen bg-white text-slate-950">
       <section className="relative overflow-hidden border-b border-black/10 bg-[radial-gradient(circle_at_18%_18%,rgba(56,152,232,0.16),transparent_28%),radial-gradient(circle_at_82%_8%,rgba(200,56,136,0.16),transparent_28%),radial-gradient(circle_at_85%_82%,rgba(216,72,88,0.12),transparent_30%),#ffffff]">
         <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.26),#ffffff_92%)]" />
 
@@ -357,7 +357,7 @@ export function RewardLedgerTab({
         </div>
       </section>
 
-      <section className="p-4 md:p-6 xl:p-10 bg-white">
+      <section className="bg-white">
         {view === "overview" && (
           <div className="grid grid-cols-12 gap-4">
             <div className="col-span-12 xl:col-span-8">
