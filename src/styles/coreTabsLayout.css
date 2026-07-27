@@ -123,6 +123,18 @@
   padding: 1.5rem;
 }
 
+/* Colored interactive cards use one high-contrast text color.
+   Light count/icon chips remain black on white. */
+.ott-contrast-on-color,
+.ott-contrast-on-color :where(h1, h2, h3, h4, p, span, svg) {
+  color: #ffffff !important;
+}
+
+.ott-contrast-on-color .ott-contrast-chip,
+.ott-contrast-on-color .ott-contrast-chip :where(span, svg) {
+  background: #ffffff !important;
+  color: #080808 !important;
+}
 @media (min-width: 640px) {
   .ott-core-tab > section:first-of-type > .relative.z-10,
   .ott-core-tab > section:not(:first-of-type),

@@ -327,7 +327,7 @@ function IntelligenceFeed({ isEnglish }: { isEnglish: boolean }) {
                   key={`${item.link}-${item.title}`}
                   type="button"
                   onClick={() => selectItem(item)}
-                  className={`w-full rounded-2xl border p-4 text-left transition ${selectedItem.link === item.link ? "border-blue-500 bg-blue-50" : "border-slate-200 hover:border-slate-300"}`}
+                  className={`w-full rounded-2xl border p-4 text-left transition ${selectedItem.link === item.link ? "ott-contrast-on-color border-transparent bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)]" : "border-slate-200 hover:border-slate-300"}`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <h3 className="text-sm font-semibold leading-5 text-slate-900">{item.title}</h3>
