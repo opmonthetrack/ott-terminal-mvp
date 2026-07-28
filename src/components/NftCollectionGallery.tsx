@@ -26,7 +26,7 @@ export type NftCollectionCard = {
 export const OTT_NFT_COLLECTIONS: NftCollectionCard[] = [
   {
     id: "genesis-access-pass",
-    image: "/nft/artwork/genesis-access-pass.webp",
+    image: "/nft/artwork/genesis-access-pass.png",
     titleEn: "Genesis Access Pass",
     titleNl: "Genesis Access Pass",
     descriptionEn:
@@ -42,7 +42,7 @@ export const OTT_NFT_COLLECTIONS: NftCollectionCard[] = [
   },
   {
     id: "public-access-pass",
-    image: "/nft/artwork/public-access-pass.webp",
+    image: "/nft/artwork/public-access-pass.png",
     titleEn: "Public Access Pass",
     titleNl: "Public Access Pass",
     descriptionEn:
@@ -58,7 +58,7 @@ export const OTT_NFT_COLLECTIONS: NftCollectionCard[] = [
   },
   {
     id: "wallet-tester-pass",
-    image: "/nft/artwork/wallet-tester-pass.webp",
+    image: "/nft/artwork/wallet-tester-pass.png",
     titleEn: "Wallet Tester Pass",
     titleNl: "Wallet Tester Pass",
     descriptionEn:
@@ -74,7 +74,7 @@ export const OTT_NFT_COLLECTIONS: NftCollectionCard[] = [
   },
   {
     id: "xrpl-foundation-certificate",
-    image: "/nft/artwork/xrpl-foundation-certificate.webp",
+    image: "/nft/artwork/xrpl-foundation-certificate.png",
     titleEn: "XRPL Foundation Certificate",
     titleNl: "XRPL Foundation-certificaat",
     descriptionEn:
@@ -90,7 +90,7 @@ export const OTT_NFT_COLLECTIONS: NftCollectionCard[] = [
   },
   {
     id: "wallet-foundation-certificate",
-    image: "/nft/artwork/wallet-foundation-certificate.webp",
+    image: "/nft/artwork/wallet-foundation-certificate.png",
     titleEn: "Wallet Foundation Certificate",
     titleNl: "Wallet Foundation-certificaat",
     descriptionEn:
@@ -106,7 +106,7 @@ export const OTT_NFT_COLLECTIONS: NftCollectionCard[] = [
   },
   {
     id: "wallet-security-certificate",
-    image: "/nft/artwork/wallet-security-certificate.webp",
+    image: "/nft/artwork/wallet-security-certificate.png",
     titleEn: "Wallet Security Certificate",
     titleNl: "Wallet Security-certificaat",
     descriptionEn:
@@ -122,7 +122,7 @@ export const OTT_NFT_COLLECTIONS: NftCollectionCard[] = [
   },
   {
     id: "wallet-operations-certificate",
-    image: "/nft/artwork/wallet-operations-certificate.webp",
+    image: "/nft/artwork/wallet-operations-certificate.png",
     titleEn: "XRPL Wallet Operations Certificate",
     titleNl: "XRPL Wallet Operations-certificaat",
     descriptionEn:
@@ -158,7 +158,7 @@ export function NftCollectionGallery({ compact = false }: { compact?: boolean })
 
       <div className="mt-8 overflow-hidden rounded-3xl border border-slate-200 bg-slate-950 shadow-xl">
         <img
-          src="/nft/overview/ott-nft-progression-overview.webp"
+          src="/nft/overview/ott-nft-progression-overview.png"
           alt={isEnglish ? "Overview of the seven OTT NFT progression routes" : "Overzicht van de zeven OTT NFT-voortgangsroutes"}
           className="h-auto w-full object-cover"
         />
@@ -172,6 +172,11 @@ export function NftCollectionGallery({ compact = false }: { compact?: boolean })
                 src={collection.image}
                 alt={isEnglish ? collection.titleEn : collection.titleNl}
                 loading="lazy"
+                onError={(event) => {
+                  event.currentTarget.onerror = null;
+                  event.currentTarget.src = "/logo.png";
+                  event.currentTarget.className = "aspect-[1055/1491] w-full bg-slate-950 object-contain p-12";
+                }}
                 className="aspect-[1055/1491] w-full object-cover"
               />
               <div className="absolute left-4 top-4">
@@ -212,8 +217,8 @@ export function NftCollectionGallery({ compact = false }: { compact?: boolean })
         <Sparkles className="mt-0.5 shrink-0 text-blue-700" size={19} />
         <p>
           {isEnglish
-            ? "The full-resolution PNG masters remain the source artwork. These optimized previews keep the terminal fast on mobile without changing the NFT design."
-            : "De PNG-masters op volledige resolutie blijven het bronartwork. Deze geoptimaliseerde previews houden de terminal snel op mobiel zonder het NFT-ontwerp te wijzigen."}
+            ? "The exact PNG masters in public/nft/artwork are used as the collection previews. Missing files fall back to the OTT mark instead of showing a broken image."
+            : "De exacte PNG-masters in public/nft/artwork worden als collectiepreview gebruikt. Ontbrekende bestanden vallen terug op het OTT-logo in plaats van een kapotte afbeelding."}
         </p>
       </div>
     </section>
