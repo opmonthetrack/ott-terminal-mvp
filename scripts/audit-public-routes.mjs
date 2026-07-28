@@ -17,6 +17,7 @@ const expectedPublicHubs = [
   "dashboard",
   "accessgate",
   "roadmap",
+  "support",
 ];
 
 const expectedNonFounderRoutes = [
@@ -100,7 +101,7 @@ for (const id of expectedPublicHubs) {
 
 for (const id of publicHubIds) {
   if (!expectedPublicHubs.includes(id)) {
-    fail(`unexpected public hub '${id}' is not part of the eight-hub contract`);
+    fail(`unexpected public hub '${id}' is not part of the nine-hub contract`);
   }
   if (founderOnlyRoutes.includes(id)) {
     fail(`founder route '${id}' leaked into the public hub menu`);

@@ -14,7 +14,6 @@ import {
   Zap,
 } from "lucide-react";
 import { OttFeatureTabs, type OttFeatureTab } from "../components/OttFeatureTabs";
-import { OTTLogoMark } from "../components/OTTLogo";
 import { MAKE_WAVES_SOURCE_TAG } from "../lib/makeWaves";
 import { useTerminalLanguage } from "../lib/useTerminalLanguage";
 
@@ -272,11 +271,7 @@ export function NetworkState() {
         <div className="absolute inset-0 opacity-40 [background-image:linear-gradient(rgba(37,99,235,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(37,99,235,0.08)_1px,transparent_1px)] [background-size:34px_34px]" />
         <div className="relative mx-auto grid max-w-7xl gap-8 px-5 py-10 sm:px-8 lg:grid-cols-[1fr_340px] lg:items-center lg:py-14">
           <div>
-            <div className="flex items-center gap-3">
-              <OTTLogoMark size={42} />
-              <div><p className="text-sm font-semibold">OnTheTrack</p><p className="text-xs text-slate-500">Live XRPL Explorer</p></div>
-            </div>
-            <p className="mt-7 text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">XRPL Tools</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">XRPL Tools</p>
             <h1 className="mt-4 max-w-4xl font-orbitron text-4xl font-semibold tracking-tight sm:text-5xl">{en ? "Live XRPL data in one clear OTT workspace." : "Live XRPL-data in één duidelijke OTT-werkruimte."}</h1>
             <p className="mt-5 max-w-3xl text-base leading-7 text-slate-700">{en ? "Inspect the validated ledger, search public accounts and transactions, and verify the official OTT SourceTag without custody or transaction execution." : "Bekijk de gevalideerde ledger, zoek publieke accounts en transacties en verifieer de officiële OTT SourceTag zonder custody of transactie-uitvoering."}</p>
           </div>

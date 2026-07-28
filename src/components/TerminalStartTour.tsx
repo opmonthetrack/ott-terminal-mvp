@@ -13,6 +13,7 @@ import { OTTLogoMark } from "./OTTLogo";
 import { useTerminalLanguage } from "../lib/useTerminalLanguage";
 
 const TOUR_STORAGE_KEY = "ott-terminal-tour-seen-v1";
+const TOUR_OPEN_EVENT = "ott-open-terminal-tour";
 
 function isPublicHome() {
   if (typeof window === "undefined") return false;
@@ -78,6 +79,17 @@ export function TerminalStartTour() {
   }, []);
 
   useEffect(() => {
+    const launch = () => {
+      if (!isPublicHome()) return;
+      setStep(0);
+      setOpen(true);
+      window.localStorage.setItem(TOUR_STORAGE_KEY, "seen");
+    };
+    window.addEventListener(TOUR_OPEN_EVENT, launch);
+    return () => window.removeEventListener(TOUR_OPEN_EVENT, launch);
+  }, []);
+
+  useEffect(() => {
     if (!open) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -105,7 +117,7 @@ export function TerminalStartTour() {
       <button
         type="button"
         onClick={openTour}
-        className="ott-tour-launch fixed bottom-[7.75rem] right-4 z-[135] inline-flex min-h-12 items-center gap-3 rounded-2xl px-5 py-3 text-sm font-semibold shadow-2xl transition hover:-translate-y-0.5 md:bottom-5 md:right-5"
+        className="ott-tour-launch fixed bottom-5 right-5 z-[135] hidden min-h-12 items-center gap-3 rounded-2xl px-6 py-3 text-sm font-semibold shadow-2xl transition hover:-translate-y-0.5 md:inline-flex"
         aria-label={en ? "Start the OTT Terminal tour" : "Start de OTT Terminal-tour"}
       >
         <ShieldCheck size={18} />

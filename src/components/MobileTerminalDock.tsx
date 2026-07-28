@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState, type ElementType } from "react";
 import { BookOpen, Compass, Home, Search, Wallet } from "lucide-react";
 import { useOttAuthSession } from "../lib/useOttAuthSession";
 import { useTerminalLanguage } from "../lib/useTerminalLanguage";
-import { loadWalletSession, type WalletSession } from "../lib/walletSession";
 
 type DockItem = {
   id: string;
@@ -32,28 +31,10 @@ function founderSurfaceActive() {
   return FOUNDER_KEYS.some((key) => params.get(key) === "1");
 }
 
-function shortWallet(address: string) {
-  return address.length > 13 ? `${address.slice(0, 6)}…${address.slice(-4)}` : address;
-}
-
-function networkLabel(session: WalletSession | null, language: "en" | "nl") {
-  if (!session) return language === "en" ? "XRPL · not synchronized" : "XRPL · niet gesynchroniseerd";
-  const network = session.network === "mainnet"
-    ? "Mainnet"
-    : session.network === "testnet"
-      ? "Testnet"
-      : "Devnet";
-  const mode = session.verificationMethod === "read-only"
-    ? (language === "en" ? "read-only" : "alleen-lezen")
-    : (language === "en" ? "verified" : "geverifieerd");
-  return `${network} · ${mode} · ${shortWallet(session.walletAddress)}`;
-}
-
 export function MobileTerminalDock() {
   const { language } = useTerminalLanguage();
   const { signedIn } = useOttAuthSession();
   const [activeTab, setActiveTab] = useState(currentTab);
-  const [session, setSession] = useState<WalletSession | null>(() => loadWalletSession());
   const hidden = founderSurfaceActive();
   const en = language === "en";
 
@@ -92,14 +73,9 @@ export function MobileTerminalDock() {
 
   useEffect(() => {
     const syncRoute = () => setActiveTab(currentTab());
-    const syncWallet = () => setSession(loadWalletSession());
     window.addEventListener("popstate", syncRoute);
-    window.addEventListener("storage", syncWallet);
-    window.addEventListener("ott-wallet-session-changed", syncWallet);
     return () => {
       window.removeEventListener("popstate", syncRoute);
-      window.removeEventListener("storage", syncWallet);
-      window.removeEventListener("ott-wallet-session-changed", syncWallet);
     };
   }, []);
 
@@ -130,18 +106,6 @@ export function MobileTerminalDock() {
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="mx-auto max-w-lg px-3 pb-2">
-        <button
-          type="button"
-          onClick={() => navigate(session ? "wallet" : "xaman")}
-          className="mx-auto mb-2 flex min-h-10 max-w-[92vw] items-center gap-2 rounded-full border border-slate-200 bg-white/95 px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-lg backdrop-blur"
-          aria-label={session
-            ? (en ? "Open synchronized XRPL wallet status" : "Open gesynchroniseerde XRPL-walletstatus")
-            : (en ? "Synchronize an XRPL wallet" : "Synchroniseer een XRPL-wallet")}
-        >
-          <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${session ? "bg-emerald-500" : "bg-slate-300"}`} aria-hidden="true" />
-          <span className="truncate font-data">{networkLabel(session, language)}</span>
-        </button>
-
         <nav
           className="grid grid-cols-5 overflow-hidden rounded-2xl border border-slate-200 bg-white/95 p-1.5 shadow-2xl backdrop-blur"
           aria-label={en ? "Mobile terminal navigation" : "Mobiele terminalnavigatie"}
