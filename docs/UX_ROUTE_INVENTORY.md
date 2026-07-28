@@ -113,6 +113,54 @@ For every canonical hub:
 8. Use one collection registry for ID, title, supply, image, status and rule.
 9. Resolve the XRPL Foundation Certificate naming/ID mismatch before IPFS or mint activation.
 
+## Public Access Pass checkout — locked product requirement
+
+The paid `Public Access Pass` card must have a clear primary action. The payment and receiving wallet are separate choices and must not be silently assumed to be the same wallet.
+
+### Customer flow
+
+1. Click `Buy Public Access Pass` from the Public Access Pass card.
+2. Choose the XRPL wallet/address that must receive the NFT.
+   - The receiving address may be any valid supported XRPL classic address.
+   - A connected wallet can be selected or a valid receiving address can be entered and confirmed.
+3. Choose the wallet/provider used to sign and pay.
+   - Live signing adapters are shown with verified official logos.
+   - Xaman, CROSSMARK and GemWallet are separate provider choices when their adapters are proven.
+   - Unsupported wallets are never shown as working; they may use a clearly labelled external/manual payment path only after that path is validated.
+4. Choose payment asset:
+   - `0.589 XRP`; or
+   - `1.00 RLUSD` using the exact approved RLUSD issuer and currency definition for the selected XRPL network.
+5. Review receiving wallet, paying wallet/provider, asset, exact amount, destination, SourceTag and utility-only terms.
+6. Open the selected wallet or signing request.
+7. Show pending, validated, failed or expired payment status without pretending that a signature alone completed payment.
+8. After a validated payment, reserve the unique serial, place the order in the founder/issuer delivery queue, mint, create the targeted transfer offer, let the receiving wallet accept it and confirm final wallet ownership before access unlocks.
+
+### Server validation requirements
+
+- Record `receiving_wallet` and `payer_account` separately.
+- Do not require payer and receiver to be identical.
+- Validate the XRPL transaction server-side against the order:
+  - validated ledger result and `tesSUCCESS`;
+  - payment destination;
+  - exact XRP drops or exact RLUSD issued-currency amount;
+  - approved RLUSD issuer and currency code;
+  - SourceTag `2606170002`;
+  - order identifier/memo where applicable;
+  - payer account;
+  - no reused transaction hash.
+- Payment never unlocks access by itself.
+- Maximum one Public Access Pass per receiving wallet/edition policy.
+- TESTNET end-to-end proof is required before MAINNET is enabled.
+- The pass remains utility access only, with no investment, yield, profit or resale-value promise.
+
+### Current blockers that must be removed before checkout is labelled live
+
+- The existing server flow is hardcoded to `1.589 XRP`, while the approved Public Access price shown in the current NFT hub is `0.589 XRP` or `1.00 RLUSD`.
+- The existing payment request is Xaman-only.
+- The existing server rejects a payment when the payer differs from the receiving wallet.
+- RLUSD payment creation and validation are not implemented yet.
+- The Public Access card does not yet expose a real checkout action.
+
 ## QA evidence required per route
 
 A route cannot be marked passed from a green build alone. Record:
