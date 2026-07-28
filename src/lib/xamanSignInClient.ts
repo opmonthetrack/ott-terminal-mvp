@@ -30,7 +30,7 @@ export type XamanSignInVerifyResponse = {
 };
 
 async function postXamanSignIn<TResponse>(body: Record<string, unknown>): Promise<TResponse> {
-  const response = await fetch("/api/xaman-signin", {
+  const response = await fetch("/api/ott", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -45,11 +45,11 @@ async function postXamanSignIn<TResponse>(body: Record<string, unknown>): Promis
 }
 
 export function createXamanSignIn() {
-  return postXamanSignIn<XamanSignInCreateResponse>({ action: "create" });
+  return postXamanSignIn<XamanSignInCreateResponse>({ action: "xaman.createSignInPayload" });
 }
 
 export function verifyXamanSignIn(uuid: string) {
-  return postXamanSignIn<XamanSignInVerifyResponse>({ action: "verify", uuid });
+  return postXamanSignIn<XamanSignInVerifyResponse>({ action: "xaman.verifySignInPayload", uuid });
 }
 
 export function getXamanSignInUuid(response: XamanSignInCreateResponse | null) {
