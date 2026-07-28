@@ -1,3 +1,4 @@
+// One-time patch: keep profile, auth providers and NFT gallery aligned.
 import fs from "node:fs";
 
 const walletPath = "src/tabs/WalletTab.tsx";
