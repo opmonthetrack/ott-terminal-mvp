@@ -54,8 +54,8 @@ export const OTT_NFT_COLLECTIONS: NftCollectionCard[] = [
     descriptionNl:
       "De normale publieke utilitypas voor premium Academy-content en geselecteerde terminalutility.",
     supply: "100,000",
-    acquisitionEn: "0.589 XRP or 1.00 RLUSD · checkout activates only after final issuer and delivery validation",
-    acquisitionNl: "0,589 XRP of 1,00 RLUSD · checkout opent pas na definitieve issuer- en leveringsvalidatie",
+    acquisitionEn: "1.589 XRP · payment and delivery are verified before access activates",
+    acquisitionNl: "1,589 XRP · betaling en levering worden geverifieerd voordat toegang opent",
     ruleEn: "Payment alone never unlocks access; validated NFT ownership is required.",
     ruleNl: "Alleen betalen ontgrendelt niets; gevalideerd NFT-bezit is vereist.",
     status: "purchase",

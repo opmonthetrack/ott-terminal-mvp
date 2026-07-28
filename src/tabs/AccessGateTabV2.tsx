@@ -16,6 +16,7 @@ import {
 import { OttFeatureTabs, type OttFeatureTab } from "../components/OttFeatureTabs";
 import { OTTLogoMark } from "../components/OTTLogo";
 import { OTT_NFT_COLLECTIONS, type NftCollectionCard } from "../components/NftCollectionGallery";
+import { AccessPassOrderPanel } from "../components/AccessPassOrderPanel";
 import {
   clearAccessState,
   isAccessVerified,
@@ -32,17 +33,27 @@ import {
   shortNftId,
   type AccessPassOwnershipResult,
 } from "../lib/accessNftPass";
-import { loadWalletSession } from "../lib/walletSession";
-import type { WalletProviderId } from "../lib/walletRegistry";
+import { connectWalletProvider } from "../lib/walletConnectors";
+import { loadWalletSession, saveWalletSession } from "../lib/walletSession";
+import type {
+  WalletProviderId,
+  WalletVerificationMethod,
+  XrplNetwork,
+} from "../lib/walletRegistry";
 import { useTerminalLanguage } from "../lib/useTerminalLanguage";
 
 type AccessGateTabProps = {
   walletAddress?: string;
   onNavigate?: (target: string) => void;
+  onWalletConnected?: (
+    address: string,
+    providerId: WalletProviderId,
+    network: XrplNetwork,
+    verificationMethod: WalletVerificationMethod,
+  ) => void;
 };
 
 type AccessView = "overview" | "collections" | "verify" | "checkout";
-type CheckoutCurrency = "XRP" | "RLUSD";
 type CheckoutProvider = Extract<WalletProviderId, "xaman" | "crossmark" | "gemwallet">;
 
 const PROVIDERS: Array<{ id: CheckoutProvider; label: string; detail: string }> = [
@@ -51,7 +62,7 @@ const PROVIDERS: Array<{ id: CheckoutProvider; label: string; detail: string }> 
   { id: "gemwallet", label: "GemWallet", detail: "Browser extension" },
 ];
 
-export function AccessGateTab({ walletAddress = "guest", onNavigate }: AccessGateTabProps) {
+export function AccessGateTab({ walletAddress = "guest", onNavigate, onWalletConnected }: AccessGateTabProps) {
   const { language } = useTerminalLanguage();
   const en = language === "en";
   const guest = walletAddress === "guest" || !walletAddress;
@@ -60,7 +71,8 @@ export function AccessGateTab({ walletAddress = "guest", onNavigate }: AccessGat
   const [scan, setScan] = useState<AccessPassOwnershipResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
-  const [currency, setCurrency] = useState<CheckoutCurrency>("XRP");
+  const [connectingProvider, setConnectingProvider] = useState<CheckoutProvider | null>(null);
+  const [checkoutMessage, setCheckoutMessage] = useState("");
   const session = loadWalletSession();
   const initialProvider = session?.providerId === "crossmark" || session?.providerId === "gemwallet"
     ? session.providerId
@@ -92,9 +104,9 @@ export function AccessGateTab({ walletAddress = "guest", onNavigate }: AccessGat
     {
       id: "checkout",
       label: en ? "Public Pass checkout" : "Public Pass-checkout",
-      description: en ? "Choose wallet and payment asset" : "Kies wallet en betaalmiddel",
+      description: en ? "Connect a wallet and pay 1.589 XRP" : "Koppel een wallet en betaal 1.589 XRP",
       icon: CreditCard,
-      badge: "0.589",
+      badge: "1.589",
     },
   ], [en]);
 
@@ -147,6 +159,46 @@ export function AccessGateTab({ walletAddress = "guest", onNavigate }: AccessGat
     setMessage(en ? "Local access cache cleared. Ledger ownership was not changed." : "Lokale toegangscache gewist. Ledgerbezit is niet gewijzigd.");
   }
 
+  async function connectCheckoutProvider(selectedProvider: CheckoutProvider) {
+    setProvider(selectedProvider);
+    setCheckoutMessage("");
+
+    if (selectedProvider === "xaman") {
+      onNavigate?.("xaman");
+      return;
+    }
+
+    setConnectingProvider(selectedProvider);
+    try {
+      const result = await connectWalletProvider(selectedProvider);
+      saveWalletSession({
+        walletAddress: result.walletAddress,
+        providerId: result.providerId,
+        network: result.network,
+        verificationMethod: result.verificationMethod,
+      });
+      onWalletConnected?.(
+        result.walletAddress,
+        result.providerId,
+        result.network,
+        result.verificationMethod,
+      );
+      setCheckoutMessage(
+        en
+          ? `${PROVIDERS.find((item) => item.id === selectedProvider)?.label} connected successfully.`
+          : `${PROVIDERS.find((item) => item.id === selectedProvider)?.label} is succesvol gekoppeld.`,
+      );
+    } catch (error) {
+      setCheckoutMessage(
+        error instanceof Error
+          ? error.message
+          : (en ? "Wallet connection failed." : "Walletverbinding is mislukt."),
+      );
+    } finally {
+      setConnectingProvider(null);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-white text-slate-950">
       <section className="relative overflow-hidden border-b border-blue-200 bg-[radial-gradient(circle_at_15%_15%,rgba(49,92,255,0.26),transparent_34%),radial-gradient(circle_at_84%_12%,rgba(239,47,145,0.20),transparent_30%),linear-gradient(135deg,#eef4ff_0%,#ffffff_52%,#fff1fa_100%)]">
@@ -159,12 +211,12 @@ export function AccessGateTab({ walletAddress = "guest", onNavigate }: AccessGat
             </h1>
             <p className="mt-5 max-w-3xl text-base leading-7 text-slate-700">
               {en
-                ? "Overview, collections, eligibility, ownership verification and the future Public Pass checkout now have one fixed place."
-                : "Overzicht, collecties, eligibility, eigendomsverificatie en de toekomstige Public Pass-checkout hebben nu één vaste plek."}
+                ? "Overview, collections, eligibility, ownership verification and the verified Public Pass checkout now have one fixed place."
+                : "Overzicht, collecties, eligibility, eigendomsverificatie en de geverifieerde Public Pass-checkout hebben nu één vaste plek."}
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Badge text={en ? "Genesis · not for sale" : "Genesis · niet te koop"} />
-              <Badge text="Public · 0.589 XRP / 1.00 RLUSD" />
+              <Badge text="Public · 1.589 XRP" />
               <Badge text={en ? "4 earned credentials" : "4 verdiende credentials"} />
             </div>
           </div>
@@ -204,17 +256,21 @@ export function AccessGateTab({ walletAddress = "guest", onNavigate }: AccessGat
         />
       )}
       {view === "checkout" && (
-        <CheckoutPanel
-          en={en}
-          guest={guest}
-          walletAddress={walletAddress}
-          connectedProvider={session?.providerId}
-          provider={provider}
-          currency={currency}
-          setProvider={setProvider}
-          setCurrency={setCurrency}
-          onNavigate={onNavigate}
-        />
+        <>
+          <CheckoutPanel
+            en={en}
+            guest={guest}
+            walletAddress={walletAddress}
+            connectedProvider={session?.providerId}
+            provider={provider}
+            connectingProvider={connectingProvider}
+            message={checkoutMessage}
+            setProvider={setProvider}
+            onConnect={(selectedProvider) => void connectCheckoutProvider(selectedProvider)}
+            onNavigate={onNavigate}
+          />
+          <AccessPassOrderPanel walletAddress={walletAddress} onNavigate={onNavigate} />
+        </>
       )}
     </div>
   );
@@ -360,9 +416,10 @@ function CheckoutPanel({
   walletAddress,
   connectedProvider,
   provider,
-  currency,
+  connectingProvider,
+  message,
   setProvider,
-  setCurrency,
+  onConnect,
   onNavigate,
 }: {
   en: boolean;
@@ -370,13 +427,14 @@ function CheckoutPanel({
   walletAddress: string;
   connectedProvider?: WalletProviderId;
   provider: CheckoutProvider;
-  currency: CheckoutCurrency;
+  connectingProvider: CheckoutProvider | null;
+  message: string;
   setProvider: (provider: CheckoutProvider) => void;
-  setCurrency: (currency: CheckoutCurrency) => void;
+  onConnect: (provider: CheckoutProvider) => void;
   onNavigate?: (target: string) => void;
 }) {
   const providerMatches = connectedProvider === provider;
-  const price = currency === "XRP" ? "0.589 XRP" : "1.00 RLUSD";
+  const selectedProviderLabel = PROVIDERS.find((item) => item.id === provider)?.label ?? provider;
 
   return (
     <section className="mx-auto max-w-7xl px-5 pb-12 pt-2 sm:px-8 sm:pb-16">
@@ -386,7 +444,7 @@ function CheckoutPanel({
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#315cff_0%,#8249ed_52%,#ef2f91_100%)] text-white"><ShoppingBag size={22} /></span>
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">Public Access Pass</p>
-              <h2 className="mt-2 text-2xl font-semibold">{en ? "Choose the receiving wallet and payment asset." : "Kies de ontvangende wallet en het betaalmiddel."}</h2>
+              <h2 className="mt-2 text-2xl font-semibold">{en ? "Choose the receiving wallet and pay 1.589 XRP." : "Kies de ontvangende wallet en betaal 1,589 XRP."}</h2>
               <p className="mt-3 text-sm leading-7 text-slate-600">{en ? "The signing wallet must be the same wallet that receives and later proves ownership of the Access Pass." : "De signingwallet moet dezelfde wallet zijn die de Access Pass ontvangt en later het bezit bewijst."}</p>
             </div>
           </div>
@@ -397,33 +455,32 @@ function CheckoutPanel({
               <button key={item.id} type="button" onClick={() => setProvider(item.id)} className={`rounded-2xl border p-4 text-left ${provider === item.id ? "border-violet-500 bg-violet-50 ring-2 ring-violet-100" : "border-slate-200"}`}>
                 <p className="font-semibold">{item.label}</p>
                 <p className="mt-1 text-xs text-slate-500">{item.detail}</p>
-                <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">{connectedProvider === item.id ? (en ? "Connected" : "Gekoppeld") : (en ? "Select in wallet hub" : "Selecteer in wallet-hub")}</p>
+                <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">{connectedProvider === item.id ? (en ? "Connected" : "Gekoppeld") : (en ? "Select, then connect below" : "Selecteer en koppel hieronder")}</p>
               </button>
             ))}
           </div>
 
-          <p className="mt-8 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">2. Payment asset</p>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            {(["XRP", "RLUSD"] as CheckoutCurrency[]).map((asset) => (
-              <button key={asset} type="button" onClick={() => setCurrency(asset)} className={`flex items-center justify-between rounded-2xl border p-4 ${currency === asset ? "border-blue-500 bg-blue-50 ring-2 ring-blue-100" : "border-slate-200"}`}>
-                <span className="flex items-center gap-3"><Coins size={19} className="text-blue-700" /><span className="font-semibold">{asset}</span></span>
-                <span className="text-sm font-semibold">{asset === "XRP" ? "0.589" : "1.00"}</span>
-              </button>
-            ))}
+          <p className="mt-8 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">2. Payment</p>
+          <div className="mt-3 flex items-center justify-between rounded-2xl border border-blue-500 bg-blue-50 p-4 ring-2 ring-blue-100">
+            <span className="flex items-center gap-3"><Coins size={19} className="text-blue-700" /><span className="font-semibold">XRP</span></span>
+            <span className="text-sm font-semibold">1.589</span>
           </div>
 
-          <div className="mt-8 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950">
-            <p className="font-semibold">{en ? "Checkout safety lock" : "Checkout-veiligheidsslot"}</p>
-            <p className="mt-2">{en ? "The provider and currency selector is ready. Live payment remains locked until payment verification and automatic NFT delivery pass the same end-to-end production test." : "De provider- en valutakiezer is klaar. Live betaling blijft vergrendeld totdat betalingsverificatie en automatische NFT-levering dezelfde end-to-end productietest doorstaan."}</p>
+          <div className="mt-8 rounded-2xl border border-blue-200 bg-blue-50 p-5 text-sm leading-6 text-blue-950">
+            <p className="font-semibold">{en ? "Verified payment flow" : "Geverifieerde betaalflow"}</p>
+            <p className="mt-2">{en ? "Connect the wallet that will receive the Access Pass. The payment link below always requests exactly 1.589 XRP and the server verifies the validated ledger transaction before reserving an NFT." : "Koppel de wallet die de Access Pass ontvangt. De betaallink hieronder vraagt altijd exact 1.589 XRP en de server controleert de gevalideerde ledgertransactie voordat een NFT wordt gereserveerd."}</p>
           </div>
+
+          {message && <p role="status" aria-live="polite" className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700">{message}</p>}
 
           <button
             type="button"
-            onClick={() => onNavigate?.("xaman")}
-            className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3.5 text-sm font-semibold text-white"
+            onClick={() => providerMatches ? onNavigate?.("wallet") : onConnect(provider)}
+            disabled={connectingProvider !== null}
+            className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3.5 text-sm font-semibold text-white disabled:opacity-50"
           >
-            <Wallet size={18} />
-            {guest || !providerMatches ? (en ? `Connect ${PROVIDERS.find((item) => item.id === provider)?.label}` : `Koppel ${PROVIDERS.find((item) => item.id === provider)?.label}`) : (en ? "Review wallet connection" : "Controleer walletverbinding")}
+            {connectingProvider === provider ? <Loader2 className="animate-spin" size={18} /> : <Wallet size={18} />}
+            {guest || !providerMatches ? (en ? `Connect ${selectedProviderLabel}` : `Koppel ${selectedProviderLabel}`) : (en ? "Review wallet connection" : "Controleer walletverbinding")}
           </button>
         </div>
 
@@ -433,10 +490,10 @@ function CheckoutPanel({
             <img src="/nft/artwork/public-access-pass.png" alt="OTT Public Access Pass" className="mx-auto max-h-64 rounded-xl object-contain" />
           </div>
           <div className="mt-6 space-y-4 text-sm">
-            <OrderLine label={en ? "Price" : "Prijs"} value={price} />
+            <OrderLine label={en ? "Price" : "Prijs"} value="1.589 XRP" />
             <OrderLine label={en ? "Provider" : "Provider"} value={PROVIDERS.find((item) => item.id === provider)?.label ?? provider} />
             <OrderLine label={en ? "Receiver" : "Ontvanger"} value={guest ? (en ? "Not connected" : "Niet gekoppeld") : `${walletAddress.slice(0, 8)}…${walletAddress.slice(-6)}`} />
-            <OrderLine label={en ? "Delivery" : "Levering"} value={en ? "Locked pending E2E" : "Vergrendeld tot E2E"} />
+            <OrderLine label={en ? "Payment link" : "Betaallink"} value={en ? "Available below" : "Hieronder beschikbaar"} />
           </div>
         </aside>
       </div>
