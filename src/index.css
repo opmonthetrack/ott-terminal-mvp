@@ -1,11 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;600;700&display=swap');
 @import "tailwindcss";
 @import "./styles/remainingTabsLightOverride.css";
 @import "./styles/accessibleSelectedStates.css";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-orbitron: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-orbitron: "Orbitron", "Inter", ui-sans-serif, system-ui, sans-serif;
   --color-ott-blue: #1d4ed8;
   --color-ott-pink: #9d174d;
 }
@@ -84,9 +84,17 @@ body {
   line-height: 1.5;
 }
 
-.font-orbitron,
-.font-mono {
-  font-family: var(--font-sans) !important;
+/* Orbitron is reserved for explicit brand/title classes. Long-form copy remains Inter. */
+.font-orbitron {
+  font-family: var(--font-orbitron) !important;
+}
+
+.font-mono,
+code,
+pre,
+kbd,
+samp {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace !important;
 }
 
 [class*="uppercase"] {
@@ -131,6 +139,16 @@ button,
   min-height: 44px;
 }
 
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]) {
+  transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+button:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
 button:focus-visible,
 a:focus-visible,
 input:focus-visible,
@@ -154,6 +172,53 @@ select {
   line-height: 1.35rem !important;
 }
 
+/* Mobile-first protection for XRPL tables, charts, hashes and code snippets. */
+main,
+main section,
+main article,
+main div {
+  min-width: 0;
+}
+
+main img,
+main canvas,
+main video,
+main iframe {
+  max-width: 100%;
+}
+
+main table {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+main pre {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: pre;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+main code:not(pre code),
+main a,
+main td,
+main th,
+main [data-xrpl-value] {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+[role="status"],
+[aria-live] {
+  max-width: min(92vw, 42rem);
+}
+
 @media (max-width: 640px) {
   header > div:first-child {
     gap: 0.5rem;
@@ -161,5 +226,32 @@ select {
 
   header [aria-pressed] {
     padding-inline: 0.625rem !important;
+  }
+
+  main table {
+    font-size: 0.8125rem;
+  }
+
+  main pre {
+    font-size: 0.75rem;
+    line-height: 1.35rem;
+  }
+
+  .font-orbitron {
+    letter-spacing: 0.01em !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
