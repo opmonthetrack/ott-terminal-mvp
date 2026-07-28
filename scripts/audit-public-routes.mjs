@@ -4,26 +4,61 @@ import process from "node:process";
 
 const root = process.cwd();
 const appPath = path.join(root, "src", "App.tsx");
+const mainPath = path.join(root, "src", "main.tsx");
 const app = fs.readFileSync(appPath, "utf8");
+const main = fs.readFileSync(mainPath, "utf8");
 
-const expectedPublicTabs = [
+const expectedPublicHubs = [
+  "home",
+  "academy",
+  "intel",
+  "network",
+  "wallet",
+  "dashboard",
+  "accessgate",
+  "roadmap",
+];
+
+const expectedNonFounderRoutes = [
   "home",
   "dashboard",
-  "wallet",
-  "academy",
-  "xamanactivation",
-  "network",
-  "intel",
-  "news",
-  "ottintelligence",
-  "roadmap",
-  "support",
-  "xaman",
-  "xrplverify",
-  "source",
   "checkin",
+  "source",
+  "roadmap",
+  "xaman",
+  "xamanactivation",
+  "xrplverify",
+  "network",
+  "wallet",
+  "ecosystem",
+  "validator",
+  "developer",
+  "tokenization",
   "rewardledger",
   "accessgate",
+  "ottintelligence",
+  "news",
+  "defi",
+  "academy",
+  "support",
+  "intel",
+];
+
+const founderOnlyRoutes = [
+  "pitchmode",
+  "submission",
+  "smoketest",
+  "launch",
+  "truthdesk",
+  "marketplace",
+  "otttestnet",
+  "portfolio",
+  "partners",
+  "factory",
+  "profile",
+  "token",
+  "rewardpolicy",
+  "ai",
 ];
 
 function fail(message) {
@@ -31,36 +66,89 @@ function fail(message) {
   process.exit(1);
 }
 
+function unique(values) {
+  return [...new Set(values)];
+}
+
+function extractQuotedRouteIds(source) {
+  return [...source.matchAll(/"([a-z][a-z0-9-]*)"/g)]
+    .map((match) => match[1])
+    .filter((value) => expectedNonFounderRoutes.includes(value) || founderOnlyRoutes.includes(value));
+}
+
 const coreStart = app.indexOf("function getCoreMenuGroups");
 const founderStart = app.indexOf("function getFounderMenuGroups");
-if (coreStart < 0 || founderStart < 0 || founderStart <= coreStart) {
+const initialRouteStart = app.indexOf("function getInitialActiveTab");
+if (coreStart < 0 || founderStart < 0 || initialRouteStart < 0 || founderStart <= coreStart || initialRouteStart <= founderStart) {
   fail("could not locate the public and founder menu registries in src/App.tsx");
 }
 
 const coreMenuSource = app.slice(coreStart, founderStart);
-const publicIds = [...coreMenuSource.matchAll(/\bid:\s*"([a-z0-9-]+)"/g)].map((match) => match[1]);
-const duplicates = publicIds.filter((id, index) => publicIds.indexOf(id) !== index);
+const founderMenuSource = app.slice(founderStart, initialRouteStart);
+const publicHubIds = unique(extractQuotedRouteIds(coreMenuSource));
+const founderMenuIds = unique(extractQuotedRouteIds(founderMenuSource));
 
-if (duplicates.length) {
-  fail(`duplicate public menu ids: ${[...new Set(duplicates)].join(", ")}`);
+if (publicHubIds.length !== expectedPublicHubs.length) {
+  fail(`expected ${expectedPublicHubs.length} public hubs but found ${publicHubIds.length}: ${publicHubIds.join(", ")}`);
 }
 
-if (publicIds.length !== expectedPublicTabs.length) {
-  fail(`expected ${expectedPublicTabs.length} public menu items but found ${publicIds.length}: ${publicIds.join(", ")}`);
+for (const id of expectedPublicHubs) {
+  if (!publicHubIds.includes(id)) {
+    fail(`public hub '${id}' is missing`);
+  }
 }
 
-for (const id of expectedPublicTabs) {
-  if (!publicIds.includes(id)) {
-    fail(`public menu item '${id}' is missing`);
+for (const id of publicHubIds) {
+  if (!expectedPublicHubs.includes(id)) {
+    fail(`unexpected public hub '${id}' is not part of the eight-hub contract`);
+  }
+  if (founderOnlyRoutes.includes(id)) {
+    fail(`founder route '${id}' leaked into the public hub menu`);
+  }
+}
+
+for (const id of expectedNonFounderRoutes) {
+  if (!app.includes(`activeTab === "${id}"`)) {
+    fail(`non-founder route '${id}' has no render route`);
+  }
+}
+
+for (const id of founderOnlyRoutes) {
+  if (!founderMenuIds.includes(id)) {
+    fail(`founder route '${id}' is missing from the private founder menu`);
   }
   if (!app.includes(`activeTab === "${id}"`)) {
-    fail(`public menu item '${id}' has no render route`);
+    fail(`founder route '${id}' has no render route`);
+  }
+  const founderCatalogPattern = new RegExp(`id:\\s*"${id}"[\\s\\S]{0,260}?audience:\\s*"founder"`);
+  if (!founderCatalogPattern.test(app)) {
+    fail(`founder route '${id}' is not classified as founder-only`);
   }
 }
 
-for (const id of publicIds) {
-  if (!expectedPublicTabs.includes(id)) {
-    fail(`unexpected public menu item '${id}' is not documented in the 17-item public route contract`);
+const requiredRolePolicyFragments = [
+  'type RouteAudience = "public" | "account" | "premium" | "founder"',
+  "hasFounderAccess(user)",
+  "loadPremiumAccessStatus",
+  "getRouteLockReason",
+  'app_metadata.ott_role',
+];
+for (const fragment of requiredRolePolicyFragments) {
+  if (!app.includes(fragment) && !main.includes(fragment)) {
+    fail(`missing role/access policy fragment: ${fragment}`);
+  }
+}
+
+const requiredFounderGuardFragments = [
+  "FOUNDER_QUERY_KEYS",
+  "FOUNDER_TAB_IDS",
+  "founderRequest.requested && !founderAuthorized",
+  "sanitizeFounderUrl",
+  "hasFounderAccess(user)",
+];
+for (const fragment of requiredFounderGuardFragments) {
+  if (!main.includes(fragment)) {
+    fail(`missing founder guard fragment in src/main.tsx: ${fragment}`);
   }
 }
 
@@ -96,4 +184,6 @@ for (const amount of ["0.589", "1.589", "2.589"]) {
   }
 }
 
-console.log(`Site route audit passed: ${publicIds.length} public menu items, return routing, legal files and XRP support amounts are complete.`);
+console.log(
+  `Site route audit passed: ${expectedPublicHubs.length} public hubs, ${expectedNonFounderRoutes.length} non-founder routes, ${founderOnlyRoutes.length} protected founder routes, return routing, legal files and XRP support amounts are complete.`,
+);
