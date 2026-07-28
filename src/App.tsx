@@ -414,7 +414,7 @@ function getCoreMenuGroups(catalog: Record<ActiveTab, RouteItem>, language: Term
     { title: en ? "Start" : "Start", items: pickRoutes(catalog, ["home", "academy"]) },
     { title: en ? "Discover" : "Ontdekken", items: pickRoutes(catalog, ["intel", "network"]) },
     { title: en ? "My OTT" : "Mijn OTT", items: pickRoutes(catalog, ["wallet", "dashboard"]) },
-    { title: en ? "Access & community" : "Toegang en community", items: pickRoutes(catalog, ["accessgate", "roadmap"]) },
+    { title: en ? "Access & community" : "Toegang en community", items: pickRoutes(catalog, ["accessgate", "roadmap", "support"]) },
   ];
 }
 
@@ -925,7 +925,7 @@ function TopNavigation({
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
-      <div className="mx-auto flex h-[72px] max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-[72px] max-w-7xl items-center gap-2 px-3 sm:gap-4 sm:px-6 lg:px-8">
         <button type="button" onClick={() => onNavigate(founderMode ? "launch" : "home")} className="flex shrink-0 items-center gap-3 text-left" aria-label="OTT home">
           <OTTLogoMark size={36} />
           <div className="hidden sm:block">
@@ -933,6 +933,41 @@ function TopNavigation({
             <p className="text-[11px] text-slate-500">{founderMode ? "Founder control" : "XRPL learning platform"}</p>
           </div>
         </button>
+
+        {!founderMode && (
+          <div className="flex min-w-0 items-center gap-1 md:hidden">
+            <button
+              type="button"
+              onClick={() => onNavigate(walletConnected ? "wallet" : "xaman")}
+              className="flex min-w-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-left text-[10px] font-semibold text-slate-700"
+              aria-label={walletConnected
+                ? (language === "en" ? "Open synchronized XRPL wallet" : "Open gesynchroniseerde XRPL-wallet")
+                : (language === "en" ? "Synchronize an XRPL wallet" : "Synchroniseer een XRPL-wallet")}
+            >
+              <span className={`h-2 w-2 shrink-0 rounded-full ${walletConnected ? "bg-emerald-500" : "bg-slate-300"}`} aria-hidden="true" />
+              <span className="min-w-0 leading-tight">
+                <span className="block">XRPL</span>
+                <span className="block max-w-16 truncate text-[9px] font-medium text-slate-500">
+                  {walletConnected
+                    ? (language === "en" ? "synchronized" : "gesynchroniseerd")
+                    : (language === "en" ? "not synchronized" : "niet gesynchroniseerd")}
+                </span>
+              </span>
+            </button>
+
+            {activeTab === "home" && (
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new Event("ott-open-terminal-tour"))}
+                className="inline-flex min-h-10 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[10px] font-semibold text-slate-700"
+                aria-label={language === "en" ? "Start the OTT Terminal tour" : "Start de OTT Terminal-tour"}
+              >
+                <ShieldCheck size={14} className="text-blue-700" />
+                <span className="leading-tight">Start tour</span>
+              </button>
+            )}
+          </div>
+        )}
 
         <nav className="mx-auto hidden items-center gap-1 md:flex" aria-label="Primary navigation">
           {primaryNavigation.map((item) => {
@@ -953,7 +988,7 @@ function TopNavigation({
           })}
         </nav>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
           <div className="flex items-center rounded-lg border border-slate-200 p-1">
             <button type="button" onClick={() => setLanguage("en")} aria-pressed={language === "en"} className={`rounded-md px-2.5 py-1.5 text-[11px] font-semibold ${language === "en" ? "bg-slate-900 text-white" : "text-slate-500"}`}>EN</button>
             <button type="button" onClick={() => setLanguage("nl")} aria-pressed={language === "nl"} className={`rounded-md px-2.5 py-1.5 text-[11px] font-semibold ${language === "nl" ? "bg-slate-900 text-white" : "text-slate-500"}`}>NL</button>
@@ -1074,7 +1109,7 @@ function AllToolsMenu({
             <p className="mt-1 text-sm text-slate-500">
               {founderMode
                 ? (language === "en" ? "Private operations, QA and issuer tools." : "Privé operatie-, QA- en issuer-tools.")
-                : (language === "en" ? "Eight clear destinations. Advanced pages live inside these hubs." : "Acht duidelijke bestemmingen. Geavanceerde pagina's staan binnen deze hubs.")}
+                : (language === "en" ? "Nine clear destinations. Advanced pages live inside these hubs." : "Negen duidelijke bestemmingen. Geavanceerde pagina's staan binnen deze hubs.")}
             </p>
           </div>
           <button type="button" onClick={onClose} className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50" aria-label={language === "en" ? "Close menu" : "Menu sluiten"}>

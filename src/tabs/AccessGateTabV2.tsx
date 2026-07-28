@@ -338,17 +338,54 @@ export function AccessGateTab({ walletAddress = "guest", onNavigate, onWalletCon
 }
 
 function OverviewPanel({ en, onOpenCollections }: { en: boolean; onOpenCollections: () => void }) {
+  const statusLabel = (status: NftCollectionCard["status"]) => {
+    if (status === "reward") return en ? "Founder reward" : "Founderbeloning";
+    if (status === "purchase") return en ? "Public · 1.589 XRP" : "Publiek · 1,589 XRP";
+    if (status === "earned") return en ? "Earned credential" : "Verdiende credential";
+    return en ? "Planned" : "Gepland";
+  };
+
   return (
     <section className="mx-auto max-w-7xl px-5 pb-12 pt-2 sm:px-8 sm:pb-16">
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-        <figure className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-950 shadow-xl">
-          <img
-            src="/nft/overview/ott-nft-progression-overview.png"
-            alt={en ? "OTT NFT progression overview" : "OTT NFT-voortgangsoverzicht"}
-            className="h-auto w-full object-cover"
-          />
-        </figure>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+      <div className="mb-6 max-w-3xl">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">OTT NFT progression</p>
+        <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
+          {en ? "Seven clear routes, from access to achievement." : "Zeven duidelijke routes, van toegang tot prestatie."}
+        </h2>
+        <p className="mt-3 text-sm leading-7 text-slate-600">
+          {en
+            ? "Every title, status and supply remains crisp and readable. Open Collections for the complete acquisition and eligibility rules."
+            : "Elke titel, status en voorraad blijft scherp en leesbaar. Open Collecties voor alle verkrijgings- en eligibilityregels."}
+        </p>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1fr_280px]">
+        <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {OTT_NFT_COLLECTIONS.map((collection, index) => (
+            <li key={collection.id} className={`rounded-2xl border bg-white p-4 shadow-sm ${index === OTT_NFT_COLLECTIONS.length - 1 ? "sm:col-span-2 lg:col-span-1" : ""}`}>
+              <div className="flex items-start gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-950 text-sm font-semibold text-white">
+                  {index + 1}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-700">{statusLabel(collection.status)}</p>
+                  <h3 className="mt-1 text-sm font-semibold leading-5 text-slate-950">
+                    {en ? collection.titleEn : collection.titleNl}
+                  </h3>
+                </div>
+              </div>
+              <p className="mt-4 text-xs leading-5 text-slate-600">
+                {en ? collection.descriptionEn : collection.descriptionNl}
+              </p>
+              <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
+                <span className="text-slate-500">{en ? "Maximum supply" : "Maximale voorraad"}</span>
+                <strong className="text-slate-900">{collection.supply}</strong>
+              </div>
+            </li>
+          ))}
+        </ol>
+
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
           <SummaryCard icon={ShoppingBag} label="Access" value="2" text={en ? "Genesis and Public Pass" : "Genesis en Public Pass"} />
           <SummaryCard icon={BadgeCheck} label={en ? "Earned" : "Verdiend"} value="4" text={en ? "Verified learning credentials" : "Geverifieerde leercredentials"} />
           <SummaryCard icon={Lock} label={en ? "Planned" : "Gepland"} value="1" text={en ? "Operations credential" : "Operations-credential"} />

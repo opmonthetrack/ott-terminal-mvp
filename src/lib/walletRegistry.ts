@@ -18,6 +18,7 @@ export type WalletProvider = {
   id: WalletProviderId;
   name: string;
   badge: string;
+  logoUrl?: string;
   accent: string;
   connectionType: WalletConnectionType;
   supportLevel: WalletSupportLevel;
@@ -37,6 +38,7 @@ export const WALLET_REGISTRY: WalletProvider[] = [
     id: "xaman",
     name: "Xaman",
     badge: "X",
+    logoUrl: "/brand/wallets/xaman.jpg",
     accent: "#173bdb",
     connectionType: "xaman-payload",
     supportLevel: "live",
@@ -56,6 +58,7 @@ export const WALLET_REGISTRY: WalletProvider[] = [
     id: "crossmark",
     name: "CROSSMARK",
     badge: "C",
+    logoUrl: "https://crossmark.io/_next/static/media/icon.296017e6.png",
     accent: "#ef3340",
     connectionType: "browser-extension",
     supportLevel: "beta",
@@ -75,6 +78,7 @@ export const WALLET_REGISTRY: WalletProvider[] = [
     id: "gemwallet",
     name: "GemWallet",
     badge: "G",
+    logoUrl: "https://gemwallet.app/img/logo.svg",
     accent: "#11a7e8",
     connectionType: "browser-extension",
     supportLevel: "beta",
@@ -94,6 +98,7 @@ export const WALLET_REGISTRY: WalletProvider[] = [
     id: "walletconnect",
     name: "WalletConnect",
     badge: "W",
+    logoUrl: "https://walletconnect.com/icon.png?14b0dfc4ce526451",
     accent: "#2788f6",
     connectionType: "walletconnect",
     supportLevel: "planned",
@@ -112,6 +117,7 @@ export const WALLET_REGISTRY: WalletProvider[] = [
     id: "joey",
     name: "Joey Wallet",
     badge: "J",
+    logoUrl: "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/c0/63/4c/c0634c60-3598-242f-d2c8-97a9ca5f13b4/AppIcon-0-0-1x_U007epad-0-1-85-220.png/512x512bb.jpg",
     accent: "#ff5a36",
     connectionType: "walletconnect",
     supportLevel: "planned",
@@ -135,6 +141,7 @@ export const WALLET_REGISTRY: WalletProvider[] = [
     id: "katz",
     name: "Katz Wallet",
     badge: "K",
+    logoUrl: "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/05/5f/74/055f7473-1c3c-700d-ef3c-67676e34f4c2/AppIcon-0-0-1x_U007emarketing-0-8-0-85-220.png/512x512bb.jpg",
     accent: "#24a8ff",
     connectionType: "walletconnect",
     supportLevel: "planned",
@@ -157,6 +164,7 @@ export const WALLET_REGISTRY: WalletProvider[] = [
     id: "metamask-xrpl",
     name: "MetaMask XRPL Snap",
     badge: "M",
+    logoUrl: "https://metamask.io/favicons/default/favicon.svg",
     accent: "#e2761b",
     connectionType: "snap",
     supportLevel: "planned",
@@ -176,6 +184,7 @@ export const WALLET_REGISTRY: WalletProvider[] = [
     id: "ledger",
     name: "Ledger",
     badge: "L",
+    logoUrl: "https://ledger-wp-website-s3-prd.ledger.com/uploads/2021/11/Ledger_favicon.png",
     accent: "#111827",
     connectionType: "hardware",
     supportLevel: "planned",

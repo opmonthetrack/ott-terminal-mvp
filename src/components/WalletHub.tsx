@@ -57,9 +57,9 @@ export function WalletHub({
   const isEnglish = language === "en";
   const storedSession = loadWalletSession();
   const connectedAddress = isLikelyXrplAddress(walletAddress) ? walletAddress : "";
-  const connectedProviderId = storedSession?.walletAddress === connectedAddress
+  const connectedProviderId = connectedAddress && storedSession?.walletAddress === connectedAddress
     ? storedSession.providerId
-    : "read-only";
+    : "xaman";
 
   const [selectedProviderId, setSelectedProviderId] = useState<WalletProviderId>(connectedProviderId || "xaman");
   const [busyProviderId, setBusyProviderId] = useState<WalletProviderId | null>(null);
@@ -228,11 +228,13 @@ export function WalletHub({
                 aria-pressed={isSelected}
               >
                 <span
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-lg font-bold text-white"
-                  style={{ backgroundColor: provider.accent }}
+                  className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white text-lg font-bold text-white"
+                  style={provider.logoUrl ? undefined : { backgroundColor: provider.accent }}
                   aria-hidden="true"
                 >
-                  {provider.badge}
+                  {provider.logoUrl
+                    ? <img src={provider.logoUrl} alt="" className="h-full w-full object-contain" />
+                    : provider.badge}
                 </span>
                 <span className="min-w-0">
                   <span className="block text-sm font-semibold text-slate-950">{provider.name}</span>
@@ -250,15 +252,28 @@ export function WalletHub({
                 }`}>
                   {getWalletSupportLabel(provider.supportLevel, language)}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => void connectProvider(provider.id)}
-                  disabled={busyProviderId !== null}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-                >
-                  {busyProviderId === provider.id ? <Loader2 className="animate-spin" size={14} /> : canConnect ? <ArrowRight size={14} /> : <BookOpen size={14} />}
-                  {canConnect ? (isEnglish ? "Connect" : "Koppelen") : (isEnglish ? "Learn" : "Leren")}
-                </button>
+                {canConnect ? (
+                  <button
+                    type="button"
+                    onClick={() => void connectProvider(provider.id)}
+                    disabled={busyProviderId !== null}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    {busyProviderId === provider.id ? <Loader2 className="animate-spin" size={14} /> : <ArrowRight size={14} />}
+                    {isEnglish ? "Connect" : "Koppelen"}
+                  </button>
+                ) : (
+                  <a
+                    href={provider.website}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => setSelectedProviderId(provider.id)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    <BookOpen size={14} />
+                    {isEnglish ? "Learn" : "Leren"}
+                  </a>
+                )}
               </div>
             </article>
           );
@@ -269,10 +284,12 @@ export function WalletHub({
         <article className="rounded-3xl bg-slate-50 p-6">
           <div className="flex items-start gap-4">
             <span
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-xl font-bold text-white"
-              style={{ backgroundColor: selectedProvider.accent }}
+              className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white text-xl font-bold text-white"
+              style={selectedProvider.logoUrl ? undefined : { backgroundColor: selectedProvider.accent }}
             >
-              {selectedProvider.badge}
+              {selectedProvider.logoUrl
+                ? <img src={selectedProvider.logoUrl} alt="" className="h-full w-full object-contain" />
+                : selectedProvider.badge}
             </span>
             <div>
               <p className="text-xs font-semibold text-blue-700">{selectedProvider.custody}</p>
@@ -376,6 +393,7 @@ export function WalletHub({
             providerName={profileProvider.name}
             providerAccent={profileProvider.accent}
             providerBadge={profileProvider.badge}
+            providerLogoUrl={profileProvider.logoUrl}
             ownershipVerified={ownershipVerified}
             isEnglish={isEnglish}
             onCopy={copyAddress}
@@ -400,6 +418,7 @@ function WalletProfileCard({
   providerName,
   providerAccent,
   providerBadge,
+  providerLogoUrl,
   ownershipVerified,
   isEnglish,
   onCopy,
@@ -413,6 +432,7 @@ function WalletProfileCard({
   providerName: string;
   providerAccent: string;
   providerBadge: string;
+  providerLogoUrl?: string;
   ownershipVerified: boolean;
   isEnglish: boolean;
   onCopy: () => void;
@@ -423,8 +443,13 @@ function WalletProfileCard({
     <article className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-950 text-white shadow-lg">
       <div className="flex flex-col justify-between gap-5 border-b border-white/10 p-6 sm:flex-row sm:items-start sm:p-8">
         <div className="flex min-w-0 items-start gap-4">
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-xl font-bold text-white" style={{ backgroundColor: providerAccent }}>
-            {providerBadge}
+          <span
+            className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/15 bg-white text-xl font-bold text-white"
+            style={providerLogoUrl ? undefined : { backgroundColor: providerAccent }}
+          >
+            {providerLogoUrl
+              ? <img src={providerLogoUrl} alt="" className="h-full w-full object-contain" />
+              : providerBadge}
           </span>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">

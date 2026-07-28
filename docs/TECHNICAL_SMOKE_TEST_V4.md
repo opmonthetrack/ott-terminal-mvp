@@ -4,7 +4,7 @@ This checklist converts external product feedback into release gates. A test may
 
 ## 1. Public routing and refresh
 
-- Open each of the eight public hubs: Home, Learn, Explore, XRPL Tools, Profile & Wallet, Progress, Access & Credentials and Community.
+- Open each of the nine public hubs: Home, Learn, Explore, XRPL Tools, Profile & Wallet, Progress, Access & Credentials, Community and Support OTT.
 - Open every documented `?tab=` subroute directly in a new browser tab.
 - Refresh each direct route manually.
 - Use browser back and forward repeatedly.
@@ -123,7 +123,7 @@ Expected: the visitor can choose Learn, Explore or Initialize Terminal without a
 - Wallet-based rights must require a verified account-wallet link.
 - `?founder=1` must not authorize a public/member account.
 - Founder and issuer APIs must also require the server allowlist.
-- Founder routes must never appear in the eight public hubs.
+- Founder routes must never appear in the nine public hubs.
 
 Expected: public, account, premium and founder are distinct and enforced on both client and server.
 
