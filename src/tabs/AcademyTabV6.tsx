@@ -12,7 +12,7 @@ export function AcademyTab(props: AcademyTabProps) {
   return (
     <>
       <AcademyCore {...props} />
-      <WalletAcademyPanel />
+      <WalletAcademyPanel walletAddress={props.walletAddress} onNavigate={props.onNavigate} />
       <NftCollectionGallery compact />
       <AcademyProgressDashboard
         walletAddress={props.walletAddress}
