@@ -10,23 +10,15 @@
   --ott-bg: #ffffff;
   --ott-bg-soft: #f7f8fc;
   --ott-text: #080808;
-  --ott-muted: rgba(8, 8, 8, 0.62);
-  --ott-dim: rgba(8, 8, 8, 0.38);
-  --ott-border: rgba(8, 8, 8, 0.12);
-  --ott-blue: #3898e8;
-  --ott-magenta: #c83888;
-  --ott-coral: #d84858;
-  --ott-gradient: linear-gradient(
-    135deg,
-    #3898e8 0%,
-    #8f49d8 42%,
-    #c83888 68%,
-    #d84858 100%
-  );
+  --ott-muted: #475569;
+  --ott-dim: #64748b;
+  --ott-border: rgba(15, 23, 42, 0.12);
+  --ott-blue: #1d4ed8;
+  --ott-magenta: #334155;
+  --ott-coral: #be123c;
+  --ott-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
   --ott-radial-bg:
-    radial-gradient(circle at 18% 18%, rgba(56, 152, 232, 0.16), transparent 28%),
-    radial-gradient(circle at 82% 8%, rgba(200, 56, 136, 0.16), transparent 28%),
-    radial-gradient(circle at 85% 82%, rgba(216, 72, 88, 0.12), transparent 30%),
+    radial-gradient(circle at 16% 8%, rgba(148, 163, 184, 0.12), transparent 28%),
     #ffffff;
 }
 

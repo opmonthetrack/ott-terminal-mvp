@@ -42,8 +42,12 @@ const categoryLabels: Record<DefiDirectoryCategory | "all", { en: string; nl: st
   all: { en: "All", nl: "Alles" },
   yield: { en: "Yield and credit", nl: "Yield en krediet" },
   dex: { en: "DEX and liquidity", nl: "DEX en liquiditeit" },
+  lending: { en: "Lending", nl: "Lenen" },
   analytics: { en: "Analytics", nl: "Analyse" },
   nft: { en: "NFT", nl: "NFT" },
+  rwa: { en: "RWA", nl: "RWA" },
+  bridge: { en: "Bridge", nl: "Bridge" },
+  infrastructure: { en: "Infrastructure", nl: "Infrastructuur" },
   xahau: { en: "Xahau", nl: "Xahau" },
 };
 
@@ -384,10 +388,10 @@ function DirectoryView({ isEnglish }: { isEnglish: boolean }) {
     <div data-page-region="true" className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
       <div className="max-w-3xl">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
-          {isEnglish ? "Learn before visiting" : "Leer vóór doorsturen"}
+          {isEnglish ? "XRPL ecosystem directory" : "XRPL-ecosysteemoverzicht"}
         </p>
         <h2 className="mt-3 text-3xl font-semibold tracking-tight">
-          {isEnglish ? "What each platform does, how it works and where risk remains" : "Wat elk platform doet, hoe het werkt en waar risico blijft"}
+          {isEnglish ? `${DEFI_DIRECTORY.length} reviewed and research-stage platforms` : `${DEFI_DIRECTORY.length} gecontroleerde en onderzoek-platforms`}
         </h2>
         <p className="mt-4 text-sm leading-7 text-slate-600 sm:text-base">
           {isEnglish
@@ -425,7 +429,7 @@ function DirectoryView({ isEnglish }: { isEnglish: boolean }) {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h3 className="font-semibold">{entry.name}</h3>
-                  <p className="mt-2 text-xs leading-5 text-slate-500">{isEnglish ? entry.summaryEn : entry.summaryNl}</p>
+                  <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-600">{isEnglish ? entry.summaryEn : entry.summaryNl}</p>
                 </div>
                 {entry.verifiedDomain ? (
                   <BadgeCheck className="shrink-0 text-emerald-600" size={19} />

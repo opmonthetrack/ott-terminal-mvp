@@ -1,0 +1,127 @@
+/* OTT Terminal — accessible selected and active surfaces
+   Loaded after the legacy light override so semantic selected states
+   keep readable contrast, visible focus and a non-colour-only cue. */
+
+:root {
+  --ott-selected-text: #ffffff;
+  --ott-selected-muted: rgba(255, 255, 255, 0.86);
+  --ott-selected-border: rgba(255, 255, 255, 0.56);
+  --ott-selected-soft: rgba(255, 255, 255, 0.16);
+}
+
+/* Explore OTT destination cards. */
+#all-tools-dialog button[aria-current="page"] {
+  position: relative;
+  background: var(--ott-gradient) !important;
+  color: var(--ott-selected-text) !important;
+  border-color: var(--ott-selected-border) !important;
+  box-shadow:
+    0 0 0 2px rgba(37, 99, 235, 0.24),
+    0 14px 32px rgba(15, 23, 42, 0.18) !important;
+  padding-right: 3rem;
+}
+
+#all-tools-dialog button[aria-current="page"]::after {
+  content: "✓";
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  display: grid;
+  width: 1.5rem;
+  height: 1.5rem;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+#all-tools-dialog button[aria-current="page"] :is(p, span, strong, small, svg) {
+  color: var(--ott-selected-text) !important;
+}
+
+#all-tools-dialog button[aria-current="page"] p + p {
+  color: var(--ott-selected-muted) !important;
+}
+
+/* Category and mode tabs such as XLS, CBDC, XRPL Core and ISO 20022. */
+[role="tablist"] button[role="tab"][aria-selected="true"] {
+  background: var(--ott-gradient) !important;
+  color: var(--ott-selected-text) !important;
+  border-color: var(--ott-selected-border) !important;
+  box-shadow:
+    0 0 0 2px rgba(37, 99, 235, 0.22),
+    0 12px 26px rgba(15, 23, 42, 0.16) !important;
+  transform: translateY(-1px);
+}
+
+[role="tablist"] button[role="tab"][aria-selected="true"] :is(p, span, strong, small, svg) {
+  color: var(--ott-selected-text) !important;
+}
+
+[role="tablist"] button[role="tab"][aria-selected="true"] [class*="bg-white/"] {
+  background: var(--ott-selected-soft) !important;
+  color: var(--ott-selected-text) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Wallet provider cards: the article contains the aria-pressed provider selector. */
+article:has(> button[aria-pressed="true"]) {
+  position: relative;
+  background: var(--ott-gradient) !important;
+  color: var(--ott-selected-text) !important;
+  border-color: var(--ott-selected-border) !important;
+  box-shadow:
+    0 0 0 2px rgba(37, 99, 235, 0.22),
+    0 14px 32px rgba(15, 23, 42, 0.18) !important;
+}
+
+article:has(> button[aria-pressed="true"])::after {
+  content: "✓";
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  display: grid;
+  width: 1.5rem;
+  height: 1.5rem;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+article:has(> button[aria-pressed="true"]) :is(p, span, strong, small, svg) {
+  color: var(--ott-selected-text) !important;
+}
+
+article:has(> button[aria-pressed="true"]) > button[aria-pressed="true"] {
+  padding-right: 2rem;
+}
+
+article:has(> button[aria-pressed="true"]) button:not([aria-pressed="true"]),
+article:has(> button[aria-pressed="true"]) [class*="rounded-full"] {
+  background: var(--ott-selected-soft) !important;
+  color: var(--ott-selected-text) !important;
+  border-color: rgba(255, 255, 255, 0.34) !important;
+}
+
+/* Strong keyboard focus that remains visible on white and gradient surfaces. */
+#all-tools-dialog button:focus-visible,
+[role="tablist"] button[role="tab"]:focus-visible,
+article > button[aria-pressed]:focus-visible {
+  outline: 3px solid #0f172a !important;
+  outline-offset: 3px !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [role="tablist"] button[role="tab"][aria-selected="true"] {
+    transform: none;
+  }
+}

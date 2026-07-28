@@ -197,10 +197,10 @@ async function createXamanVotePayload(body: RequestBody) {
     };
   }
 
-  if (walletAddress && !isValidXrplAddress(walletAddress)) {
+  if (!walletAddress || !isValidXrplAddress(walletAddress)) {
     return {
       status: 400,
-      body: { ok: false, error: "Invalid walletAddress." },
+      body: { ok: false, error: "Connect and verify a valid XRPL wallet before voting." },
     };
   }
 
@@ -232,9 +232,7 @@ async function createXamanVotePayload(body: RequestBody) {
     ],
   };
 
-  if (walletAddress) {
-    txjson.Account = walletAddress;
-  }
+  txjson.Account = walletAddress;
 
   const response = await fetch(XAMAN_API_URL, {
     method: "POST",
@@ -370,7 +368,11 @@ async function fetchAllVoteAccountTransactions() {
   const entries: AccountTxEntry[] = [];
   let marker: unknown = undefined;
 
+  let pagesScanned = 0;
+  let scanComplete = false;
+
   for (let page = 0; page < MAX_ACCOUNT_TX_PAGES; page += 1) {
+    pagesScanned = page + 1;
     const params: Record<string, unknown> = {
       account: ROADMAP_VOTE_WALLET,
       ledger_index_min: -1,
@@ -405,14 +407,15 @@ async function fetchAllVoteAccountTransactions() {
     marker = data.result?.marker;
 
     if (marker === undefined || marker === null) {
+      scanComplete = true;
       break;
     }
   }
 
-  return entries;
+  return { entries, scanComplete, pagesScanned };
 }
 
-function buildStatsResponse(entries: AccountTxEntry[]) {
+function buildStatsResponse(entries: AccountTxEntry[], scanComplete: boolean, pagesScanned: number) {
   const allVerifiedTransactions = entries
     .map(parseVerifiedVote)
     .filter((vote): vote is VerifiedVoteTransaction => Boolean(vote))
@@ -465,12 +468,16 @@ function buildStatsResponse(entries: AccountTxEntry[]) {
       uniqueWallets: activeVotes.length,
       verifiedVoteTransactions: allVerifiedTransactions.length,
       scannedAccountTransactions: entries.length,
+      scanComplete,
+      pagesScanned,
+      scanLimit: MAX_ACCOUNT_TX_PAGES * ACCOUNT_TX_PAGE_LIMIT,
     },
     counts,
     ranking,
     mostVoted: ranking[0] ?? null,
     leastVoted: ranking.length > 0 ? ranking[ranking.length - 1] : null,
     recentVotes: activeVotes.slice(0, 12),
+    _activeVotes: activeVotes,
     updatedAt: new Date().toISOString(),
   };
 }
@@ -491,8 +498,8 @@ async function getVoteStats(body: RequestBody) {
     : undefined;
 
   if (!baseStats) {
-    const entries = await fetchAllVoteAccountTransactions();
-    baseStats = buildStatsResponse(entries);
+    const scan = await fetchAllVoteAccountTransactions();
+    baseStats = buildStatsResponse(scan.entries, scan.scanComplete, scan.pagesScanned);
     cachedStats = {
       expiresAt: now + 10_000,
       value: baseStats,
@@ -500,13 +507,14 @@ async function getVoteStats(body: RequestBody) {
   }
 
   const walletVote = walletAddress
-    ? baseStats.recentVotes.find((vote) => vote.account === walletAddress) ?? null
+    ? baseStats._activeVotes.find((vote) => vote.account === walletAddress) ?? null
     : null;
+  const { _activeVotes, ...publicStats } = baseStats;
 
   return {
     status: 200,
     body: {
-      ...baseStats,
+      ...publicStats,
       walletVote,
     },
   };
