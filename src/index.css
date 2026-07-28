@@ -151,6 +151,11 @@ button,
   min-height: 44px;
 }
 
+button[data-compact-control] {
+  min-width: 0 !important;
+  min-height: 0 !important;
+}
+
 button:not(:disabled),
 [role="button"]:not([aria-disabled="true"]) {
   transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease, border-color 160ms ease, color 160ms ease;
@@ -249,12 +254,12 @@ main [data-xrpl-value] {
 }
 
 @media (max-width: 767px) {
-  body {
+  body.ott-mobile-dock-mounted {
     padding-bottom: calc(7.25rem + env(safe-area-inset-bottom));
   }
 
   /* The bottom dock replaces the former second navigation row on phones. */
-  header > nav[aria-label="Mobile primary navigation"] {
+  body.ott-mobile-dock-mounted header > nav[aria-label="Mobile primary navigation"] {
     display: none !important;
   }
 }
