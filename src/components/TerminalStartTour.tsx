@@ -100,7 +100,7 @@ export function TerminalStartTour() {
       <button
         type="button"
         onClick={openTour}
-        className="fixed bottom-5 right-5 z-[135] inline-flex min-h-12 items-center gap-3 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-2xl transition hover:-translate-y-0.5 hover:bg-slate-800"
+        className="fixed bottom-[7.75rem] right-4 z-[135] inline-flex min-h-12 items-center gap-3 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-2xl transition hover:-translate-y-0.5 hover:bg-slate-800 md:bottom-5 md:right-5"
         aria-label={en ? "Start the OTT Terminal tour" : "Start de OTT Terminal-tour"}
       >
         <ShieldCheck size={18} />
@@ -134,6 +134,7 @@ export function TerminalStartTour() {
                   <button
                     key={item.eyebrow}
                     type="button"
+                    data-compact-control
                     onClick={() => setStep(index)}
                     aria-label={`${en ? "Open step" : "Open stap"} ${index + 1}`}
                     aria-current={index === step ? "step" : undefined}
