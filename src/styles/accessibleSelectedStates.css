@@ -4,7 +4,7 @@
 
 :root {
   --ott-selected-text: #ffffff;
-  --ott-selected-muted: rgba(255, 255, 255, 0.86);
+  --ott-selected-muted: rgba(255, 255, 255, 0.88);
   --ott-selected-border: rgba(255, 255, 255, 0.56);
   --ott-selected-soft: rgba(255, 255, 255, 0.16);
 }
@@ -47,9 +47,28 @@
   color: var(--ott-selected-muted) !important;
 }
 
-/* Category and mode tabs such as XLS, CBDC, XRPL Core and ISO 20022. */
+/* Category and mode tabs such as XLS, CBDC, XRPL Core and ISO 20022.
+   Explicit false-state rules are necessary because the legacy stylesheet
+   used substring matching and interpreted hover:bg-blue-* as an active fill. */
+[role="tablist"] button[role="tab"][aria-selected="false"] {
+  background: #ffffff !important;
+  color: #334155 !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: none !important;
+  transform: none;
+}
+
+[role="tablist"] button[role="tab"][aria-selected="false"] :is(p, span, strong, small, svg) {
+  color: #475569 !important;
+}
+
+[role="tablist"] button[role="tab"][aria-selected="false"] [class*="rounded-xl"]:has(svg) {
+  background: #f1f5f9 !important;
+  color: #1d4ed8 !important;
+}
+
 [role="tablist"] button[role="tab"][aria-selected="true"] {
-  background: var(--ott-gradient) !important;
+  background: linear-gradient(135deg, #173bdb 0%, #6d28d9 48%, #c2185b 100%) !important;
   color: var(--ott-selected-text) !important;
   border-color: var(--ott-selected-border) !important;
   box-shadow:
@@ -60,12 +79,34 @@
 
 [role="tablist"] button[role="tab"][aria-selected="true"] :is(p, span, strong, small, svg) {
   color: var(--ott-selected-text) !important;
+  -webkit-text-fill-color: var(--ott-selected-text) !important;
 }
 
 [role="tablist"] button[role="tab"][aria-selected="true"] [class*="bg-white/"] {
   background: var(--ott-selected-soft) !important;
   color: var(--ott-selected-text) !important;
   border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Intelligence and DeFi selected result cards. Their Tailwind classes contain
+   bg-blue-50, which the legacy compatibility stylesheet turns into a gradient. */
+button[class*="border-blue-500"][class*="bg-blue-50"],
+button[class*="border-blue-600"][class*="bg-blue-50"] {
+  background: linear-gradient(135deg, #173bdb 0%, #6d28d9 48%, #c2185b 100%) !important;
+  border-color: rgba(255, 255, 255, 0.58) !important;
+  color: #ffffff !important;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.17) !important;
+}
+
+button[class*="border-blue-500"][class*="bg-blue-50"] :is(h2, h3, h4, p, span, strong, small, svg),
+button[class*="border-blue-600"][class*="bg-blue-50"] :is(h2, h3, h4, p, span, strong, small, svg) {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+button[class*="border-blue-500"][class*="bg-blue-50"] p,
+button[class*="border-blue-600"][class*="bg-blue-50"] p {
+  color: rgba(255, 255, 255, 0.86) !important;
 }
 
 /* Wallet provider cards: the article contains the aria-pressed provider selector. */
