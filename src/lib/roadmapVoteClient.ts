@@ -92,8 +92,8 @@ export type RoadmapVoteStatsResponse = {
   error?: string;
 };
 
-async function postJson<TResponse>(url: string, body: Record<string, unknown>) {
-  const response = await fetch(url, {
+async function postRoadmapVote<TResponse>(body: Record<string, unknown>) {
+  const response = await fetch("/api/roadmap-vote", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -114,7 +114,7 @@ export function createRoadmapVotePayload(
   voteId: RoadmapVoteOptionId,
   walletAddress?: string,
 ) {
-  return postJson<RoadmapVotePayloadResponse>("/api/roadmap-vote", {
+  return postRoadmapVote<RoadmapVotePayloadResponse>({
     action: "xaman.createRoadmapVotePayload",
     voteId,
     walletAddress,
@@ -126,7 +126,8 @@ export function prepareRoadmapVoteTransaction(
   walletAddress: string,
   providerId: Extract<WalletProviderId, "crossmark" | "gemwallet">,
 ) {
-  return postJson<PreparedRoadmapVoteResponse>("/api/roadmap-vote-prepare", {
+  return postRoadmapVote<PreparedRoadmapVoteResponse>({
+    action: "xrpl.prepareRoadmapVoteTransaction",
     voteId,
     walletAddress,
     providerId,
@@ -134,7 +135,7 @@ export function prepareRoadmapVoteTransaction(
 }
 
 export function getRoadmapVoteStats(walletAddress?: string) {
-  return postJson<RoadmapVoteStatsResponse>("/api/roadmap-vote", {
+  return postRoadmapVote<RoadmapVoteStatsResponse>({
     action: "xrpl.getRoadmapVoteStats",
     walletAddress,
   });
