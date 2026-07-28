@@ -31,6 +31,6 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/tabs/WalletTab.tsx src/lib/ottAuth.ts
+          git add src/tabs/WalletTab.tsx src/lib/ottAuth.ts src/components/NftCollectionGallery.tsx
           git commit -m "Show all NFT routes and preserve login providers"
           git push origin HEAD:agent/role-navigation-hardening-20260728
