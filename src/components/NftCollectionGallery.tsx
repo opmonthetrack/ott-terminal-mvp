@@ -1,4 +1,6 @@
+import { useMemo, useState } from "react";
 import {
+  ArrowRight,
   BadgeCheck,
   Gift,
   LockKeyhole,
@@ -22,6 +24,8 @@ export type NftCollectionCard = {
   ruleNl: string;
   status: "reward" | "purchase" | "earned" | "planned";
 };
+
+type NftCollectionFilter = "all" | "access" | "earned" | "planned";
 
 export const OTT_NFT_COLLECTIONS: NftCollectionCard[] = [
   {
@@ -138,87 +142,171 @@ export const OTT_NFT_COLLECTIONS: NftCollectionCard[] = [
   },
 ];
 
+function collectionFilter(status: NftCollectionCard["status"]): Exclude<NftCollectionFilter, "all"> {
+  if (status === "reward" || status === "purchase") return "access";
+  if (status === "planned") return "planned";
+  return "earned";
+}
+
 export function NftCollectionGallery({ compact = false }: { compact?: boolean }) {
   const { language } = useTerminalLanguage();
   const isEnglish = language === "en";
+  const [filter, setFilter] = useState<NftCollectionFilter>("all");
+
+  const filteredCollections = useMemo(
+    () => OTT_NFT_COLLECTIONS.filter((collection) => filter === "all" || collectionFilter(collection.status) === filter),
+    [filter],
+  );
+
+  if (compact) {
+    return (
+      <section className="mt-8 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+        <div className="grid items-stretch md:grid-cols-[220px_1fr]">
+          <div className="bg-slate-950 p-4">
+            <img
+              src="/nft/overview/ott-nft-progression-overview.png"
+              alt={isEnglish ? "Overview of the seven OTT NFT routes" : "Overzicht van de zeven OTT NFT-routes"}
+              className="h-full min-h-40 w-full rounded-2xl object-cover"
+            />
+          </div>
+          <div className="flex flex-col justify-center p-6 sm:p-8">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">OTT NFT & Access</p>
+            <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
+              {isEnglish ? "Your credentials have one clear home." : "Je credentials hebben één duidelijke plek."}
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+              {isEnglish
+                ? "View the complete progression, all seven collections, eligibility rules and access status in the NFT & Access hub."
+                : "Bekijk de volledige voortgang, alle zeven collecties, eligibilityregels en toegangsstatus in de NFT & Access-hub."}
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2 text-xs font-semibold">
+              <span className="rounded-full bg-blue-50 px-3 py-1.5 text-blue-800">2 Access</span>
+              <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-emerald-800">4 Earned</span>
+              <span className="rounded-full bg-slate-100 px-3 py-1.5 text-slate-700">1 Planned</span>
+            </div>
+            <a
+              href="/?tab=accessgate"
+              className="mt-6 inline-flex w-fit items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+            >
+              {isEnglish ? "Open NFT & Access" : "Open NFT & Access"}
+              <ArrowRight size={17} />
+            </a>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const filters: Array<{ id: NftCollectionFilter; label: string; count: number }> = [
+    { id: "all", label: isEnglish ? "All" : "Alles", count: OTT_NFT_COLLECTIONS.length },
+    { id: "access", label: "Access", count: OTT_NFT_COLLECTIONS.filter((item) => collectionFilter(item.status) === "access").length },
+    { id: "earned", label: isEnglish ? "Earned" : "Verdiend", count: OTT_NFT_COLLECTIONS.filter((item) => collectionFilter(item.status) === "earned").length },
+    { id: "planned", label: isEnglish ? "Planned" : "Gepland", count: OTT_NFT_COLLECTIONS.filter((item) => collectionFilter(item.status) === "planned").length },
+  ];
 
   return (
-    <section className="mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-16">
-      <div className="max-w-4xl">
-        <p className="text-sm font-semibold text-blue-700">OTT XRPL credentials</p>
-        <h2 className="mt-3 font-orbitron text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-          {isEnglish ? "Seven NFT routes. One transparent progression." : "Zeven NFT-routes. Eén transparante voortgang."}
-        </h2>
-        <p className="mt-4 text-base leading-7 text-slate-600">
-          {isEnglish
-            ? "Every collection has its own artwork, maximum supply and eligibility rule. Artwork in the interface is a preview; an NFT exists only after a validated XRPL mint and confirmed wallet ownership."
-            : "Iedere collectie heeft eigen artwork, maximale voorraad en eligibilityregel. Artwork in de interface is een preview; een NFT bestaat pas na een gevalideerde XRPL-mint en bevestigd walletbezit."}
-        </p>
+    <section className="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-12">
+      <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
+        <div className="max-w-4xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">OTT NFT & Access</p>
+          <h2 className="mt-3 font-orbitron text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+            {isEnglish ? "Seven routes. One transparent progression." : "Zeven routes. Eén transparante voortgang."}
+          </h2>
+          <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
+            {isEnglish
+              ? "The overview, collection artwork, eligibility and supply now live together here. Open details only when you need them."
+              : "Het overzicht, de collectie-artworks, eligibility en voorraad staan nu samen op één plek. Open details alleen wanneer je ze nodig hebt."}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-2" aria-label={isEnglish ? "Filter NFT collections" : "Filter NFT-collecties"}>
+          {filters.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setFilter(item.id)}
+              aria-pressed={filter === item.id}
+              className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${
+                filter === item.id
+                  ? "border-slate-950 bg-slate-950 text-white"
+                  : "border-slate-200 bg-white text-slate-600 hover:border-slate-400 hover:text-slate-950"
+              }`}
+            >
+              {item.label} · {item.count}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="mt-8 overflow-hidden rounded-3xl border border-slate-200 bg-slate-950 shadow-xl">
+      <figure className="mt-7 overflow-hidden rounded-3xl border border-slate-200 bg-slate-950 shadow-xl">
         <img
           src="/nft/overview/ott-nft-progression-overview.png"
           alt={isEnglish ? "Overview of the seven OTT NFT progression routes" : "Overzicht van de zeven OTT NFT-voortgangsroutes"}
           className="h-auto w-full object-cover"
         />
-      </div>
+      </figure>
 
-      <div className={`mt-8 grid gap-6 ${compact ? "md:grid-cols-2 xl:grid-cols-3" : "sm:grid-cols-2 lg:grid-cols-3"}`}>
-        {OTT_NFT_COLLECTIONS.map((collection) => (
+      <div className="mt-7 grid gap-4 lg:grid-cols-2">
+        {filteredCollections.map((collection) => (
           <article key={collection.id} className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-            <div className="relative overflow-hidden bg-slate-950">
-              <img
-                src={collection.image}
-                alt={isEnglish ? collection.titleEn : collection.titleNl}
-                loading="lazy"
-                onError={(event) => {
-                  event.currentTarget.onerror = null;
-                  event.currentTarget.src = "/logo.png";
-                  event.currentTarget.className = "aspect-[1055/1491] w-full bg-slate-950 object-contain p-12";
-                }}
-                className="aspect-[1055/1491] w-full object-cover"
-              />
-              <div className="absolute left-4 top-4">
-                <StatusBadge status={collection.status} isEnglish={isEnglish} />
+            <div className="grid grid-cols-[104px_1fr] sm:grid-cols-[132px_1fr]">
+              <div className="relative bg-slate-950 p-2 sm:p-3">
+                <img
+                  src={collection.image}
+                  alt={isEnglish ? collection.titleEn : collection.titleNl}
+                  loading="lazy"
+                  onError={(event) => {
+                    event.currentTarget.onerror = null;
+                    event.currentTarget.src = "/logo.png";
+                    event.currentTarget.className = "h-full w-full rounded-2xl bg-slate-950 object-contain p-5";
+                  }}
+                  className="h-full min-h-44 w-full rounded-2xl object-cover object-top"
+                />
               </div>
-            </div>
 
-            <div className="p-5 sm:p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h3 className="font-orbitron text-lg font-semibold text-slate-950">
-                    {isEnglish ? collection.titleEn : collection.titleNl}
-                  </h3>
-                  <p className="mt-1 text-xs font-medium text-slate-500">
-                    {isEnglish ? "Maximum edition" : "Maximale editie"}: {collection.supply}
-                  </p>
+              <div className="min-w-0 p-5 sm:p-6">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <StatusBadge status={collection.status} isEnglish={isEnglish} />
+                    <h3 className="mt-3 font-orbitron text-base font-semibold text-slate-950 sm:text-lg">
+                      {isEnglish ? collection.titleEn : collection.titleNl}
+                    </h3>
+                    <p className="mt-1 text-xs font-medium text-slate-500">
+                      {isEnglish ? "Maximum edition" : "Maximale editie"}: {collection.supply}
+                    </p>
+                  </div>
+                  <StatusIcon status={collection.status} />
                 </div>
-                <StatusIcon status={collection.status} />
-              </div>
 
-              <p className="mt-4 text-sm leading-6 text-slate-600">
-                {isEnglish ? collection.descriptionEn : collection.descriptionNl}
-              </p>
+                <p className="mt-4 text-sm leading-6 text-slate-600">
+                  {isEnglish ? collection.descriptionEn : collection.descriptionNl}
+                </p>
 
-              <div className="mt-5 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-xs font-semibold leading-5 text-blue-950">
-                {isEnglish ? collection.acquisitionEn : collection.acquisitionNl}
-              </div>
-
-              <div className="mt-3 rounded-2xl bg-slate-50 p-4 text-xs leading-5 text-slate-700">
-                {isEnglish ? collection.ruleEn : collection.ruleNl}
+                <details className="mt-4 rounded-2xl border border-slate-200 bg-slate-50">
+                  <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-slate-800">
+                    {isEnglish ? "Eligibility and rules" : "Eligibility en regels"}
+                  </summary>
+                  <div className="border-t border-slate-200 px-4 py-4">
+                    <p className="rounded-xl border border-blue-100 bg-blue-50 p-3 text-xs font-semibold leading-5 text-blue-950">
+                      {isEnglish ? collection.acquisitionEn : collection.acquisitionNl}
+                    </p>
+                    <p className="mt-3 text-xs leading-5 text-slate-700">
+                      {isEnglish ? collection.ruleEn : collection.ruleNl}
+                    </p>
+                  </div>
+                </details>
               </div>
             </div>
           </article>
         ))}
       </div>
 
-      <div className="mt-8 flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
+      <div className="mt-7 flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
         <Sparkles className="mt-0.5 shrink-0 text-blue-700" size={19} />
         <p>
           {isEnglish
-            ? "The exact PNG masters in public/nft/artwork are used as the collection previews. Missing files fall back to the OTT mark instead of showing a broken image."
-            : "De exacte PNG-masters in public/nft/artwork worden als collectiepreview gebruikt. Ontbrekende bestanden vallen terug op het OTT-logo in plaats van een kapotte afbeelding."}
+            ? "Artwork is a preview. An NFT exists only after a validated XRPL mint, delivery and confirmed wallet ownership."
+            : "Artwork is een preview. Een NFT bestaat pas na een gevalideerde XRPL-mint, levering en bevestigd walletbezit."}
         </p>
       </div>
     </section>
@@ -228,22 +316,22 @@ export function NftCollectionGallery({ compact = false }: { compact?: boolean })
 function StatusBadge({ status, isEnglish }: { status: NftCollectionCard["status"]; isEnglish: boolean }) {
   const labels = {
     reward: isEnglish ? "Founder/community reward" : "Founder/communitybeloning",
-    purchase: isEnglish ? "Public purchase route" : "Publieke aankooproute",
+    purchase: isEnglish ? "Public access route" : "Publieke toegangsroute",
     earned: isEnglish ? "Earned only" : "Alleen te verdienen",
     planned: isEnglish ? "Verification in progress" : "Verificatie in opbouw",
   } as const;
 
   return (
-    <span className="rounded-full border border-white/25 bg-slate-950/80 px-3 py-1.5 text-[11px] font-semibold text-white shadow-lg backdrop-blur">
+    <span className="inline-flex rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-slate-600">
       {labels[status]}
     </span>
   );
 }
 
 function StatusIcon({ status }: { status: NftCollectionCard["status"] }) {
-  if (status === "reward") return <Gift className="shrink-0 text-fuchsia-700" size={22} aria-label="Reward" />;
-  if (status === "purchase") return <ShoppingBag className="shrink-0 text-blue-700" size={22} aria-label="Purchase route" />;
-  if (status === "earned") return <BadgeCheck className="shrink-0 text-emerald-700" size={22} aria-label="Earned credential" />;
-  if (status === "planned") return <LockKeyhole className="shrink-0 text-slate-500" size={22} aria-label="Verification in progress" />;
-  return <ShieldCheck className="shrink-0 text-blue-700" size={22} aria-label="Eligibility controlled" />;
+  if (status === "reward") return <Gift className="shrink-0 text-fuchsia-700" size={21} aria-label="Reward" />;
+  if (status === "purchase") return <ShoppingBag className="shrink-0 text-blue-700" size={21} aria-label="Access route" />;
+  if (status === "earned") return <BadgeCheck className="shrink-0 text-emerald-700" size={21} aria-label="Earned credential" />;
+  if (status === "planned") return <LockKeyhole className="shrink-0 text-slate-500" size={21} aria-label="Verification in progress" />;
+  return <ShieldCheck className="shrink-0 text-blue-700" size={21} aria-label="Eligibility controlled" />;
 }
