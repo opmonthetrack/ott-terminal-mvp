@@ -35,16 +35,11 @@ const FOUNDER_TAB_IDS = new Set([
   "otttestnet",
   "portfolio",
   "partners",
-  "ecosystem",
-  "validator",
-  "developer",
-  "tokenization",
   "factory",
   "profile",
   "token",
   "rewardpolicy",
   "ai",
-  "defi",
 ]);
 
 function readFounderRequest() {
