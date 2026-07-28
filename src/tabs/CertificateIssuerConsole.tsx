@@ -132,7 +132,7 @@ export function CertificateIssuerConsole() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-5 py-10 sm:px-8">
+      <div data-page-region="true" className="mx-auto max-w-7xl px-5 py-10 sm:px-8">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Stat label="Totaal" value={counts.total} />
           <Stat label="Gereserveerd" value={counts.reserved} />
@@ -251,7 +251,7 @@ export function CertificateIssuerConsole() {
             );
           })}
         </section>
-      </main>
+      </div>
     </div>
   );
 }

@@ -20,6 +20,7 @@ const ROADMAP_OPTIONS = [
 ] as const;
 
 const ROADMAP_OPTION_IDS = new Set(ROADMAP_OPTIONS.map((option) => option.id));
+const ALLOWED_TRANSACTION_PROVIDERS = new Set(["crossmark", "gemwallet"]);
 
 const OTT_PUBLIC_APP_URL =
   normalizePublicUrl(process.env.OTT_PUBLIC_APP_URL) ||
@@ -172,14 +173,30 @@ function getVoteMemo(voteId: string) {
   return `${ROADMAP_VOTE_MEMO_PREFIX} | ${ROADMAP_VOTE_CYCLE} | ${voteId}`;
 }
 
-function getVoteReturnUrl(voteId: string) {
+function createRoadmapVoteTransaction(voteId: string, walletAddress: string) {
+  return {
+    TransactionType: "Payment",
+    Account: walletAddress,
+    Destination: ROADMAP_VOTE_WALLET,
+    Amount: ROADMAP_VOTE_AMOUNT_DROPS,
+    SourceTag: MAKE_WAVES_SOURCE_TAG,
+    Memos: [
+      {
+        Memo: {
+          MemoType: textToHex(ROADMAP_VOTE_MEMO_TYPE),
+          MemoData: textToHex(getVoteMemo(voteId)),
+        },
+      },
+    ],
+  };
+}
+
+function getVoteReturnUrl(_voteId: string) {
   return (
     `${OTT_PUBLIC_APP_URL}/?ott_xaman_return=1` +
     `&payload={id}` +
     `&action=roadmap-vote` +
-    `&target=roadmap` +
-    `&vote=${encodeURIComponent(voteId)}` +
-    `&sourceTag=${MAKE_WAVES_SOURCE_TAG}`
+    `&target=roadmap`
   );
 }
 
@@ -199,10 +216,10 @@ async function createXamanVotePayload(body: RequestBody) {
     };
   }
 
-  if (walletAddress && !isValidXrplAddress(walletAddress)) {
+  if (!walletAddress || !isValidXrplAddress(walletAddress)) {
     return {
       status: 400,
-      body: { ok: false, error: "Invalid walletAddress." },
+      body: { ok: false, error: "Connect and verify a valid XRPL wallet before voting." },
     };
   }
 
@@ -219,24 +236,7 @@ async function createXamanVotePayload(body: RequestBody) {
 
   const memoText = getVoteMemo(voteId);
   const returnUrl = getVoteReturnUrl(voteId);
-  const txjson: Record<string, unknown> = {
-    TransactionType: "Payment",
-    Destination: ROADMAP_VOTE_WALLET,
-    Amount: ROADMAP_VOTE_AMOUNT_DROPS,
-    SourceTag: MAKE_WAVES_SOURCE_TAG,
-    Memos: [
-      {
-        Memo: {
-          MemoType: textToHex(ROADMAP_VOTE_MEMO_TYPE),
-          MemoData: textToHex(memoText),
-        },
-      },
-    ],
-  };
-
-  if (walletAddress) {
-    txjson.Account = walletAddress;
-  }
+  const txjson = createRoadmapVoteTransaction(voteId, walletAddress);
 
   const response = await fetch(XAMAN_API_URL, {
     method: "POST",
@@ -251,20 +251,12 @@ async function createXamanVotePayload(body: RequestBody) {
         },
       },
       custom_meta: {
-        identifier: `ott-roadmap-vote-${ROADMAP_VOTE_CYCLE}-${voteId}`,
-        instruction: `Vote for ${option.title}. This sends 1 drop as on-chain proof and creates no governance, token or financial rights.`,
+        identifier: `ott-vote-${voteId}`,
+        instruction: `OTT roadmap vote: ${option.title}`,
         blob: {
-          mode: "ott-roadmap-vote",
-          brand: "XRPL OnTheTrack Terminal",
           actionId: "roadmap-vote",
-          returnTarget: "roadmap",
-          cycle: ROADMAP_VOTE_CYCLE,
           voteId,
-          voteTitle: option.title,
           sourceTag: MAKE_WAVES_SOURCE_TAG,
-          destinationWallet: ROADMAP_VOTE_WALLET,
-          amountDrops: ROADMAP_VOTE_AMOUNT_DROPS,
-          memoText,
         },
       },
     }),
@@ -298,6 +290,73 @@ async function createXamanVotePayload(body: RequestBody) {
         memoText,
       },
       payload,
+    },
+  };
+}
+
+function prepareRoadmapVoteTransaction(body: RequestBody) {
+  const voteId = getString(body, "voteId");
+  const walletAddress = getString(body, "walletAddress");
+  const providerId = getString(body, "providerId");
+  const option = getVoteOption(voteId);
+
+  if (!option || !ROADMAP_OPTION_IDS.has(voteId as (typeof ROADMAP_OPTIONS)[number]["id"])) {
+    return {
+      status: 400,
+      body: {
+        ok: false,
+        error: "Invalid roadmap vote option.",
+        allowedVoteIds: ROADMAP_OPTIONS.map((item) => item.id),
+      },
+    };
+  }
+
+  if (!walletAddress || !isValidXrplAddress(walletAddress)) {
+    return {
+      status: 400,
+      body: { ok: false, error: "Connect and verify a valid XRPL wallet before voting." },
+    };
+  }
+
+  if (!ALLOWED_TRANSACTION_PROVIDERS.has(providerId)) {
+    return {
+      status: 400,
+      body: {
+        ok: false,
+        error: "This action supports CROSSMARK and GemWallet transactions only.",
+      },
+    };
+  }
+
+  if (!ROADMAP_VOTE_WALLET || !isValidXrplAddress(ROADMAP_VOTE_WALLET)) {
+    return {
+      status: 503,
+      body: {
+        ok: false,
+        error:
+          "Roadmap voting wallet is not configured. Set OTT_ROADMAP_VOTE_WALLET or OTT_PROOF_DESTINATION_WALLET.",
+      },
+    };
+  }
+
+  const memoText = getVoteMemo(voteId);
+
+  return {
+    status: 200,
+    body: {
+      ok: true,
+      mode: "ott-roadmap-provider-transaction",
+      providerId,
+      cycle: ROADMAP_VOTE_CYCLE,
+      sourceTag: MAKE_WAVES_SOURCE_TAG,
+      vote: option,
+      proof: {
+        destinationWallet: ROADMAP_VOTE_WALLET,
+        amountDrops: ROADMAP_VOTE_AMOUNT_DROPS,
+        memoType: ROADMAP_VOTE_MEMO_TYPE,
+        memoText,
+      },
+      txjson: createRoadmapVoteTransaction(voteId, walletAddress),
     },
   };
 }
@@ -380,7 +439,11 @@ async function fetchAllVoteAccountTransactions() {
   const entries: AccountTxEntry[] = [];
   let marker: unknown = undefined;
 
+  let pagesScanned = 0;
+  let scanComplete = false;
+
   for (let page = 0; page < MAX_ACCOUNT_TX_PAGES; page += 1) {
+    pagesScanned = page + 1;
     const params: Record<string, unknown> = {
       account: ROADMAP_VOTE_WALLET,
       ledger_index_min: -1,
@@ -415,14 +478,15 @@ async function fetchAllVoteAccountTransactions() {
     marker = data.result?.marker;
 
     if (marker === undefined || marker === null) {
+      scanComplete = true;
       break;
     }
   }
 
-  return entries;
+  return { entries, scanComplete, pagesScanned };
 }
 
-function buildStatsResponse(entries: AccountTxEntry[]) {
+function buildStatsResponse(entries: AccountTxEntry[], scanComplete: boolean, pagesScanned: number) {
   const allVerifiedTransactions = entries
     .map(parseVerifiedVote)
     .filter((vote): vote is VerifiedVoteTransaction => Boolean(vote))
@@ -475,12 +539,16 @@ function buildStatsResponse(entries: AccountTxEntry[]) {
       uniqueWallets: activeVotes.length,
       verifiedVoteTransactions: allVerifiedTransactions.length,
       scannedAccountTransactions: entries.length,
+      scanComplete,
+      pagesScanned,
+      scanLimit: MAX_ACCOUNT_TX_PAGES * ACCOUNT_TX_PAGE_LIMIT,
     },
     counts,
     ranking,
     mostVoted: ranking[0] ?? null,
     leastVoted: ranking.length > 0 ? ranking[ranking.length - 1] : null,
     recentVotes: activeVotes.slice(0, 12),
+    _activeVotes: activeVotes,
     updatedAt: new Date().toISOString(),
   };
 }
@@ -501,8 +569,8 @@ async function getVoteStats(body: RequestBody) {
     : undefined;
 
   if (!baseStats) {
-    const entries = await fetchAllVoteAccountTransactions();
-    baseStats = buildStatsResponse(entries);
+    const scan = await fetchAllVoteAccountTransactions();
+    baseStats = buildStatsResponse(scan.entries, scan.scanComplete, scan.pagesScanned);
     cachedStats = {
       expiresAt: now + 10_000,
       value: baseStats,
@@ -510,13 +578,14 @@ async function getVoteStats(body: RequestBody) {
   }
 
   const walletVote = walletAddress
-    ? baseStats.recentVotes.find((vote) => vote.account === walletAddress) ?? null
+    ? baseStats._activeVotes.find((vote) => vote.account === walletAddress) ?? null
     : null;
+  const { _activeVotes, ...publicStats } = baseStats;
 
   return {
     status: 200,
     body: {
-      ...baseStats,
+      ...publicStats,
       walletVote,
     },
   };
@@ -535,6 +604,11 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
 
     if (body.action === "xaman.createRoadmapVotePayload") {
       const result = await createXamanVotePayload(body);
+      return res.status(result.status).json(result.body);
+    }
+
+    if (body.action === "xrpl.prepareRoadmapVoteTransaction") {
+      const result = prepareRoadmapVoteTransaction(body);
       return res.status(result.status).json(result.body);
     }
 

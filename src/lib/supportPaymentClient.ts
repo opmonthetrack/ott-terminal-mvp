@@ -6,7 +6,12 @@ export type SupportStats = {
   paymentCount: number;
   uniqueSupporters: number;
   publicMessageCount: number;
+  reviewedPublicSupporterCount?: number;
   latestPaymentAt?: string | null;
+  scannedTransactions?: number;
+  scanComplete?: boolean;
+  scanLimit?: number;
+  truncated?: boolean;
   updatedAt?: string;
 };
 
@@ -25,16 +30,24 @@ export type XamanSupportPayload = {
   response?: { account?: string; txid?: string };
 };
 
-type SupportResponse = {
+export type SupportResponse = {
   ok: boolean;
+  sourceTag?: number;
+  supportWallet?: string;
   stats?: SupportStats;
   latestPublicSupporters?: PublicSupporter[];
   payload?: XamanSupportPayload;
   verified?: {
     signed: boolean;
     resolved: boolean;
+    validated: boolean;
+    pendingLedgerValidation?: boolean;
     payerAccount: string | null;
     txid: string | null;
+    transactionResult?: string | null;
+    amountXrp?: string | null;
+    destinationWallet?: string | null;
+    sourceTag?: number | null;
   };
   support?: {
     amountXrp: string;

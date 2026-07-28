@@ -236,7 +236,7 @@ function IntelligenceFeed({ isEnglish }: { isEnglish: boolean }) {
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
+    <div data-page-region="true" className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
       <div className="grid gap-4 sm:grid-cols-3">
         <Metric label={isEnglish ? "Items" : "Items"} value={loading ? "…" : String(items.length)} note={data?.fallback ? (isEnglish ? "Fallback active" : "Terugval actief") : (isEnglish ? "Current feed" : "Actuele feed")} />
         <Metric label={isEnglish ? "Official sources" : "Officiële bronnen"} value={loading ? "…" : String(officialCount)} note={isEnglish ? "Weighted higher" : "Zwaarder gewogen"} />
@@ -444,7 +444,7 @@ function IntelligenceFeed({ isEnglish }: { isEnglish: boolean }) {
           </div>
         </article>
       </div>
-    </main>
+    </div>
   );
 }
 

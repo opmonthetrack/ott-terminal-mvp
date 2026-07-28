@@ -82,7 +82,7 @@ export function AcademyProgressDashboard({ walletAddress = "guest", onNavigate }
       <button
         type="button"
         onClick={() => { setOpen(true); if (signedIn) void refresh(); }}
-        className="fixed bottom-5 left-5 z-[140] inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-xl hover:shadow-2xl"
+        className="fixed bottom-[7.75rem] left-4 z-[140] inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-xl hover:shadow-2xl md:bottom-5 md:left-5"
       >
         <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-white"><BarChart3 size={19} /></span>
         <span className="text-left">
@@ -155,7 +155,7 @@ export function AcademyProgressDashboard({ walletAddress = "guest", onNavigate }
                             <article key={lesson.id} className={`grid gap-3 px-4 py-4 sm:grid-cols-[65px_1fr_110px] sm:items-center ${index ? "border-t border-slate-200" : ""}`}>
                               <span className="inline-flex h-9 w-12 items-center justify-center rounded-xl bg-slate-100 text-xs font-semibold">{lesson.module}</span>
                               <div><p className="font-semibold">{lesson.title}</p><p className="mt-1 text-xs text-slate-500">{lesson.completed ? `${lesson.xp} XP · ${en ? "verified" : "geverifieerd"}` : (en ? "No verified score yet" : "Nog geen geverifieerde score")}</p></div>
-                              <div className="flex items-center gap-2 sm:justify-end">{lesson.completed ? <Award className="text-violet-600" size={18} /> : <LockKeyhole className="text-slate-300" size={18} />}<span className="text-lg font-semibold">{lesson.score === null ? "—" : `${lesson.score}%`}</span></div>
+                              <div className="flex items-center gap-2 sm:justify-end">{lesson.completed ? <Award className="text-violet-600" size={18} /> : <LockKeyhole className="text-slate-300" size={18} />}<span className="text-lg font-semibold font-data">{lesson.score === null ? "—" : `${lesson.score}%`}</span></div>
                             </article>
                           ))}
                         </div>
@@ -177,7 +177,7 @@ function Loading({ en }: { en: boolean }) {
 }
 
 function Metric({ label, value, sub }: { label: string; value: string; sub: string }) {
-  return <article className="rounded-2xl border border-slate-200 p-5"><p className="text-xs text-slate-500">{label}</p><p className="mt-2 text-2xl font-semibold">{value}</p><p className="mt-1 text-xs text-slate-500">{sub}</p></article>;
+  return <article className="rounded-2xl border border-slate-200 p-5"><p className="text-xs text-slate-500">{label}</p><p className="mt-2 text-2xl font-semibold font-data">{value}</p><p className="mt-1 text-xs text-slate-500 font-data">{sub}</p></article>;
 }
 
 function Requirement({ done, text }: { done: boolean; text: string }) {

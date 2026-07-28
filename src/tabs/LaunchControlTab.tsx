@@ -475,7 +475,7 @@ export function LaunchControlTab() {
         </div>
       </section>
 
-      <main className="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14">
+      <div data-page-region="true" className="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14">
         <AuditSection title="Public shell" description="Visitor-facing routes, accounts and public files." checks={checks.filter((check) => check.category === "public")} />
         <AuditSection title="Live services" description="Public server routes and on-ledger reporting." checks={checks.filter((check) => check.category === "services")} />
         <AuditSection title="Protected delivery" description="Founder-only readiness and NFT issuer endpoints." checks={checks.filter((check) => check.category === "protected")} />
@@ -533,7 +533,7 @@ export function LaunchControlTab() {
             ))}
           </div>
         </section>
-      </main>
+      </div>
     </div>
   );
 }

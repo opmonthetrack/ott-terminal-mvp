@@ -177,7 +177,7 @@ export function FounderAccessManager() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-5 py-10 sm:px-8">
+      <div data-page-region="true" className="mx-auto max-w-7xl px-5 py-10 sm:px-8">
         {setupRequired && <Warning title="Databaseactivering vereist" text="Voer eerst de tokenresearch- en wallet-linkmigraties uit. Tot die tijd worden geen grants aangemaakt." />}
         {message && <p className="mb-6 rounded-2xl border border-blue-300/20 bg-blue-300/5 p-5 text-sm text-blue-100">{message}</p>}
         {error && <p className="mb-6 rounded-2xl border border-red-300/20 bg-red-300/5 p-5 text-sm text-red-100">{error}</p>}
@@ -230,7 +230,7 @@ export function FounderAccessManager() {
             }) : <p className="rounded-2xl border border-white/10 p-8 text-center text-sm text-slate-400">Nog geen grants opgeslagen.</p>}
           </div>
         </section>
-      </main>
+      </div>
     </div>
   );
 }

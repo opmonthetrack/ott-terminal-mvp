@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "artworkVersion": "1.0.0",
+  "status": "approved-before-ipfs-publication",
+  "generatedWith": "OpenAI built-in image editor",
+  "rules": {
+    "serialNumbersEmbedded": false,
+    "publicAccessPriceEmbedded": false,
+    "duplicatePolicy": "Maximum one NFT per collection, course version or tested wallet provider.",
+    "ipfsPublished": false
+  },
+  "assets": [
+    {
+      "collectionId": "genesis-access-pass",
+      "displayName": "OTT Genesis Access Pass",
+      "file": "artwork/genesis-access-pass.png",
+      "width": 1055,
+      "height": 1491,
+      "sha256": "0519106e88215f3f5aa5a50310ebe86909993d33aa3b6011c632a1b5d02eec8b"
+    },
+    {
+      "collectionId": "public-access-pass",
+      "displayName": "OTT Public Access Pass",
+      "file": "artwork/public-access-pass.png",
+      "width": 1055,
+      "height": 1491,
+      "sha256": "61c4a5ed17be2a14dfd9d9f6b28c27088f47842edbe47e86935fe4abdda3509e"
+    },
+    {
+      "collectionId": "wallet-tester-pass",
+      "displayName": "OTT Wallet Tester Pass",
+      "file": "artwork/wallet-tester-pass.png",
+      "width": 1055,
+      "height": 1491,
+      "sha256": "8ceb45747bef65f1c6abc0b055e9250312aab67d47e70ceb9615feac92fc968c"
+    },
+    {
+      "collectionId": "xrp-ledger-foundations-certificate",
+      "displayName": "OTT XRP Ledger Foundations Certificate",
+      "file": "artwork/xrpl-foundation-certificate.png",
+      "width": 1055,
+      "height": 1491,
+      "sha256": "4df52ea021e5a87ccf00c69d99c36f164ce534906ac7baf2593dff7968b6f5df"
+    },
+    {
+      "collectionId": "wallet-foundation-certificate",
+      "displayName": "OTT Wallet Foundation Certificate",
+      "file": "artwork/wallet-foundation-certificate.png",
+      "width": 1055,
+      "height": 1491,
+      "sha256": "462a23eb7974ec23bb46163e56dbbc14769cd0a277677ac67b05aa5493e23f87"
+    },
+    {
+      "collectionId": "wallet-security-certificate",
+      "displayName": "OTT Wallet Security Certificate",
+      "file": "artwork/wallet-security-certificate.png",
+      "width": 1055,
+      "height": 1491,
+      "sha256": "98308fe93f266d89b6b29f5a64c06641f0c3ab61574f740171b6db6264352831"
+    },
+    {
+      "collectionId": "wallet-operations-certificate",
+      "displayName": "OTT XRPL Wallet Operations Certificate",
+      "file": "artwork/wallet-operations-certificate.png",
+      "width": 1055,
+      "height": 1491,
+      "sha256": "351aae6bbb81acbab86e801165b808cb7ed31c8b4c413eb82ea5a760045297fc"
+    },
+    {
+      "assetId": "nft-progression-overview",
+      "displayName": "OTT Terminal NFT Overview",
+      "file": "overview/ott-nft-progression-overview.png",
+      "width": 1491,
+      "height": 1055,
+      "sha256": "ebf56aae8bdb6d20e3b4daf9467519c054a1a50de9012ff963ad50aae6481e74"
+    }
+  ]
+}

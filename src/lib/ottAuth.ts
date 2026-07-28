@@ -65,7 +65,7 @@ export const OTT_AUTH_PROVIDER_OPTIONS: OttAuthProviderOption[] = [
 ];
 
 export function getEnabledOttAuthProviders() {
-  return OTT_AUTH_PROVIDER_OPTIONS.filter((provider) => provider.enabled);
+  return OTT_AUTH_PROVIDER_OPTIONS;
 }
 
 export function isOttAuthProviderEnabled(provider: OttAuthProvider) {

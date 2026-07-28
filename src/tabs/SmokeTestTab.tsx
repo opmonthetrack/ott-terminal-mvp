@@ -399,7 +399,7 @@ export function SmokeTestTab({ walletAddress = "guest" }: SmokeTestTabProps) {
         </div>
       </section>
 
-      <main className="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14">
+      <div data-page-region="true" className="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">Test queue</p>
@@ -436,7 +436,7 @@ export function SmokeTestTab({ walletAddress = "guest" }: SmokeTestTabProps) {
             <div className="rounded-3xl border border-slate-200 bg-slate-50 p-10 text-center text-sm text-slate-600">No tests match this filter.</div>
           )}
         </div>
-      </main>
+      </div>
     </div>
   );
 }

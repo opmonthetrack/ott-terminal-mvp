@@ -333,7 +333,7 @@ export function SubmissionPackTab({ walletAddress = "guest" }: SubmissionPackTab
         </div>
       </section>
 
-      <main className="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14">
+      <div data-page-region="true" className="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14">
         <section>
           <div className="max-w-3xl">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">Deliverable status</p>
@@ -370,7 +370,7 @@ export function SubmissionPackTab({ walletAddress = "guest" }: SubmissionPackTab
             <p className="mt-2 text-sm leading-6 text-slate-700">Make Waves SourceTag: <strong>{MAKE_WAVES_SOURCE_TAG}</strong>. Use the full value consistently; do not shorten it to 2606 in submission evidence.</p>
           </div>
         </section>
-      </main>
+      </div>
     </div>
   );
 }

@@ -42,8 +42,12 @@ const categoryLabels: Record<DefiDirectoryCategory | "all", { en: string; nl: st
   all: { en: "All", nl: "Alles" },
   yield: { en: "Yield and credit", nl: "Yield en krediet" },
   dex: { en: "DEX and liquidity", nl: "DEX en liquiditeit" },
+  lending: { en: "Lending", nl: "Lenen" },
   analytics: { en: "Analytics", nl: "Analyse" },
   nft: { en: "NFT", nl: "NFT" },
+  rwa: { en: "RWA", nl: "RWA" },
+  bridge: { en: "Bridge", nl: "Bridge" },
+  infrastructure: { en: "Infrastructure", nl: "Infrastructuur" },
   xahau: { en: "Xahau", nl: "Xahau" },
 };
 
@@ -140,7 +144,7 @@ function TokenResearchView({ isEnglish }: { isEnglish: boolean }) {
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
+    <div data-page-region="true" className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
       <div className="grid gap-8 lg:grid-cols-[0.82fr_1.18fr]">
         <section className="rounded-3xl border border-slate-200 p-6 sm:p-8">
           <div className="flex items-start justify-between gap-4">
@@ -225,7 +229,7 @@ function TokenResearchView({ isEnglish }: { isEnglish: boolean }) {
           <ResearchEmptyState isEnglish={isEnglish} />
         )}
       </div>
-    </main>
+    </div>
   );
 }
 
@@ -381,13 +385,13 @@ function DirectoryView({ isEnglish }: { isEnglish: boolean }) {
   const selected = entries.find((entry) => entry.id === selectedId) ?? entries[0];
 
   return (
-    <main className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
+    <div data-page-region="true" className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
       <div className="max-w-3xl">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
-          {isEnglish ? "Learn before visiting" : "Leer vóór doorsturen"}
+          {isEnglish ? "XRPL ecosystem directory" : "XRPL-ecosysteemoverzicht"}
         </p>
         <h2 className="mt-3 text-3xl font-semibold tracking-tight">
-          {isEnglish ? "What each platform does, how it works and where risk remains" : "Wat elk platform doet, hoe het werkt en waar risico blijft"}
+          {isEnglish ? `${DEFI_DIRECTORY.length} reviewed and research-stage platforms` : `${DEFI_DIRECTORY.length} gecontroleerde en onderzoek-platforms`}
         </h2>
         <p className="mt-4 text-sm leading-7 text-slate-600 sm:text-base">
           {isEnglish
@@ -425,7 +429,7 @@ function DirectoryView({ isEnglish }: { isEnglish: boolean }) {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h3 className="font-semibold">{entry.name}</h3>
-                  <p className="mt-2 text-xs leading-5 text-slate-500">{isEnglish ? entry.summaryEn : entry.summaryNl}</p>
+                  <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-600">{isEnglish ? entry.summaryEn : entry.summaryNl}</p>
                 </div>
                 {entry.verifiedDomain ? (
                   <BadgeCheck className="shrink-0 text-emerald-600" size={19} />
@@ -439,7 +443,7 @@ function DirectoryView({ isEnglish }: { isEnglish: boolean }) {
 
         {selected && <DirectoryDetail entry={selected} isEnglish={isEnglish} />}
       </div>
-    </main>
+    </div>
   );
 }
 
@@ -539,7 +543,7 @@ function EvidenceView({ isEnglish }: { isEnglish: boolean }) {
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
+    <div data-page-region="true" className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
       <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr]">
         <section className="rounded-3xl border border-slate-200 p-6 sm:p-8">
           <div className="flex items-start justify-between gap-4">
@@ -666,7 +670,7 @@ function EvidenceView({ isEnglish }: { isEnglish: boolean }) {
         <TrustCard icon={Layers} title={isEnglish ? "Version-ready" : "Klaar voor versies"} text={isEnglish ? "Each upload receives a unique path and timestamp for later comparison." : "Elke upload krijgt een uniek pad en tijdstip voor latere vergelijking."} />
         <TrustCard icon={ShieldCheck} title={isEnglish ? "Evidence, not endorsement" : "Bewijs, geen aanbeveling"} text={isEnglish ? "A document records a claim; it does not make that claim true." : "Een document registreert een claim; het maakt die claim niet automatisch waar."} />
       </section>
-    </main>
+    </div>
   );
 }
 

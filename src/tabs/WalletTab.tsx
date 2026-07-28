@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ElementType } from "react";
+import { WalletHub } from "../components/WalletHub";
 import {
   Apple,
   Award,
@@ -36,16 +37,20 @@ import {
   updateOttDisplayName,
   type OttAuthProvider,
 } from "../lib/ottAuth";
-import {
-  formatNftSerial,
-  getNftIssuanceSummary,
-  NFT_ISSUANCE_LIMITS,
-} from "../lib/nftIssuanceStore";
+import { NftCollectionGallery } from "../components/NftCollectionGallery";
 import { useOttAuthSession } from "../lib/useOttAuthSession";
 import { useTerminalLanguage } from "../lib/useTerminalLanguage";
+import type { WalletProviderId, WalletVerificationMethod, XrplNetwork } from "../lib/walletRegistry";
 
 type WalletTabProps = {
   walletAddress?: string;
+  onWalletConnected?: (
+    address: string,
+    providerId: WalletProviderId,
+    network: XrplNetwork,
+    verificationMethod: WalletVerificationMethod,
+  ) => void;
+  onNavigate?: (target: string) => void;
   onDisconnect?: () => void;
 };
 
@@ -151,15 +156,13 @@ function loadWalletSnapshot(walletAddress: string) {
   });
 }
 
-export function WalletTab({ walletAddress = "guest", onDisconnect }: WalletTabProps) {
+export function WalletTab({ walletAddress = "guest", onWalletConnected, onNavigate, onDisconnect }: WalletTabProps) {
   const { language } = useTerminalLanguage();
   const isEnglish = language === "en";
   const { user, loading: authLoading, signedIn } = useOttAuthSession();
   const hasWallet = isLikelyXrplAddress(walletAddress);
   const enabledProviders = useMemo(() => getEnabledOttAuthProviders(), []);
   const academy = useMemo(() => getAcademyProgressSummary(walletAddress), [walletAddress]);
-  const accessPass = useMemo(() => getNftIssuanceSummary("access-pass"), []);
-  const certificate = useMemo(() => getNftIssuanceSummary("foundation-certificate"), []);
 
   const [authMode, setAuthMode] = useState<AuthMode>("sign-in");
   const [displayName, setDisplayName] = useState("");
@@ -329,7 +332,7 @@ export function WalletTab({ walletAddress = "guest", onDisconnect }: WalletTabPr
         </div>
       </section>
 
-      <main className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
+      <div data-page-region="true" className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
         {authStatus && (
           <div className="mb-6 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-950">
             {authStatus}
@@ -413,44 +416,17 @@ export function WalletTab({ walletAddress = "guest", onDisconnect }: WalletTabPr
           </div>
         </div>
 
-        <section className="mt-8 rounded-3xl border border-slate-200 p-6 sm:p-8">
-          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
-                {isEnglish ? "NFT issuance foundation" : "NFT-uitgiftefundament"}
-              </p>
-              <h2 className="mt-3 text-2xl font-semibold">
-                {isEnglish ? "Separate editions, controlled status and no duplicate serials." : "Gescheiden edities, gecontroleerde status en geen dubbele nummers."}
-              </h2>
-            </div>
-            <p className="max-w-xl text-sm leading-6 text-slate-500">
-              {isEnglish
-                ? "An NFT is never created merely by pressing a UI button. Eligibility, wallet ownership, metadata and the validated mint transaction must agree."
-                : "Een NFT ontstaat nooit alleen door op een knop te drukken. Geschiktheid, walletbezit, metadata en de gevalideerde minttransactie moeten overeenkomen."}
-            </p>
-          </div>
+        <div className="mt-8">
+          <WalletHub
+            walletAddress={walletAddress}
+            onWalletConnected={onWalletConnected}
+            onUseXaman={() => onNavigate?.("xaman")}
+            onOpenAcademy={() => onNavigate?.("academy")}
+            onDisconnect={onDisconnect}
+          />
+        </div>
 
-          <div className="mt-7 grid gap-5 md:grid-cols-2">
-            <EditionCard
-              title={NFT_ISSUANCE_LIMITS["access-pass"].label}
-              range="#001–#500"
-              nextSerial={accessPass.nextSerial ? formatNftSerial("access-pass", accessPass.nextSerial) : "Full"}
-              issued={accessPass.issued}
-              reserved={accessPass.reserved}
-              available={accessPass.available}
-              isEnglish={isEnglish}
-            />
-            <EditionCard
-              title={NFT_ISSUANCE_LIMITS["foundation-certificate"].label}
-              range="#0001–#5000"
-              nextSerial={certificate.nextSerial ? formatNftSerial("foundation-certificate", certificate.nextSerial) : "Full"}
-              issued={certificate.issued}
-              reserved={certificate.reserved}
-              available={certificate.available}
-              isEnglish={isEnglish}
-            />
-          </div>
-        </section>
+        <NftCollectionGallery compact />
 
         <section className="mt-8 grid gap-4 md:grid-cols-3">
           <TrustCard
@@ -469,7 +445,7 @@ export function WalletTab({ walletAddress = "guest", onDisconnect }: WalletTabPr
             text={isEnglish ? "Wallet ownership is proven only for a specific on-chain action." : "Walletbezit wordt alleen bewezen voor een specifieke on-chain actie."}
           />
         </section>
-      </main>
+      </div>
     </div>
   );
 }
@@ -541,11 +517,12 @@ function AccountAccess({
                   key={provider.id}
                   type="button"
                   onClick={() => onProvider(provider.id)}
-                  disabled={busy}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  disabled={busy || !provider.enabled}
+                  title={!provider.enabled ? (isEnglish ? "Provider not activated in Supabase yet" : "Provider nog niet geactiveerd in Supabase") : undefined}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400 disabled:opacity-100"
                 >
                   <Icon size={18} />
-                  {provider.label}
+                  {provider.label}{!provider.enabled ? (isEnglish ? " · soon" : " · binnenkort") : ""}
                 </button>
               );
             })}

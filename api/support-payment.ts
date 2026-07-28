@@ -1,5 +1,5 @@
 // api/support-payment.ts is a standalone Vercel serverless route for voluntary OTT support payments.
-// It creates Xaman payloads and reads public XRPL transactions for the live support counter.
+// It creates Xaman payloads and verifies public XRPL transactions for the live support counter.
 
 const MAKE_WAVES_SOURCE_TAG = 2606170002;
 const XAMAN_API_URL = "https://xumm.app/api/v1/platform/payload";
@@ -7,20 +7,20 @@ const XRPL_RPC_URL = process.env.XRPL_RPC_URL || "https://s1.ripple.com:51234/";
 const RIPPLE_EPOCH_OFFSET_SECONDS = 946684800;
 const MAX_ACCOUNT_TX_PAGES = 5;
 const ACCOUNT_TX_PAGE_SIZE = 200;
+const SUPPORT_STATS_CACHE_MS = 30_000;
+const PAYLOAD_RATE_LIMIT_WINDOW_MS = 60_000;
+const PAYLOAD_RATE_LIMIT_MAX = 6;
 
-const SUPPORT_AMOUNTS: Record<string, string> = {
+const SUPPORT_AMOUNTS = {
   "0.589": "589000",
-  "1.00": "1000000",
   "1.589": "1589000",
-  "2.00": "2000000",
   "2.589": "2589000",
-  "3.00": "3000000",
-  "3.589": "3589000",
-  "4.00": "4000000",
-  "4.589": "4589000",
-  "5.00": "5000000",
-  "5.89": "5890000",
-};
+} as const;
+
+const ALLOWED_SUPPORT_DROPS = new Set<string>(Object.values(SUPPORT_AMOUNTS));
+const SUPPORT_AMOUNT_BY_DROPS = new Map<string, string>(
+  Object.entries(SUPPORT_AMOUNTS).map(([xrp, drops]) => [drops, xrp]),
+);
 
 const OTT_PUBLIC_APP_URL =
   normalizePublicUrl(process.env.OTT_PUBLIC_APP_URL) ||
@@ -33,6 +33,13 @@ const OTT_SUPPORT_WALLET =
   process.env.VITE_OTT_ACCESS_WALLET?.trim() ||
   "rsEHpJiExneayjkrQdeQEveUwabmmPbksq";
 
+const REVIEWED_SUPPORT_TX_HASHES = new Set(
+  (process.env.OTT_REVIEWED_SUPPORT_TX_HASHES || "")
+    .split(",")
+    .map((value) => value.trim().toUpperCase())
+    .filter((value) => /^[A-F0-9]{64}$/.test(value)),
+);
+
 type RequestBody = Record<string, unknown> & {
   action?: string;
 };
@@ -40,13 +47,19 @@ type RequestBody = Record<string, unknown> & {
 type RequestLike = {
   method?: string;
   body?: RequestBody;
+  headers?: Record<string, string | string[] | undefined>;
 };
 
 type ResponseLike = {
   status: (code: number) => {
     json: (body: unknown) => void;
   };
-  setHeader?: (name: string, value: string) => void;
+  setHeader?: (name: string, value: string | number) => void;
+};
+
+type HandlerResult = {
+  status: number;
+  body: unknown;
 };
 
 type XrplMemo = {
@@ -66,6 +79,7 @@ type XrplTransaction = {
   Memos?: XrplMemo[];
   date?: number;
   hash?: string;
+  ledger_index?: number;
 };
 
 type XrplTransactionMeta = {
@@ -76,18 +90,31 @@ type AccountTransactionEntry = {
   tx?: XrplTransaction;
   tx_json?: XrplTransaction;
   meta?: XrplTransactionMeta;
+  metaData?: XrplTransactionMeta;
   validated?: boolean;
   hash?: string;
+  ledger_index?: number;
 };
 
-type XrplRpcResponse = {
-  result?: {
-    transactions?: AccountTransactionEntry[];
-    marker?: unknown;
-    error?: string;
-    error_message?: string;
-  };
+type AccountTxRpcResult = {
+  transactions?: AccountTransactionEntry[];
+  marker?: unknown;
   error?: string;
+  error_message?: string;
+};
+
+type XrplRpcResponse<T> = {
+  result?: T;
+  error?: string;
+};
+
+type TxLookupResult = XrplTransaction & {
+  tx_json?: XrplTransaction;
+  meta?: XrplTransactionMeta;
+  metaData?: XrplTransactionMeta;
+  validated?: boolean;
+  error?: string;
+  error_message?: string;
 };
 
 type PublicSupportMemo = {
@@ -96,6 +123,9 @@ type PublicSupportMemo = {
   name: string;
   message: string;
 };
+
+const payloadRateLimit = new Map<string, { count: number; resetAt: number }>();
+let supportStatsCache: { expiresAt: number; value: HandlerResult } | undefined;
 
 function normalizePublicUrl(value: string | undefined) {
   const cleanValue = value?.trim().replace(/\/$/, "");
@@ -158,6 +188,46 @@ function isValidXrplAddress(value: string) {
   return /^r[1-9A-HJ-NP-Za-km-z]{25,34}$/.test(value);
 }
 
+function isValidHash(value: string) {
+  return /^[A-Fa-f0-9]{64}$/.test(value);
+}
+
+function getHeader(req: RequestLike, name: string) {
+  const direct = req.headers?.[name] ?? req.headers?.[name.toLowerCase()];
+  return Array.isArray(direct) ? direct[0] : direct;
+}
+
+function requestKey(req: RequestLike) {
+  const forwarded =
+    getHeader(req, "x-vercel-forwarded-for") ||
+    getHeader(req, "x-forwarded-for") ||
+    getHeader(req, "x-real-ip") ||
+    "unknown";
+  return forwarded.split(",")[0]?.trim() || "unknown";
+}
+
+function consumePayloadAllowance(req: RequestLike) {
+  const now = Date.now();
+  const key = requestKey(req);
+  const current = payloadRateLimit.get(key);
+
+  if (!current || current.resetAt <= now) {
+    payloadRateLimit.set(key, { count: 1, resetAt: now + PAYLOAD_RATE_LIMIT_WINDOW_MS });
+    return { allowed: true, retryAfterSeconds: 0 };
+  }
+
+  if (current.count >= PAYLOAD_RATE_LIMIT_MAX) {
+    return {
+      allowed: false,
+      retryAfterSeconds: Math.max(1, Math.ceil((current.resetAt - now) / 1000)),
+    };
+  }
+
+  current.count += 1;
+  payloadRateLimit.set(key, current);
+  return { allowed: true, retryAfterSeconds: 0 };
+}
+
 function getXamanHeaders() {
   const apiKey = process.env.XAMAN_API_KEY;
   const apiSecret = process.env.XAMAN_API_SECRET;
@@ -173,7 +243,7 @@ function getXamanHeaders() {
   };
 }
 
-async function createXamanPayload(body: Record<string, unknown>) {
+async function createXamanPayload(body: Record<string, unknown>): Promise<HandlerResult> {
   const response = await fetch(XAMAN_API_URL, {
     method: "POST",
     headers: getXamanHeaders(),
@@ -199,7 +269,7 @@ async function createXamanPayload(body: Record<string, unknown>) {
   };
 }
 
-async function getXamanPayload(uuid: string) {
+async function getXamanPayload(uuid: string): Promise<HandlerResult> {
   const response = await fetch(`${XAMAN_API_URL}/${uuid}`, {
     method: "GET",
     headers: getXamanHeaders(),
@@ -224,7 +294,7 @@ async function getXamanPayload(uuid: string) {
   };
 }
 
-async function xrplRpc(method: string, params: Record<string, unknown>) {
+async function xrplRpc<T>(method: string, params: Record<string, unknown>): Promise<HandlerResult> {
   const response = await fetch(XRPL_RPC_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -234,14 +304,14 @@ async function xrplRpc(method: string, params: Record<string, unknown>) {
     }),
   });
 
-  const data = (await response.json()) as XrplRpcResponse;
+  const data = (await response.json()) as XrplRpcResponse<T & { error?: string; error_message?: string }>;
 
   if (!response.ok || data.error || data.result?.error) {
     return {
       status: 502,
       body: {
         ok: false,
-        error: "XRPL support counter lookup failed.",
+        error: data.result?.error_message || data.result?.error || data.error || "XRPL request failed.",
         details: data,
       },
     };
@@ -253,8 +323,40 @@ async function xrplRpc(method: string, params: Record<string, unknown>) {
   };
 }
 
+async function lookupSupportTransaction(hash: string) {
+  const response = await fetch(XRPL_RPC_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      method: "tx",
+      params: [{ transaction: hash, binary: false }],
+    }),
+  });
+
+  const data = (await response.json()) as XrplRpcResponse<TxLookupResult>;
+  const result = data.result;
+
+  if (result?.error === "txnNotFound") {
+    return { pending: true, result: null };
+  }
+
+  if (!response.ok || data.error || result?.error || !result) {
+    throw new Error(result?.error_message || result?.error || data.error || "XRPL support transaction lookup failed.");
+  }
+
+  return { pending: false, result };
+}
+
 function getTransaction(entry: AccountTransactionEntry) {
   return entry.tx_json ?? entry.tx ?? {};
+}
+
+function getLookupTransaction(result: TxLookupResult) {
+  return result.tx_json ?? result;
+}
+
+function getTransactionResult(entry: AccountTransactionEntry | TxLookupResult) {
+  return entry.meta?.TransactionResult ?? entry.metaData?.TransactionResult ?? "";
 }
 
 function getMemoText(transaction: XrplTransaction) {
@@ -267,7 +369,7 @@ function getMemoText(transaction: XrplTransaction) {
 function hasSupportPaymentMemo(transaction: XrplTransaction) {
   return getMemoText(transaction).some(
     (memo) =>
-      memo.type === "OTT_SUPPORT_PAYMENT" ||
+      memo.type === "OTT_SUPPORT_PAYMENT" &&
       memo.data.includes("OTT Terminal voluntary support"),
   );
 }
@@ -327,9 +429,23 @@ function shortAddress(value: string) {
   return value.length > 13 ? `${value.slice(0, 7)}...${value.slice(-5)}` : value;
 }
 
+function supportTransactionMatches(transaction: XrplTransaction, transactionResult: string, validated: boolean) {
+  const amount = transaction.Amount;
+  return Boolean(
+    validated === true &&
+      transactionResult === "tesSUCCESS" &&
+      transaction.TransactionType === "Payment" &&
+      transaction.Destination === OTT_SUPPORT_WALLET &&
+      transaction.SourceTag === MAKE_WAVES_SOURCE_TAG &&
+      typeof amount === "string" &&
+      ALLOWED_SUPPORT_DROPS.has(amount) &&
+      hasSupportPaymentMemo(transaction),
+  );
+}
+
 async function handleCreateSupportPaymentPayload(body: RequestBody) {
   const amountXrp = getString(body, "amountXrp");
-  const amountDrops = SUPPORT_AMOUNTS[amountXrp];
+  const amountDrops = SUPPORT_AMOUNTS[amountXrp as keyof typeof SUPPORT_AMOUNTS];
   const supporterName = cleanPublicText(getString(body, "supporterName"), 40);
   const publicMessage = cleanPublicText(getString(body, "publicMessage"), 160);
   const publicConsent = getBoolean(body, "publicConsent");
@@ -359,7 +475,7 @@ async function handleCreateSupportPaymentPayload(body: RequestBody) {
       body: {
         ok: false,
         error:
-          "Confirm that the name/message may be stored publicly on XRPL and shared by OTT, or clear the fields.",
+          "Confirm that the name/message may be stored publicly on XRPL, or clear the fields.",
       },
     };
   }
@@ -411,18 +527,7 @@ async function handleCreateSupportPaymentPayload(body: RequestBody) {
     },
     custom_meta: {
       identifier: `ott-support-${amountXrp.replace(".", "-")}`,
-      instruction: publicMemo
-        ? `Voluntary support of ${amountXrp} XRP for OTT Terminal. Your optional public message is included in the XRPL transaction memo.`
-        : `Voluntary support payment of ${amountXrp} XRP for OTT Terminal development, education and onboarding. No investment or access rights.`,
-      blob: {
-        mode: "ott-support-payment",
-        amountXrp,
-        amountDrops,
-        destinationWallet: OTT_SUPPORT_WALLET,
-        sourceTag: MAKE_WAVES_SOURCE_TAG,
-        memoText,
-        publicSupportMessage: publicMemo,
-      },
+      instruction: `Voluntary support of ${amountXrp} XRP for OTT Terminal. Verify destination, amount and SourceTag before signing.`,
     },
   });
 
@@ -436,6 +541,7 @@ async function handleCreateSupportPaymentPayload(body: RequestBody) {
       ok: true,
       mode: "ott-support-payment",
       sourceTag: MAKE_WAVES_SOURCE_TAG,
+      supportWallet: OTT_SUPPORT_WALLET,
       support: {
         amountXrp,
         amountDrops,
@@ -465,24 +571,123 @@ async function handleVerifySupportPaymentPayload(body: RequestBody) {
     response?: { account?: string; txid?: string };
   };
 
+  const signed = Boolean(payload.meta?.signed);
+  const resolved = Boolean(payload.meta?.resolved);
+  const payerAccount = payload.response?.account ?? null;
+  const txid = payload.response?.txid?.toUpperCase() ?? null;
+
+  if (!signed || !txid || !isValidHash(txid)) {
+    return {
+      status: 200,
+      body: {
+        ok: true,
+        mode: "ott-support-payment-verification",
+        sourceTag: MAKE_WAVES_SOURCE_TAG,
+        supportWallet: OTT_SUPPORT_WALLET,
+        verified: {
+          signed,
+          resolved,
+          validated: false,
+          pendingLedgerValidation: false,
+          payerAccount,
+          txid,
+          transactionResult: null,
+          amountXrp: null,
+          destinationWallet: null,
+          sourceTag: null,
+        },
+      },
+    };
+  }
+
+  const lookup = await lookupSupportTransaction(txid);
+
+  if (lookup.pending || !lookup.result) {
+    return {
+      status: 200,
+      body: {
+        ok: true,
+        mode: "ott-support-payment-verification",
+        sourceTag: MAKE_WAVES_SOURCE_TAG,
+        supportWallet: OTT_SUPPORT_WALLET,
+        verified: {
+          signed: true,
+          resolved,
+          validated: false,
+          pendingLedgerValidation: true,
+          payerAccount,
+          txid,
+          transactionResult: null,
+          amountXrp: null,
+          destinationWallet: OTT_SUPPORT_WALLET,
+          sourceTag: MAKE_WAVES_SOURCE_TAG,
+        },
+      },
+    };
+  }
+
+  const transaction = getLookupTransaction(lookup.result);
+  const transactionResult = getTransactionResult(lookup.result);
+  const amountDrops = typeof transaction.Amount === "string" ? transaction.Amount : "";
+  const validated = supportTransactionMatches(
+    transaction,
+    transactionResult,
+    lookup.result.validated === true,
+  );
+
+  if (!validated) {
+    return {
+      status: 409,
+      body: {
+        ok: false,
+        error: "The signed XRPL transaction does not match every OTT support requirement.",
+        verified: {
+          signed: true,
+          resolved,
+          validated: false,
+          pendingLedgerValidation: false,
+          payerAccount,
+          txid,
+          transactionResult,
+          amountXrp: SUPPORT_AMOUNT_BY_DROPS.get(amountDrops) ?? null,
+          destinationWallet: transaction.Destination ?? null,
+          sourceTag: transaction.SourceTag ?? null,
+        },
+      },
+    };
+  }
+
+  supportStatsCache = undefined;
+
   return {
     status: 200,
     body: {
       ok: true,
       mode: "ott-support-payment-verification",
       sourceTag: MAKE_WAVES_SOURCE_TAG,
+      supportWallet: OTT_SUPPORT_WALLET,
       verified: {
-        signed: Boolean(payload.meta?.signed),
-        resolved: Boolean(payload.meta?.resolved),
-        payerAccount: payload.response?.account ?? null,
-        txid: payload.response?.txid ?? null,
+        signed: true,
+        resolved,
+        validated: true,
+        pendingLedgerValidation: false,
+        payerAccount: transaction.Account ?? payerAccount,
+        txid,
+        transactionResult,
+        amountXrp: SUPPORT_AMOUNT_BY_DROPS.get(amountDrops) ?? null,
+        destinationWallet: transaction.Destination ?? null,
+        sourceTag: transaction.SourceTag ?? null,
       },
-      payload,
     },
   };
 }
 
 async function handleGetSupportStats() {
+  const now = Date.now();
+  if (supportStatsCache && supportStatsCache.expiresAt > now) {
+    return supportStatsCache.value;
+  }
+
   if (!isValidXrplAddress(OTT_SUPPORT_WALLET)) {
     return {
       status: 500,
@@ -495,7 +700,7 @@ async function handleGetSupportStats() {
   let truncated = false;
 
   for (let page = 0; page < MAX_ACCOUNT_TX_PAGES; page += 1) {
-    const result = await xrplRpc("account_tx", {
+    const result = await xrplRpc<AccountTxRpcResult>("account_tx", {
       account: OTT_SUPPORT_WALLET,
       ledger_index_min: -1,
       ledger_index_max: -1,
@@ -509,7 +714,7 @@ async function handleGetSupportStats() {
       return result;
     }
 
-    const data = result.body as XrplRpcResponse;
+    const data = result.body as XrplRpcResponse<AccountTxRpcResult>;
     entries.push(...(data.result?.transactions ?? []));
     marker = data.result?.marker;
 
@@ -536,17 +741,11 @@ async function handleGetSupportStats() {
 
   for (const entry of entries) {
     const transaction = getTransaction(entry);
-    const meta = entry.meta ?? {};
     const amount = transaction.Amount;
-    const isSupportPayment = Boolean(
-      entry.validated !== false &&
-        meta.TransactionResult === "tesSUCCESS" &&
-        transaction.TransactionType === "Payment" &&
-        transaction.Destination === OTT_SUPPORT_WALLET &&
-        transaction.SourceTag === MAKE_WAVES_SOURCE_TAG &&
-        typeof amount === "string" &&
-        /^\d+$/.test(amount) &&
-        hasSupportPaymentMemo(transaction),
+    const isSupportPayment = supportTransactionMatches(
+      transaction,
+      getTransactionResult(entry),
+      entry.validated === true,
     );
 
     if (!isSupportPayment || typeof amount !== "string") {
@@ -556,6 +755,7 @@ async function handleGetSupportStats() {
     const amountDrops = BigInt(amount);
     const paymentDate = rippleDateToIso(transaction.date);
     const publicMemo = readPublicSupportMemo(transaction);
+    const transactionHash = (transaction.hash || entry.hash || "").toUpperCase();
 
     totalDrops += amountDrops;
     paymentCount += 1;
@@ -571,7 +771,10 @@ async function handleGetSupportStats() {
     if (publicMemo) {
       publicMessageCount += 1;
 
-      if (latestPublicSupporters.length < 8) {
+      if (
+        REVIEWED_SUPPORT_TX_HASHES.has(transactionHash) &&
+        latestPublicSupporters.length < 8
+      ) {
         latestPublicSupporters.push({
           name: publicMemo.name || "Anonymous supporter",
           account: transaction.Account ? shortAddress(transaction.Account) : "Unknown wallet",
@@ -582,7 +785,7 @@ async function handleGetSupportStats() {
     }
   }
 
-  return {
+  const value: HandlerResult = {
     status: 200,
     body: {
       ok: true,
@@ -595,16 +798,26 @@ async function handleGetSupportStats() {
         paymentCount,
         uniqueSupporters: supporterAccounts.size,
         publicMessageCount,
+        reviewedPublicSupporterCount: latestPublicSupporters.length,
         latestPaymentAt,
         scannedTransactions: entries.length,
+        scanComplete: !truncated,
+        scanLimit: MAX_ACCOUNT_TX_PAGES * ACCOUNT_TX_PAGE_SIZE,
         truncated,
         updatedAt: new Date().toISOString(),
       },
       latestPublicSupporters,
       note:
-        "Public message text is stored on XRPL but is reviewed before OTT republishes or features it.",
+        "Optional public memo text remains on XRPL. OTT republishes a supporter only after the transaction hash is manually approved.",
     },
   };
+
+  supportStatsCache = {
+    expiresAt: now + SUPPORT_STATS_CACHE_MS,
+    value,
+  };
+
+  return value;
 }
 
 export default async function handler(req: RequestLike, res: ResponseLike) {
@@ -621,33 +834,34 @@ export default async function handler(req: RequestLike, res: ResponseLike) {
     const body = req.body ?? {};
     const action = body.action;
 
-    let result:
-      | {
-          status: number;
-          body: unknown;
-        }
-      | undefined;
-
     if (action === "xaman.createSupportPaymentPayload") {
-      result = await handleCreateSupportPaymentPayload(body);
+      const allowance = consumePayloadAllowance(req);
+      if (!allowance.allowed) {
+        res.setHeader?.("Retry-After", allowance.retryAfterSeconds);
+        return res.status(429).json({
+          ok: false,
+          error: "Too many support signing requests. Please wait before trying again.",
+        });
+      }
+
+      const result = await handleCreateSupportPaymentPayload(body);
+      return res.status(result.status).json(result.body);
     }
 
     if (action === "xaman.verifySupportPaymentPayload") {
-      result = await handleVerifySupportPaymentPayload(body);
+      const result = await handleVerifySupportPaymentPayload(body);
+      return res.status(result.status).json(result.body);
     }
 
     if (action === "xrpl.getSupportStats") {
-      result = await handleGetSupportStats();
+      const result = await handleGetSupportStats();
+      return res.status(result.status).json(result.body);
     }
 
-    if (!result) {
-      return res.status(400).json({
-        ok: false,
-        error: "Unknown support payment API action.",
-      });
-    }
-
-    return res.status(result.status).json(result.body);
+    return res.status(400).json({
+      ok: false,
+      error: "Unknown support payment API action.",
+    });
   } catch (error) {
     return res.status(500).json({
       ok: false,

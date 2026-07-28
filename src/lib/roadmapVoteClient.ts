@@ -1,4 +1,5 @@
 import type { XamanPayloadShape } from "./xamanClient";
+import type { WalletProviderId } from "./walletRegistry";
 
 export type RoadmapVoteOptionId =
   | "academy-expansion"
@@ -25,6 +26,26 @@ export type RoadmapVotePayloadResponse = {
   payload?: XamanPayloadShape;
   error?: string;
   details?: unknown;
+};
+
+export type PreparedRoadmapVoteResponse = {
+  ok: boolean;
+  mode?: string;
+  providerId?: Extract<WalletProviderId, "crossmark" | "gemwallet">;
+  cycle?: string;
+  sourceTag?: number;
+  vote?: {
+    id: RoadmapVoteOptionId;
+    title: string;
+  };
+  proof?: {
+    destinationWallet: string;
+    amountDrops: string;
+    memoType: string;
+    memoText: string;
+  };
+  txjson?: Record<string, unknown>;
+  error?: string;
 };
 
 export type RoadmapVoteRecord = {
@@ -57,6 +78,9 @@ export type RoadmapVoteStatsResponse = {
     uniqueWallets: number;
     verifiedVoteTransactions: number;
     scannedAccountTransactions: number;
+    scanComplete?: boolean;
+    pagesScanned?: number;
+    scanLimit?: number;
   };
   counts?: Partial<Record<RoadmapVoteOptionId, number>>;
   ranking?: RoadmapVoteRankingItem[];
@@ -94,6 +118,19 @@ export function createRoadmapVotePayload(
     action: "xaman.createRoadmapVotePayload",
     voteId,
     walletAddress,
+  });
+}
+
+export function prepareRoadmapVoteTransaction(
+  voteId: RoadmapVoteOptionId,
+  walletAddress: string,
+  providerId: Extract<WalletProviderId, "crossmark" | "gemwallet">,
+) {
+  return postRoadmapVote<PreparedRoadmapVoteResponse>({
+    action: "xrpl.prepareRoadmapVoteTransaction",
+    voteId,
+    walletAddress,
+    providerId,
   });
 }
 

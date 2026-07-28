@@ -293,7 +293,7 @@ export function FounderResearchReview() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1500px] px-5 py-8 sm:px-8">
+      <div data-page-region="true" className="mx-auto max-w-[1500px] px-5 py-8 sm:px-8">
         {setupRequired && <Notice tone="amber" text="Researchdatabase is nog niet geactiveerd. Voer de researchmigraties uit voordat scores of watchlistpublicaties worden opgeslagen." />}
         {message && <Notice tone="blue" text={message} />}
         {error && <Notice tone="red" text={error} />}
@@ -347,7 +347,7 @@ export function FounderResearchReview() {
             )}
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

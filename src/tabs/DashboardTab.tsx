@@ -237,13 +237,13 @@ export function DashboardTab({ onNavigate }: DashboardTabProps) {
                 <Database size={17} />
 
                 <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
-                  OTT Command Dashboard
+                  {isEnglish ? "OTT command dashboard" : "OTT-dagoverzicht"}
                 </p>
               </div>
 
-              <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
-                Daily Intelligence Snapshot
-              </h2>
+              <h1 className="font-orbitron text-3xl xl:text-4xl font-black mb-4">
+                {isEnglish ? "Daily intelligence snapshot" : "Dagelijkse intelligence-momentopname"}
+              </h1>
 
               <p className="font-mono text-sm text-black/55 max-w-3xl leading-relaxed">
                 {isEnglish
