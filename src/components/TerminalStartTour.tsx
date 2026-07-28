@@ -5,9 +5,11 @@ import {
   CheckCircle2,
   Compass,
   ShieldCheck,
+  Sparkles,
   Wallet,
   X,
 } from "lucide-react";
+import { OTTLogoMark } from "./OTTLogo";
 import { useTerminalLanguage } from "../lib/useTerminalLanguage";
 
 const TOUR_STORAGE_KEY = "ott-terminal-tour-seen-v1";
@@ -43,6 +45,7 @@ export function TerminalStartTour() {
         : "Verken eerst de XRPL-basis en de publieke Academy. OTT vraagt nooit om een seed phrase en een wallet is niet nodig om alleen te leren.",
       action: en ? "Open Academy" : "Open Academy",
       target: "academy",
+      code: "LEARN_01",
     },
     {
       icon: Compass,
@@ -53,6 +56,7 @@ export function TerminalStartTour() {
         : "Gebruik Ontdekken en XRPL-tools om projecten, issuerinformatie, transacties en bewijs te bekijken voordat je conclusies trekt.",
       action: en ? "Explore XRPL" : "Ontdek XRPL",
       target: "intel",
+      code: "VERIFY_02",
     },
     {
       icon: Wallet,
@@ -63,6 +67,7 @@ export function TerminalStartTour() {
         : "Initialiseer eerst je OTT-account. Synchroniseer later een XRPL-wallet voor handtekeningen, betalingen, stemmen of geverifieerd bezit.",
       action: en ? "Initialize Terminal" : "Initialiseer Terminal",
       target: "wallet",
+      code: "SYNC_03",
     },
   ], [en]);
 
@@ -100,7 +105,7 @@ export function TerminalStartTour() {
       <button
         type="button"
         onClick={openTour}
-        className="fixed bottom-[7.75rem] right-4 z-[135] inline-flex min-h-12 items-center gap-3 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-2xl transition hover:-translate-y-0.5 hover:bg-slate-800 md:bottom-5 md:right-5"
+        className="ott-tour-launch fixed bottom-[7.75rem] right-4 z-[135] inline-flex min-h-12 items-center gap-3 rounded-2xl px-5 py-3 text-sm font-semibold shadow-2xl transition hover:-translate-y-0.5 md:bottom-5 md:right-5"
         aria-label={en ? "Start the OTT Terminal tour" : "Start de OTT Terminal-tour"}
       >
         <ShieldCheck size={18} />
@@ -109,76 +114,109 @@ export function TerminalStartTour() {
 
       {open && (
         <div
-          className="fixed inset-0 z-[240] flex items-end justify-center bg-slate-950/55 p-0 backdrop-blur-sm sm:items-center sm:p-6"
+          className="ott-tour-backdrop fixed inset-0 z-[240] flex items-end justify-center p-0 backdrop-blur-md sm:items-center sm:p-6"
           role="dialog"
           aria-modal="true"
           aria-labelledby="terminal-tour-title"
           onMouseDown={(event) => event.currentTarget === event.target && setOpen(false)}
         >
-          <section className="w-full max-w-2xl overflow-hidden rounded-t-3xl border border-slate-200 bg-white shadow-2xl sm:rounded-3xl">
-            <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-5 sm:px-8">
-              <div>
-                <p className="text-xs font-semibold text-blue-700">OTT Terminal · Quick Start</p>
-                <h2 id="terminal-tour-title" className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">
-                  {en ? "Understand the first move in under a minute" : "Begrijp je eerste stap binnen één minuut"}
-                </h2>
+          <section className="ott-tour-shell relative w-full max-w-3xl overflow-hidden rounded-t-[2rem] sm:rounded-[2rem]">
+            <div className="ott-tour-orb ott-tour-orb-blue" />
+            <div className="ott-tour-orb ott-tour-orb-pink" />
+            <div className="ott-tour-grid" />
+
+            <header className="relative z-10 flex items-start justify-between gap-4 border-b border-white/10 px-5 py-5 sm:px-8 sm:py-6">
+              <div className="flex items-center gap-3">
+                <span className="ott-tour-logo"><OTTLogoMark size={36} /></span>
+                <div>
+                  <p className="ott-tour-kicker">OTT Terminal · Quick Start</p>
+                  <h2 id="terminal-tour-title" className="ott-tour-heading mt-1 text-lg font-semibold sm:text-xl">
+                    {en ? "Your first verified route" : "Je eerste geverifieerde route"}
+                  </h2>
+                </div>
               </div>
-              <button type="button" onClick={() => setOpen(false)} className="rounded-xl border border-slate-200 p-2 text-slate-500" aria-label={en ? "Close tour" : "Tour sluiten"}>
+              <button type="button" onClick={() => setOpen(false)} className="ott-tour-icon-button rounded-xl p-2" aria-label={en ? "Close tour" : "Tour sluiten"}>
                 <X size={18} />
               </button>
             </header>
 
-            <div className="px-5 py-7 sm:px-8 sm:py-9">
-              <div className="flex gap-2" aria-label={en ? "Tour progress" : "Tourvoortgang"}>
-                {steps.map((item, index) => (
-                  <button
-                    key={item.eyebrow}
-                    type="button"
-                    data-compact-control
-                    onClick={() => setStep(index)}
-                    aria-label={`${en ? "Open step" : "Open stap"} ${index + 1}`}
-                    aria-current={index === step ? "step" : undefined}
-                    className={`h-2 min-h-2 flex-1 rounded-full ${index <= step ? "bg-blue-700" : "bg-slate-200"}`}
-                  />
-                ))}
-              </div>
+            <div className="relative z-10 grid min-h-[470px] md:grid-cols-[0.34fr_0.66fr]">
+              <aside className="ott-tour-side border-b border-white/10 p-5 md:border-b-0 md:border-r md:p-7">
+                <p className="ott-tour-kicker">{en ? "Route map" : "Routekaart"}</p>
+                <div className="mt-5 grid grid-cols-3 gap-2 md:grid-cols-1">
+                  {steps.map((item, index) => {
+                    const StepIcon = item.icon;
+                    const selected = index === step;
+                    return (
+                      <button
+                        key={item.code}
+                        type="button"
+                        onClick={() => setStep(index)}
+                        aria-current={selected ? "step" : undefined}
+                        className={`ott-tour-step flex min-w-0 items-center gap-3 rounded-2xl p-3 text-left ${selected ? "is-active" : ""}`}
+                      >
+                        <span className="ott-tour-step-icon"><StepIcon size={17} /></span>
+                        <span className="hidden min-w-0 md:block">
+                          <span className="block font-data text-[10px]">{item.code}</span>
+                          <span className="mt-1 block truncate text-xs font-semibold">{item.eyebrow.replace(/^Step \d · |^Stap \d · /, "")}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
 
-              <div className="mt-8 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-950 text-white">
-                <Icon size={25} />
-              </div>
-              <p className="mt-6 text-xs font-semibold text-blue-700">{current.eyebrow}</p>
-              <h3 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">{current.title}</h3>
-              <p className="mt-4 text-base leading-7 text-slate-600">{current.text}</p>
+                <div className="ott-tour-seal mt-6 hidden rounded-2xl p-4 md:block">
+                  <Sparkles size={18} />
+                  <p className="mt-3 text-xs font-semibold">{en ? "Learn → Verify → Initialize" : "Leer → Verifieer → Initialiseer"}</p>
+                  <p className="mt-2 text-[11px] leading-5">{en ? "No wallet wall. No hidden transaction." : "Geen walletmuur. Geen verborgen transactie."}</p>
+                </div>
+              </aside>
 
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <button
-                  type="button"
-                  onClick={() => navigate(current.target)}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white"
-                >
-                  {current.action}
-                  <ArrowRight size={17} />
-                </button>
+              <div className="p-5 sm:p-8 md:p-9">
+                <div className="flex items-center justify-between gap-4">
+                  <span className="ott-tour-medallion"><Icon size={27} /></span>
+                  <span className="ott-tour-code font-data text-[11px]">{current.code}</span>
+                </div>
 
-                <div className="flex items-center justify-between gap-2 sm:justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setStep((value) => Math.max(0, value - 1))}
-                    disabled={step === 0}
-                    className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 disabled:opacity-40"
-                  >
-                    {en ? "Previous" : "Vorige"}
+                <p className="ott-tour-kicker mt-7">{current.eyebrow}</p>
+                <h3 className="ott-tour-title mt-3 text-3xl font-bold leading-tight sm:text-4xl">{current.title}</h3>
+                <p className="ott-tour-copy mt-5 text-base leading-7">{current.text}</p>
+
+                <div className="mt-8 flex gap-2" aria-label={en ? "Tour progress" : "Tourvoortgang"}>
+                  {steps.map((item, index) => (
+                    <button
+                      key={item.code}
+                      type="button"
+                      data-compact-control
+                      onClick={() => setStep(index)}
+                      aria-label={`${en ? "Open step" : "Open stap"} ${index + 1}`}
+                      aria-current={index === step ? "step" : undefined}
+                      className={`ott-tour-progress h-2 min-h-2 flex-1 rounded-full ${index <= step ? "is-filled" : ""}`}
+                    />
+                  ))}
+                </div>
+
+                <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <button type="button" onClick={() => navigate(current.target)} className="ott-tour-primary inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3.5 text-sm font-semibold">
+                    {current.action}
+                    <ArrowRight size={17} />
                   </button>
-                  {step < steps.length - 1 ? (
-                    <button type="button" onClick={() => setStep((value) => Math.min(steps.length - 1, value + 1))} className="rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-900">
-                      {en ? "Next" : "Volgende"}
+
+                  <div className="flex items-center justify-between gap-2 sm:justify-end">
+                    <button type="button" onClick={() => setStep((value) => Math.max(0, value - 1))} disabled={step === 0} className="ott-tour-secondary rounded-xl px-4 py-3 text-sm font-semibold disabled:opacity-35">
+                      {en ? "Previous" : "Vorige"}
                     </button>
-                  ) : (
-                    <button type="button" onClick={() => setOpen(false)} className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
-                      <CheckCircle2 size={17} />
-                      {en ? "Tour complete" : "Tour voltooid"}
-                    </button>
-                  )}
+                    {step < steps.length - 1 ? (
+                      <button type="button" onClick={() => setStep((value) => Math.min(steps.length - 1, value + 1))} className="ott-tour-secondary rounded-xl px-4 py-3 text-sm font-semibold">
+                        {en ? "Next" : "Volgende"}
+                      </button>
+                    ) : (
+                      <button type="button" onClick={() => setOpen(false)} className="ott-tour-complete inline-flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold">
+                        <CheckCircle2 size={17} />
+                        {en ? "Tour complete" : "Tour voltooid"}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
