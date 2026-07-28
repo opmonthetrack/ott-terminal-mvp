@@ -103,6 +103,15 @@ export function MobileTerminalDock() {
     };
   }, []);
 
+  useEffect(() => {
+    if (hidden) {
+      document.body.classList.remove("ott-mobile-dock-mounted");
+      return;
+    }
+    document.body.classList.add("ott-mobile-dock-mounted");
+    return () => document.body.classList.remove("ott-mobile-dock-mounted");
+  }, [hidden]);
+
   if (hidden) return null;
 
   function navigate(target: string) {
