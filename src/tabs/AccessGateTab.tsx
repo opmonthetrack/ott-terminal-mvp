@@ -103,23 +103,23 @@ export function AccessGateTab({ walletAddress = "guest", onNavigate }: AccessGat
       <section className="relative overflow-hidden border-b border-blue-200 bg-[radial-gradient(circle_at_15%_15%,rgba(59,130,246,0.38),transparent_34%),radial-gradient(circle_at_84%_12%,rgba(124,58,237,0.28),transparent_30%),linear-gradient(135deg,#eef5ff_0%,#ffffff_52%,#f6f0ff_100%)]">
         <div className="absolute inset-0 opacity-40 [background-image:linear-gradient(rgba(37,99,235,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(37,99,235,0.08)_1px,transparent_1px)] [background-size:34px_34px]" />
 
-        <div className="relative mx-auto grid max-w-7xl gap-10 px-5 py-14 sm:px-8 lg:grid-cols-[1fr_390px] lg:items-center lg:py-20">
+        <div className="relative mx-auto grid max-w-7xl gap-8 px-5 py-12 sm:px-8 lg:grid-cols-[1fr_360px] lg:items-center lg:py-16">
           <div>
-            <p className="text-xs font-semibold text-blue-700">OTT Access & Credentials</p>
-            <h1 className="mt-4 max-w-4xl font-orbitron text-4xl font-semibold tracking-tight sm:text-6xl">
-              {en ? "Seven NFT routes. No hidden mint promises." : "Zeven NFT-routes. Geen verborgen mintbeloftes."}
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">OTT NFT & Access</p>
+            <h1 className="mt-4 max-w-4xl font-orbitron text-4xl font-semibold tracking-tight sm:text-5xl">
+              {en ? "All seven NFT routes in one clear place." : "Alle zeven NFT-routes op één duidelijke plek."}
             </h1>
-            <p className="mt-6 max-w-3xl text-base leading-8 text-slate-700">
+            <p className="mt-5 max-w-3xl text-base leading-7 text-slate-700">
               {en
-                ? "Genesis is a founder/community reward, Public Access is the normal paid route, and the five tester and certificate collections are earned through verified learning or testing. A preview image is not an issued NFT."
-                : "Genesis is een founder/communitybeloning, Public Access is de normale betaalde route en de vijf tester- en certificaatcollecties worden verdiend via geverifieerd leren of testen. Een previewafbeelding is geen uitgegeven NFT."}
+                ? "Start with the progression overview, compare compact collection cards and open eligibility details only when needed. Access verification remains separate and never moves funds."
+                : "Begin met het voortgangsoverzicht, vergelijk compacte collectiekaarten en open eligibilitydetails alleen wanneer nodig. Toegangsverificatie blijft apart en verplaatst nooit geld."}
             </p>
 
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-7 flex flex-wrap gap-3">
               <Badge text={en ? "Genesis · not for sale" : "Genesis · niet te koop"} />
               <Badge text="Public · 0.589 XRP / 1.00 RLUSD" />
-              <Badge text={en ? "5 earned credentials" : "5 verdiende credentials"} />
-              <Badge text={en ? "Validated ownership only" : "Alleen gevalideerd bezit"} />
+              <Badge text={en ? "4 earned credentials" : "4 verdiende credentials"} />
+              <Badge text={en ? "1 planned credential" : "1 geplande credential"} />
             </div>
           </div>
 
@@ -138,69 +138,71 @@ export function AccessGateTab({ walletAddress = "guest", onNavigate }: AccessGat
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-16">
-        <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-          <div className="rounded-3xl border border-slate-200 p-6 sm:p-8">
-            <div className="flex items-start gap-4">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-700"><KeyRound size={22} /></span>
-              <div>
-                <p className="text-xs font-semibold text-blue-700">XRPL ownership scanner</p>
-                <h2 className="mt-2 text-2xl font-semibold">{en ? "Check the connected wallet" : "Controleer de gekoppelde wallet"}</h2>
-                <p className="mt-3 text-sm leading-7 text-slate-600">
-                  {en
-                    ? "This scanner currently checks the existing configured Access Pass by trusted issuer, taxon and metadata URI. It never moves XRP or NFTs. New Public Access metadata must pass the same controls before checkout is enabled."
-                    : "Deze scanner controleert momenteel de bestaande geconfigureerde Access Pass via vertrouwde issuer, taxon en metadata-URI. Hij verplaatst nooit XRP of NFT's. Nieuwe Public Access-metadata moet dezelfde controles doorstaan voordat checkout wordt geactiveerd."}
-                </p>
-              </div>
-            </div>
+      <NftCollectionGallery />
 
-            <div className="mt-7 grid gap-4 sm:grid-cols-3">
-              <Metric label="Metadata CID" value={OTT_ACCESS_PASS_METADATA_CID} />
-              <Metric label="NFTokenID" value={shortNftId(scan?.matchedNft?.nftokenId)} />
-              <Metric label={en ? "Checked NFTs" : "Gecontroleerde NFT's"} value={String(scan?.totalNftsChecked ?? 0)} />
-            </div>
-
-            {message && <p className="mt-6 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm leading-6 text-blue-950">{message}</p>}
-
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              {guest ? (
-                <button type="button" onClick={() => onNavigate?.("xaman")} className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white"><Wallet size={18} />{en ? "Sync wallet" : "Wallet synchroniseren"}</button>
-              ) : (
-                <button type="button" onClick={() => void scanWallet()} disabled={busy} className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{busy ? <Loader2 className="animate-spin" size={18} /> : <RefreshCcw size={18} />}{en ? "Scan configured Access Pass" : "Geconfigureerde Access Pass scannen"}</button>
-              )}
-              <button type="button" onClick={resetLocalAccess} disabled={guest} className="rounded-xl border border-slate-300 px-5 py-3 text-sm font-semibold hover:bg-slate-50 disabled:opacity-40">{en ? "Clear local cache" : "Lokale cache wissen"}</button>
-            </div>
-          </div>
-
-          <div className="space-y-5">
-            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
-              <p className="text-xs font-semibold text-slate-500">Security model</p>
-              <div className="mt-5 space-y-4">
-                <SecurityLine icon={CheckCircle2} text={en ? "Eligibility is verified before minting" : "Eligibility wordt vóór minting geverifieerd"} />
-                <SecurityLine icon={BadgeCheck} text={en ? "No duplicate wallet/course-version credential" : "Geen dubbele wallet/curriculumversie-credential"} />
-                <SecurityLine icon={ShieldCheck} text={en ? "Founder or issuer signs the actual mint and delivery" : "Founder of issuer tekent de echte mint en levering"} />
-                <SecurityLine icon={Wallet} text={en ? "Utility unlocks after confirmed wallet ownership" : "Utility opent na bevestigd walletbezit"} />
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-blue-200 bg-blue-50 p-6">
-              <div className="flex items-start gap-3">
-                <ShoppingBag className="mt-0.5 shrink-0 text-blue-700" size={21} />
+      <section className="border-t border-slate-200 bg-slate-50/60">
+        <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-12">
+          <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+              <div className="flex items-start gap-4">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-700"><KeyRound size={22} /></span>
                 <div>
-                  <p className="text-sm font-semibold text-blue-950">{en ? "Public Access checkout status" : "Status Public Access-checkout"}</p>
-                  <p className="mt-2 text-sm leading-6 text-blue-950/80">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">XRPL ownership scanner</p>
+                  <h2 className="mt-2 text-2xl font-semibold">{en ? "Check the connected wallet" : "Controleer de gekoppelde wallet"}</h2>
+                  <p className="mt-3 text-sm leading-7 text-slate-600">
                     {en
-                      ? "Terms are fixed at 0.589 XRP or 1.00 RLUSD. The purchase button stays disabled until the new public collection issuer, metadata, payment verification and NFT delivery are tested end to end."
-                      : "De voorwaarden staan vast op 0,589 XRP of 1,00 RLUSD. De aankoopknop blijft uit totdat de nieuwe publieke collectie-issuer, metadata, betalingsverificatie en NFT-levering end-to-end zijn getest."}
+                      ? "This scanner checks the configured Access Pass by trusted issuer, taxon and metadata URI. It never moves XRP or NFTs."
+                      : "Deze scanner controleert de geconfigureerde Access Pass via vertrouwde issuer, taxon en metadata-URI. Hij verplaatst nooit XRP of NFT's."}
                   </p>
+                </div>
+              </div>
+
+              <div className="mt-7 grid gap-4 sm:grid-cols-3">
+                <Metric label="Metadata CID" value={OTT_ACCESS_PASS_METADATA_CID} />
+                <Metric label="Taxon" value={String(OTT_ACCESS_PASS_TAXON)} />
+                <Metric label="NFTokenID" value={shortNftId(scan?.matchedNft?.nftokenId)} />
+              </div>
+
+              {message && <p className="mt-6 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm leading-6 text-blue-950">{message}</p>}
+
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                {guest ? (
+                  <button type="button" onClick={() => onNavigate?.("xaman")} className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white"><Wallet size={18} />{en ? "Sync wallet" : "Wallet synchroniseren"}</button>
+                ) : (
+                  <button type="button" onClick={() => void scanWallet()} disabled={busy} className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{busy ? <Loader2 className="animate-spin" size={18} /> : <RefreshCcw size={18} />}{en ? "Scan Access Pass" : "Scan Access Pass"}</button>
+                )}
+                <button type="button" onClick={resetLocalAccess} disabled={guest} className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold hover:bg-slate-50 disabled:opacity-40">{en ? "Clear local cache" : "Lokale cache wissen"}</button>
+              </div>
+            </div>
+
+            <div className="space-y-5">
+              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Security model</p>
+                <div className="mt-5 space-y-4">
+                  <SecurityLine icon={CheckCircle2} text={en ? "Eligibility is verified before minting" : "Eligibility wordt vóór minting geverifieerd"} />
+                  <SecurityLine icon={BadgeCheck} text={en ? "No duplicate wallet/course-version credential" : "Geen dubbele wallet/curriculumversie-credential"} />
+                  <SecurityLine icon={ShieldCheck} text={en ? "Founder or issuer signs the actual mint and delivery" : "Founder of issuer tekent de echte mint en levering"} />
+                  <SecurityLine icon={Wallet} text={en ? "Utility unlocks after confirmed wallet ownership" : "Utility opent na bevestigd walletbezit"} />
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-blue-200 bg-blue-50 p-6">
+                <div className="flex items-start gap-3">
+                  <ShoppingBag className="mt-0.5 shrink-0 text-blue-700" size={21} />
+                  <div>
+                    <p className="text-sm font-semibold text-blue-950">{en ? "Public Access checkout status" : "Status Public Access-checkout"}</p>
+                    <p className="mt-2 text-sm leading-6 text-blue-950/80">
+                      {en
+                        ? "Terms are fixed at 0.589 XRP or 1.00 RLUSD. Checkout stays disabled until issuer, metadata, payment verification and delivery pass end-to-end testing."
+                        : "De voorwaarden staan vast op 0,589 XRP of 1,00 RLUSD. Checkout blijft uit totdat issuer, metadata, betalingsverificatie en levering end-to-end zijn getest."}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </section>
-
-      <NftCollectionGallery compact />
     </div>
   );
 }
