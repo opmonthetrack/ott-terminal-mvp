@@ -234,7 +234,7 @@ export function TokenResearchRequestPanel() {
             <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-blue-950">
               {en ? "Research requests and uploads are private to the submitting OTT account until a founder review is published." : "Researchaanvragen en uploads blijven privé voor het aanleverende OTT-account totdat een founderreview wordt gepubliceerd."}
             </p>
-            <a href="/?tab=wallet" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-blue-950 px-5 py-3 text-sm font-semibold text-white">
+            <a href="/?tab=wallet" className="ott-contrast-on-color mt-5 inline-flex items-center gap-2 rounded-xl bg-blue-950 px-5 py-3 text-sm font-semibold text-white">
               <ShieldCheck size={18} /> {en ? "Open account login" : "Open accountlogin"}
             </a>
           </div>
