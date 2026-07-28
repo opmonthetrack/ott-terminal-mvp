@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Orbitron:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 @import "./styles/remainingTabsLightOverride.css";
 @import "./styles/accessibleSelectedStates.css";
@@ -6,8 +6,9 @@
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-orbitron: "Orbitron", "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-data: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-orbitron: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-data: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Inter", ui-sans-serif, system-ui, sans-serif;
   --color-ott-blue: #1d4ed8;
   --color-ott-pink: #9d174d;
 }
@@ -81,17 +82,24 @@ html {
   scroll-behavior: smooth;
 }
 
-body {
+body,
+button,
+input,
+select,
+textarea {
   font-family: var(--font-sans);
+}
+
+body {
   line-height: 1.5;
 }
 
-/* Orbitron is reserved for explicit brand/title classes. Long-form copy remains Inter. */
+/* Keep legacy utility names compatible while rendering one font everywhere. */
 .font-orbitron {
-  font-family: var(--font-orbitron) !important;
+  font-family: var(--font-sans) !important;
 }
 
-/* Ledger values, hashes, code and numeric read-outs use a real data font. */
+/* Ledger values keep numeric alignment without switching typeface. */
 .font-data,
 .font-mono,
 code,
@@ -99,7 +107,7 @@ pre,
 kbd,
 samp,
 [data-xrpl-value] {
-  font-family: var(--font-data) !important;
+  font-family: var(--font-sans) !important;
   font-variant-numeric: tabular-nums slashed-zero;
 }
 

@@ -717,6 +717,17 @@ export default function App() {
     setMenuOpen(false);
   }
 
+  function connectWalletWithoutNavigation(
+    address: string,
+    providerId: WalletProviderId,
+    network: XrplNetwork,
+    verificationMethod: WalletVerificationMethod,
+  ) {
+    saveWalletSession({ walletAddress: address, providerId, network, verificationMethod });
+    setWalletAddress(address);
+    setMenuOpen(false);
+  }
+
   function disconnectWallet() {
     clearWalletSession();
     setWalletAddress("guest");
@@ -856,7 +867,13 @@ export default function App() {
             {activeTab === "otttestnet" && <OTTTestnetTokenTab walletAddress={walletAddress} />}
             {activeTab === "partners" && <PartnerHubTab walletAddress={walletAddress} />}
             {activeTab === "truthdesk" && <TruthDeskTab walletAddress={walletAddress} />}
-            {activeTab === "accessgate" && <AccessGateTab walletAddress={walletAddress} onNavigate={navigateTo} />}
+            {activeTab === "accessgate" && (
+              <AccessGateTab
+                walletAddress={walletAddress}
+                onNavigate={navigateTo}
+                onWalletConnected={connectWalletWithoutNavigation}
+              />
+            )}
             {activeTab === "pitchmode" && <PitchModeTab walletAddress={walletAddress} />}
             {activeTab === "submission" && <SubmissionPackTab walletAddress={walletAddress} />}
             {activeTab === "smoketest" && <SmokeTestTab walletAddress={walletAddress} />}

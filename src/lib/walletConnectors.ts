@@ -44,18 +44,42 @@ function requireHash(value: unknown, providerName: string) {
 
 export async function connectCrossmark(): Promise<WalletConnectorResult> {
   const sdk = crossmarkSdk as unknown as {
-    methods?: { signInAndWait?: () => Promise<unknown> };
+    async?: { detect?: (timeout?: number) => Promise<boolean> };
+    methods?: {
+      signInAndWait?: () => Promise<unknown>;
+      getAddress?: () => unknown;
+      getNetwork?: () => unknown;
+    };
   };
   if (!sdk.methods?.signInAndWait) {
     throw new Error("CROSSMARK is not available. Install and unlock the browser extension first.");
   }
+  const detected = await sdk.async?.detect?.(5_000);
+  if (detected === false) {
+    throw new Error("CROSSMARK was not detected. Install or unlock the extension and refresh this page.");
+  }
   const result = await sdk.methods.signInAndWait() as {
-    response?: { address?: string; data?: { address?: string; network?: string; networkId?: string | number } };
+    response?: {
+      address?: string;
+      data?: {
+        address?: string;
+        network?: string;
+        networkId?: string | number;
+        user?: { address?: string };
+      };
+    };
   };
+  const address = result.response?.data?.address
+    ?? result.response?.data?.user?.address
+    ?? result.response?.address
+    ?? sdk.methods.getAddress?.();
+  const network = result.response?.data?.network
+    ?? result.response?.data?.networkId
+    ?? sdk.methods.getNetwork?.();
   return {
-    walletAddress: requireAddress(result.response?.data?.address ?? result.response?.address, "CROSSMARK"),
+    walletAddress: requireAddress(address, "CROSSMARK"),
     providerId: "crossmark",
-    network: normalizeNetwork(result.response?.data?.network ?? result.response?.data?.networkId),
+    network: normalizeNetwork(network),
     verificationMethod: "signed",
   };
 }
@@ -65,10 +89,8 @@ export async function connectGemWallet(): Promise<WalletConnectorResult> {
   if (!installation.result?.isInstalled) {
     throw new Error("GemWallet is not installed. Install and unlock the browser extension first.");
   }
-  const [addressResponse, networkResponse] = await Promise.all([
-    getGemWalletAddress(),
-    getGemWalletNetwork(),
-  ]) as [{ result?: { address?: string } }, { result?: { network?: string } }];
+  const addressResponse = await getGemWalletAddress() as { result?: { address?: string } };
+  const networkResponse = await getGemWalletNetwork() as { result?: { network?: string } };
   return {
     walletAddress: requireAddress(addressResponse.result?.address, "GemWallet"),
     providerId: "gemwallet",
