@@ -384,7 +384,11 @@ export function OTTIntelligence() {
           <div className="col-span-12 xl:col-span-4 space-y-4">
             <Panel title={`${selectedOption.title} ${isEnglish ? "Output" : "Uitvoer"}`} icon={selectedOption.icon}>
               <div className="border border-black/10 bg-[#F7F8FC] p-5 min-h-[420px]">
-                <pre className="font-mono text-xs text-black/65 whitespace-pre-wrap leading-relaxed">
+                <pre
+                  className="font-mono text-xs text-black/65 whitespace-pre-wrap leading-relaxed"
+                  tabIndex={0}
+                  aria-label={isEnglish ? "Generated intelligence analysis" : "Gegenereerde intelligence-analyse"}
+                >
                   {analysisText}
                 </pre>
               </div>
