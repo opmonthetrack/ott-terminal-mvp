@@ -182,7 +182,7 @@ export function RoadmapTab({ walletAddress = "guest", onNavigate }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-white text-slate-950">
+    <div className="ott-core-tab min-h-screen bg-white text-slate-950">
       <section className="border-b border-slate-200">
         <div className="mx-auto max-w-7xl px-5 py-14 sm:px-8 sm:py-20">
           <div className="flex flex-col justify-between gap-8 lg:flex-row lg:items-end">

@@ -200,7 +200,7 @@ export function SupportDonationTab() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-slate-950">
+    <div className="ott-core-tab min-h-screen bg-white text-slate-950">
       <section className="relative overflow-hidden border-b border-slate-200 bg-[radial-gradient(circle_at_15%_20%,rgba(56,152,232,0.12),transparent_30%),radial-gradient(circle_at_85%_15%,rgba(200,56,136,0.10),transparent_32%),#fff]">
         <div className="mx-auto grid max-w-7xl gap-10 px-5 py-14 sm:px-8 lg:grid-cols-[1fr_390px] lg:items-center lg:py-20">
           <div>

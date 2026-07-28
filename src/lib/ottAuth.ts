@@ -7,7 +7,7 @@ import {
   type User,
 } from "@supabase/supabase-js";
 
-export type OttAuthProvider = "google" | "apple" | "azure" | "github";
+export type OttAuthProvider = "google" | "apple" | "azure" | "github" | "discord";
 
 export type OttAuthProviderOption = {
   id: OttAuthProvider;
@@ -55,6 +55,12 @@ export const OTT_AUTH_PROVIDER_OPTIONS: OttAuthProviderOption[] = [
     label: "GitHub",
     enabled: isOttAuthConfigured && envFlag("VITE_AUTH_GITHUB_ENABLED"),
     configurationKey: "VITE_AUTH_GITHUB_ENABLED",
+  },
+  {
+    id: "discord",
+    label: "Discord",
+    enabled: isOttAuthConfigured && envFlag("VITE_AUTH_DISCORD_ENABLED"),
+    configurationKey: "VITE_AUTH_DISCORD_ENABLED",
   },
 ];
 
@@ -211,10 +217,19 @@ export async function signInOttProvider(provider: OttAuthProvider) {
         scopes: "openid email profile",
         queryParams: { prompt: "select_account" },
       }
-    : {
-        redirectTo: getRedirectUrl(),
-        queryParams: { prompt: "select_account" },
-      };
+    : provider === "discord"
+      ? {
+          redirectTo: getRedirectUrl(),
+          scopes: "identify email",
+        }
+      : provider === "google"
+        ? {
+            redirectTo: getRedirectUrl(),
+            queryParams: { prompt: "select_account" },
+          }
+        : {
+            redirectTo: getRedirectUrl(),
+          };
 
   const { data, error } = await client.auth.signInWithOAuth({
     provider: provider as Provider,

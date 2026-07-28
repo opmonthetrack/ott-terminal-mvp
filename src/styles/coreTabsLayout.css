@@ -1,0 +1,174 @@
+/*
+ * Shared layout for the public OTT tool pages.
+ *
+ * Home, Learn, Explore and Profile established the current public design
+ * language: Inter, a centered 72rem content column, calm slate borders,
+ * rounded surfaces and sentence-case headings. The core tool pages still
+ * contain older utility classes because their product logic predates that
+ * shell. Scoping the bridge to .ott-core-tab keeps founder/lab screens
+ * untouched while every public tool gets the same visual foundation.
+ */
+
+.ott-core-tab {
+  min-width: 0;
+  overflow-x: clip;
+  background: #fff;
+  color: #020617;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+.ott-core-tab :where(.font-orbitron, .font-mono) {
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif !important;
+}
+
+.ott-core-tab .font-orbitron {
+  font-weight: 600 !important;
+  text-transform: none !important;
+  letter-spacing: -0.01em !important;
+}
+
+.ott-core-tab .font-mono[class*="tracking-"] {
+  letter-spacing: 0.16em !important;
+}
+
+.ott-core-tab :where(h1, h2, h3, h4) {
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  letter-spacing: -0.025em !important;
+}
+
+.ott-core-tab h1 {
+  font-size: clamp(2.25rem, 4vw, 3rem) !important;
+  line-height: 1.05 !important;
+}
+
+.ott-core-tab :where(button, input, textarea, select) {
+  font-family: inherit;
+}
+
+.ott-core-tab :where(button, a) {
+  border-radius: 0.75rem;
+}
+
+.ott-core-tab :where(
+  [class*="border-black/10"],
+  [class*="border-black/15"],
+  [class*="border-black/20"]
+) {
+  border-color: #e2e8f0 !important;
+}
+
+.ott-core-tab :where(
+  [class*="bg-[#F7F8FC]"],
+  [class*="bg-[#f7f8fc]"]
+) {
+  background-color: #f8fafc !important;
+}
+
+.ott-core-tab :where(
+  [class*="text-black/35"],
+  [class*="text-black/40"],
+  [class*="text-black/45"]
+) {
+  color: #64748b !important;
+}
+
+.ott-core-tab :where(
+  [class*="text-black/50"],
+  [class*="text-black/55"],
+  [class*="text-black/60"],
+  [class*="text-black/65"]
+) {
+  color: #475569 !important;
+}
+
+.ott-core-tab :where(
+  div,
+  section,
+  article
+)[class*="border-black/10"] {
+  border-radius: 1rem;
+}
+
+.ott-core-tab > section:first-of-type {
+  border-color: #e2e8f0 !important;
+}
+
+.ott-core-tab > section:first-of-type > .relative.z-10 {
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding: 3rem 1.25rem;
+}
+
+.ott-core-tab > section:not(:first-of-type) {
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding: 3rem 1.25rem;
+}
+
+.ott-core-tab > .ott-core-content {
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding: 3rem 1.25rem 4rem;
+}
+
+.ott-core-tab .ott-core-hero-card {
+  margin-bottom: 1.5rem;
+  border-color: #e2e8f0 !important;
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+}
+
+/* Colored interactive cards use one high-contrast text color.
+   Light count/icon chips remain black on white. */
+.ott-contrast-on-color,
+.ott-contrast-on-color :where(h1, h2, h3, h4, p, span, svg) {
+  color: #ffffff !important;
+}
+
+.ott-contrast-on-color .ott-contrast-chip,
+.ott-contrast-on-color .ott-contrast-chip :where(span, svg) {
+  background: #ffffff !important;
+  color: #080808 !important;
+}
+@media (min-width: 640px) {
+  .ott-core-tab > section:first-of-type > .relative.z-10,
+  .ott-core-tab > section:not(:first-of-type),
+  .ott-core-tab > .ott-core-content {
+    padding-right: 2rem;
+    padding-left: 2rem;
+  }
+
+  .ott-core-tab > section:first-of-type > .relative.z-10,
+  .ott-core-tab > section:not(:first-of-type) {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+  }
+
+  .ott-core-tab .ott-core-hero-card {
+    padding: 2rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .ott-core-tab :where(h1) {
+    font-size: 2.25rem !important;
+    line-height: 1.08 !important;
+  }
+
+  .ott-core-tab :where(h2) {
+    line-height: 1.15 !important;
+  }
+
+  .ott-core-tab :where(
+    div,
+    section,
+    article
+  )[class*="border-black/10"] {
+    border-radius: 0.875rem;
+  }
+}

@@ -136,20 +136,31 @@ button[class*="hover:bg-gray-"]:hover {
   color: var(--ott-text) !important;
 }
 
-/* Primary-looking buttons: make them brand gradient */
-button[class*="bg-blue"],
-button[class*="bg-indigo"],
-button[class*="bg-purple"],
-button[class*="bg-pink"],
-a[class*="bg-blue"],
-a[class*="bg-indigo"],
-a[class*="bg-purple"],
-a[class*="bg-pink"] {
+/* Primary-looking buttons: make only explicit strong fills brand gradient.
+   Exact class tokens prevent hover:bg-blue-50 and selected bg-blue-50 cards
+   from being turned into gradients unintentionally. */
+:is(button, a):is(
+  [class~="bg-blue-500"],
+  [class~="bg-blue-600"],
+  [class~="bg-blue-700"],
+  [class~="bg-blue-800"],
+  [class~="bg-indigo-500"],
+  [class~="bg-indigo-600"],
+  [class~="bg-indigo-700"],
+  [class~="bg-indigo-800"],
+  [class~="bg-purple-500"],
+  [class~="bg-purple-600"],
+  [class~="bg-purple-700"],
+  [class~="bg-purple-800"],
+  [class~="bg-pink-500"],
+  [class~="bg-pink-600"],
+  [class~="bg-pink-700"],
+  [class~="bg-pink-800"]
+) {
   background: var(--ott-gradient) !important;
   color: #ffffff !important;
   border-color: transparent !important;
 }
-
 /* Inputs / textareas */
 input,
 textarea,

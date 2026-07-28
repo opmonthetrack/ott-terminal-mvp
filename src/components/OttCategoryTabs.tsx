@@ -45,22 +45,22 @@ export function OttCategoryTabs({
             onClick={() => onSelect(item.id)}
             className={`group min-w-0 rounded-2xl border p-3 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-50 ${
               active
-                ? "border-slate-950 bg-slate-950 text-white shadow-sm"
+                ? "ott-contrast-on-color border-transparent bg-[linear-gradient(135deg,#3898E8_0%,#8F49D8_42%,#C83888_68%,#D84858_100%)] text-white shadow-sm"
                 : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50"
             }`}
           >
             <div className="flex items-center justify-between gap-2">
-              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${active ? "bg-white/15" : "bg-slate-100 text-blue-700 group-hover:bg-white"}`}>
+              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${active ? "ott-contrast-chip bg-white text-black" : "bg-slate-100 text-blue-700 group-hover:bg-white"}`}>
                 <Icon size={18} aria-hidden="true" />
               </span>
-              <span className={`rounded-full px-2 py-1 text-xs font-semibold ${active ? "bg-white/15 text-white" : "bg-slate-100 text-slate-600"}`}>
+              <span className={`rounded-full px-2 py-1 text-xs font-semibold ${active ? "ott-contrast-chip bg-white text-black" : "bg-slate-100 text-slate-600"}`}>
                 {item.count}
               </span>
             </div>
             <span className="mt-3 block truncate text-sm font-semibold" title={item.label}>
               {visual.key === "other" ? item.label : visual.shortLabel}
             </span>
-            <span className={`mt-1 hidden text-[11px] leading-4 sm:block ${active ? "text-slate-300" : "text-slate-500"}`}>
+            <span className={`mt-1 hidden text-[11px] leading-4 sm:block ${active ? "text-white" : "text-slate-500"}`}>
               {isEnglish ? visual.descriptionEn : visual.descriptionNl}
             </span>
           </button>

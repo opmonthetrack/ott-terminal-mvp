@@ -289,7 +289,7 @@ export function NetworkState() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-7xl px-5 py-6 sm:px-8"><OttFeatureTabs items={tabs} activeId={view} onChange={setView} ariaLabel={en ? "XRPL tool sections" : "XRPL-toolsecties"} /></div>
+      <div className="mx-auto max-w-7xl px-5 py-6 sm:px-8"><OttFeatureTabs items={tabs} activeId={view} onChange={(id) => setView(id as ExplorerView)} ariaLabel={en ? "XRPL tool sections" : "XRPL-toolsecties"} /></div>
 
       {view === "network" && <NetworkPanel en={en} ledgerInfo={ledgerInfo} serverInfo={serverInfo} status={networkStatus} error={error} onRefresh={() => void loadNetworkState()} />}
       {view === "search" && <SearchPanel en={en} value={searchValue} setValue={setSearchValue} status={searchStatus} error={searchError} result={searchResult} onSearch={() => void runSearch()} />}

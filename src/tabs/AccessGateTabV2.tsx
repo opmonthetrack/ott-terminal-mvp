@@ -185,7 +185,7 @@ export function AccessGateTab({ walletAddress = "guest", onNavigate }: AccessGat
       </section>
 
       <div className="mx-auto max-w-7xl px-5 py-6 sm:px-8">
-        <OttFeatureTabs items={tabs} activeId={view} onChange={setView} ariaLabel={en ? "NFT and access sections" : "NFT- en toegangssecties"} />
+        <OttFeatureTabs items={tabs} activeId={view} onChange={(id) => setView(id as AccessView)} ariaLabel={en ? "NFT and access sections" : "NFT- en toegangssecties"} />
       </div>
 
       {view === "overview" && <OverviewPanel en={en} onOpenCollections={() => setView("collections")} />}
