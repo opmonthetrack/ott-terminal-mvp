@@ -91,6 +91,21 @@ function PublicLegalFooter() {
   );
 }
 
+function PreviewBuildBadge() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("preview") !== "46") return null;
+
+  return (
+    <div
+      className="fixed right-3 top-[82px] z-[260] rounded-xl border-2 border-emerald-300 bg-emerald-950 px-3 py-2 text-xs font-bold text-white shadow-2xl sm:right-5"
+      role="status"
+      aria-live="polite"
+    >
+      PR46 TEST BUILD · 2026-07-28B
+    </div>
+  );
+}
+
 function AuthLoadingScreen() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-white px-6 text-slate-950">
@@ -177,6 +192,7 @@ function ApplicationRoot() {
       <AcademyCoachPopup />
       <TerminalStartTour />
       <MobileTerminalDock />
+      <PreviewBuildBadge />
     </>
   );
 }
