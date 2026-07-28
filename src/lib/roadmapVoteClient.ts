@@ -1,4 +1,5 @@
 import type { XamanPayloadShape } from "./xamanClient";
+import type { WalletProviderId } from "./walletRegistry";
 
 export type RoadmapVoteOptionId =
   | "academy-expansion"
@@ -25,6 +26,26 @@ export type RoadmapVotePayloadResponse = {
   payload?: XamanPayloadShape;
   error?: string;
   details?: unknown;
+};
+
+export type PreparedRoadmapVoteResponse = {
+  ok: boolean;
+  mode?: string;
+  providerId?: Extract<WalletProviderId, "crossmark" | "gemwallet">;
+  cycle?: string;
+  sourceTag?: number;
+  vote?: {
+    id: RoadmapVoteOptionId;
+    title: string;
+  };
+  proof?: {
+    destinationWallet: string;
+    amountDrops: string;
+    memoType: string;
+    memoText: string;
+  };
+  txjson?: Record<string, unknown>;
+  error?: string;
 };
 
 export type RoadmapVoteRecord = {
@@ -71,8 +92,8 @@ export type RoadmapVoteStatsResponse = {
   error?: string;
 };
 
-async function postRoadmapVote<TResponse>(body: Record<string, unknown>) {
-  const response = await fetch("/api/roadmap-vote", {
+async function postJson<TResponse>(url: string, body: Record<string, unknown>) {
+  const response = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -93,15 +114,27 @@ export function createRoadmapVotePayload(
   voteId: RoadmapVoteOptionId,
   walletAddress?: string,
 ) {
-  return postRoadmapVote<RoadmapVotePayloadResponse>({
+  return postJson<RoadmapVotePayloadResponse>("/api/roadmap-vote", {
     action: "xaman.createRoadmapVotePayload",
     voteId,
     walletAddress,
   });
 }
 
+export function prepareRoadmapVoteTransaction(
+  voteId: RoadmapVoteOptionId,
+  walletAddress: string,
+  providerId: Extract<WalletProviderId, "crossmark" | "gemwallet">,
+) {
+  return postJson<PreparedRoadmapVoteResponse>("/api/roadmap-vote-prepare", {
+    voteId,
+    walletAddress,
+    providerId,
+  });
+}
+
 export function getRoadmapVoteStats(walletAddress?: string) {
-  return postRoadmapVote<RoadmapVoteStatsResponse>({
+  return postJson<RoadmapVoteStatsResponse>("/api/roadmap-vote", {
     action: "xrpl.getRoadmapVoteStats",
     walletAddress,
   });
