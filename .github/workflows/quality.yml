@@ -1,0 +1,38 @@
+name: OTT Quality
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - agent/full-release-hardening-20260724
+      - agent/role-navigation-hardening-20260728
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ott-quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Routes, TypeScript and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run complete quality gate
+        run: npm run quality
