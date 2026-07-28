@@ -4,6 +4,7 @@ import App from "./App.tsx";
 import "./index.css";
 import { AcademyCoachPopup } from "./components/AcademyCoachPopup";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { TerminalStartTour } from "./components/TerminalStartTour";
 import { hasFounderAccess } from "./lib/ottRoles";
 import { useOttAuthSession } from "./lib/useOttAuthSession";
 import { AccessPassIssuerConsole } from "./tabs/AccessPassIssuerConsole";
@@ -173,6 +174,7 @@ function ApplicationRoot() {
       <App />
       <PublicLegalFooter />
       <AcademyCoachPopup />
+      <TerminalStartTour />
     </>
   );
 }
