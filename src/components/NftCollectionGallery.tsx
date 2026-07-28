@@ -1,4 +1,11 @@
-import { BadgeCheck, LockKeyhole, ShieldCheck } from "lucide-react";
+import {
+  BadgeCheck,
+  Gift,
+  LockKeyhole,
+  ShoppingBag,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 import { useTerminalLanguage } from "../lib/useTerminalLanguage";
 
 export type NftCollectionCard = {
@@ -9,83 +16,125 @@ export type NftCollectionCard = {
   descriptionEn: string;
   descriptionNl: string;
   supply: string;
+  acquisitionEn: string;
+  acquisitionNl: string;
   ruleEn: string;
   ruleNl: string;
-  status: "live" | "eligible" | "locked";
+  status: "reward" | "purchase" | "earned" | "planned";
 };
 
 export const OTT_NFT_COLLECTIONS: NftCollectionCard[] = [
   {
     id: "genesis-access-pass",
-    image: "/nft/genesis-access-pass.svg",
+    image: "/nft/artwork/genesis-access-pass.png",
     titleEn: "Genesis Access Pass",
     titleNl: "Genesis Access Pass",
-    descriptionEn: "The limited founding utility edition. Existing scarcity remains #001–#500.",
-    descriptionNl: "De beperkte founding-utilityeditie. De bestaande schaarste blijft #001–#500.",
+    descriptionEn:
+      "The limited founding and community-reward pass for people who materially help OTT move forward.",
+    descriptionNl:
+      "De beperkte founding- en communitybeloningspas voor mensen die OTT aantoonbaar vooruithelpen.",
     supply: "500",
-    ruleEn: "Minted only after validated 1.589 XRP payment and ownership delivery.",
-    ruleNl: "Alleen gemint na gevalideerde betaling van 1.589 XRP en eigendomsoverdracht.",
-    status: "live",
+    acquisitionEn: "Not for sale · granted by the founder or earned through a verified community campaign",
+    acquisitionNl: "Niet te koop · toegekend door de founder of verdiend via een geverifieerde communitycampagne",
+    ruleEn: "Maximum one Genesis Access Pass per XRPL wallet.",
+    ruleNl: "Maximaal één Genesis Access Pass per XRPL-wallet.",
+    status: "reward",
+  },
+  {
+    id: "public-access-pass",
+    image: "/nft/artwork/public-access-pass.png",
+    titleEn: "Public Access Pass",
+    titleNl: "Public Access Pass",
+    descriptionEn:
+      "The normal public utility pass for premium Academy content and selected terminal utility.",
+    descriptionNl:
+      "De normale publieke utilitypas voor premium Academy-content en geselecteerde terminalutility.",
+    supply: "100,000",
+    acquisitionEn: "0.589 XRP or 1.00 RLUSD · checkout activates only after final issuer and delivery validation",
+    acquisitionNl: "0,589 XRP of 1,00 RLUSD · checkout opent pas na definitieve issuer- en leveringsvalidatie",
+    ruleEn: "Payment alone never unlocks access; validated NFT ownership is required.",
+    ruleNl: "Alleen betalen ontgrendelt niets; gevalideerd NFT-bezit is vereist.",
+    status: "purchase",
   },
   {
     id: "wallet-tester-pass",
-    image: "/nft/wallet-tester-pass.svg",
+    image: "/nft/artwork/wallet-tester-pass.png",
     titleEn: "Wallet Tester Pass",
     titleNl: "Wallet Tester Pass",
-    descriptionEn: "Proof that a signed OTT wallet test was validated on XRPL.",
-    descriptionNl: "Bewijs dat een ondertekende OTT-wallettest op XRPL is gevalideerd.",
+    descriptionEn:
+      "Recognition for a completed and server-verified OTT wallet-provider test.",
+    descriptionNl:
+      "Erkenning voor een voltooide en server-gevalideerde OTT-walletprovidertest.",
     supply: "100,000",
-    ruleEn: "Mint eligibility unlocks only when the tested connector reaches 100% OTT verification.",
-    ruleNl: "Minttoegang opent pas wanneer de geteste connector 100% OTT-verificatie bereikt.",
-    status: "eligible",
+    acquisitionEn: "Earned only · one pass per wallet and verified provider test",
+    acquisitionNl: "Alleen te verdienen · één pas per wallet en geverifieerde providertest",
+    ruleEn: "The provider test must reach the required OTT verification score before eligibility opens.",
+    ruleNl: "De providertest moet de vereiste OTT-verificatiescore halen voordat eligibility opent.",
+    status: "earned",
   },
   {
-    id: "xrpl-foundation",
-    image: "/nft/xrpl-foundation.svg",
+    id: "xrpl-foundation-certificate",
+    image: "/nft/artwork/xrpl-foundation-certificate.png",
     titleEn: "XRPL Foundation Certificate",
     titleNl: "XRPL Foundation-certificaat",
-    descriptionEn: "A completion credential for the broad XRPL foundation curriculum.",
-    descriptionNl: "Een voltooiingscredential voor het brede XRPL-fundamenttraject.",
+    descriptionEn:
+      "A broad XRPL knowledge credential covering the ledger, accounts, assets and core concepts.",
+    descriptionNl:
+      "Een brede XRPL-kenniscredential over de ledger, accounts, assets en kernconcepten.",
     supply: "50,000",
-    ruleEn: "Requires all verified lessons and the minimum average score.",
-    ruleNl: "Vereist alle geverifieerde lessen en de minimale gemiddelde score.",
-    status: "eligible",
+    acquisitionEn: "Earned only · complete the verified XRPL Foundation learning path",
+    acquisitionNl: "Alleen te verdienen · voltooi het geverifieerde XRPL Foundation-leerpad",
+    ruleEn: "All required lessons and the minimum verified score must be complete.",
+    ruleNl: "Alle verplichte lessen en de minimale geverifieerde score moeten zijn behaald.",
+    status: "earned",
   },
   {
-    id: "wallet-foundation",
-    image: "/nft/wallet-foundation.svg",
-    titleEn: "Wallet Foundation",
-    titleNl: "Walletfundament",
-    descriptionEn: "Account, address, reserve and custody-model knowledge.",
-    descriptionNl: "Kennis van account, adres, reserve en custody-modellen.",
+    id: "wallet-foundation-certificate",
+    image: "/nft/artwork/wallet-foundation-certificate.png",
+    titleEn: "Wallet Foundation Certificate",
+    titleNl: "Wallet Foundation-certificaat",
+    descriptionEn:
+      "Accounts, wallet applications, addresses, reserves, custody, setup and recovery fundamentals.",
+    descriptionNl:
+      "Accounts, walletapps, adressen, reserves, custody, installatie en herstelprincipes.",
     supply: "100,000",
-    ruleEn: "Requires verified module completion and linked wallet ownership.",
-    ruleNl: "Vereist geverifieerde modulevoltooiing en gekoppeld walletbezit.",
-    status: "eligible",
+    acquisitionEn: "Earned only · verified module completion and linked wallet ownership",
+    acquisitionNl: "Alleen te verdienen · geverifieerde modulevoltooiing en gekoppeld walletbezit",
+    ruleEn: "One certificate per wallet and curriculum version.",
+    ruleNl: "Eén certificaat per wallet en curriculumversie.",
+    status: "earned",
   },
   {
-    id: "wallet-security",
-    image: "/nft/wallet-security.svg",
-    titleEn: "Wallet Security",
-    titleNl: "Walletbeveiliging",
-    descriptionEn: "Safe recovery, payload review, keys and phishing response.",
-    descriptionNl: "Veilig herstel, payloadcontrole, sleutels en phishingrespons.",
+    id: "wallet-security-certificate",
+    image: "/nft/artwork/wallet-security-certificate.png",
+    titleEn: "Wallet Security Certificate",
+    titleNl: "Wallet Security-certificaat",
+    descriptionEn:
+      "Seed and private-key safety, recovery, phishing defence and transaction review.",
+    descriptionNl:
+      "Seed- en private-keyveiligheid, herstel, phishingverdediging en transactiecontrole.",
     supply: "100,000",
-    ruleEn: "Requires verified security assessment completion.",
-    ruleNl: "Vereist voltooiing van de geverifieerde beveiligingsbeoordeling.",
-    status: "eligible",
+    acquisitionEn: "Earned only · pass the verified wallet-security assessment",
+    acquisitionNl: "Alleen te verdienen · slaag voor de geverifieerde wallet-securitybeoordeling",
+    ruleEn: "A UI click never counts as completion; assessment evidence must be stored server-side.",
+    ruleNl: "Een UI-klik telt nooit als voltooiing; beoordelingsbewijs moet server-side zijn opgeslagen.",
+    status: "earned",
   },
   {
-    id: "wallet-operations",
-    image: "/nft/wallet-operations.svg",
-    titleEn: "XRPL Wallet Operations",
-    titleNl: "XRPL-walletgebruik",
-    descriptionEn: "Testnet practice with payments, tokens, DEX, AMM and NFTs.",
-    descriptionNl: "Testnetpraktijk met betalingen, tokens, DEX, AMM en NFT's.",
+    id: "wallet-operations-certificate",
+    image: "/nft/artwork/wallet-operations-certificate.png",
+    titleEn: "XRPL Wallet Operations Certificate",
+    titleNl: "XRPL Wallet Operations-certificaat",
+    descriptionEn:
+      "Practical payments, trustlines, DEX, AMM, NFTs and verified on-ledger operations.",
+    descriptionNl:
+      "Praktische betalingen, trustlines, DEX, AMM, NFT's en geverifieerde on-ledgerhandelingen.",
     supply: "100,000",
-    ruleEn: "Requires the validated Testnet lab and module completion.",
-    ruleNl: "Vereist het gevalideerde Testnetlab en modulevoltooiing.",
-    status: "locked",
+    acquisitionEn: "Earned only · complete the validated practical lab and learning path",
+    acquisitionNl: "Alleen te verdienen · voltooi het gevalideerde praktijklab en leerpad",
+    ruleEn: "Production eligibility stays locked until the practical verification flow is fully proven.",
+    ruleNl: "Productie-eligibility blijft vergrendeld totdat de praktische verificatieflow volledig is bewezen.",
+    status: "planned",
   },
 ];
 
@@ -95,48 +144,106 @@ export function NftCollectionGallery({ compact = false }: { compact?: boolean })
 
   return (
     <section className="mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-16">
-      <div className="max-w-3xl">
+      <div className="max-w-4xl">
         <p className="text-sm font-semibold text-blue-700">OTT XRPL credentials</p>
-        <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
-          {isEnglish ? "See the NFT before you earn or mint it" : "Bekijk het NFT voordat je het verdient of mint"}
+        <h2 className="mt-3 font-orbitron text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+          {isEnglish ? "Seven NFT routes. One transparent progression." : "Zeven NFT-routes. Eén transparante voortgang."}
         </h2>
         <p className="mt-4 text-base leading-7 text-slate-600">
           {isEnglish
-            ? "Every collection has its own visual, supply and server-verified eligibility rule. A button click never counts as an issued NFT."
-            : "Iedere collectie heeft een eigen visual, voorraad en server-gevalideerde toegangsregel. Een knopklik telt nooit als uitgegeven NFT."}
+            ? "Every collection has its own artwork, maximum supply and eligibility rule. Artwork in the interface is a preview; an NFT exists only after a validated XRPL mint and confirmed wallet ownership."
+            : "Iedere collectie heeft eigen artwork, maximale voorraad en eligibilityregel. Artwork in de interface is een preview; een NFT bestaat pas na een gevalideerde XRPL-mint en bevestigd walletbezit."}
         </p>
+      </div>
+
+      <div className="mt-8 overflow-hidden rounded-3xl border border-slate-200 bg-slate-950 shadow-xl">
+        <img
+          src="/nft/overview/ott-nft-progression-overview.png"
+          alt={isEnglish ? "Overview of the seven OTT NFT progression routes" : "Overzicht van de zeven OTT NFT-voortgangsroutes"}
+          className="h-auto w-full object-cover"
+        />
       </div>
 
       <div className={`mt-8 grid gap-6 ${compact ? "md:grid-cols-2 xl:grid-cols-3" : "sm:grid-cols-2 lg:grid-cols-3"}`}>
         {OTT_NFT_COLLECTIONS.map((collection) => (
           <article key={collection.id} className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-            <img src={collection.image} alt="" className="aspect-square w-full bg-slate-950 object-cover" />
+            <div className="relative overflow-hidden bg-slate-950">
+              <img
+                src={collection.image}
+                alt={isEnglish ? collection.titleEn : collection.titleNl}
+                loading="lazy"
+                onError={(event) => {
+                  event.currentTarget.onerror = null;
+                  event.currentTarget.src = "/logo.png";
+                  event.currentTarget.className = "aspect-[1055/1491] w-full bg-slate-950 object-contain p-12";
+                }}
+                className="aspect-[1055/1491] w-full object-cover"
+              />
+              <div className="absolute left-4 top-4">
+                <StatusBadge status={collection.status} isEnglish={isEnglish} />
+              </div>
+            </div>
+
             <div className="p-5 sm:p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-950">{isEnglish ? collection.titleEn : collection.titleNl}</h3>
+                  <h3 className="font-orbitron text-lg font-semibold text-slate-950">
+                    {isEnglish ? collection.titleEn : collection.titleNl}
+                  </h3>
                   <p className="mt-1 text-xs font-medium text-slate-500">
                     {isEnglish ? "Maximum edition" : "Maximale editie"}: {collection.supply}
                   </p>
                 </div>
                 <StatusIcon status={collection.status} />
               </div>
+
               <p className="mt-4 text-sm leading-6 text-slate-600">
                 {isEnglish ? collection.descriptionEn : collection.descriptionNl}
               </p>
-              <div className="mt-5 rounded-2xl bg-slate-50 p-4 text-xs leading-5 text-slate-700">
+
+              <div className="mt-5 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-xs font-semibold leading-5 text-blue-950">
+                {isEnglish ? collection.acquisitionEn : collection.acquisitionNl}
+              </div>
+
+              <div className="mt-3 rounded-2xl bg-slate-50 p-4 text-xs leading-5 text-slate-700">
                 {isEnglish ? collection.ruleEn : collection.ruleNl}
               </div>
             </div>
           </article>
         ))}
       </div>
+
+      <div className="mt-8 flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
+        <Sparkles className="mt-0.5 shrink-0 text-blue-700" size={19} />
+        <p>
+          {isEnglish
+            ? "The exact PNG masters in public/nft/artwork are used as the collection previews. Missing files fall back to the OTT mark instead of showing a broken image."
+            : "De exacte PNG-masters in public/nft/artwork worden als collectiepreview gebruikt. Ontbrekende bestanden vallen terug op het OTT-logo in plaats van een kapotte afbeelding."}
+        </p>
+      </div>
     </section>
   );
 }
 
+function StatusBadge({ status, isEnglish }: { status: NftCollectionCard["status"]; isEnglish: boolean }) {
+  const labels = {
+    reward: isEnglish ? "Founder/community reward" : "Founder/communitybeloning",
+    purchase: isEnglish ? "Public purchase route" : "Publieke aankooproute",
+    earned: isEnglish ? "Earned only" : "Alleen te verdienen",
+    planned: isEnglish ? "Verification in progress" : "Verificatie in opbouw",
+  } as const;
+
+  return (
+    <span className="rounded-full border border-white/25 bg-slate-950/80 px-3 py-1.5 text-[11px] font-semibold text-white shadow-lg backdrop-blur">
+      {labels[status]}
+    </span>
+  );
+}
+
 function StatusIcon({ status }: { status: NftCollectionCard["status"] }) {
-  if (status === "live") return <BadgeCheck className="shrink-0 text-emerald-700" size={22} aria-label="Live" />;
-  if (status === "eligible") return <ShieldCheck className="shrink-0 text-blue-700" size={22} aria-label="Eligibility controlled" />;
-  return <LockKeyhole className="shrink-0 text-slate-500" size={22} aria-label="Locked" />;
+  if (status === "reward") return <Gift className="shrink-0 text-fuchsia-700" size={22} aria-label="Reward" />;
+  if (status === "purchase") return <ShoppingBag className="shrink-0 text-blue-700" size={22} aria-label="Purchase route" />;
+  if (status === "earned") return <BadgeCheck className="shrink-0 text-emerald-700" size={22} aria-label="Earned credential" />;
+  if (status === "planned") return <LockKeyhole className="shrink-0 text-slate-500" size={22} aria-label="Verification in progress" />;
+  return <ShieldCheck className="shrink-0 text-blue-700" size={22} aria-label="Eligibility controlled" />;
 }
