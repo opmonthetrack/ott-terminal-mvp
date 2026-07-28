@@ -2,9 +2,11 @@ import fs from "node:fs";
 
 const walletPath = "src/tabs/WalletTab.tsx";
 const authPath = "src/lib/ottAuth.ts";
+const galleryPath = "src/components/NftCollectionGallery.tsx";
 
 let wallet = fs.readFileSync(walletPath, "utf8");
 let auth = fs.readFileSync(authPath, "utf8");
+let gallery = fs.readFileSync(galleryPath, "utf8");
 
 const oldNftImport = `import {
   formatNftSerial,
@@ -80,5 +82,16 @@ auth = auth.replace(
   `export function getEnabledOttAuthProviders() {\n  return OTT_AUTH_PROVIDER_OPTIONS;\n}`,
 );
 
+gallery = gallery.replaceAll(".webp", ".png");
+gallery = gallery.replace(
+  `                loading="lazy"\n                className="aspect-[1055/1491] w-full object-cover"`,
+  `                loading="lazy"\n                onError={(event) => {\n                  event.currentTarget.onerror = null;\n                  event.currentTarget.src = "/logo.png";\n                  event.currentTarget.className = "aspect-[1055/1491] w-full bg-slate-950 object-contain p-12";\n                }}\n                className="aspect-[1055/1491] w-full object-cover"`,
+);
+gallery = gallery.replace(
+  `            ? "The full-resolution PNG masters remain the source artwork. These optimized previews keep the terminal fast on mobile without changing the NFT design."\n            : "De PNG-masters op volledige resolutie blijven het bronartwork. Deze geoptimaliseerde previews houden de terminal snel op mobiel zonder het NFT-ontwerp te wijzigen."}`,
+  `            ? "The exact PNG masters in public/nft/artwork are used as the collection previews. Missing files fall back to the OTT mark instead of showing a broken image."\n            : "De exacte PNG-masters in public/nft/artwork worden als collectiepreview gebruikt. Ontbrekende bestanden vallen terug op het OTT-logo in plaats van een kapotte afbeelding."}`,
+);
+
 fs.writeFileSync(walletPath, wallet);
 fs.writeFileSync(authPath, auth);
+fs.writeFileSync(galleryPath, gallery);
