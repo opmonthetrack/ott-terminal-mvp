@@ -17,6 +17,7 @@ import { OttFeatureTabs, type OttFeatureTab } from "../components/OttFeatureTabs
 import { OTTLogoMark } from "../components/OTTLogo";
 import { OTT_NFT_COLLECTIONS, type NftCollectionCard } from "../components/NftCollectionGallery";
 import { AccessPassOrderPanel } from "../components/AccessPassOrderPanel";
+import { createAccessPassPayment } from "../lib/accessPassOrderClient";
 import {
   clearAccessState,
   isAccessVerified,
@@ -41,6 +42,7 @@ import type {
   XrplNetwork,
 } from "../lib/walletRegistry";
 import { useTerminalLanguage } from "../lib/useTerminalLanguage";
+import { useOttAuthSession } from "../lib/useOttAuthSession";
 
 type AccessGateTabProps = {
   walletAddress?: string;
@@ -64,6 +66,7 @@ const PROVIDERS: Array<{ id: CheckoutProvider; label: string; detail: string }> 
 
 export function AccessGateTab({ walletAddress = "guest", onNavigate, onWalletConnected }: AccessGateTabProps) {
   const { language } = useTerminalLanguage();
+  const { signedIn, loading: authLoading } = useOttAuthSession();
   const en = language === "en";
   const guest = walletAddress === "guest" || !walletAddress;
   const [view, setView] = useState<AccessView>("overview");
@@ -72,6 +75,7 @@ export function AccessGateTab({ walletAddress = "guest", onNavigate, onWalletCon
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [connectingProvider, setConnectingProvider] = useState<CheckoutProvider | null>(null);
+  const [purchaseBusy, setPurchaseBusy] = useState(false);
   const [checkoutMessage, setCheckoutMessage] = useState("");
   const session = loadWalletSession();
   const initialProvider = session?.providerId === "crossmark" || session?.providerId === "gemwallet"
@@ -199,6 +203,58 @@ export function AccessGateTab({ walletAddress = "guest", onNavigate, onWalletCon
     }
   }
 
+  async function startCheckoutPurchase() {
+    if (unlocked) {
+      setCheckoutMessage(
+        en
+          ? "This wallet already owns a verified Access Pass. No additional purchase is required."
+          : "Deze wallet bezit al een geverifieerde Access Pass. Een extra aankoop is niet nodig.",
+      );
+      return;
+    }
+    if (guest) {
+      await connectCheckoutProvider(provider);
+      return;
+    }
+    if (!signedIn) {
+      setCheckoutMessage(
+        en
+          ? "Sign in with your OTT account to create and recover the verified order."
+          : "Log in met je OTT-account om de geverifieerde bestelling te maken en later terug te kunnen vinden.",
+      );
+      onNavigate?.("wallet");
+      return;
+    }
+
+    setPurchaseBusy(true);
+    setCheckoutMessage(en ? "Creating the secure 1.589 XRP payment request…" : "Het beveiligde betaalverzoek van 1,589 XRP wordt gemaakt…");
+    try {
+      const response = await createAccessPassPayment(walletAddress);
+      if (response.alreadyPaid) {
+        setCheckoutMessage(
+          en
+            ? "This OTT account already has a paid or reserved Access Pass order."
+            : "Dit OTT-account heeft al een betaalde of gereserveerde Access Pass-bestelling.",
+        );
+        return;
+      }
+      const paymentUrl = response.payload?.next?.always || response.payload?.next?.no_push_msg_received;
+      if (!paymentUrl) throw new Error(en ? "Xaman did not return a payment link." : "Xaman heeft geen betaallink teruggegeven.");
+      window.location.assign(paymentUrl);
+    } catch (error) {
+      const apiError = typeof error === "object" && error !== null && "error" in error
+        ? String((error as { error?: unknown }).error ?? "")
+        : "";
+      setCheckoutMessage(
+        apiError
+        || (error instanceof Error ? error.message : "")
+        || (en ? "The payment link could not be created." : "De betaallink kon niet worden gemaakt."),
+      );
+    } finally {
+      setPurchaseBusy(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-white text-slate-950">
       <section className="relative overflow-hidden border-b border-blue-200 bg-[radial-gradient(circle_at_15%_15%,rgba(49,92,255,0.26),transparent_34%),radial-gradient(circle_at_84%_12%,rgba(239,47,145,0.20),transparent_30%),linear-gradient(135deg,#eef4ff_0%,#ffffff_52%,#fff1fa_100%)]">
@@ -264,9 +320,14 @@ export function AccessGateTab({ walletAddress = "guest", onNavigate, onWalletCon
             connectedProvider={session?.providerId}
             provider={provider}
             connectingProvider={connectingProvider}
+            purchaseBusy={purchaseBusy}
+            signedIn={signedIn}
+            authLoading={authLoading}
+            unlocked={unlocked}
             message={checkoutMessage}
             setProvider={setProvider}
             onConnect={(selectedProvider) => void connectCheckoutProvider(selectedProvider)}
+            onPurchase={() => void startCheckoutPurchase()}
             onNavigate={onNavigate}
           />
           <AccessPassOrderPanel walletAddress={walletAddress} onNavigate={onNavigate} />
@@ -417,9 +478,14 @@ function CheckoutPanel({
   connectedProvider,
   provider,
   connectingProvider,
+  purchaseBusy,
+  signedIn,
+  authLoading,
+  unlocked,
   message,
   setProvider,
   onConnect,
+  onPurchase,
   onNavigate,
 }: {
   en: boolean;
@@ -428,9 +494,14 @@ function CheckoutPanel({
   connectedProvider?: WalletProviderId;
   provider: CheckoutProvider;
   connectingProvider: CheckoutProvider | null;
+  purchaseBusy: boolean;
+  signedIn: boolean;
+  authLoading: boolean;
+  unlocked: boolean;
   message: string;
   setProvider: (provider: CheckoutProvider) => void;
   onConnect: (provider: CheckoutProvider) => void;
+  onPurchase: () => void;
   onNavigate?: (target: string) => void;
 }) {
   const providerMatches = connectedProvider === provider;
@@ -473,15 +544,46 @@ function CheckoutPanel({
 
           {message && <p role="status" aria-live="polite" className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700">{message}</p>}
 
-          <button
-            type="button"
-            onClick={() => providerMatches ? onNavigate?.("wallet") : onConnect(provider)}
-            disabled={connectingProvider !== null}
-            className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3.5 text-sm font-semibold text-white disabled:opacity-50"
-          >
-            {connectingProvider === provider ? <Loader2 className="animate-spin" size={18} /> : <Wallet size={18} />}
-            {guest || !providerMatches ? (en ? `Connect ${selectedProviderLabel}` : `Koppel ${selectedProviderLabel}`) : (en ? "Review wallet connection" : "Controleer walletverbinding")}
-          </button>
+          {unlocked && (
+            <p className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-950">
+              {en ? "This receiving wallet already owns a verified Access Pass." : "Deze ontvangende wallet bezit al een geverifieerde Access Pass."}
+            </p>
+          )}
+
+          {!providerMatches || guest ? (
+            <button
+              type="button"
+              onClick={() => onConnect(provider)}
+              disabled={connectingProvider !== null}
+              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3.5 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {connectingProvider === provider ? <Loader2 className="animate-spin" size={18} /> : <Wallet size={18} />}
+              {en ? `Connect ${selectedProviderLabel}` : `Koppel ${selectedProviderLabel}`}
+            </button>
+          ) : (
+            <div className="mt-6 grid gap-3 sm:grid-cols-[1fr_auto]">
+              <button
+                type="button"
+                onClick={onPurchase}
+                disabled={purchaseBusy || authLoading || unlocked}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[linear-gradient(135deg,#315cff_0%,#8249ed_52%,#ef2f91_100%)] px-5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-200/40 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {purchaseBusy || authLoading ? <Loader2 className="animate-spin" size={18} /> : <CreditCard size={18} />}
+                {unlocked
+                  ? (en ? "Access Pass already owned" : "Access Pass al in bezit")
+                  : signedIn
+                    ? (en ? "Buy Access Pass · 1.589 XRP" : "Koop Access Pass · 1,589 XRP")
+                    : (en ? "Sign in to buy · 1.589 XRP" : "Log in om te kopen · 1,589 XRP")}
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate?.("wallet")}
+                className="rounded-xl border border-slate-300 bg-white px-5 py-3.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                {en ? "Wallet details" : "Walletdetails"}
+              </button>
+            </div>
+          )}
         </div>
 
         <aside className="rounded-3xl bg-slate-950 p-6 text-white shadow-xl">
