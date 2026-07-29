@@ -236,8 +236,25 @@ function IntelligenceFeed({ isEnglish }: { isEnglish: boolean }) {
   }
 
   return (
-    <div data-page-region="true" className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
-      <div className="grid gap-4 sm:grid-cols-3">
+    <div className="min-h-screen bg-white text-slate-950">
+      <section className="relative overflow-hidden border-b border-blue-200 bg-[radial-gradient(circle_at_16%_12%,rgba(49,92,255,0.24),transparent_32%),radial-gradient(circle_at_82%_10%,rgba(239,47,145,0.20),transparent_30%),linear-gradient(135deg,#eef4ff_0%,#ffffff_52%,#fff1fa_100%)]">
+        <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
+            {isEnglish ? "XRPL EXPLORE & INTEL" : "XRPL ONTDEKKEN & INTEL"}
+          </p>
+          <h1 className="font-orbitron text-4xl font-extrabold tracking-tight sm:text-5xl text-slate-950">
+            {isEnglish ? "Explore XRPL projects, news and source activity." : "Ontdek XRPL-projecten, nieuws en bronactiviteit."}
+          </h1>
+          <p className="mt-5 max-w-3xl text-base leading-7 text-slate-600">
+            {isEnglish
+              ? "Observed XRPL intelligence with clear source health, buckets and verified status."
+              : "Waargenomen XRPL-intelligence met duidelijke bronstatus, categorieën en geverifieerde status."}
+          </p>
+        </div>
+      </section>
+
+      <div data-page-region="true" className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
+        <div className="grid gap-4 sm:grid-cols-3">
         <Metric label={isEnglish ? "Items" : "Items"} value={loading ? "…" : String(items.length)} note={data?.fallback ? (isEnglish ? "Fallback active" : "Terugval actief") : (isEnglish ? "Current feed" : "Actuele feed")} />
         <Metric label={isEnglish ? "Official sources" : "Officiële bronnen"} value={loading ? "…" : String(officialCount)} note={isEnglish ? "Weighted higher" : "Zwaarder gewogen"} />
         <Metric label={isEnglish ? "Needs confirmation" : "Bevestiging nodig"} value={loading ? "…" : String(reviewCount)} note={isEnglish ? "Review before sharing" : "Controleer vóór delen"} />
@@ -444,6 +461,7 @@ function IntelligenceFeed({ isEnglish }: { isEnglish: boolean }) {
           </div>
         </article>
       </div>
+    </div>
     </div>
   );
 }

@@ -314,12 +314,12 @@ export function WalletTab({ walletAddress = "guest", onWalletConnected, onNaviga
 
   return (
     <div className="min-h-screen bg-white text-slate-950">
-      <section className="border-b border-slate-200">
+      <section className="relative overflow-hidden border-b border-blue-200 bg-[radial-gradient(circle_at_16%_12%,rgba(49,92,255,0.24),transparent_32%),radial-gradient(circle_at_82%_10%,rgba(239,47,145,0.20),transparent_30%),linear-gradient(135deg,#eef4ff_0%,#ffffff_52%,#fff1fa_100%)]">
         <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-700">
-            {isEnglish ? "Account and profile" : "Account en profiel"}
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
+            {isEnglish ? "ACCOUNT & WALLET PROFILE" : "ACCOUNT & WALLET PROFIEL"}
           </p>
-          <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl">
+          <h1 className="font-orbitron text-4xl font-extrabold tracking-tight sm:text-5xl text-slate-950">
             {isEnglish
               ? "One normal account. A wallet only when an on-chain action needs it."
               : "Eén normaal account. Alleen een wallet wanneer een on-chain actie die nodig heeft."}
