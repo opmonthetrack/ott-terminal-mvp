@@ -425,6 +425,8 @@ export function SupportDonationTab() {
                     </div>
                   ))}
             </div>
+          </section>
+
           <section className="rounded-3xl border border-slate-200 p-6 bg-slate-50">
             <div className="flex items-center gap-3">
               <Mail className="text-blue-600" size={20} />
