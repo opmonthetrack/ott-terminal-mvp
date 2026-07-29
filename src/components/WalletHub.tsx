@@ -215,7 +215,7 @@ export function WalletHub({
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {WALLET_REGISTRY.filter((provider) => provider.id !== "read-only").map((provider) => {
           const isSelected = selectedProviderId === provider.id;
-          const canConnect = ["xaman", "crossmark", "gemwallet"].includes(provider.id);
+          const canConnect = ["xaman", "crossmark", "gemwallet", "metamask-xrpl", "walletconnect", "joey", "katz"].includes(provider.id);
           return (
             <article
               key={provider.id}

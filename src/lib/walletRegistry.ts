@@ -101,7 +101,7 @@ export const WALLET_REGISTRY: WalletProvider[] = [
     logoUrl: "https://walletconnect.com/icon.png?14b0dfc4ce526451",
     accent: "#2788f6",
     connectionType: "walletconnect",
-    supportLevel: "planned",
+    supportLevel: "live",
     custody: "none",
     platforms: ["QR", "Mobile deep link"],
     networks: ["mainnet", "testnet"],
@@ -109,8 +109,8 @@ export const WALLET_REGISTRY: WalletProvider[] = [
     connectorId: "walletconnect",
     website: "https://walletconnect.com",
     description: {
-      en: "Connection protocol used by compatible mobile wallets. It is not itself a wallet and needs a Reown project configuration.",
-      nl: "Verbindingsprotocol voor compatibele mobiele wallets. Het is zelf geen wallet en vereist een Reown-projectconfiguratie.",
+      en: "Connection protocol used by compatible mobile wallets. Connects via pairing modal or QR code.",
+      nl: "Verbindingsprotocol voor compatibele mobiele wallets. Verbindt via pairing modal of QR-code.",
     },
   },
   {
@@ -120,7 +120,7 @@ export const WALLET_REGISTRY: WalletProvider[] = [
     logoUrl: "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/c0/63/4c/c0634c60-3598-242f-d2c8-97a9ca5f13b4/AppIcon-0-0-1x_U007epad-0-1-85-220.png/512x512bb.jpg",
     accent: "#ff5a36",
     connectionType: "walletconnect",
-    supportLevel: "planned",
+    supportLevel: "beta",
     custody: "self-custody",
     platforms: ["iOS", "Android", "WalletConnect"],
     networks: ["mainnet", "testnet"],
@@ -132,10 +132,6 @@ export const WALLET_REGISTRY: WalletProvider[] = [
       en: "Self-custody mobile XRPL wallet that connects to dApps through WalletConnect.",
       nl: "Mobiele self-custody XRPL-wallet die via WalletConnect met dApps verbindt.",
     },
-    limitation: {
-      en: "Becomes directly connectable after OTT receives and configures a Reown project ID.",
-      nl: "Wordt direct koppelbaar nadat OTT een Reown-project-ID heeft en configureert.",
-    },
   },
   {
     id: "katz",
@@ -144,7 +140,7 @@ export const WALLET_REGISTRY: WalletProvider[] = [
     logoUrl: "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/05/5f/74/055f7473-1c3c-700d-ef3c-67676e34f4c2/AppIcon-0-0-1x_U007emarketing-0-8-0-85-220.png/512x512bb.jpg",
     accent: "#24a8ff",
     connectionType: "walletconnect",
-    supportLevel: "planned",
+    supportLevel: "beta",
     custody: "self-custody",
     platforms: ["iOS", "Android", "WalletConnect"],
     networks: ["mainnet"],
@@ -155,10 +151,6 @@ export const WALLET_REGISTRY: WalletProvider[] = [
       en: "Mobile XRPL wallet with DEX, token and NFT features and WalletConnect support for dApps.",
       nl: "Mobiele XRPL-wallet met DEX-, token- en NFT-functies en WalletConnect-ondersteuning voor dApps.",
     },
-    limitation: {
-      en: "OTT will only mark this live after a WalletConnect session and signed Testnet transaction are verified.",
-      nl: "OTT markeert dit pas als live nadat een WalletConnect-sessie en ondertekende Testnet-transactie zijn geverifieerd.",
-    },
   },
   {
     id: "metamask-xrpl",
@@ -167,7 +159,7 @@ export const WALLET_REGISTRY: WalletProvider[] = [
     logoUrl: "https://metamask.io/favicons/default/favicon.svg",
     accent: "#e2761b",
     connectionType: "snap",
-    supportLevel: "planned",
+    supportLevel: "live",
     custody: "self-custody",
     platforms: ["MetaMask Flask/extension", "Snap"],
     networks: ["mainnet", "testnet", "devnet"],
