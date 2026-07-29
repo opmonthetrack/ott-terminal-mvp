@@ -1,240 +1,74 @@
-/* OTT Terminal — Remaining Tabs Light Override
-   Purpose: make older/legacy tabs match the new logo-based light palette
-   without touching their business logic, Xaman logic, API calls, or data flow.
-
-   Palette:
-   White base, black text, XRPL blue, OTT magenta, coral warning, soft silver lines.
+/* OTT Terminal — Logo-Based Unified Theme System
+   Matching TerminalHomeTab: White base, Orbitron titles, Logo brand gradients, XRPL Blue & OTT Magenta.
 */
 
 :root {
   --ott-bg: #ffffff;
-  --ott-bg-soft: #f7f8fc;
-  --ott-text: #080808;
+  --ott-bg-soft: #f8fafc;
+  --ott-text: #020617;
   --ott-muted: #475569;
   --ott-dim: #64748b;
-  --ott-border: rgba(15, 23, 42, 0.12);
-  --ott-blue: #1d4ed8;
-  --ott-magenta: #334155;
-  --ott-coral: #be123c;
-  --ott-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  --ott-border: #e2e8f0;
+  --ott-blue: #315cff;
+  --ott-magenta: #ef2f91;
+  --ott-coral: #d84858;
+  --ott-gradient: linear-gradient(135deg, #315cff 0%, #8249ed 52%, #ef2f91 100%);
   --ott-radial-bg:
-    radial-gradient(circle at 16% 8%, rgba(148, 163, 184, 0.12), transparent 28%),
-    #ffffff;
+    radial-gradient(circle at 16% 12%, rgba(49, 92, 255, 0.12), transparent 32%),
+    radial-gradient(circle at 82% 10%, rgba(239, 47, 145, 0.10), transparent 30%),
+    linear-gradient(135deg, #eef4ff 0%, #ffffff 52%, #fff1fa 100%);
 }
 
-/* Page bases */
-[class*="bg-black"],
-[class*="bg-neutral-950"],
-[class*="bg-zinc-950"],
-[class*="bg-slate-950"],
-[class*="bg-gray-950"],
-[class*="bg-neutral-900"],
-[class*="bg-zinc-900"],
-[class*="bg-slate-900"],
-[class*="bg-gray-900"] {
-  background: var(--ott-bg) !important;
-  color: var(--ott-text) !important;
-}
-
-/* Full-screen old dark pages */
-.min-h-screen[class*="bg-"],
-.h-screen[class*="bg-"] {
-  background: var(--ott-radial-bg) !important;
-  color: var(--ott-text) !important;
-}
-
-/* Cards and panels */
-[class*="bg-white/5"],
-[class*="bg-white/10"],
-[class*="bg-white/15"],
-[class*="bg-black/20"],
-[class*="bg-black/30"],
-[class*="bg-black/40"],
-[class*="bg-neutral-800"],
-[class*="bg-zinc-800"],
-[class*="bg-slate-800"],
-[class*="bg-gray-800"],
-[class*="bg-neutral-900/"],
-[class*="bg-zinc-900/"],
-[class*="bg-slate-900/"] {
-  background: rgba(255, 255, 255, 0.92) !important;
-  color: var(--ott-text) !important;
-  border-color: var(--ott-border) !important;
-  box-shadow: 0 18px 50px rgba(8, 8, 8, 0.06) !important;
-}
-
-/* Soft panels */
-[class*="bg-neutral-700"],
-[class*="bg-zinc-700"],
-[class*="bg-slate-700"],
-[class*="bg-gray-700"] {
-  background: var(--ott-bg-soft) !important;
-  color: var(--ott-text) !important;
-}
-
-/* Text conversion */
-[class*="text-white"] {
-  color: var(--ott-text) !important;
-}
-
-[class*="text-white/90"],
-[class*="text-white/80"],
-[class*="text-white/70"],
-[class*="text-neutral-300"],
-[class*="text-zinc-300"],
-[class*="text-slate-300"],
-[class*="text-gray-300"] {
-  color: var(--ott-muted) !important;
-}
-
-[class*="text-white/60"],
-[class*="text-white/50"],
-[class*="text-white/40"],
-[class*="text-neutral-400"],
-[class*="text-zinc-400"],
-[class*="text-slate-400"],
-[class*="text-gray-400"] {
-  color: var(--ott-dim) !important;
-}
-
-/* Keep text on gradient/colored buttons white */
-[class*="bg-gradient"] [class*="text-white"],
-button[class*="bg-gradient"],
-a[class*="bg-gradient"],
-[class*="from-"][class*="to-"] {
-  color: #ffffff !important;
-}
-
-/* Borders */
-[class*="border-white/"],
-[class*="border-neutral-"],
-[class*="border-zinc-"],
-[class*="border-slate-"],
-[class*="border-gray-"] {
-  border-color: var(--ott-border) !important;
-}
-
-/* Buttons */
-button[class*="bg-white/"],
-a[class*="bg-white/"],
-button[class*="bg-neutral-"],
-button[class*="bg-zinc-"],
-button[class*="bg-slate-"],
-button[class*="bg-gray-"] {
-  background: #ffffff !important;
-  color: var(--ott-text) !important;
-  border-color: var(--ott-border) !important;
-}
-
-button[class*="hover:bg-white/"]:hover,
-a[class*="hover:bg-white/"]:hover,
-button[class*="hover:bg-neutral-"]:hover,
-button[class*="hover:bg-zinc-"]:hover,
-button[class*="hover:bg-slate-"]:hover,
-button[class*="hover:bg-gray-"]:hover {
-  background: var(--ott-bg-soft) !important;
-  color: var(--ott-text) !important;
-}
-
-/* Primary-looking buttons: make only explicit strong fills brand gradient.
-   Exact class tokens prevent hover:bg-blue-50 and selected bg-blue-50 cards
-   from being turned into gradients unintentionally. */
-:is(button, a):is(
-  [class~="bg-blue-500"],
-  [class~="bg-blue-600"],
-  [class~="bg-blue-700"],
-  [class~="bg-blue-800"],
-  [class~="bg-indigo-500"],
-  [class~="bg-indigo-600"],
-  [class~="bg-indigo-700"],
-  [class~="bg-indigo-800"],
-  [class~="bg-purple-500"],
-  [class~="bg-purple-600"],
-  [class~="bg-purple-700"],
-  [class~="bg-purple-800"],
-  [class~="bg-pink-500"],
-  [class~="bg-pink-600"],
-  [class~="bg-pink-700"],
-  [class~="bg-pink-800"]
-) {
-  background: var(--ott-gradient) !important;
-  color: #ffffff !important;
-  border-color: transparent !important;
-}
-/* Inputs / textareas */
-input,
-textarea,
-select {
-  background: #ffffff !important;
-  color: var(--ott-text) !important;
-  border-color: var(--ott-border) !important;
-}
-
-input::placeholder,
-textarea::placeholder {
-  color: var(--ott-dim) !important;
-}
-
-/* Tables and code boxes */
-table,
-thead,
-tbody,
-tr,
-td,
-th,
-pre,
-code {
-  border-color: var(--ott-border) !important;
-}
-
-pre,
-code {
-  background: var(--ott-bg-soft) !important;
-  color: var(--ott-text) !important;
-}
-
-/* Badges */
-[class*="rounded-full"][class*="bg-white/"],
-[class*="rounded"][class*="bg-white/"] {
-  background: var(--ott-bg-soft) !important;
-  color: var(--ott-text) !important;
-  border-color: var(--ott-border) !important;
-}
-
-/* Icons inherit better contrast */
-svg {
-  color: currentColor;
-}
-
-/* Warning/error keeps coral tone */
-[class*="text-red"],
-[class*="text-rose"] {
-  color: var(--ott-coral) !important;
-}
-
-[class*="bg-red"],
-[class*="bg-rose"] {
-  background: rgba(216, 72, 88, 0.12) !important;
-  color: var(--ott-text) !important;
-  border-color: rgba(216, 72, 88, 0.26) !important;
-}
-
-/* Success/info accents */
-[class*="text-green"],
-[class*="text-emerald"],
-[class*="text-cyan"],
-[class*="text-blue"] {
-  color: var(--ott-blue) !important;
-}
-
-[class*="text-purple"],
-[class*="text-pink"],
-[class*="text-fuchsia"] {
-  color: var(--ott-magenta) !important;
-}
-
-/* Selection */
-::selection {
-  background: rgba(200, 56, 136, 0.22);
+/* Page containers */
+.ott-core-tab,
+main[role="main"] {
+  background-color: var(--ott-bg);
   color: var(--ott-text);
+  font-family: inherit;
+}
+
+/* Hero Headers */
+.ott-hero-section {
+  background: var(--ott-radial-bg);
+  border-bottom: 1px solid var(--ott-border);
+}
+
+/* Ensure text on gradient/dark buttons remains crisp white */
+.bg-gradient-to-r,
+.bg-gradient-to-br,
+[class*="bg-[linear-gradient"],
+button[class*="bg-slate-950"],
+button[class*="bg-slate-900"],
+button[class*="bg-black"],
+div[class*="bg-slate-950"] .text-white,
+div[class*="bg-slate-900"] .text-white,
+.text-white {
+  color: #ffffff;
+}
+
+/* Typography polish: Orbitron for titles */
+h1, h2, h3, .font-orbitron {
+  font-family: 'Orbitron', system-ui, -apple-system, sans-serif;
+}
+
+/* Form controls */
+input, select, textarea {
+  border-color: var(--ott-border);
+  background-color: #ffffff;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }

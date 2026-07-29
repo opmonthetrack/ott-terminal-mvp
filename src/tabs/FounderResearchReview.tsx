@@ -280,16 +280,16 @@ export function FounderResearchReview() {
   if (!signedIn) return <FullScreen text="Log eerst in via Account & Profile en open daarna opnieuw ?founder=1&research=1." />;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      <header className="border-b border-white/10">
+    <div className="min-h-screen bg-white text-slate-950">
+      <header className="relative overflow-hidden border-b border-blue-200 bg-[radial-gradient(circle_at_16%_12%,rgba(49,92,255,0.24),transparent_32%),radial-gradient(circle_at_82%_10%,rgba(239,47,145,0.20),transparent_30%),linear-gradient(135deg,#eef4ff_0%,#ffffff_52%,#fff1fa_100%)]">
         <div className="mx-auto flex max-w-[1500px] flex-col gap-6 px-5 py-8 sm:px-8 xl:flex-row xl:items-start xl:justify-between">
           <div>
-            <a href="/?founder=1" className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white"><ArrowLeft size={16} />Terug naar OTT Terminal</a>
-            <p className="mt-6 text-xs font-semibold uppercase tracking-[0.22em] text-blue-300">Founder only · evidence review</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">OTT Token Research Review</h1>
-            <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-400">Ingelogd als {getOttAccountName(user) || user?.email}. Iedere puntentoekenning moet gekoppeld zijn aan bewijs en een onderbouwing. De server berekent de eindscore en past caps toe.</p>
+            <a href="/?founder=1" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900"><ArrowLeft size={16} />Terug naar OTT Terminal</a>
+            <p className="mt-6 text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">Founder only · evidence review</p>
+            <h1 className="mt-2 font-orbitron text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">OTT Token Research Review</h1>
+            <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-600">Ingelogd als {getOttAccountName(user) || user?.email}. Iedere puntentoekenning moet gekoppeld zijn aan bewijs en een onderbouwing. De server berekent de eindscore en past caps toe.</p>
           </div>
-          <button type="button" onClick={() => void refreshQueue()} disabled={Boolean(busy)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 px-4 py-3 text-sm font-semibold hover:bg-white/5 disabled:opacity-50">{busy === "queue" ? <Loader2 className="animate-spin" size={17} /> : <RefreshCcw size={17} />}Queue vernieuwen</button>
+          <button type="button" onClick={() => void refreshQueue()} disabled={Boolean(busy)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-50">{busy === "queue" ? <Loader2 className="animate-spin" size={17} /> : <RefreshCcw size={17} />}Queue vernieuwen</button>
         </div>
       </header>
 

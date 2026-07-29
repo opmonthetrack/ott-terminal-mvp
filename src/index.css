@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;700;800;900&display=swap');
 @import "tailwindcss";
 @import "./styles/remainingTabsLightOverride.css";
 @import "./styles/accessibleSelectedStates.css";
@@ -6,26 +6,26 @@
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-orbitron: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-orbitron: "Orbitron", "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-data: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --color-ott-blue: #1d4ed8;
-  --color-ott-pink: #9d174d;
+  --font-mono: "ui-monospace", "SFMono-Regular", "Menlo", "Consolas", monospace;
+  --color-ott-blue: #315cff;
+  --color-ott-pink: #ef2f91;
 }
 
 @utility bg-ott-gradient {
-  background-image: linear-gradient(135deg, #1d4ed8 0%, #6d28d9 50%, #9d174d 100%);
+  background-image: linear-gradient(135deg, #315cff 0%, #8249ed 52%, #ef2f91 100%);
 }
 
 @utility text-ott-gradient {
-  background-image: linear-gradient(135deg, #1d4ed8 0%, #6d28d9 50%, #9d174d 100%);
+  background-image: linear-gradient(135deg, #315cff 0%, #8249ed 52%, #ef2f91 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
 @utility border-ott-gradient {
-  border-image: linear-gradient(135deg, #1d4ed8 0%, #6d28d9 50%, #9d174d 100%) 1;
+  border-image: linear-gradient(135deg, #315cff 0%, #8249ed 52%, #ef2f91 100%) 1;
 }
 
 html {
@@ -42,7 +42,7 @@ body {
   margin: 0;
   overflow-x: hidden;
   background-color: #fff;
-  color: #080808;
+  color: #020617;
 }
 
 #root {
@@ -59,22 +59,21 @@ select {
   font: inherit;
 }
 
-/* OTT release hardening: accessibility and unified interface */
+/* OTT design system: accessibility and unified interface */
 :root {
-  --ott-text: #0f172a;
+  --ott-text: #020617;
   --ott-muted: #475569;
   --ott-subtle: #334155;
-  --ott-focus: #1d4ed8;
-  --ott-blue: #1d4ed8;
-  --ott-magenta: #9d174d;
-  --ott-coral: #be123c;
-  --ott-dim: #475569;
+  --ott-focus: #315cff;
+  --ott-blue: #315cff;
+  --ott-magenta: #ef2f91;
+  --ott-coral: #d84858;
+  --ott-dim: #64748b;
   --ott-gradient: linear-gradient(
     135deg,
-    #1d4ed8 0%,
-    #6d28d9 42%,
-    #9d174d 68%,
-    #be123c 100%
+    #315cff 0%,
+    #8249ed 52%,
+    #ef2f91 100%
   );
 }
 
@@ -94,12 +93,10 @@ body {
   line-height: 1.5;
 }
 
-/* Keep legacy utility names compatible while rendering one font everywhere. */
 .font-orbitron {
-  font-family: var(--font-sans) !important;
+  font-family: var(--font-orbitron) !important;
 }
 
-/* Ledger values keep numeric alignment without switching typeface. */
 .font-data,
 .font-mono,
 code,
@@ -107,7 +104,7 @@ pre,
 kbd,
 samp,
 [data-xrpl-value] {
-  font-family: var(--font-sans) !important;
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums slashed-zero;
 }
 
@@ -116,42 +113,6 @@ input[type="number"],
 input[inputmode="numeric"],
 input[inputmode="decimal"] {
   font-variant-numeric: tabular-nums;
-}
-
-[class*="uppercase"] {
-  text-transform: none !important;
-  letter-spacing: normal !important;
-}
-
-[class*="text-black/"] ,
-[class*="text-slate-300"],
-[class*="text-slate-400"],
-[class*="text-slate-500"],
-[class*="text-gray-300"],
-[class*="text-gray-400"],
-[class*="text-gray-500"] {
-  color: var(--ott-muted) !important;
-}
-
-/* Some legacy tabs still carry the old hardcoded accent class. */
-[class~="text-[#3898E8]"],
-[class~="text-[#3898e8]"] {
-  color: var(--ott-blue) !important;
-}
-
-/* Legacy dark panels are converted to light panels by the imported override.
-   Their former light foreground must therefore also become a dark readable tone. */
-[class*="bg-black"] [class*="text-black/"],
-[class*="bg-slate-9"] [class*="text-slate-"],
-[class*="bg-[#080808]"] [class*="text-black/"],
-[class*="bg-[#111827]"] [class*="text-slate-"] {
-  color: var(--ott-muted) !important;
-}
-
-[class*="text-transparent"] {
-  color: var(--ott-text) !important;
-  -webkit-text-fill-color: var(--ott-text) !important;
-  background-image: none !important;
 }
 
 button,
@@ -189,13 +150,6 @@ input,
 textarea,
 select {
   min-height: 44px;
-}
-
-.text-\[9px\],
-.text-\[10px\],
-.text-\[11px\] {
-  font-size: 0.8125rem !important;
-  line-height: 1.35rem !important;
 }
 
 /* Mobile-first protection for XRPL tables, charts, hashes and code snippets. */
@@ -240,7 +194,6 @@ main [data-xrpl-value] {
   word-break: break-word;
 }
 
-/* Apply these attributes to selected dense tables after per-table mobile review. */
 [data-mobile-table-scroll] {
   max-width: 100%;
   overflow-x: auto;
@@ -267,7 +220,6 @@ main [data-xrpl-value] {
     padding-bottom: calc(7.25rem + env(safe-area-inset-bottom));
   }
 
-  /* The bottom dock replaces the former second navigation row on phones. */
   body.ott-mobile-dock-mounted header > nav[aria-label="Mobile primary navigation"] {
     display: none !important;
   }
@@ -289,10 +241,6 @@ main [data-xrpl-value] {
   main pre {
     font-size: 0.75rem;
     line-height: 1.35rem;
-  }
-
-  .font-orbitron {
-    letter-spacing: 0.01em !important;
   }
 }
 
