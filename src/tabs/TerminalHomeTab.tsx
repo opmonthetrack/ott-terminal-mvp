@@ -111,7 +111,7 @@ export function TerminalHomeTab({
         />
       )}
 
-      <section className="border-b border-slate-200">
+      <section className="relative overflow-hidden border-b border-blue-200 bg-[radial-gradient(circle_at_16%_12%,rgba(49,92,255,0.24),transparent_32%),radial-gradient(circle_at_82%_10%,rgba(239,47,145,0.20),transparent_30%),linear-gradient(135deg,#eef4ff_0%,#ffffff_52%,#fff1fa_100%)]">
         <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-20 lg:py-24">
           <div className="grid items-center gap-12 lg:grid-cols-[1.12fr_0.88fr]">
             <div className="max-w-3xl">
@@ -143,7 +143,7 @@ export function TerminalHomeTab({
                 <button
                   type="button"
                   onClick={() => signedIn ? navigate("academy") : openAccount()}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-slate-800"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[linear-gradient(135deg,#315cff_0%,#8249ed_52%,#ef2f91_100%)] px-5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-300/30 transition hover:brightness-95"
                 >
                   {signedIn
                     ? isEnglish ? "Continue learning" : "Ga verder met leren"
