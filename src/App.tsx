@@ -804,7 +804,7 @@ export default function App() {
       )}
 
       <main id="main-content" className="min-h-[calc(100vh-72px)] bg-white" tabIndex={-1}>
-        {(["news", "ottintelligence"] as ActiveTab[]).includes(activeTab) && (
+        {!routeAccessPending && !lockReason && (["news", "ottintelligence"] as ActiveTab[]).includes(activeTab) && (
           <h1 className="sr-only">{activeItem.label}</h1>
         )}
         {activeTab !== "home" && (
@@ -1002,7 +1002,7 @@ function TopNavigation({
             <span className="truncate">{accountLabel}</span>
           </button>
 
-          <button type="button" onClick={onOpenMenu} className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50" aria-label={language === "en" ? "Open navigation" : "Navigatie openen"}>
+          <button type="button" onClick={onOpenMenu} className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50" aria-label={language === "en" ? "Open all tools" : "Open alle tools"}>
             <Menu size={19} />
           </button>
         </div>

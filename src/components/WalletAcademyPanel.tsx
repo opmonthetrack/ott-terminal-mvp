@@ -153,7 +153,7 @@ export function WalletAcademyPanel({ walletAddress = "guest", onNavigate }: Prop
                 <button
                   type="button"
                   onClick={() => onNavigate?.(signedIn && walletGrantAvailable && !walletLinked ? "wallet" : signedIn ? "accessgate" : "wallet")}
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-amber-950 px-5 py-3 text-sm font-semibold text-white"
+                  className="ott-contrast-on-color inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-amber-950 px-5 py-3 text-sm font-semibold text-white"
                 >
                   {signedIn && walletGrantAvailable && !walletLinked ? <Wallet size={17} /> : <LockKeyhole size={17} />}
                   {!signedIn
