@@ -108,6 +108,12 @@ samp,
   font-variant-numeric: tabular-nums slashed-zero;
 }
 
+/* Ensure text-slate-400 and text-slate-500 pass WCAG AA contrast (>= 4.5:1) on white */
+.text-slate-400,
+.text-slate-500 {
+  color: #475569 !important;
+}
+
 .tabular-nums,
 input[type="number"],
 input[inputmode="numeric"],
