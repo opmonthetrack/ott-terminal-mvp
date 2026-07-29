@@ -15,6 +15,7 @@ const SUPPORT_AMOUNTS = {
   "0.589": "589000",
   "1.589": "1589000",
   "2.589": "2589000",
+  "23.589": "23589000",
 } as const;
 
 const ALLOWED_SUPPORT_DROPS = new Set<string>(Object.values(SUPPORT_AMOUNTS));

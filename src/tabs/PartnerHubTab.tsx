@@ -1,31 +1,38 @@
 import { useMemo, useState } from "react";
 import type { ElementType, ReactNode } from "react";
 import {
+  AlertTriangle,
   BadgeCheck,
   Building2,
   CheckCircle2,
   ClipboardCheck,
+  Clock,
   FileText,
   GraduationCap,
   Handshake,
   Layers,
+  Loader2,
   LockKeyhole,
+  MessageSquareText,
   Network,
   Rocket,
+  Send,
   ShieldCheck,
   Sparkles,
   Store,
   Target,
+  Video,
   Wallet,
 } from "lucide-react";
 import { OTTLogo, OTTProofBadge } from "../components/OTTLogo";
+import { createSupportPayment } from "../lib/supportPaymentClient";
 import { useTerminalLanguage } from "../lib/useTerminalLanguage";
 
 type PartnerHubTabProps = {
   walletAddress?: string;
 };
 
-type PartnerView = "map" | "onboarding" | "brief" | "access";
+type PartnerView = "map" | "ask" | "onboarding" | "brief" | "access";
 
 type PartnerRoute = {
   id: string;
@@ -125,6 +132,70 @@ export function PartnerHubTab({ walletAddress = "guest" }: PartnerHubTabProps) {
   const [selectedRouteId, setSelectedRouteId] = useState("education");
   const [briefReady, setBriefReady] = useState(false);
 
+  // Community Ask & Consultation State
+  const [questionText, setQuestionText] = useState("");
+  const [questionContact, setQuestionContact] = useState("");
+  const [sessionTopic, setSessionTopic] = useState("");
+  const [sessionTime, setSessionTime] = useState("");
+  const [sessionContact, setSessionContact] = useState("");
+  const [sessionNotes, setSessionNotes] = useState("");
+  const [busyAction, setBusyAction] = useState("");
+  const [actionMessage, setActionMessage] = useState("");
+  const [actionError, setActionError] = useState("");
+
+  async function handleAskQuestion() {
+    if (!questionText.trim()) {
+      setActionError(isEnglish ? "Please enter your question or opinion prompt." : "Vul je vraag of meningverzoek in.");
+      return;
+    }
+    if (questionText.length > 200) {
+      setActionError(isEnglish ? "Maximum 200 characters allowed." : "Maximaal 200 tekens toegestaan.");
+      return;
+    }
+    setBusyAction("question");
+    setActionError("");
+    setActionMessage(isEnglish ? "Creating Xaman payload for 1.589 XRP…" : "Xaman-verzoek voor 1.589 XRP wordt gemaakt…");
+    try {
+      const response = await createSupportPayment({
+        amountXrp: "1.589",
+        supporterName: questionContact.trim() || "Anonymous",
+        publicMessage: `[Question/Opinion] ${questionText.trim()}`,
+        publicConsent: true,
+      });
+      const nextUrl = response.payload?.next?.always || response.payload?.next?.no_push_msg_received;
+      if (!nextUrl) throw new Error(isEnglish ? "Xaman payload URL not returned." : "Geen Xaman-betaallink ontvangen.");
+      window.location.assign(nextUrl);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : String(err));
+      setBusyAction("");
+    }
+  }
+
+  async function handleBookSession() {
+    if (!sessionTopic.trim()) {
+      setActionError(isEnglish ? "Please enter a topic or project title for the 15-minute session." : "Vul een onderwerp of projecttitel in voor de 15-minuten sessie.");
+      return;
+    }
+    setBusyAction("session");
+    setActionError("");
+    setActionMessage(isEnglish ? "Creating Xaman payload for 23.589 XRP…" : "Xaman-verzoek voor 23.589 XRP wordt gemaakt…");
+    try {
+      const fullMsg = `[15-Min Session] ${sessionTopic.trim()} | Time: ${sessionTime.trim()} | Contact: ${sessionContact.trim()} | Notes: ${sessionNotes.trim()}`;
+      const response = await createSupportPayment({
+        amountXrp: "23.589",
+        supporterName: sessionContact.trim() || "Anonymous",
+        publicMessage: fullMsg.slice(0, 400),
+        publicConsent: true,
+      });
+      const nextUrl = response.payload?.next?.always || response.payload?.next?.no_push_msg_received;
+      if (!nextUrl) throw new Error(isEnglish ? "Xaman payload URL not returned." : "Geen Xaman-betaallink ontvangen.");
+      window.location.assign(nextUrl);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : String(err));
+      setBusyAction("");
+    }
+  }
+
   const selectedRoute =
     partnerRoutes.find((route) => route.id === selectedRouteId) ?? partnerRoutes[0];
 
@@ -218,6 +289,7 @@ export function PartnerHubTab({ walletAddress = "guest" }: PartnerHubTabProps) {
 
           <div className="flex flex-wrap gap-2 mt-8">
             <ModeButton active={view === "map"} label={isEnglish ? "Partner Map" : "Partnerkaart"} onClick={() => setView("map")} />
+            <ModeButton active={view === "ask"} label={isEnglish ? "Ask & Consultation (1.589 / 23.589 XRP)" : "Vraag & Consult (1.589 / 23.589 XRP)"} onClick={() => setView("ask")} />
             <ModeButton active={view === "onboarding"} label={isEnglish ? "Onboarding" : "Onboarding"} onClick={() => setView("onboarding")} />
             <ModeButton active={view === "brief"} label={isEnglish ? "Partner Brief" : "Partner Brief"} onClick={() => setView("brief")} />
             <ModeButton active={view === "access"} label={isEnglish ? "Access" : "Toegang"} onClick={() => setView("access")} />
@@ -226,6 +298,187 @@ export function PartnerHubTab({ walletAddress = "guest" }: PartnerHubTabProps) {
       </section>
 
       <section className="p-4 md:p-6 xl:p-10 bg-white">
+        {actionMessage && (
+          <div className="mb-6 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm font-semibold text-blue-900 flex items-center gap-3">
+            <Loader2 className="animate-spin" size={18} />
+            <span>{actionMessage}</span>
+          </div>
+        )}
+
+        {actionError && (
+          <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-900 flex items-center gap-3">
+            <AlertTriangle size={18} className="shrink-0" />
+            <span>{actionError}</span>
+          </div>
+        )}
+
+        {view === "ask" && (
+          <div className="grid grid-cols-12 gap-6">
+            {/* Form 1: Ask Question / Request Opinion */}
+            <div className="col-span-12 lg:col-span-6">
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 sm:p-8 h-full flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between gap-3 mb-4">
+                    <div className="flex items-center gap-2">
+                      <MessageSquareText className="text-pink-600" size={22} />
+                      <h2 className="font-orbitron text-xl font-bold text-slate-950">
+                        {isEnglish ? "Ask Question / Request Opinion" : "Stel een Vraag / Vraag om Mening"}
+                      </h2>
+                    </div>
+                    <span className="rounded-full bg-pink-100 px-3 py-1 text-xs font-bold text-pink-700">
+                      1.589 XRP
+                    </span>
+                  </div>
+
+                  <p className="text-xs leading-5 text-slate-600 mb-5">
+                    {isEnglish
+                      ? "Submit a question or request an opinion on XRPL projects, tokens or strategy. Max 200 characters cap."
+                      : "Stel een vraag of vraag om een mening over XRPL-projecten, tokens of strategie. Maximaal 200 tekens (200 caps max)."}
+                  </p>
+
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex justify-between text-xs font-semibold text-slate-700 mb-1">
+                        <label>{isEnglish ? "Your Question / Opinion Prompt" : "Je Vraag / Meningverzoek"}</label>
+                        <span className={questionText.length > 200 ? "text-rose-600 font-bold" : "text-slate-500"}>
+                          {questionText.length} / 200 caps max
+                        </span>
+                      </div>
+                      <textarea
+                        value={questionText}
+                        onChange={(e) => setQuestionText(e.target.value.slice(0, 200))}
+                        rows={4}
+                        placeholder={isEnglish ? "What is your opinion on XLS-30 liquidity pools or RLUSD integration?" : "Wat is jouw mening over XLS-30 liquidity pools of RLUSD integratie?"}
+                        className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                        {isEnglish ? "Your Contact (X Handle, Telegram or Email)" : "Je Contact (X Handle, Telegram of E-mail)"}
+                      </label>
+                      <input
+                        type="text"
+                        value={questionContact}
+                        onChange={(e) => setQuestionContact(e.target.value)}
+                        placeholder="@yourhandle or name@example.com"
+                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <button
+                    type="button"
+                    onClick={() => void handleAskQuestion()}
+                    disabled={busyAction === "question" || !questionText.trim()}
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[linear-gradient(135deg,#315cff_0%,#8249ed_52%,#ef2f91_100%)] px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-pink-200 transition hover:brightness-95 disabled:opacity-50"
+                  >
+                    {busyAction === "question" ? <Loader2 className="animate-spin" size={17} /> : <Send size={17} />}
+                    <span>
+                      {isEnglish ? "Ask Question via Xaman (1.589 XRP)" : "Stel Vraag via Xaman (1.589 XRP)"}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Form 2: 15-Minute Consultation Session */}
+            <div className="col-span-12 lg:col-span-6">
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 sm:p-8 h-full flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between gap-3 mb-4">
+                    <div className="flex items-center gap-2">
+                      <Video className="text-blue-600" size={22} />
+                      <h2 className="font-orbitron text-xl font-bold text-slate-950">
+                        {isEnglish ? "15-Min Live Consultation Session" : "15-Min Live Consultatiesessie"}
+                      </h2>
+                    </div>
+                    <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700">
+                      23.589 XRP
+                    </span>
+                  </div>
+
+                  <p className="text-xs leading-5 text-slate-600 mb-5">
+                    {isEnglish
+                      ? "Book a 15-minute 1-on-1 video/audio session for deep XRPL strategy, project architecture or token review."
+                      : "Boek een 15-minuten 1-op-1 video/audio sessie voor diepe XRPL strategie, projectarchitectuur of token review."}
+                  </p>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                        {isEnglish ? "Project / Topic Title" : "Project / Onderwerp Titel"}
+                      </label>
+                      <input
+                        type="text"
+                        value={sessionTopic}
+                        onChange={(e) => setSessionTopic(e.target.value)}
+                        placeholder={isEnglish ? "e.g. XRPL Tokenization & Access Pass Strategy" : "bijv. XRPL Tokenisatie & Access Pass Strategie"}
+                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">
+                          {isEnglish ? "Preferred Date / Time" : "Voorkeursdatum / Tijd"}
+                        </label>
+                        <input
+                          type="text"
+                          value={sessionTime}
+                          onChange={(e) => setSessionTime(e.target.value)}
+                          placeholder="Thu 14:00 CET"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">
+                          {isEnglish ? "Your Contact Info" : "Je Contactgegevens"}
+                        </label>
+                        <input
+                          type="text"
+                          value={sessionContact}
+                          onChange={(e) => setSessionContact(e.target.value)}
+                          placeholder="@handle or email"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                        {isEnglish ? "Session Goals / Notes" : "Sessiedoelen / Notities"}
+                      </label>
+                      <textarea
+                        value={sessionNotes}
+                        onChange={(e) => setSessionNotes(e.target.value)}
+                        rows={2}
+                        placeholder={isEnglish ? "Briefly explain what you want to cover during the 15 minutes..." : "Kort uitleggen wat je wilt behandelen tijdens de 15 minuten..."}
+                        className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-sm outline-none focus:border-blue-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <button
+                    type="button"
+                    onClick={() => void handleBookSession()}
+                    disabled={busyAction === "session" || !sessionTopic.trim()}
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[linear-gradient(135deg,#315cff_0%,#8249ed_52%,#ef2f91_100%)] px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-200 transition hover:brightness-95 disabled:opacity-50"
+                  >
+                    {busyAction === "session" ? <Loader2 className="animate-spin" size={17} /> : <Clock size={17} />}
+                    <span>
+                      {isEnglish ? "Book 15 Min Session via Xaman (23.589 XRP)" : "Boek 15 Min Sessie via Xaman (23.589 XRP)"}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         {view === "map" && (
           <Panel title={isEnglish ? "Partner Route Map" : "Partner Routekaart"} icon={Network}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

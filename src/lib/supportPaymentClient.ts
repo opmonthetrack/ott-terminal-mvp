@@ -1,4 +1,4 @@
-export type SupportAmount = "0.589" | "1.589" | "2.589";
+export type SupportAmount = "0.589" | "1.589" | "2.589" | "23.589";
 
 export type SupportStats = {
   totalXrp: string;
