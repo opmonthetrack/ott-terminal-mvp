@@ -5,6 +5,7 @@ import {
   ExternalLink,
   HeartHandshake,
   Loader2,
+  Mail,
   MessageSquareText,
   RefreshCcw,
   ShieldCheck,
@@ -424,6 +425,23 @@ export function SupportDonationTab() {
                     </div>
                   ))}
             </div>
+          <section className="rounded-3xl border border-slate-200 p-6 bg-slate-50">
+            <div className="flex items-center gap-3">
+              <Mail className="text-blue-600" size={20} />
+              <h3 className="font-semibold">{en ? "Official Contact & Inquiries" : "Officieel Contact & Vragen"}</h3>
+            </div>
+            <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+              {en
+                ? "Questions about Make Waves, partnership opportunities or platform support?"
+                : "Vragen over Make Waves, partnerships of platformondersteuning?"}
+            </p>
+            <a
+              href="mailto:info@onthetrack.com"
+              className="mt-4 inline-flex items-center gap-2 font-mono text-xs font-bold text-blue-700 hover:text-blue-900 bg-white border border-slate-200 px-3 py-2 rounded-xl shadow-sm"
+            >
+              <Mail size={14} />
+              <span>info@onthetrack.com</span>
+            </a>
           </section>
         </aside>
       </div>

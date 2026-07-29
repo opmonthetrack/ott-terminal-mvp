@@ -73,19 +73,39 @@ function sanitizeFounderUrl() {
   return url;
 }
 
+import { Mail, ShieldCheck } from "lucide-react";
+
 function PublicLegalFooter() {
   return (
-    <footer className="border-t border-slate-200 bg-white px-5 py-8 text-sm text-slate-500 sm:px-8">
-      <div className="mx-auto flex max-w-7xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p>© 2026 TruthOnTheTrack / OnTheTrack — OTT Terminal</p>
-        <nav className="flex flex-wrap gap-x-5 gap-y-2" aria-label="Legal information">
-          <a className="font-medium text-slate-600 hover:text-blue-700" href="/privacy.html">
-            Privacy Policy
-          </a>
-          <a className="font-medium text-slate-600 hover:text-blue-700" href="/terms.html">
-            Terms of Use
-          </a>
-        </nav>
+    <footer className="border-t border-slate-200 bg-white px-5 py-8 text-xs text-slate-500 sm:px-8">
+      <div className="mx-auto max-w-7xl space-y-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-4">
+          <div>
+            <p className="font-semibold text-slate-900">© 2026 TruthOnTheTrack / OnTheTrack — XRPL OTT Terminal</p>
+            <p className="mt-1 text-[11px] text-slate-500 max-w-2xl">
+              OTT Terminal is an independent analytical & utility platform for the XRP Ledger. Not financial or investment advice. SourceTag 2606170002.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4">
+            <a
+              href="mailto:info@onthetrack.com"
+              className="inline-flex items-center gap-1.5 font-medium text-blue-700 hover:text-blue-900 bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-xl transition-all"
+            >
+              <Mail size={14} />
+              <span>info@onthetrack.com</span>
+            </a>
+
+            <nav className="flex flex-wrap gap-x-4 gap-y-2" aria-label="Legal information">
+              <a className="font-medium text-slate-600 hover:text-blue-700" href="/privacy.html">
+                Privacy Policy
+              </a>
+              <a className="font-medium text-slate-600 hover:text-blue-700" href="/terms.html">
+                Terms of Use
+              </a>
+            </nav>
+          </div>
+        </div>
       </div>
     </footer>
   );
