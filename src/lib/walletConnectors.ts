@@ -99,6 +99,93 @@ export async function connectGemWallet(): Promise<WalletConnectorResult> {
   };
 }
 
+export async function connectMetaMaskSnap(): Promise<WalletConnectorResult> {
+  const ethereum = (window as unknown as { ethereum?: { request: (args: { method: string; params?: unknown }) => Promise<unknown> } }).ethereum;
+  if (!ethereum) {
+    throw new Error("MetaMask is not installed in this browser. Install the MetaMask browser extension first.");
+  }
+  try {
+    await ethereum.request({
+      method: "wallet_requestSnaps",
+      params: { "npm:xrpl-snap": {} },
+    });
+    const response = await ethereum.request({
+      method: "wallet_invokeSnap",
+      params: {
+        snapId: "npm:xrpl-snap",
+        request: { method: "xrpl_getAccount" },
+      },
+    }) as { address?: string; account?: { address?: string } } | string;
+
+    const rawAddress = typeof response === "string" ? response : (response?.address ?? response?.account?.address);
+    return {
+      walletAddress: requireAddress(rawAddress, "MetaMask XRPL Snap"),
+      providerId: "metamask-xrpl",
+      network: "mainnet",
+      verificationMethod: "signed",
+    };
+  } catch (error) {
+    throw new Error(error instanceof Error ? error.message : "MetaMask XRPL Snap connection failed.");
+  }
+}
+
+export async function connectWalletConnect(providerId: WalletProviderId = "walletconnect"): Promise<WalletConnectorResult> {
+  const providerName = providerId === "joey" ? "Joey Wallet" : providerId === "katz" ? "Katz Wallet" : "WalletConnect";
+  try {
+    const { SignClient } = await import("@walletconnect/sign-client");
+    const { WalletConnectModal } = await import("@walletconnect/modal");
+
+    const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || "c4f79cc821944d9680842e344664b15b";
+
+    const signClient = await SignClient.init({
+      projectId,
+      metadata: {
+        name: "XRPL OnTheTrack Terminal",
+        description: "XRPL Terminal & Verification Layer",
+        url: window.location.origin,
+        icons: [`${window.location.origin}/favicon.ico`],
+      },
+    });
+
+    const modal = new WalletConnectModal({
+      projectId,
+      chains: ["xrpl:0"],
+    });
+
+    const { uri, approval } = await signClient.connect({
+      requiredNamespaces: {
+        xrpl: {
+          methods: ["xrpl_signTransaction", "xrpl_signMessage"],
+          chains: ["xrpl:0"],
+          events: ["chainChanged", "accountsChanged"],
+        },
+      },
+    });
+
+    if (uri) {
+      void modal.openModal({ uri });
+    }
+
+    const session = await approval();
+    modal.closeModal();
+
+    const account = session.namespaces.xrpl?.accounts?.[0];
+    const address = account ? account.split(":")[2] : "";
+
+    return {
+      walletAddress: requireAddress(address, providerName),
+      providerId,
+      network: "mainnet",
+      verificationMethod: "signed",
+    };
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("did not return a valid")) {
+      throw error;
+    }
+    throw new Error(`${providerName} WalletConnect pairing was closed or needs a valid Reown Project ID.`);
+  }
+}
+
 export async function submitWalletTestTransaction(
   providerId: WalletProviderId,
   txjson: Record<string, unknown>,
@@ -130,11 +217,29 @@ export async function submitWalletTestTransaction(
     );
   }
 
+  if (providerId === "metamask-xrpl") {
+    const ethereum = (window as unknown as { ethereum?: { request: (args: { method: string; params?: unknown }) => Promise<unknown> } }).ethereum;
+    if (!ethereum) throw new Error("MetaMask is not available in this browser.");
+    const result = await ethereum.request({
+      method: "wallet_invokeSnap",
+      params: {
+        snapId: "npm:xrpl-snap",
+        request: { method: "xrpl_signTransaction", params: { tx: txjson } },
+      },
+    }) as { hash?: string; txid?: string; result?: { hash?: string } } | string;
+    const hash = typeof result === "string" ? result : (result?.hash ?? result?.txid ?? result?.result?.hash);
+    return requireHash(hash, "MetaMask XRPL Snap");
+  }
+
   throw new Error("This wallet does not have a public OTT transaction-test adapter yet.");
 }
 
 export async function connectWalletProvider(providerId: WalletProviderId) {
   if (providerId === "crossmark") return connectCrossmark();
   if (providerId === "gemwallet") return connectGemWallet();
+  if (providerId === "metamask-xrpl") return connectMetaMaskSnap();
+  if (providerId === "walletconnect" || providerId === "joey" || providerId === "katz") {
+    return connectWalletConnect(providerId);
+  }
   throw new Error("This wallet connector is not live yet. Use its education guide or open a read-only XRPL profile.");
 }

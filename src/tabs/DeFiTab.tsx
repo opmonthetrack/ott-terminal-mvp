@@ -10,6 +10,7 @@ import {
   ExternalLink,
   FileCheck2,
   FileSearch,
+  Flame,
   FolderLock,
   Globe2,
   Landmark,
@@ -21,6 +22,7 @@ import {
   Upload,
   Wallet,
   XCircle,
+  Zap,
 } from "lucide-react";
 import { DEFI_DIRECTORY, type DefiDirectoryCategory, type DefiDirectoryEntry } from "../lib/defiDirectory";
 import {
@@ -33,10 +35,13 @@ import {
   type TokenResearchCategory,
   type TokenResearchResult,
 } from "../lib/xrplTokenResearch";
+import { XrplTokenHeatmap } from "../components/XrplTokenHeatmap";
+import { XrplDexSwapTerminal } from "../components/XrplDexSwapTerminal";
+import type { XrplTokenMarketData } from "../lib/xrplHeatmapData";
 import { useOttAuthSession } from "../lib/useOttAuthSession";
 import { useTerminalLanguage } from "../lib/useTerminalLanguage";
 
-type LabView = "research" | "directory" | "evidence";
+type LabView = "heatmap" | "dex" | "research" | "directory" | "evidence";
 
 const categoryLabels: Record<DefiDirectoryCategory | "all", { en: string; nl: string }> = {
   all: { en: "All", nl: "Alles" },
@@ -64,7 +69,13 @@ function getProjectKey(currency: string, issuer: string) {
 export function DeFiTab() {
   const { language } = useTerminalLanguage();
   const isEnglish = language === "en";
-  const [view, setView] = useState<LabView>("research");
+  const [view, setView] = useState<LabView>("heatmap");
+  const [selectedTokenForSwap, setSelectedTokenForSwap] = useState<XrplTokenMarketData | null>(null);
+
+  function handleSelectTokenForSwap(token: XrplTokenMarketData) {
+    setSelectedTokenForSwap(token);
+    setView("dex");
+  }
 
   return (
     <div className="min-h-screen bg-white text-slate-950">
@@ -72,21 +83,23 @@ export function DeFiTab() {
         <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-20">
           <div className="max-w-4xl">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
-              {isEnglish ? "Token Research & DeFi Lab" : "Tokenonderzoek & DeFi Lab"}
+              {isEnglish ? "XRPL DEX & Token Market Terminal" : "XRPL DEX & Token Markt Terminal"}
             </p>
             <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
               {isEnglish
-                ? "Investigate claims before you connect, trust or transact."
-                : "Onderzoek claims voordat je koppelt, vertrouwt of handelt."}
+                ? "Top 50 XRPL Heatmap & Native DEX Swap."
+                : "Top 50 XRPL Heatmap & Native DEX Swap."}
             </h1>
             <p className="mt-6 max-w-3xl text-base leading-7 text-slate-600 sm:text-lg">
               {isEnglish
-                ? "OTT separates validated XRPL observations, supplied documents and human claims. The lab reports mismatches and uncertainty without declaring a project safe, fraudulent or suitable as an investment."
-                : "OTT scheidt gevalideerde XRPL-observaties, aangeleverde documenten en menselijke claims. Het lab rapporteert afwijkingen en onzekerheid zonder een project veilig, frauduleus of geschikt als investering te noemen."}
+                ? "Explore top XRP Ledger tokens with live market heatmaps inspired by XMagnetic & OnTheDex, or trade directly on the native XRPL DEX with multi-wallet support."
+                : "Bekijk top XRP Ledger-tokens met een live markt heatmap geïnspireerd op XMagnetic & OnTheDex, of handel direct op de native XRPL DEX met ondersteuning voor meerdere wallets."}
             </p>
           </div>
 
           <div className="mt-9 flex flex-wrap gap-2" role="tablist" aria-label="Research lab views">
+            <ViewButton active={view === "heatmap"} icon={Flame} label={isEnglish ? "Top 50 Heatmap" : "Top 50 Heatmap"} onClick={() => setView("heatmap")} />
+            <ViewButton active={view === "dex"} icon={Zap} label={isEnglish ? "XRPL DEX Swap" : "XRPL DEX Swap"} onClick={() => setView("dex")} />
             <ViewButton active={view === "research"} icon={FileSearch} label={isEnglish ? "Token research" : "Tokenonderzoek"} onClick={() => setView("research")} />
             <ViewButton active={view === "directory"} icon={Globe2} label={isEnglish ? "DeFi directory" : "DeFi-overzicht"} onClick={() => setView("directory")} />
             <ViewButton active={view === "evidence"} icon={FolderLock} label={isEnglish ? "Evidence files" : "Bewijsbestanden"} onClick={() => setView("evidence")} />
@@ -94,9 +107,17 @@ export function DeFiTab() {
         </div>
       </section>
 
-      {view === "research" && <TokenResearchView isEnglish={isEnglish} />}
-      {view === "directory" && <DirectoryView isEnglish={isEnglish} />}
-      {view === "evidence" && <EvidenceView isEnglish={isEnglish} />}
+      <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
+        {view === "heatmap" && (
+          <XrplTokenHeatmap isEnglish={isEnglish} onSelectTokenForSwap={handleSelectTokenForSwap} />
+        )}
+        {view === "dex" && (
+          <XrplDexSwapTerminal isEnglish={isEnglish} initialToken={selectedTokenForSwap} />
+        )}
+        {view === "research" && <TokenResearchView isEnglish={isEnglish} />}
+        {view === "directory" && <DirectoryView isEnglish={isEnglish} />}
+        {view === "evidence" && <EvidenceView isEnglish={isEnglish} />}
+      </div>
     </div>
   );
 }

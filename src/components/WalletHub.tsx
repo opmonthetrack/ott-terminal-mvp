@@ -122,11 +122,11 @@ export function WalletHub({
       return;
     }
 
-    if (!(["crossmark", "gemwallet"] as WalletProviderId[]).includes(providerId)) {
+    if (!(["crossmark", "gemwallet", "metamask-xrpl", "walletconnect", "joey", "katz"] as WalletProviderId[]).includes(providerId)) {
       setStatus(
         isEnglish
-          ? "This connector is listed and documented, but it remains locked until its official signing flow passes an OTT Testnet proof."
-          : "Deze connector staat in de registry en Academy, maar blijft vergrendeld totdat de officiële signingflow een OTT-Testnetbewijs heeft doorstaan.",
+          ? "This connector is listed and documented, but Ledger hardware direct connect requires reviewed Transport USB."
+          : "Deze connector staat in de registry, maar Ledger hardware directe koppeling vereist een gecontroleerde Transport USB-verbinding.",
       );
       return;
     }
