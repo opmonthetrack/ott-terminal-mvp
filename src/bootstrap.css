@@ -1,0 +1,62 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
+}
+
+html,
+body {
+  margin: 0;
+  overflow-x: hidden;
+  background: transparent;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+html.xaman-xapp-boot,
+html.xaman-xapp-boot body,
+body.xaman-xapp-active,
+body.xaman-xapp-active #root {
+  background: transparent !important;
+}
+
+body.xaman-xapp-active {
+  padding-bottom: 0 !important;
+}
+
+.xaman-xapp-boot-status,
+.ott-web-boot-status {
+  align-items: center;
+  color: #334155;
+  display: flex;
+  font: 600 16px/1.5 system-ui, sans-serif;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+  text-align: center;
+}
+
+.xaman-xapp-boot-status {
+  background: transparent;
+}
+
+.ott-web-boot-status {
+  background: #ffffff;
+}

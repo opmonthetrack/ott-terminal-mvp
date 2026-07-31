@@ -24,6 +24,22 @@ export type XrplWalletProfile = {
   loadedAt: string;
 };
 
+export type XrplTransactionSnapshot = {
+  hash: string;
+  network: XrplNetwork;
+  validated: boolean;
+  successful: boolean;
+  result: string;
+  transactionType: string;
+  account: string;
+  destination: string;
+  amount: string;
+  feeXrp: string;
+  sourceTag: number | null;
+  destinationTag: number | null;
+  ledgerIndex: number;
+};
+
 type XrplResponse = {
   id?: number;
   status?: string;
@@ -44,6 +60,28 @@ type XrplResponse = {
     lines?: Array<{ currency?: string; balance?: string; account?: string }>;
     account_objects?: Array<{ LedgerEntryType?: string; [key: string]: unknown }>;
     account_nfts?: Array<{ NFTokenID?: string }>;
+    hash?: string;
+    validated?: boolean;
+    TransactionType?: string;
+    Account?: string;
+    Destination?: string;
+    Amount?: string | { currency?: string; issuer?: string; value?: string };
+    Fee?: string;
+    SourceTag?: number;
+    DestinationTag?: number;
+    tx_json?: {
+      hash?: string;
+      TransactionType?: string;
+      Account?: string;
+      Destination?: string;
+      Amount?: string | { currency?: string; issuer?: string; value?: string };
+      Fee?: string;
+      SourceTag?: number;
+      DestinationTag?: number;
+    };
+    meta?: {
+      TransactionResult?: string;
+    };
   };
 };
 
@@ -117,6 +155,17 @@ function countObjects(objects: Array<{ LedgerEntryType?: string }>, type: string
   return objects.filter((object) => object.LedgerEntryType === type).length;
 }
 
+function formatTransactionAmount(value: unknown) {
+  if (typeof value === "string") return `${dropsToXrp(value)} XRP`;
+  if (typeof value === "object" && value !== null) {
+    const amount = value as { currency?: string; value?: string };
+    const currency = amount.currency?.trim() || "issued asset";
+    const quantity = amount.value?.trim() || "unknown amount";
+    return `${quantity} ${currency}`;
+  }
+  return "Not displayed";
+}
+
 export async function loadXrplWalletProfile(
   address: string,
   network: XrplNetwork = "mainnet",
@@ -183,5 +232,43 @@ export async function loadXrplWalletProfile(
     objectCountLoaded: objects.length,
     partial,
     loadedAt: new Date().toISOString(),
+  };
+}
+
+export async function loadXrplTransactionSnapshot(
+  hash: string,
+  network: XrplNetwork = "mainnet",
+): Promise<XrplTransactionSnapshot> {
+  const normalizedHash = hash.trim().toUpperCase();
+  if (!/^[A-F0-9]{64}$/.test(normalizedHash)) {
+    throw new Error("Enter a valid 64-character XRPL transaction hash.");
+  }
+
+  const response = await requestXrpl(network, {
+    command: "tx",
+    transaction: normalizedHash,
+    binary: false,
+  });
+  const result = response.result;
+  const transaction = result?.tx_json ?? result;
+  if (!transaction?.TransactionType || !transaction.Account) {
+    throw new Error("No transaction was found for this hash on the selected network.");
+  }
+
+  const transactionResult = result?.meta?.TransactionResult ?? "Unknown";
+  return {
+    hash: transaction.hash?.toUpperCase() || normalizedHash,
+    network,
+    validated: result?.validated === true,
+    successful: transactionResult === "tesSUCCESS",
+    result: transactionResult,
+    transactionType: transaction.TransactionType,
+    account: transaction.Account,
+    destination: transaction.Destination ?? "",
+    amount: formatTransactionAmount(transaction.Amount),
+    feeXrp: transaction.Fee ? dropsToXrp(transaction.Fee) : "Unknown",
+    sourceTag: typeof transaction.SourceTag === "number" ? transaction.SourceTag : null,
+    destinationTag: typeof transaction.DestinationTag === "number" ? transaction.DestinationTag : null,
+    ledgerIndex: result?.ledger_index ?? 0,
   };
 }

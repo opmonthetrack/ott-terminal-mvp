@@ -99,6 +99,7 @@ for (const profile of profiles) {
   }
 
   const toolsButton = page.getByRole("button", { name: /open all tools|open alle tools/i });
+  await toolsButton.waitFor({ state: "visible", timeout: 15_000 }).catch(() => undefined);
   if (!(await toolsButton.isVisible().catch(() => false))) {
     addFinding("critical", "navigation", "All-tools button is not visible.", { profile: profile.name });
   } else {
@@ -117,8 +118,14 @@ for (const profile of profiles) {
   }
 
   if (profile.name === "mobile") {
-    const enVisible = await page.getByRole("button", { name: "EN", exact: true }).isVisible().catch(() => false);
-    const nlVisible = await page.getByRole("button", { name: "NL", exact: true }).isVisible().catch(() => false);
+    const enButton = page.getByRole("button", { name: "EN", exact: true });
+    const nlButton = page.getByRole("button", { name: "NL", exact: true });
+    await Promise.all([
+      enButton.waitFor({ state: "visible", timeout: 15_000 }).catch(() => undefined),
+      nlButton.waitFor({ state: "visible", timeout: 15_000 }).catch(() => undefined),
+    ]);
+    const enVisible = await enButton.isVisible().catch(() => false);
+    const nlVisible = await nlButton.isVisible().catch(() => false);
     if (!enVisible || !nlVisible) addFinding("high", "language", "EN/NL controls are not directly visible on mobile.", { profile: profile.name });
   }
 

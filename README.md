@@ -18,6 +18,24 @@ Visitors can explore the platform without connecting a wallet. An OTT account st
 
 OTT Terminal does not custody funds, request recovery secrets, execute hidden transactions, provide financial advice, promise yield or guarantee an NFT’s resale value.
 
+## Two entry modes, one OTT codebase
+
+The normal browser URL keeps the complete OTT Terminal with all public hubs, accounts, supported wallets, Academy, credentials, Access Pass and founder-protected tooling.
+
+When Xaman launches the same URL with an `xAppToken`, the root router renders a dedicated Xaman Safety Companion instead. This review-focused xApp mode:
+
+- reads the account and network selected in Xaman;
+- displays a read-only public XRPL wallet snapshot;
+- verifies transaction hashes entered manually or through Xaman's native QR scanner;
+- creates no payment, trustline, token, NFT or signing request;
+- contains no NFT-gated functionality, speculation promotion or donation flow;
+- opens support, legal pages and public source code through Xaman's native external-browser method;
+- does not use polling, cookies, `localStorage` or `sessionStorage`.
+
+For a browser-only layout preview, use `/?xapp=1`. Verified account context is available only when Xaman supplies a real one-time xApp token.
+
+The reviewer explanation, qualification matrix, initial-question answers and owner checklist are maintained in [XAMAN_XAPP_SUBMISSION.md](XAMAN_XAPP_SUBMISSION.md).
+
 ## Public navigation
 
 The public product is organized into nine hubs:
@@ -238,6 +256,7 @@ Never commit real credentials or paste service-role, Xaman or wallet secrets int
 | Route | Responsibility |
 | --- | --- |
 | `api/ott.ts` | Core Xaman and OTT proof actions |
+| `src/lib/xamanXappRuntime.ts` | Native xApp SDK bridge and registered public Xaman application identifier; never contains the API secret |
 | `api/roadmap-vote.ts` | Consolidated roadmap voting |
 | `api/access-payment.ts` | Access Pass readiness, payment and delivery lifecycle |
 | `api/support-payment.ts` | Voluntary support payloads and validated totals |

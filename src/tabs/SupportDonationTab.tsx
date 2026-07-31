@@ -226,7 +226,7 @@ export function SupportDonationTab() {
               <OTTLogoMark size="lg" />
               <HeartHandshake className="text-pink-300" size={30} />
             </div>
-            <p className="mt-8 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+            <p className="mt-8 text-xs font-semibold uppercase tracking-[0.2em] text-slate-200">
               {en ? "Validated total" : "Gevalideerd totaal"}
             </p>
             <p className="mt-2 text-4xl font-semibold">{stats ? `${stats.totalXrp} XRP` : "—"}</p>
@@ -462,7 +462,7 @@ function Pill({ text }: { text: string }) {
 function DarkMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-      <p className="text-xs text-slate-400">{label}</p>
+      <p className="text-xs text-slate-200">{label}</p>
       <p className="mt-2 text-xl font-semibold">{value}</p>
     </div>
   );

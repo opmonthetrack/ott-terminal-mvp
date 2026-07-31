@@ -8,9 +8,11 @@
     "build": "vite build --configLoader runner",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
+    "audit:dependencies": "npm audit --omit=dev --audit-level=moderate",
     "audit:routes": "node scripts/audit-public-routes.mjs",
+    "audit:xapp": "node scripts/audit-xaman-xapp.mjs",
     "lint": "tsc --noEmit",
-    "quality": "npm run audit:routes && npm run lint && npm run build"
+    "quality": "npm run audit:routes && npm run audit:xapp && npm run audit:dependencies && npm run lint && npm run build"
   },
   "dependencies": {
     "@axe-core/playwright": "^4.12.1",
@@ -30,7 +32,7 @@
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
     "vite": "^6.2.3",
-    "xumm": "^1.0.0"
+    "xumm": "^1.8.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
@@ -43,5 +45,11 @@
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.3"
+  },
+  "overrides": {
+    "body-parser": "1.20.6",
+    "nanoid": "3.3.16",
+    "postcss": "8.5.25",
+    "protobufjs": "7.6.5"
   }
 }

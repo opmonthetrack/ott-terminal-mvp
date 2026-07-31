@@ -1,0 +1,214 @@
+import { useEffect } from "react";
+import { Mail } from "lucide-react";
+import App from "../App.tsx";
+import { AcademyCoachPopup } from "../components/AcademyCoachPopup";
+import { MobileTerminalDock } from "../components/MobileTerminalDock";
+import { TerminalStartTour } from "../components/TerminalStartTour";
+import { hasFounderAccess } from "../lib/ottRoles";
+import { useOttAuthSession } from "../lib/useOttAuthSession";
+import { AccessPassIssuerConsole } from "../tabs/AccessPassIssuerConsole";
+import { CertificateIssuerConsole } from "../tabs/CertificateIssuerConsole";
+import { FounderAccessManager } from "../tabs/FounderAccessManager";
+import { FounderResearchReview } from "../tabs/FounderResearchReview";
+import "../index.css";
+
+// These errors are injected by optional wallet browser extensions and are not
+// application failures. This listener is loaded only for the full web terminal.
+window.addEventListener("unhandledrejection", (event) => {
+  if (event.reason?.message?.includes("MetaMask") || event.reason?.message?.includes("ethereum")) {
+    event.preventDefault();
+  }
+});
+
+window.addEventListener("error", (event) => {
+  if (event.message.includes("MetaMask")) {
+    event.preventDefault();
+  }
+});
+
+const FOUNDER_QUERY_KEYS = ["founder", "issuer", "accessissuer", "accessmanager", "research"] as const;
+const FOUNDER_TAB_IDS = new Set([
+  "pitchmode",
+  "submission",
+  "smoketest",
+  "launch",
+  "truthdesk",
+  "marketplace",
+  "otttestnet",
+  "portfolio",
+  "partners",
+  "factory",
+  "profile",
+  "token",
+  "rewardpolicy",
+  "ai",
+]);
+
+function readFounderRequest() {
+  const params = new URLSearchParams(window.location.search);
+  const founderFlag = params.get("founder") === "1";
+  const consoleRequested = FOUNDER_QUERY_KEYS.slice(1).some((key) => params.get(key) === "1");
+  const founderTabRequested = FOUNDER_TAB_IDS.has(params.get("tab") ?? "");
+
+  return {
+    requested: founderFlag || consoleRequested || founderTabRequested,
+    showCertificateIssuer: params.get("issuer") === "1",
+    showAccessPassIssuer: params.get("accessissuer") === "1",
+    showAccessManager: params.get("accessmanager") === "1",
+    showResearchReview: params.get("research") === "1",
+  };
+}
+
+function sanitizeFounderUrl() {
+  const url = new URL(window.location.href);
+  FOUNDER_QUERY_KEYS.forEach((key) => url.searchParams.delete(key));
+
+  if (FOUNDER_TAB_IDS.has(url.searchParams.get("tab") ?? "")) {
+    url.searchParams.delete("tab");
+  }
+
+  window.history.replaceState({}, document.title, url.toString());
+  return url;
+}
+
+function PublicLegalFooter() {
+  return (
+    <footer className="border-t border-slate-200 bg-white px-5 py-8 text-xs text-slate-500 sm:px-8">
+      <div className="mx-auto max-w-7xl space-y-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-4">
+          <div>
+            <p className="font-semibold text-slate-900">© 2026 TruthOnTheTrack / OnTheTrack — XRPL OTT Terminal</p>
+            <p className="mt-1 text-[11px] text-slate-500 max-w-2xl">
+              OTT Terminal is an independent analytical & utility platform for the XRP Ledger. Not financial or investment advice. SourceTag 2606170002.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4">
+            <a
+              href="mailto:info@onthetrack.com"
+              className="inline-flex items-center gap-1.5 font-medium text-blue-700 hover:text-blue-900 bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-xl transition-all"
+            >
+              <Mail size={14} />
+              <span>info@onthetrack.com</span>
+            </a>
+
+            <nav className="flex flex-wrap gap-x-4 gap-y-2" aria-label="Legal information">
+              <a className="font-medium text-slate-600 hover:text-blue-700" href="/privacy.html">
+                Privacy Policy
+              </a>
+              <a className="font-medium text-slate-600 hover:text-blue-700" href="/terms.html">
+                Terms of Use
+              </a>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+function PreviewBuildBadge() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("preview") !== "46") return null;
+
+  return (
+    <div
+      className="fixed right-3 top-[82px] z-[260] rounded-xl border-2 border-emerald-300 bg-emerald-950 px-3 py-2 text-xs font-bold text-white shadow-2xl sm:right-5"
+      role="status"
+      aria-live="polite"
+    >
+      PR46 TEST BUILD · 2026-07-28B
+    </div>
+  );
+}
+
+function AuthLoadingScreen() {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-white px-6 text-slate-950">
+      <div role="status" aria-live="polite" className="text-center">
+        <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-blue-700" />
+        <p className="mt-5 text-sm font-medium text-slate-600">Verifying secure account access…</p>
+      </div>
+    </main>
+  );
+}
+
+function FounderAccessDenied({ signedIn }: { signedIn: boolean }) {
+  useEffect(() => {
+    sanitizeFounderUrl();
+  }, []);
+
+  function continueToOtt() {
+    const url = sanitizeFounderUrl();
+    if (!signedIn) {
+      url.searchParams.set("tab", "wallet");
+    }
+    window.location.assign(url.toString());
+  }
+
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-5 py-16 text-slate-950">
+      <section className="w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-xl sm:p-12">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-rose-50 text-2xl" aria-hidden="true">
+          🔒
+        </div>
+        <h1 className="mt-6 text-3xl font-semibold tracking-tight">Founder access protected</h1>
+        <p className="mt-4 text-sm leading-7 text-slate-600">
+          Founder, issuer, research and launch controls are only available to an authenticated OTT account with a trusted
+          <code className="mx-1 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-800">app_metadata.ott_role</code>
+          value of <strong>founder</strong> or <strong>admin</strong>.
+        </p>
+        <p className="mt-3 text-sm leading-7 text-slate-500">
+          A URL parameter, wallet connection or Access Pass can never grant founder permissions.
+        </p>
+        <button
+          type="button"
+          onClick={continueToOtt}
+          className="mt-8 inline-flex min-h-11 items-center justify-center rounded-xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white hover:bg-slate-800"
+        >
+          {signedIn ? "Back to OTT Terminal" : "Open OTT sign in"}
+        </button>
+      </section>
+    </main>
+  );
+}
+
+export default function OttWebApplication() {
+  const { user, signedIn, loading } = useOttAuthSession();
+  const founderRequest = readFounderRequest();
+  const founderAuthorized = hasFounderAccess(user);
+
+  if (loading && founderRequest.requested) {
+    return <AuthLoadingScreen />;
+  }
+
+  if (founderRequest.requested && !founderAuthorized) {
+    return <FounderAccessDenied signedIn={signedIn} />;
+  }
+
+  if (founderAuthorized) {
+    if (founderRequest.showResearchReview) {
+      return <FounderResearchReview />;
+    }
+    if (founderRequest.showAccessManager) {
+      return <FounderAccessManager />;
+    }
+    if (founderRequest.showAccessPassIssuer) {
+      return <AccessPassIssuerConsole />;
+    }
+    if (founderRequest.showCertificateIssuer) {
+      return <CertificateIssuerConsole />;
+    }
+  }
+
+  return (
+    <>
+      <App />
+      <PublicLegalFooter />
+      <AcademyCoachPopup />
+      <TerminalStartTour />
+      <MobileTerminalDock />
+      <PreviewBuildBadge />
+    </>
+  );
+}
