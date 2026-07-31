@@ -5,8 +5,10 @@ import process from "node:process";
 const root = process.cwd();
 const appPath = path.join(root, "src", "App.tsx");
 const mainPath = path.join(root, "src", "main.tsx");
+const webPath = path.join(root, "src", "web", "OttWebApplication.tsx");
 const app = fs.readFileSync(appPath, "utf8");
 const main = fs.readFileSync(mainPath, "utf8");
+const web = fs.readFileSync(webPath, "utf8");
 
 const expectedPublicHubs = [
   "home",
@@ -135,7 +137,7 @@ const requiredRolePolicyFragments = [
   'app_metadata.ott_role',
 ];
 for (const fragment of requiredRolePolicyFragments) {
-  if (!app.includes(fragment) && !main.includes(fragment)) {
+  if (!app.includes(fragment) && !main.includes(fragment) && !web.includes(fragment)) {
     fail(`missing role/access policy fragment: ${fragment}`);
   }
 }
@@ -148,8 +150,8 @@ const requiredFounderGuardFragments = [
   "hasFounderAccess(user)",
 ];
 for (const fragment of requiredFounderGuardFragments) {
-  if (!main.includes(fragment)) {
-    fail(`missing founder guard fragment in src/main.tsx: ${fragment}`);
+  if (!web.includes(fragment)) {
+    fail(`missing founder guard fragment in src/web/OttWebApplication.tsx: ${fragment}`);
   }
 }
 
@@ -168,6 +170,7 @@ for (const fragment of requiredReturnRouting) {
 const requiredPublicFiles = [
   "public/privacy.html",
   "public/terms.html",
+  "public/xapp-support.html",
   "public/robots.txt",
   "public/sitemap.xml",
 ];

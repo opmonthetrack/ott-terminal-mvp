@@ -39,6 +39,12 @@ jobs:
       - name: Audit all 17 public routes
         run: npm run audit:routes
 
+      - name: Audit dedicated Xaman xApp boundary
+        run: npm run audit:xapp
+
+      - name: Block moderate, high and critical dependency advisories
+        run: npm run audit:dependencies
+
       - name: TypeScript validation
         shell: bash
         run: |
@@ -67,6 +73,7 @@ jobs:
           test -s dist/index.html
           test -s dist/privacy.html
           test -s dist/terms.html
+          test -s dist/xapp-support.html
           test -s dist/robots.txt
           test -s dist/sitemap.xml
           test -s dist/manifest.webmanifest
