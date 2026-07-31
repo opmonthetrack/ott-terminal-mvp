@@ -1,61 +1,57 @@
 .xaman-xapp-shell {
-  --xapp-bg: #f3f6fb;
+  --xapp-bg: #eef2f8;
   --xapp-surface: #ffffff;
-  --xapp-surface-muted: #f7f9fc;
-  --xapp-text: #111827;
-  --xapp-muted: #475569;
-  --xapp-border: #dbe3ef;
+  --xapp-surface-muted: #f5f7fb;
+  --xapp-text: #0f172a;
+  --xapp-muted: #526076;
+  --xapp-border: #d9e1ec;
   --xapp-primary: #315cff;
   --xapp-primary-strong: #2147db;
   --xapp-accent: #d8187c;
   --xapp-success: #087a55;
-  --xapp-success-bg: #e8f8f1;
-  --xapp-warning: #9a5200;
-  --xapp-warning-bg: #fff5dd;
+  --xapp-success-bg: #e6f8f0;
+  --xapp-warning: #8a4b00;
+  --xapp-warning-bg: #fff4da;
   --xapp-error: #a61b2b;
   --xapp-error-bg: #fff0f2;
   min-height: 100svh;
-  background: var(--xapp-bg);
+  background:
+    radial-gradient(circle at 10% 0%, rgb(49 92 255 / 11%), transparent 32rem),
+    var(--xapp-bg);
   color: var(--xapp-text);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 16px;
   line-height: 1.55;
 }
 
-@keyframes xaman-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.xaman-xapp-shell .animate-spin {
-  animation: xaman-spin 1s linear infinite;
-}
+@keyframes xaman-spin { to { transform: rotate(360deg); } }
+@keyframes xaman-view-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+.xaman-xapp-shell .animate-spin { animation: xaman-spin 1s linear infinite; }
 
 .xaman-xapp-shell[data-theme="dark"] {
-  --xapp-bg: #0b1020;
-  --xapp-surface: #141b2f;
-  --xapp-surface-muted: #1b2440;
+  --xapp-bg: #080d19;
+  --xapp-surface: #121a2a;
+  --xapp-surface-muted: #192338;
   --xapp-text: #f8fafc;
-  --xapp-muted: #cbd5e1;
-  --xapp-border: #33415f;
-  --xapp-primary: #6f8cff;
-  --xapp-primary-strong: #8ca2ff;
+  --xapp-muted: #c4cede;
+  --xapp-border: #324158;
+  --xapp-primary: #7891ff;
+  --xapp-primary-strong: #91a5ff;
   --xapp-success: #6ee7b7;
   --xapp-success-bg: #103a31;
-  --xapp-warning: #fbbf24;
+  --xapp-warning: #f8c251;
   --xapp-warning-bg: #3b2b12;
   --xapp-error: #fda4af;
   --xapp-error-bg: #411b25;
 }
 
 .xaman-xapp-shell[data-theme="moonlight"] {
-  --xapp-bg: #10172b;
-  --xapp-surface: #19223c;
-  --xapp-surface-muted: #222d4d;
-  --xapp-text: #f2f5ff;
-  --xapp-muted: #c7d2fe;
-  --xapp-border: #3b4b78;
+  --xapp-bg: #0e1528;
+  --xapp-surface: #18223a;
+  --xapp-surface-muted: #202d4a;
+  --xapp-text: #f3f6ff;
+  --xapp-muted: #c7d2e8;
+  --xapp-border: #3a4b73;
   --xapp-primary: #7aa2ff;
   --xapp-primary-strong: #9ab8ff;
   --xapp-success: #78e2bd;
@@ -67,9 +63,9 @@
 }
 
 .xaman-xapp-shell[data-theme="royal"] {
-  --xapp-bg: #191033;
-  --xapp-surface: #27194a;
-  --xapp-surface-muted: #33235c;
+  --xapp-bg: #160d2d;
+  --xapp-surface: #251747;
+  --xapp-surface-muted: #302057;
   --xapp-text: #fbf8ff;
   --xapp-muted: #ddd2f5;
   --xapp-border: #523c7d;
@@ -85,397 +81,253 @@
 
 .xaman-xapp-container {
   width: min(100%, 760px);
+  min-height: 100svh;
   margin: 0 auto;
-  padding: max(20px, env(safe-area-inset-top)) 16px max(28px, env(safe-area-inset-bottom));
+  padding: max(12px, env(safe-area-inset-top)) 14px calc(104px + env(safe-area-inset-bottom));
 }
 
-.xaman-xapp-header {
-  padding: 8px 2px 20px;
-}
-
+.xaman-app-bar,
 .xaman-brand-row,
+.xaman-app-actions,
+.xaman-hero-topline,
+.xaman-hero-topline span,
+.xaman-balance-row,
+.xaman-hero-actions,
 .xaman-section-title-row,
-.xaman-trust-row,
+.xaman-positive-line,
+.xaman-warning-list li,
+.xaman-asset-heading,
+.xaman-chip-row,
+.xaman-status-badge,
+.xaman-small-chip,
+.xaman-transaction-row,
+.xaman-transaction-meta,
 .xaman-action-row,
 .xaman-loading,
 .xaman-error,
 .xaman-notice,
-.xaman-result-status {
+.xaman-result-status,
+.xaman-data-row,
+.xaman-security-item,
+.xaman-bottom-nav,
+.xaman-text-link {
   display: flex;
   align-items: center;
 }
 
-.xaman-brand-row {
+.xaman-app-bar {
+  position: sticky;
+  z-index: 20;
+  top: 0;
+  justify-content: space-between;
   gap: 12px;
+  margin: -12px -14px 12px;
+  padding: max(12px, env(safe-area-inset-top)) 16px 11px;
+  border-bottom: 1px solid color-mix(in srgb, var(--xapp-border) 76%, transparent);
+  background: color-mix(in srgb, var(--xapp-bg) 88%, transparent);
+  backdrop-filter: blur(18px);
 }
 
-.xaman-brand-logo {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  object-fit: cover;
-  border: 1px solid var(--xapp-border);
+.xaman-brand-row { gap: 10px; }
+.xaman-brand-logo { width: 42px; height: 42px; border: 1px solid var(--xapp-border); border-radius: 13px; object-fit: cover; }
+.xaman-brand-row strong { display: block; font-size: 16px; line-height: 1.2; }
+.xaman-eyebrow { margin: 0; color: var(--xapp-primary); font-size: 11px; font-weight: 850; letter-spacing: .13em; text-transform: uppercase; }
+.xaman-app-actions { gap: 8px; }
+.xaman-icon-button { display: inline-flex; width: 44px; min-height: 44px; align-items: center; justify-content: center; border: 1px solid var(--xapp-border); border-radius: 13px; background: var(--xapp-surface); color: var(--xapp-text); }
+.xaman-icon-button:disabled { opacity: .45; }
+
+.xaman-view { animation: xaman-view-in .18s ease-out; }
+.xaman-page-header { padding: 12px 4px 18px; }
+.xaman-page-header h1 { margin: 5px 0 7px; font-size: clamp(34px, 10vw, 48px); line-height: 1; letter-spacing: -.045em; }
+.xaman-page-header > p:last-child { margin: 0; max-width: 620px; color: var(--xapp-muted); font-size: 16px; line-height: 1.6; }
+
+.xaman-hero-card {
+  overflow: hidden;
+  position: relative;
+  margin-top: 5px;
+  padding: 20px;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 92% 8%, rgb(255 255 255 / 24%), transparent 25%),
+    linear-gradient(135deg, #203fd0, #315cff 56%, #7a49e6);
+  box-shadow: 0 18px 42px rgb(36 67 180 / 28%);
+  color: #fff;
 }
 
-.xaman-eyebrow {
-  margin: 0;
-  color: var(--xapp-primary);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-}
+.xaman-hero-topline { justify-content: space-between; gap: 10px; font-size: 12px; font-weight: 750; }
+.xaman-hero-topline span { gap: 6px; }
+.xaman-live-dot::before { width: 7px; height: 7px; border-radius: 999px; background: #6ee7b7; box-shadow: 0 0 0 4px rgb(110 231 183 / 16%); content: ""; }
+.xaman-home-title { margin: 24px 0 0; font-size: 18px; line-height: 1.2; letter-spacing: -.02em; }
+.xaman-hero-label { margin: 5px 0 2px; color: rgb(255 255 255 / 78%); font-size: 13px; font-weight: 700; }
+.xaman-balance-row { gap: 8px; }
+.xaman-balance-row strong { font-size: clamp(38px, 12vw, 58px); line-height: 1; letter-spacing: -.05em; }
+.xaman-balance-row span { margin-top: 10px; font-size: 17px; font-weight: 800; }
+.xaman-address-line { margin: 12px 0 0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 14px; }
+.xaman-hero-actions { gap: 9px; margin-top: 20px; }
+.xaman-hero-actions button { display: inline-flex; min-height: 43px; flex: 1; align-items: center; justify-content: center; gap: 7px; border: 1px solid rgb(255 255 255 / 26%); border-radius: 12px; background: rgb(255 255 255 / 13%); color: #fff; font-weight: 800; }
+.xaman-hero-actions button:disabled { opacity: .5; }
 
-.xaman-third-party {
-  margin: 3px 0 0;
-  color: var(--xapp-muted);
-  font-size: 13px;
-}
-
-.xaman-xapp-header h1 {
-  margin: 24px 0 12px;
-  max-width: 680px;
-  font-size: clamp(32px, 9vw, 48px);
-  line-height: 1.04;
-  letter-spacing: -0.04em;
-}
-
-.xaman-lead,
-.xaman-muted,
-.xaman-footnote {
-  color: var(--xapp-muted);
-}
-
-.xaman-lead {
-  margin: 0;
-  font-size: 17px;
-  line-height: 1.65;
-}
-
-.xaman-trust-row {
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 18px;
-}
-
-.xaman-trust-pill {
-  display: inline-flex;
-  min-height: 40px;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border: 1px solid var(--xapp-border);
-  border-radius: 999px;
-  background: var(--xapp-surface);
-  color: var(--xapp-text);
-  font-size: 14px;
-  font-weight: 700;
-}
+.xaman-stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+.xaman-stat-card { min-width: 0; padding: 15px; border: 1px solid var(--xapp-border); border-radius: 17px; background: var(--xapp-surface); box-shadow: 0 8px 24px rgb(15 23 42 / 5%); }
+.xaman-stat-card > span { display: inline-flex; width: 38px; height: 38px; align-items: center; justify-content: center; border-radius: 12px; background: color-mix(in srgb, var(--xapp-primary) 12%, transparent); color: var(--xapp-primary); }
+.xaman-stat-card p { margin: 12px 0 3px; color: var(--xapp-muted); font-size: 12px; font-weight: 750; }
+.xaman-stat-card strong { display: block; overflow-wrap: anywhere; font-size: 17px; }
 
 .xaman-card,
+.xaman-asset-card,
+.xaman-transaction-card,
 .xaman-notice {
   border: 1px solid var(--xapp-border);
   border-radius: 20px;
   background: var(--xapp-surface);
-  box-shadow: 0 12px 32px rgb(15 23 42 / 8%);
+  box-shadow: 0 10px 30px rgb(15 23 42 / 6%);
 }
+.xaman-card { margin-top: 12px; padding: 18px; }
+.xaman-notice { width: 100%; gap: 10px; margin: 0 0 12px; padding: 13px 15px; color: var(--xapp-text); text-align: left; }
+.xaman-notice span { flex: 1; }
 
-.xaman-card {
-  margin-top: 14px;
-  padding: 18px;
-}
+.xaman-section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.xaman-section-title-row { min-width: 0; gap: 11px; }
+.xaman-section-icon { display: inline-flex; width: 42px; height: 42px; flex: 0 0 42px; align-items: center; justify-content: center; border-radius: 13px; background: color-mix(in srgb, var(--xapp-primary) 13%, transparent); color: var(--xapp-primary); }
+.xaman-section-heading h2 { margin: 3px 0 0; font-size: 20px; line-height: 1.2; }
+.xaman-muted, .xaman-footnote { color: var(--xapp-muted); }
+.xaman-muted { margin: 0 0 14px; }
+.xaman-footnote { margin: 13px 0 0; font-size: 13px; }
+.xaman-boundary { margin: 18px 5px; color: var(--xapp-muted); font-size: 12px; text-align: center; }
 
-.xaman-notice {
-  gap: 12px;
-  margin: 0 0 14px;
-  padding: 14px 16px;
-  color: var(--xapp-text);
-}
+.xaman-positive-line { gap: 9px; padding: 13px; border-radius: 13px; background: var(--xapp-success-bg); color: var(--xapp-success); font-weight: 700; }
+.xaman-warning-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.xaman-warning-list li { align-items: flex-start; gap: 9px; padding: 12px; border-radius: 13px; background: var(--xapp-warning-bg); color: var(--xapp-warning); }
+.xaman-warning-list svg { flex: 0 0 auto; margin-top: 2px; }
+.xaman-text-link { min-height: 44px; justify-content: space-between; gap: 8px; width: 100%; margin-top: 10px; border: 0; background: transparent; color: var(--xapp-primary); font-weight: 800; text-align: left; }
 
-.xaman-section-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 16px;
-}
+.xaman-segmented { display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; padding: 5px; border: 1px solid var(--xapp-border); border-radius: 15px; background: var(--xapp-surface); }
+.xaman-segmented button { min-height: 45px; border: 0; border-radius: 11px; background: transparent; color: var(--xapp-muted); font-weight: 800; }
+.xaman-segmented button span { margin-left: 5px; opacity: .7; }
+.xaman-segmented button.is-active { background: var(--xapp-primary); color: #fff; box-shadow: 0 7px 18px color-mix(in srgb, var(--xapp-primary) 26%, transparent); }
+.xaman-list-stack { display: grid; gap: 11px; margin-top: 12px; }
+.xaman-asset-card, .xaman-transaction-card { padding: 16px; }
+.xaman-asset-heading { gap: 11px; margin-bottom: 13px; }
+.xaman-asset-heading > div { min-width: 0; flex: 1; }
+.xaman-asset-heading p, .xaman-asset-heading strong { display: block; margin: 0; overflow-wrap: anywhere; }
+.xaman-asset-heading p { color: var(--xapp-muted); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+.xaman-asset-heading strong { margin-top: 2px; font-size: 21px; }
+.xaman-asset-icon { display: inline-flex; width: 42px; height: 42px; flex: 0 0 42px; align-items: center; justify-content: center; border-radius: 13px; background: color-mix(in srgb, var(--xapp-accent) 12%, transparent); color: var(--xapp-accent); }
 
-.xaman-section-title-row {
-  min-width: 0;
-  gap: 12px;
-}
+.xaman-data-row { min-height: 45px; gap: 9px; border-top: 1px solid var(--xapp-border); }
+.xaman-data-row > span { flex: 0 0 32%; color: var(--xapp-muted); font-size: 12px; font-weight: 750; }
+.xaman-data-row strong { min-width: 0; flex: 1; overflow-wrap: anywhere; font-size: 14px; text-align: right; }
+.xaman-data-row button { display: inline-flex; width: 34px; height: 34px; flex: 0 0 34px; align-items: center; justify-content: center; border: 0; border-radius: 10px; background: var(--xapp-surface-muted); color: var(--xapp-primary); }
+.is-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.xaman-chip-row { flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.xaman-small-chip { gap: 4px; padding: 5px 8px; border: 1px solid var(--xapp-border); border-radius: 999px; color: var(--xapp-muted); font-size: 11px; font-weight: 800; }
+.xaman-small-chip.is-active { border-color: color-mix(in srgb, var(--xapp-success) 30%, var(--xapp-border)); background: var(--xapp-success-bg); color: var(--xapp-success); }
+.xaman-small-chip.is-warning { border-color: color-mix(in srgb, var(--xapp-warning) 30%, var(--xapp-border)); background: var(--xapp-warning-bg); color: var(--xapp-warning); }
+.xaman-status-badge { flex: 0 0 auto; gap: 4px; padding: 5px 8px; border-radius: 999px; font-size: 10px; font-weight: 850; }
+.xaman-status-badge.is-positive { background: var(--xapp-success-bg); color: var(--xapp-success); }
+.xaman-status-badge.is-warning { background: var(--xapp-warning-bg); color: var(--xapp-warning); }
+.xaman-status-badge.is-neutral { background: var(--xapp-surface-muted); color: var(--xapp-muted); }
 
-.xaman-section-icon {
-  display: inline-flex;
-  width: 44px;
-  height: 44px;
-  flex: 0 0 44px;
-  align-items: center;
+.xaman-transaction-row { width: 100%; min-height: 58px; gap: 10px; border: 0; background: transparent; color: var(--xapp-text); padding: 0; text-align: left; }
+.xaman-direction-icon { display: inline-flex; width: 40px; height: 40px; flex: 0 0 40px; align-items: center; justify-content: center; border-radius: 13px; }
+.xaman-direction-icon.is-incoming { background: var(--xapp-success-bg); color: var(--xapp-success); }
+.xaman-direction-icon.is-outgoing { background: color-mix(in srgb, var(--xapp-primary) 12%, transparent); color: var(--xapp-primary); }
+.xaman-direction-icon.is-self, .xaman-direction-icon.is-related { background: var(--xapp-surface-muted); color: var(--xapp-muted); }
+.xaman-transaction-main { min-width: 0; flex: 1; }
+.xaman-transaction-main strong, .xaman-transaction-main span, .xaman-transaction-value strong, .xaman-transaction-value span { display: block; }
+.xaman-transaction-main strong { font-size: 14px; }
+.xaman-transaction-main span { overflow-wrap: anywhere; color: var(--xapp-muted); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; }
+.xaman-transaction-value { max-width: 42%; text-align: right; }
+.xaman-transaction-value strong { overflow-wrap: anywhere; font-size: 13px; }
+.xaman-transaction-value span { margin-top: 2px; font-size: 10px; font-weight: 850; }
+.xaman-transaction-value .is-ok { color: var(--xapp-success); }
+.xaman-transaction-value .is-attention { color: var(--xapp-warning); }
+.xaman-transaction-card .xaman-transaction-row { border-bottom: 1px solid var(--xapp-border); padding-bottom: 10px; }
+.xaman-transaction-meta { justify-content: space-between; gap: 10px; padding: 9px 1px 0; color: var(--xapp-muted); font-size: 11px; }
+
+.xaman-field-label { display: block; margin: 16px 0 7px; font-weight: 800; }
+.xaman-input { width: 100%; min-height: 92px; resize: vertical; border: 1px solid var(--xapp-border); border-radius: 14px; background: var(--xapp-surface-muted); color: var(--xapp-text); padding: 13px 14px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 16px; line-height: 1.5; }
+.xaman-single-input { min-height: 50px; resize: none; }
+.xaman-input::placeholder { color: var(--xapp-muted); opacity: .8; }
+.xaman-action-row { flex-wrap: wrap; gap: 9px; margin-top: 11px; }
+.xaman-button { display: inline-flex; min-height: 48px; flex: 1 1 180px; align-items: center; justify-content: center; gap: 8px; border: 1px solid transparent; border-radius: 13px; padding: 10px 14px; font-size: 14px; font-weight: 850; }
+.xaman-button:disabled { opacity: .55; }
+.xaman-button-primary { background: var(--xapp-primary); color: #fff; }
+.xaman-button-primary:hover:not(:disabled) { background: var(--xapp-primary-strong); }
+.xaman-button-secondary { border-color: var(--xapp-border); background: var(--xapp-surface-muted); color: var(--xapp-text); }
+.xaman-full-button { width: 100%; margin-top: 12px; }
+
+.xaman-loading, .xaman-error { gap: 10px; border-radius: 14px; padding: 14px; }
+.xaman-loading { background: var(--xapp-surface); color: var(--xapp-muted); }
+.xaman-error { margin: 10px 0; background: var(--xapp-error-bg); color: var(--xapp-error); }
+.xaman-result { margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--xapp-border); }
+.xaman-result-status { gap: 11px; margin-bottom: 11px; border-radius: 14px; padding: 13px; }
+.xaman-result-status.is-success { background: var(--xapp-success-bg); color: var(--xapp-success); }
+.xaman-result-status.is-warning { background: var(--xapp-warning-bg); color: var(--xapp-warning); }
+.xaman-result-status strong, .xaman-result-status span { display: block; }
+.xaman-result-status span { font-size: 13px; }
+.xaman-session-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.xaman-data-point { min-width: 0; padding: 11px; border: 1px solid var(--xapp-border); border-radius: 13px; background: var(--xapp-surface-muted); }
+.xaman-data-point span { display: block; color: var(--xapp-muted); font-size: 10px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+.xaman-data-point strong { display: block; margin-top: 4px; overflow-wrap: anywhere; font-size: 13px; }
+
+.xaman-flag-grid { display: flex; flex-wrap: wrap; gap: 7px; }
+.xaman-security-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 14px; }
+.xaman-security-item { min-width: 0; gap: 9px; padding: 11px; border: 1px solid var(--xapp-border); border-radius: 13px; background: var(--xapp-surface-muted); }
+.xaman-security-item > span { color: var(--xapp-primary); }
+.xaman-security-item div { min-width: 0; }
+.xaman-security-item p, .xaman-security-item strong { display: block; margin: 0; overflow-wrap: anywhere; }
+.xaman-security-item p { color: var(--xapp-muted); font-size: 10px; font-weight: 800; text-transform: uppercase; }
+.xaman-security-item strong { margin-top: 3px; font-size: 13px; }
+.xaman-lessons { display: grid; gap: 12px; }
+.xaman-lessons article { display: grid; grid-template-columns: 35px 1fr; gap: 10px; }
+.xaman-lessons article > span { display: inline-flex; width: 32px; height: 32px; align-items: center; justify-content: center; border-radius: 10px; background: color-mix(in srgb, var(--xapp-primary) 12%, transparent); color: var(--xapp-primary); font-size: 11px; font-weight: 900; }
+.xaman-lessons strong { font-size: 14px; }
+.xaman-lessons p { margin: 3px 0 0; color: var(--xapp-muted); font-size: 13px; }
+.xaman-link-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 14px; }
+
+.xaman-empty-state { padding: 35px 20px; border: 1px dashed var(--xapp-border); border-radius: 18px; color: var(--xapp-muted); text-align: center; }
+.xaman-empty-state > span { display: inline-flex; width: 54px; height: 54px; align-items: center; justify-content: center; border-radius: 17px; background: var(--xapp-surface-muted); color: var(--xapp-primary); }
+.xaman-empty-state strong { display: block; margin-top: 12px; color: var(--xapp-text); }
+.xaman-empty-state p { margin: 5px auto 0; max-width: 400px; font-size: 13px; }
+.xaman-xapp-footer { padding: 21px 6px 4px; color: var(--xapp-muted); font-size: 11px; text-align: center; }
+.xaman-xapp-footer p { margin: 3px; }
+
+.xaman-bottom-nav {
+  position: fixed;
+  z-index: 30;
+  right: 0;
+  bottom: 0;
+  left: 0;
   justify-content: center;
-  border-radius: 13px;
-  background: color-mix(in srgb, var(--xapp-primary) 14%, transparent);
-  color: var(--xapp-primary);
-}
-
-.xaman-section-heading h2 {
-  margin: 3px 0 0;
-  font-size: 21px;
-  line-height: 1.2;
-}
-
-.xaman-session-grid,
-.xaman-metric-grid,
-.xaman-link-grid {
-  display: grid;
-  gap: 10px;
-}
-
-.xaman-session-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.xaman-metric-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.xaman-link-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin-top: 16px;
-}
-
-.xaman-data-point,
-.xaman-metric {
-  min-width: 0;
-  padding: 13px;
-  border: 1px solid var(--xapp-border);
-  border-radius: 14px;
-  background: var(--xapp-surface-muted);
-}
-
-.xaman-data-point span,
-.xaman-metric span {
-  display: block;
-  color: var(--xapp-muted);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.xaman-data-point strong,
-.xaman-metric strong {
-  display: block;
-  margin-top: 6px;
-  overflow-wrap: anywhere;
-  font-size: 16px;
-}
-
-.xaman-metric strong {
-  font-size: 22px;
-}
-
-.is-mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-}
-
-.xaman-muted {
-  margin: 0 0 16px;
-  font-size: 16px;
-}
-
-.xaman-footnote {
-  margin: 14px 0 0;
-  font-size: 14px;
-}
-
-.xaman-field-label {
-  display: block;
-  margin: 18px 0 7px;
-  font-weight: 800;
-}
-
-.xaman-input {
-  width: 100%;
-  min-height: 92px;
-  resize: vertical;
-  border: 1px solid var(--xapp-border);
-  border-radius: 14px;
-  background: var(--xapp-surface-muted);
-  color: var(--xapp-text);
-  padding: 13px 14px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 16px;
-  line-height: 1.5;
-}
-
-.xaman-input::placeholder {
-  color: var(--xapp-muted);
-  opacity: 0.8;
-}
-
-.xaman-action-row {
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 12px;
-}
-
-.xaman-button {
-  display: inline-flex;
-  min-height: 48px;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border: 1px solid transparent;
-  border-radius: 13px;
-  padding: 11px 15px;
-  font-size: 15px;
-  font-weight: 800;
-}
-
-.xaman-button:disabled {
-  opacity: 0.6;
-}
-
-.xaman-button-primary {
-  flex: 1 1 190px;
-  background: var(--xapp-primary);
-  color: #ffffff;
-}
-
-.xaman-button-primary:hover:not(:disabled) {
-  background: var(--xapp-primary-strong);
-}
-
-.xaman-button-secondary,
-.xaman-button-quiet {
-  background: var(--xapp-surface-muted);
-  color: var(--xapp-text);
-  border-color: var(--xapp-border);
-}
-
-.xaman-button-secondary {
-  flex: 1 1 190px;
-}
-
-.xaman-button-quiet {
-  min-height: 44px;
-  flex: 0 0 auto;
-  padding: 8px 11px;
-}
-
-.xaman-loading,
-.xaman-error {
-  gap: 10px;
-  border-radius: 14px;
-  padding: 14px;
-}
-
-.xaman-loading {
-  background: var(--xapp-surface-muted);
-  color: var(--xapp-muted);
-}
-
-.xaman-error {
-  margin-top: 12px;
-  background: var(--xapp-error-bg);
-  color: var(--xapp-error);
-}
-
-.xaman-result {
-  margin-top: 16px;
-  padding-top: 16px;
+  gap: 1px;
+  width: min(100%, 760px);
+  margin: 0 auto;
+  padding: 7px 8px max(7px, env(safe-area-inset-bottom));
   border-top: 1px solid var(--xapp-border);
+  background: color-mix(in srgb, var(--xapp-surface) 92%, transparent);
+  box-shadow: 0 -12px 30px rgb(15 23 42 / 8%);
+  backdrop-filter: blur(20px);
+}
+.xaman-bottom-nav button { display: inline-flex; min-width: 0; min-height: 54px; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border: 0; border-radius: 13px; background: transparent; color: var(--xapp-muted); }
+.xaman-bottom-nav button span { font-size: 10px; font-weight: 800; }
+.xaman-bottom-nav button.is-active { background: color-mix(in srgb, var(--xapp-primary) 11%, transparent); color: var(--xapp-primary); }
+
+@media (min-width: 620px) {
+  .xaman-xapp-container { padding-right: 20px; padding-left: 20px; }
+  .xaman-stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .xaman-session-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .xaman-app-bar { margin-right: -20px; margin-left: -20px; padding-right: 22px; padding-left: 22px; }
 }
 
-.xaman-result-status {
-  gap: 12px;
-  margin-bottom: 12px;
-  border-radius: 14px;
-  padding: 14px;
-}
-
-.xaman-result-status.is-success {
-  background: var(--xapp-success-bg);
-  color: var(--xapp-success);
-}
-
-.xaman-result-status.is-warning {
-  background: var(--xapp-warning-bg);
-  color: var(--xapp-warning);
-}
-
-.xaman-result-status strong,
-.xaman-result-status span {
-  display: block;
-}
-
-.xaman-result-status span {
-  font-size: 14px;
-}
-
-.xaman-checklist {
-  margin: 0;
-  padding-left: 24px;
-  color: var(--xapp-muted);
-}
-
-.xaman-checklist li {
-  padding: 5px 0 5px 4px;
-}
-
-.xaman-checklist li::marker {
-  color: var(--xapp-primary);
-}
-
-.xaman-xapp-footer {
-  padding: 22px 4px 4px;
-  color: var(--xapp-muted);
-  text-align: center;
-  font-size: 13px;
-}
-
-.xaman-xapp-footer p {
-  margin: 3px 0;
-}
-
-@media (max-width: 620px) {
-  .xaman-session-grid,
-  .xaman-metric-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .xaman-section-heading {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .xaman-section-heading .xaman-button-quiet {
-    align-self: flex-start;
-  }
-}
-
-@media (max-width: 420px) {
-  .xaman-xapp-container {
-    padding-inline: 12px;
-  }
-
-  .xaman-card {
-    border-radius: 17px;
-    padding: 15px;
-  }
-
-  .xaman-link-grid {
-    grid-template-columns: 1fr;
-  }
+@media (max-width: 390px) {
+  .xaman-status-badge { max-width: 116px; white-space: normal; }
+  .xaman-session-grid, .xaman-security-grid { grid-template-columns: 1fr; }
+  .xaman-link-grid { grid-template-columns: 1fr; }
+  .xaman-bottom-nav button span { font-size: 9px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .xaman-xapp-shell *,
-  .xaman-xapp-shell *::before,
-  .xaman-xapp-shell *::after {
-    scroll-behavior: auto !important;
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
+  .xaman-view { animation: none; }
+  .xaman-xapp-shell .animate-spin { animation-duration: 1.8s; }
 }
