@@ -954,12 +954,12 @@ function OutputButton({
           </p>
         </div>
 
-        <p className="font-mono text-[10px] text-black/35 uppercase">
+        <p className="font-mono text-[10px] text-slate-700 uppercase">
           {option.status}
         </p>
       </div>
 
-      <p className="font-mono text-[10px] text-black/45 leading-relaxed">
+      <p className="font-mono text-[10px] text-slate-700 leading-relaxed">
         {option.text}
       </p>
     </button>
@@ -994,7 +994,7 @@ function NewsRow({
         </p>
       </div>
 
-      <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
+      <p className="font-mono text-[10px] text-slate-700 uppercase tracking-widest mb-2">
         {item.source} • {item.bucket}
       </p>
 

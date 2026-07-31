@@ -242,9 +242,9 @@ function IntelligenceFeed({ isEnglish }: { isEnglish: boolean }) {
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
             {isEnglish ? "XRPL EXPLORE & INTEL" : "XRPL ONTDEKKEN & INTEL"}
           </p>
-          <h1 className="font-orbitron text-4xl font-extrabold tracking-tight sm:text-5xl text-slate-950">
+          <h2 className="font-orbitron text-4xl font-extrabold tracking-tight sm:text-5xl text-slate-950">
             {isEnglish ? "Explore XRPL projects, news and source activity." : "Ontdek XRPL-projecten, nieuws en bronactiviteit."}
-          </h1>
+          </h2>
           <p className="mt-5 max-w-3xl text-base leading-7 text-slate-600">
             {isEnglish
               ? "Observed XRPL intelligence with clear source health, buckets and verified status."

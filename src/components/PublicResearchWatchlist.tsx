@@ -59,7 +59,7 @@ export function PublicResearchWatchlist() {
           <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.03] p-10 text-center">
             <ShieldCheck className="mx-auto text-blue-300" size={30} />
             <p className="mt-4 font-semibold">{en ? "No project has passed founder publication review yet." : "Nog geen project is door de founderpublicatiereview gekomen."}</p>
-            <p className="mt-2 text-sm text-slate-400">{en ? "The list remains empty rather than presenting unreviewed tokens." : "De lijst blijft leeg in plaats van onbeoordeelde tokens te tonen."}</p>
+            <p className="mt-2 text-sm text-slate-200">{en ? "The list remains empty rather than presenting unreviewed tokens." : "De lijst blijft leeg in plaats van onbeoordeelde tokens te tonen."}</p>
           </div>
         )}
 
