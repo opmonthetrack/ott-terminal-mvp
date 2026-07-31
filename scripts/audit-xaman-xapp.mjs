@@ -47,6 +47,12 @@ for (const fragment of ["xAppToken", "xaman-xapp-boot", "background: transparent
 for (const fragment of [
   "Independent xApp by OnTheTrack · not operated by Xaman",
   "This xApp is read-only",
+  'type XappView = "home" | "assets" | "activity" | "scan" | "safety"',
+  "loadXrplWalletWorkspace",
+  "Xaman picker",
+  "Recent transactions",
+  "Active account controls",
+  "Five safety lessons",
   "info@onthetrack.com",
   "xapp-support.html",
   "privacy.html",
@@ -56,7 +62,7 @@ for (const fragment of [
   if (!component.includes(fragment)) fail(`xApp accountability copy is missing '${fragment}'`);
 }
 
-for (const fragment of ["openBrowser", "scanQr", "close", "ready", "sdk.user.account", "sdk.user.networkType"]) {
+for (const fragment of ["openBrowser", "scanQr", "selectDestination", "tx", "share", "close", "ready", "sdk.user.account", "sdk.user.networkType"]) {
   if (!runtime.includes(fragment) && !component.includes(fragment)) {
     fail(`native Xaman integration is missing '${fragment}'`);
   }
