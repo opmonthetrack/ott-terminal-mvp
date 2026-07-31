@@ -22,7 +22,6 @@ const index = read("index.html");
 const component = read("src/xapp/XamanXapp.tsx");
 const runtime = read("src/lib/xamanXappRuntime.ts");
 const styles = read("src/xapp/xaman-xapp.css");
-const config = read("api/xapp-config.ts");
 const support = read("public/xapp-support.html");
 const submission = read("XAMAN_XAPP_SUBMISSION.md");
 const packageJson = JSON.parse(read("package.json"));
@@ -73,8 +72,12 @@ if (!styles.includes("font-size: 16px") || !styles.includes("min-height: 48px"))
   fail("xApp accessibility baseline for body text or touch controls is missing");
 }
 
-if (!config.includes("process.env.XAMAN_API_KEY") || config.includes("process.env.XAMAN_API_SECRET")) {
-  fail("xApp config must expose only the public Xaman application identifier");
+if (!runtime.includes("XAMAN_APPLICATION_ID") || !runtime.includes("49f37b53-0ef8-432f-87d8-d1b1d79fef8b")) {
+  fail("xApp runtime must contain the registered public Xaman application identifier");
+}
+
+if (runtime.includes("XAMAN_API_SECRET") || runtime.includes("xapp-config")) {
+  fail("xApp client must never reference the API secret or require an extra config function");
 }
 
 for (const fragment of ["Customer support", "Technical support", "Never send", "Privacy Policy", "Terms of Use"]) {

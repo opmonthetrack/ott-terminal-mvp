@@ -27,13 +27,8 @@ export type XamanXappRuntime = {
   theme: XamanXappTheme;
 };
 
-type XappConfigResponse = {
-  ok?: boolean;
-  apiKey?: string;
-  error?: string;
-};
-
 const XRPL_ADDRESS_PATTERN = /^r[1-9A-HJ-NP-Za-km-z]{24,34}$/;
+const XAMAN_APPLICATION_ID = "49f37b53-0ef8-432f-87d8-d1b1d79fef8b";
 const XAPP_READY_TIMEOUT_MS = 5_000;
 let runtimePromise: Promise<XamanXappRuntime> | null = null;
 
@@ -68,18 +63,6 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number) {
   }
 }
 
-async function fetchXappApiKey() {
-  const response = await fetch("/api/xapp-config", {
-    method: "GET",
-    headers: { Accept: "application/json" },
-  });
-  const data = (await response.json().catch(() => ({}))) as XappConfigResponse;
-  if (!response.ok || !data.ok || !data.apiKey) {
-    throw new Error(data.error || "The Xaman xApp connection is unavailable.");
-  }
-  return data.apiKey;
-}
-
 async function createXamanXappRuntime(): Promise<XamanXappRuntime> {
   const params = new URLSearchParams(window.location.search);
   const token = params.get("xAppToken")?.trim() ?? "";
@@ -97,9 +80,8 @@ async function createXamanXappRuntime(): Promise<XamanXappRuntime> {
     };
   }
 
-  const apiKey = await fetchXappApiKey();
   const { Xumm: XummSdk } = await import("xumm");
-  const sdk: Xumm = new XummSdk(apiKey, token);
+  const sdk: Xumm = new XummSdk(XAMAN_APPLICATION_ID, token);
   let bridge = (sdk.xapp ?? null) as XamanXappBridge | null;
 
   try {

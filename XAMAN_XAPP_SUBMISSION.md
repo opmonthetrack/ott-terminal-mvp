@@ -112,7 +112,7 @@ Status meanings: **PASS** is backed by code or a live platform audit; **LIVE TES
 | `src/xapp/xaman-xapp.css` | Responsive themes, contrast, fonts and touch targets. |
 | `src/lib/xamanXappRuntime.ts` | One-time Xaman token initialization and native bridge methods. |
 | `src/lib/xrplWalletProfile.ts` | Bounded public XRPL WebSocket reads for wallet and transaction evidence. |
-| `api/xapp-config.ts` | Returns only the public Xaman application identifier; never the API secret. |
+| `src/lib/xamanXappRuntime.ts` | Initializes the native bridge with the registered public Xaman application identifier; never contains the API secret. |
 | `public/xapp-support.html` | Customer/technical support and safe reporting instructions. |
 | `scripts/audit-xaman-xapp.mjs` | Automated review-boundary regression checks. |
 | `.github/workflows/platform-quality.yml` | Reproducible CI for routes, xApp rules, dependencies, TypeScript and production build. |
@@ -161,7 +161,7 @@ All blocking defects resolved: **_pending_**
 - [ ] Send verified owner and associated xApp XRP addresses privately to Xaman.
 - [ ] Personally acknowledge Xaman's right to revoke xApp access.
 - [ ] Configure the Xaman Developer Console launch URL as the production root URL.
-- [ ] Confirm production `XAMAN_API_KEY` belongs to that same xApp registration.
+- [ ] Confirm the public Xaman application identifier in the client belongs to that same xApp registration.
 - [ ] Add sandbox tester Device UUIDs and run the complete device/theme test record.
 - [ ] Record testing duration and tester count truthfully.
 - [ ] Merge/deploy the reviewed source commit and verify every public URL.

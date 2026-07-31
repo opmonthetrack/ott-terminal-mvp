@@ -256,7 +256,7 @@ Never commit real credentials or paste service-role, Xaman or wallet secrets int
 | Route | Responsibility |
 | --- | --- |
 | `api/ott.ts` | Core Xaman and OTT proof actions |
-| `api/xapp-config.ts` | Public Xaman application identifier for the native xApp SDK; never exposes the API secret |
+| `src/lib/xamanXappRuntime.ts` | Native xApp SDK bridge and registered public Xaman application identifier; never contains the API secret |
 | `api/roadmap-vote.ts` | Consolidated roadmap voting |
 | `api/access-payment.ts` | Access Pass readiness, payment and delivery lifecycle |
 | `api/support-payment.ts` | Voluntary support payloads and validated totals |
