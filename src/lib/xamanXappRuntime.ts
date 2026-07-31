@@ -8,13 +8,27 @@ export type XamanQrEvent = {
   reason?: string;
 };
 
+export type XamanDestinationEvent = {
+  destination?: {
+    address?: string;
+    tag?: number | null;
+    name?: string;
+  } | null;
+  reason?: string;
+};
+
 export type XamanXappBridge = {
   ready: () => void | Promise<unknown>;
   openBrowser: (options: { url: string }) => void | Promise<unknown>;
   close: (options?: { refreshEvents?: boolean }) => void | Promise<unknown>;
   scanQr: () => void | Promise<unknown>;
-  on: (event: "qr", listener: (data: XamanQrEvent) => void) => void;
-  off?: (event: "qr", listener: (data: XamanQrEvent) => void) => void;
+  selectDestination?: (options: { ignoreDestinationTag: boolean }) => void | Promise<unknown>;
+  tx?: (options: { account: string; tx: string }) => void | Promise<unknown>;
+  share?: (options: { text: string }) => void | Promise<unknown>;
+  on(event: "qr", listener: (data: XamanQrEvent) => void): void;
+  on(event: "destination", listener: (data: XamanDestinationEvent) => void): void;
+  off?(event: "qr", listener: (data: XamanQrEvent) => void): void;
+  off?(event: "destination", listener: (data: XamanDestinationEvent) => void): void;
 };
 
 export type XamanXappRuntime = {
@@ -127,4 +141,8 @@ export function initializeXamanXapp() {
 
 export function extractXrplTransactionHash(value: string) {
   return value.match(/(?:^|[^A-Fa-f0-9])([A-Fa-f0-9]{64})(?:$|[^A-Fa-f0-9])/)?.[1]?.toUpperCase() ?? "";
+}
+
+export function extractXrplAddress(value: string) {
+  return value.match(/(?:^|[^1-9A-HJ-NP-Za-km-z])(r[1-9A-HJ-NP-Za-km-z]{24,34})(?:$|[^1-9A-HJ-NP-Za-km-z])/)?.[1] ?? "";
 }
