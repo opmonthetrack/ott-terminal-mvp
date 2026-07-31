@@ -890,7 +890,7 @@ function StatBox({
     <div className="border border-black/10 bg-[#F7F8FC] p-4">
       <Icon size={18} className="text-[#3898E8] mb-3" />
 
-      <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
+      <p className="font-mono text-[10px] text-slate-700 uppercase tracking-widest mb-2">
         {label}
       </p>
 
@@ -1040,7 +1040,7 @@ function TagInfo({
 }) {
   return (
     <div className={`border p-3 ${warn ? "border-[#D84858]/25 bg-[#D84858]/10" : "border-black/10 bg-[#F7F8FC]"}`}>
-      <p className="font-mono text-[10px] text-black/35 uppercase tracking-widest mb-2">
+      <p className="font-mono text-[10px] text-slate-700 uppercase tracking-widest mb-2">
         {label}
       </p>
 
