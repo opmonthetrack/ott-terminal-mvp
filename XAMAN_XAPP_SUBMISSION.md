@@ -11,7 +11,7 @@ This document is the reviewer-facing explanation, qualification matrix and final
 | Field | Value |
 | --- | --- |
 | Working title | **OTT Xaman Safety Companion** |
-| Short description | A read-only Xaman companion that checks the selected XRPL account and verifies public transaction evidence before a user relies on it. |
+| Short description | A read-only XRPL wallet companion with asset, activity, security, destination and transaction checks for the account selected in Xaman. |
 | Production launch URL | `https://ott-terminal-mvp.vercel.app/` |
 | Browser-only layout preview | `https://ott-terminal-mvp.vercel.app/?xapp=1` |
 | Support | `https://ott-terminal-mvp.vercel.app/xapp-support.html` |
@@ -30,11 +30,13 @@ OTT Xaman Safety Companion is a dedicated, read-only xApp experience. It is not 
 - a normal browser visit lazy-loads the complete OTT Terminal;
 - a Xaman launch with `xAppToken` lazy-loads only the compact Safety Companion and the Xaman SDK integration.
 
-The xApp reads the account and network selected in Xaman, then retrieves public data from the corresponding XRP Ledger network. It shows a wallet snapshot and lets the user paste or scan a 64-character XRPL transaction hash. For a matching public transaction it displays validation status, result, transaction type, amount, fee, sender, destination and destination tag, and explains whether the selected Xaman account is the sender or destination.
+The xApp reads the account and network selected in Xaman, then retrieves public data from the corresponding XRP Ledger network. Its five mobile sections provide an account/reserve overview, trustline and NFT inventory, recent transaction history, a transaction/address scanner and a security/education report. It exposes public issuer, freeze, account-flag, Regular Key, signer-list, tag and ledger evidence without ranking or promoting an asset.
+
+Users can paste or scan a 64-character transaction hash, scan an XRPL address, or use Xaman's native Destination Picker. A matching transaction displays validation status, result, type, amount, fee, sender, destination, source/destination tags, ledger and date. Native Xaman panels are used for QR scanning, destination selection, transaction details, sharing, external links and closing the xApp.
 
 The xApp creates no payload and makes no payment, trustline, offer, token, NFT, credential or signing request. It never asks for a seed phrase, recovery words or private key. Its purpose is expectation setting and evidence checking before the user treats public XRPL information as reliable. Xaman's own signing screen remains the final authority for any transaction created elsewhere.
 
-All external destinations—support, privacy, terms and source—open through Xaman's native `openBrowser` method. The native QR scanner and close action are used where available. The xApp does not use cookies, `localStorage`, `sessionStorage` or polling.
+All external destinations—support, privacy, terms and source—open through Xaman's native `openBrowser` method. Native QR, Destination Picker, transaction details, share and close actions are used where available. The xApp does not use cookies, `localStorage`, `sessionStorage` or polling.
 
 ## Initial review answers
 
@@ -42,7 +44,7 @@ These answers map directly to the questions in Xaman's publishing guidance.
 
 ### 1. What use case will the app have?
 
-Give Xaman users a fast, account-aware safety check for public XRPL data. A user can confirm the selected account and network, inspect a validated wallet snapshot, and verify a transaction hash without granting custody or signing anything.
+Give Xaman users an account-aware XRPL safety workspace. A user can inspect wallet reserve, assets, trustlines, NFTs, recent activity, security flags, destinations and transaction evidence without granting custody or signing anything.
 
 ### 2. Who is the target audience?
 
@@ -71,7 +73,7 @@ The xApp itself is free and contains no purchase, fee, subscription, donation, t
 ### 9. Working title and description
 
 **Title:** OTT Xaman Safety Companion  
-**Description:** A read-only Xaman companion that checks the selected XRPL account and verifies public transaction evidence before a user relies on it. No custody and no signing requests.
+**Description:** A read-only XRPL wallet companion with asset, activity, security, destination and transaction checks for the account selected in Xaman. No custody and no signing requests.
 
 ## Qualification matrix
 
@@ -79,9 +81,9 @@ Status meanings: **PASS** is backed by code or a live platform audit; **LIVE TES
 
 | Xaman requirement | Evidence | Status |
 | --- | --- | --- |
-| Value to a significant share of users | Selected-account wallet snapshot and network-aware transaction verification are general XRPL safety utilities. | **PASS** |
-| Clear first screen and instructions | First screen states “Selected wallet. Clear checks. No signing.” and explains the exact read-only scope. | **PASS** |
-| Protect users from dangerous mistakes | No payload creation; explicit secret warnings; signing-screen checklist; destination/tag/account comparison. | **PASS** |
+| Value to a significant share of users | Wallet reserve, asset inventory, activity, address/tag and transaction verification are general XRPL safety utilities. | **PASS** |
+| Clear first screen and instructions | First screen identifies the selected network, wallet balance, estimated reserve and explicit read-only boundary. | **PASS** |
+| Protect users from dangerous mistakes | No payload creation; secret warnings; issuer/freeze/flag visibility; destination-tag detection; transaction/account comparison. | **PASS** |
 | Say what it does and do what it says | Static xApp audit checks required claims and forbids signing/payment/gating modules in the xApp boundary. | **PASS** |
 | Public and maintained source | Public GitHub repository; xApp code, audits, CI and dependency overrides are versioned together. | **PASS** |
 | Accountable, non-anonymous developer | Publisher identity and KYC must be supplied directly to Xaman; in-app owner/support identity is visible. | **OWNER** |
@@ -89,7 +91,7 @@ Status meanings: **PASS** is backed by code or a live platform audit; **LIVE TES
 | No speculation or token-purchase pressure | xApp has no token purchase, swap, price, yield, donation or NFT-unlock route. | **PASS** |
 | Clearly third-party | Header states “Independent xApp by OnTheTrack · not operated by Xaman.” | **PASS** |
 | Tailored to Xaman, not a normal website | `xAppToken` selects a separate lazy-loaded component; full web app and xApp bundles are isolated. | **PASS** |
-| Xaman account/network integration | Uses Xaman SDK environment, selected account and selected network. | **LIVE TEST** |
+| Xaman account/network integration | Uses Xaman SDK environment, selected account/network, QR, Destination Picker, transaction details and share actions. | **LIVE TEST** |
 | External links use native browser | Support, privacy, terms and source use `xapp.openBrowser`; no `window.open`. | **LIVE TEST** |
 | Reliable storage rule | xApp stores no user data in cookies, local storage or session storage. | **PASS** |
 | No polling | No `setInterval`; XRPL reads use bounded WebSocket requests and Xaman context is initialized once. | **PASS** |
@@ -123,12 +125,13 @@ Status meanings: **PASS** is backed by code or a live platform audit; **LIVE TES
 2. Confirm the first screen identifies OnTheTrack as an independent third party and promises no signing.
 3. Confirm the account and network match the account currently selected in Xaman.
 4. Confirm the public wallet snapshot loads or returns a clear network/account error.
-5. Paste a known transaction hash on the selected network and verify the displayed result against an independent explorer.
-6. Scan a QR containing a transaction hash and confirm the same result.
-7. Test an invalid hash, a hash from another network and an unknown/unfunded selected account.
-8. Open support, privacy, terms and source; confirm Xaman opens each in its external-browser flow.
-9. Test Close, scrolling, rotation, text scaling and every Xaman theme.
-10. Confirm a normal browser visit still opens the full OTT Terminal, while a Xaman launch never exposes full-terminal tabs.
+5. Open Assets and compare trustlines, freeze flags and NFTs with an independent explorer.
+6. Open Activity and confirm recent transaction types, direction and result; open one in Xaman's native details panel.
+7. Paste and scan a known transaction hash and verify the decoded result against an independent explorer.
+8. Use Destination Picker for an address with and without a required destination tag, then scan an address QR.
+9. Review AccountRoot flags, Regular Key, signer-list counts and all five safety lessons.
+10. Test invalid/cross-network evidence, Share, support/privacy/terms/source, Close, scrolling, rotation, text scaling and every theme.
+11. Confirm a normal browser visit still opens the full OTT Terminal, while a Xaman launch never exposes full-terminal tabs.
 
 ## Sandbox test record
 
