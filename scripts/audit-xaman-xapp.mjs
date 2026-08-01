@@ -78,8 +78,13 @@ for (const fragment of [
   "Your file never leaves this device",
   "No swap and no signing request",
   "Inclusion is not endorsement",
+  'if (typeof value === "string" && !value.trim()) return null',
 ]) {
   if (!explore.includes(fragment)) fail(`Explore XRPL safeguard is missing '${fragment}'`);
+}
+
+for (const fragment of ["evidenceRecords", "setEvidenceRecords", "onEvidenceRecordsChange"]) {
+  if (!component.includes(fragment)) fail(`parent-level evidence session state is missing '${fragment}'`);
 }
 
 for (const fragment of ["openBrowser", "scanQr", "selectDestination", "tx", "share", "close", "ready", "sdk.user.account", "sdk.user.networkType"]) {
