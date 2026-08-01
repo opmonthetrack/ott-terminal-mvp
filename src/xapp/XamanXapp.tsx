@@ -10,17 +10,21 @@ import {
   CheckCircle2,
   ChevronRight,
   CircleDollarSign,
+  CircleHelp,
   Copy,
   ExternalLink,
   FileCode2,
+  FlaskConical,
   FileText,
   Fingerprint,
   Flag,
+  GraduationCap,
   Hash,
   Home,
   Image,
   KeyRound,
   LifeBuoy,
+  Lightbulb,
   Loader2,
   LockKeyhole,
   LogOut,
@@ -35,6 +39,7 @@ import {
   Tag,
   Wallet,
 } from "lucide-react";
+import type { TokenResearchResult } from "../lib/xrplTokenResearch";
 import {
   loadXrplTransactionSnapshot,
   loadXrplWalletProfile,
@@ -56,7 +61,8 @@ import {
 import "./xaman-xapp.css";
 
 type LoadState = "idle" | "loading" | "success" | "error";
-type XappView = "home" | "assets" | "activity" | "scan" | "safety";
+type XappView = "home" | "assets" | "activity" | "scan" | "safety" | "learn" | "research";
+type ResearchSeed = { issuer: string; currency: string };
 
 const SOURCE_REPOSITORY = "https://github.com/opmonthetrack/ott-terminal-mvp";
 const ACCOUNT_FLAGS = [
@@ -81,6 +87,105 @@ const SAFETY_LESSONS = [
   { title: "NFT actions are ledger actions", text: "Mint, offer, accept and burn are different actions. Never approve an unexpected NFT offer or brokered sale." },
   { title: "Secrets never belong here", text: "OTT and legitimate xApps never need your seed phrase, recovery words, private key or family seed." },
 ];
+
+const FREE_LESSONS = [
+  {
+    id: "ledger",
+    track: "XRPL basics",
+    title: "What the XRP Ledger records",
+    duration: "3 min",
+    summary: "XRPL is a public ledger that reaches consensus without proof-of-work mining. Validated transactions become part of a shared history.",
+    points: [
+      "A wallet address is public; its seed or private key must remain secret.",
+      "Validated means the network accepted the transaction into a validated ledger.",
+      "A failed transaction can still appear on-ledger and may still charge a network fee.",
+    ],
+    question: "Which information is safe to use in a public ledger explorer?",
+    options: ["A wallet r-address", "A family seed", "Recovery words"],
+    correct: 0,
+    explanation: "An r-address is public. Seeds, private keys and recovery words must never be shared.",
+  },
+  {
+    id: "assets",
+    track: "XRPL basics",
+    title: "XRP, issued assets and trustlines",
+    duration: "4 min",
+    summary: "XRP is the native asset. Other currencies are identified by both a currency code and an issuer account.",
+    points: [
+      "Two tokens with the same currency code can be different assets when their issuers differ.",
+      "A trustline defines a relationship and limits for an issued asset; it is not a normal payment.",
+      "Issuer controls such as freeze, authorization and Default Ripple deserve review.",
+    ],
+    question: "What uniquely identifies an issued XRPL asset?",
+    options: ["Its currency code only", "Currency code plus issuer", "Its website name"],
+    correct: 1,
+    explanation: "The currency and issuer must be checked together. A ticker alone is not enough.",
+  },
+  {
+    id: "reserve",
+    track: "XRPL basics",
+    title: "Reserve and owner objects",
+    duration: "3 min",
+    summary: "An account keeps a base reserve, while trustlines, offers, escrows and some other owned objects can increase the reserve requirement.",
+    points: [
+      "Wallet balance and spendable balance are not always the same.",
+      "Deleting an unnecessary owner object can release its owner reserve.",
+      "Reserve values are network parameters and can change through amendments.",
+    ],
+    question: "Why can available XRP be lower than the displayed balance?",
+    options: ["Because of the account reserve", "Because Xaman owns it", "Because XRP expires"],
+    correct: 0,
+    explanation: "Part of the balance may be held to satisfy the current base and owner reserve.",
+  },
+  {
+    id: "signing",
+    track: "Using Xaman",
+    title: "Read the signing screen",
+    duration: "5 min",
+    summary: "The final Xaman signing screen is where you verify the exact transaction before approval. The name of a website is never enough.",
+    points: [
+      "Match transaction type, account, destination, amount, issuer, tags and fee with your intent.",
+      "TrustSet, OfferCreate, NFTokenAcceptOffer and AccountSet are not ordinary payments.",
+      "Reject unexpected fields or a transaction type you do not understand.",
+    ],
+    question: "What should you do when the transaction type is unexpected?",
+    options: ["Sign quickly", "Reject and investigate", "Share your seed with support"],
+    correct: 1,
+    explanation: "Reject first. Investigate independently before creating a new signing request.",
+  },
+  {
+    id: "network-tags",
+    track: "Using Xaman",
+    title: "Networks and destination tags",
+    duration: "4 min",
+    summary: "Mainnet and Testnet are separate ledgers. Exchanges and custodians can also require a destination tag to credit the correct customer.",
+    points: [
+      "A Testnet balance has no Mainnet value and transactions do not cross between the networks.",
+      "Confirm both destination address and destination tag when a service provides one.",
+      "Use Xaman's Destination Picker or the OTT scanner to inspect the public destination settings.",
+    ],
+    question: "What can happen when a required destination tag is missing?",
+    options: ["Nothing ever", "The service may not credit the deposit automatically", "The network changes to Testnet"],
+    correct: 1,
+    explanation: "The payment may reach a shared address but require manual recovery by the receiving service.",
+  },
+  {
+    id: "secrets",
+    track: "Using Xaman",
+    title: "Seeds, support and recovery",
+    duration: "3 min",
+    summary: "Your seed or recovery words control the account. A legitimate xApp, explorer, project or support agent does not need them.",
+    points: [
+      "Never type recovery words into a website, form, chat or support ticket.",
+      "Install Xaman only from official app-store sources and verify important links independently.",
+      "Public addresses and transaction hashes are normally sufficient for read-only support.",
+    ],
+    question: "What may OTT support ask for during a public transaction check?",
+    options: ["A transaction hash", "Your family seed", "Your private key"],
+    correct: 0,
+    explanation: "A public transaction hash can be inspected without giving anyone control of your wallet.",
+  },
+] as const;
 
 function shortValue(value: string, start = 8, end = 6) {
   if (!value) return "Not present";
@@ -131,6 +236,7 @@ export function XamanXapp() {
   const [addressState, setAddressState] = useState<LoadState>("idle");
   const [addressError, setAddressError] = useState("");
   const [assetMode, setAssetMode] = useState<"tokens" | "nfts">("tokens");
+  const [researchSeed, setResearchSeed] = useState<ResearchSeed>({ issuer: "", currency: "" });
   const [notice, setNotice] = useState("");
   const theme = runtime?.theme ?? getXamanXappTheme();
 
@@ -324,6 +430,11 @@ export function XamanXapp() {
     void Promise.resolve(runtime.bridge.openBrowser({ url })).catch(() => setNotice("Xaman could not open the external page."));
   }
 
+  function openResearch(seed: ResearchSeed = { issuer: "", currency: "" }) {
+    setResearchSeed(seed);
+    setView("research");
+  }
+
   function closeXapp() {
     if (!runtime?.bridge) {
       setNotice("The close action is available only inside Xaman.");
@@ -360,10 +471,10 @@ export function XamanXapp() {
 
         <div className="xaman-view" key={view}>
           {view === "home" ? (
-            <HomeView runtime={runtime} workspace={workspace} state={workspaceState} warnings={warnings} onNavigate={setView} onCopy={copyValue} onShare={shareText} />
+            <HomeView runtime={runtime} workspace={workspace} state={workspaceState} warnings={warnings} onNavigate={setView} onResearch={() => openResearch()} onCopy={copyValue} onShare={shareText} />
           ) : null}
           {view === "assets" ? (
-            <AssetsView workspace={workspace} mode={assetMode} onMode={setAssetMode} onCopy={copyValue} />
+            <AssetsView workspace={workspace} mode={assetMode} onMode={setAssetMode} onCopy={copyValue} onResearch={openResearch} />
           ) : null}
           {view === "activity" ? (
             <ActivityView transactions={workspace?.transactions ?? []} onOpen={showNativeTransaction} onInspect={(hash) => { setView("scan"); void verifyTransaction(hash); }} />
@@ -394,6 +505,12 @@ export function XamanXapp() {
           {view === "safety" ? (
             <SafetyView profile={profile} workspace={workspace} warnings={warnings} onExternal={openExternal} />
           ) : null}
+          {view === "learn" ? (
+            <LearnView onBack={() => setView("home")} onOpenSafety={() => setView("safety")} />
+          ) : null}
+          {view === "research" ? (
+            <ResearchView seed={researchSeed} network={runtime?.network ?? "mainnet"} networkLabel={runtime?.networkType ?? "Preview"} onBack={() => setView("home")} onExternal={openExternal} />
+          ) : null}
         </div>
 
         <nav className="xaman-bottom-nav" aria-label="xApp sections">
@@ -408,12 +525,13 @@ export function XamanXapp() {
   );
 }
 
-function HomeView({ runtime, workspace, state, warnings, onNavigate, onCopy, onShare }: {
+function HomeView({ runtime, workspace, state, warnings, onNavigate, onResearch, onCopy, onShare }: {
   runtime: XamanXappRuntime | null;
   workspace: XrplWalletWorkspace | null;
   state: LoadState;
   warnings: string[];
   onNavigate: (view: XappView) => void;
+  onResearch: () => void;
   onCopy: (value: string, label: string) => void;
   onShare: (text: string) => void;
 }) {
@@ -440,6 +558,25 @@ function HomeView({ runtime, workspace, state, warnings, onNavigate, onCopy, onS
       </div>
 
       <section className="xaman-card">
+        <SectionHeading icon={<GraduationCap size={22} />} eyebrow="Free knowledge" title="Learn before you sign" />
+        <p className="xaman-muted">Short XRPL and Xaman lessons explain the fields, permissions and safety checks users meet in real wallet activity.</p>
+        <div className="xaman-feature-grid">
+          <button type="button" className="xaman-feature-card" onClick={() => onNavigate("learn")}>
+            <span><GraduationCap size={22} /></span>
+            <strong>Free lessons</strong>
+            <small>6 micro-lessons · knowledge checks</small>
+            <ChevronRight size={19} />
+          </button>
+          <button type="button" className="xaman-feature-card" onClick={onResearch}>
+            <span><FlaskConical size={22} /></span>
+            <strong>Research Lab</strong>
+            <small>Inspect an issuer and issued asset</small>
+            <ChevronRight size={19} />
+          </button>
+        </div>
+      </section>
+
+      <section className="xaman-card">
         <SectionHeading icon={<ShieldCheck size={22} />} eyebrow="Wallet safety" title={warnings.length ? `${warnings.length} item${warnings.length === 1 ? "" : "s"} to review` : "No immediate warnings found"} />
         <p className="xaman-muted">This is a public-ledger checklist, not a guarantee of wallet, token or issuer safety.</p>
         {warnings.length ? <ul className="xaman-warning-list">{warnings.slice(0, 3).map((warning) => <li key={warning}><AlertTriangle size={18} />{warning}</li>)}</ul> : <div className="xaman-positive-line"><CheckCircle2 size={20} />No supported high-attention flag was detected in the current snapshot.</div>}
@@ -457,11 +594,12 @@ function HomeView({ runtime, workspace, state, warnings, onNavigate, onCopy, onS
   );
 }
 
-function AssetsView({ workspace, mode, onMode, onCopy }: {
+function AssetsView({ workspace, mode, onMode, onCopy, onResearch }: {
   workspace: XrplWalletWorkspace | null;
   mode: "tokens" | "nfts";
   onMode: (mode: "tokens" | "nfts") => void;
   onCopy: (value: string, label: string) => void;
+  onResearch: (seed: ResearchSeed) => void;
 }) {
   return (
     <>
@@ -482,6 +620,7 @@ function AssetsView({ workspace, mode, onMode, onCopy }: {
                 <SmallChip active={line.authorized || line.peerAuthorized} text="Authorized" />
                 <SmallChip active={line.freeze || line.freezePeer} warning text="Frozen" />
               </div>
+              <button type="button" className="xaman-text-link" onClick={() => onResearch({ issuer: line.issuer, currency: line.currency })}>Research this issuer <FlaskConical size={17} /></button>
               <p className="xaman-footnote">A listed balance or issuer is not an endorsement. Verify issuer identity independently.</p>
             </article>
           )) : <EmptyState icon={<Tag size={28} />} title="No trustlines loaded" text="The account has no loaded trustlines on this network, or the public query returned a partial result." />}
@@ -661,6 +800,185 @@ function SafetyView({ profile, workspace, warnings, onExternal }: {
       <footer className="xaman-xapp-footer"><p>OTT Xaman Safety Companion · SourceTag 2606170002</p><p>Read-only educational utility. No custody and no financial advice.</p></footer>
     </>
   );
+}
+
+function LearnView({ onBack, onOpenSafety }: { onBack: () => void; onOpenSafety: () => void }) {
+  const [answers, setAnswers] = useState<Record<string, number>>({});
+  const completed = FREE_LESSONS.filter((lesson) => answers[lesson.id] === lesson.correct).length;
+  const progress = Math.round((completed / FREE_LESSONS.length) * 100);
+
+  return (
+    <>
+      <BackButton label="Back to wallet" onClick={onBack} />
+      <PageHeader eyebrow="Free XRPL Academy" title="Learn before you sign" text="Six practical micro-lessons explain the public ledger and the Xaman decisions that protect your account." />
+
+      <section className="xaman-card xaman-progress-card" aria-label="Lesson progress">
+        <div><span>{completed}/{FREE_LESSONS.length} completed this session</span><strong>{progress}%</strong></div>
+        <div className="xaman-progress-track" aria-hidden="true"><span style={{ width: `${progress}%` }} /></div>
+        <p>Progress is kept only while this xApp session is open. OTT does not collect lesson answers.</p>
+      </section>
+
+      <section className="xaman-course-list" aria-label="Free lessons">
+        {FREE_LESSONS.map((lesson, index) => {
+          const selected = answers[lesson.id];
+          const correct = selected === lesson.correct;
+          return (
+            <details className="xaman-course-card" key={lesson.id}>
+              <summary>
+                <span className={correct ? "is-complete" : ""}>{correct ? <CheckCircle2 size={19} /> : String(index + 1).padStart(2, "0")}</span>
+                <div><small>{lesson.track} · {lesson.duration}</small><strong>{lesson.title}</strong></div>
+                <ChevronRight size={19} />
+              </summary>
+              <div className="xaman-course-body">
+                <p>{lesson.summary}</p>
+                <ul>{lesson.points.map((point) => <li key={point}><Lightbulb size={17} />{point}</li>)}</ul>
+                <div className="xaman-quiz">
+                  <p><CircleHelp size={18} /><strong>Knowledge check</strong></p>
+                  <h3>{lesson.question}</h3>
+                  <div>
+                    {lesson.options.map((option, optionIndex) => (
+                      <button
+                        type="button"
+                        key={option}
+                        className={selected === optionIndex ? optionIndex === lesson.correct ? "is-correct" : "is-wrong" : ""}
+                        aria-pressed={selected === optionIndex}
+                        onClick={() => setAnswers((current) => ({ ...current, [lesson.id]: optionIndex }))}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                  {selected !== undefined ? <p className={correct ? "xaman-quiz-feedback is-correct" : "xaman-quiz-feedback is-wrong"}>{correct ? "Correct. " : "Not yet. "}{lesson.explanation}</p> : null}
+                </div>
+              </div>
+            </details>
+          );
+        })}
+      </section>
+
+      <section className="xaman-card">
+        <SectionHeading icon={<ShieldCheck size={22} />} eyebrow="Apply the lessons" title="Check your wallet evidence" />
+        <p className="xaman-muted">The Safety section applies these concepts to the account currently selected in Xaman.</p>
+        <button type="button" className="xaman-button xaman-button-primary xaman-full-button" onClick={onOpenSafety}><ShieldCheck size={19} />Open wallet safety</button>
+      </section>
+    </>
+  );
+}
+
+function ResearchView({ seed, network, networkLabel, onBack, onExternal }: {
+  seed: ResearchSeed;
+  network: XamanXappRuntime["network"];
+  networkLabel: string;
+  onBack: () => void;
+  onExternal: (url: string) => void;
+}) {
+  const [issuer, setIssuer] = useState(seed.issuer);
+  const [currency, setCurrency] = useState(seed.currency);
+  const [state, setState] = useState<LoadState>("idle");
+  const [error, setError] = useState("");
+  const [result, setResult] = useState<TokenResearchResult | null>(null);
+  const issuerValid = /^r[1-9A-HJ-NP-Za-km-z]{25,34}$/.test(issuer.trim());
+  const currencyValid = /^(?:[A-Za-z0-9?!@#$%^&*<>{}]{3,20}|[0-9A-Fa-f]{40})$/.test(currency.trim());
+  const evidenceCategories = result?.categories.filter((category) => category.id !== "documentation") ?? [];
+  const evidenceScore = evidenceCategories.length
+    ? Math.round(evidenceCategories.reduce((total, category) => total + category.score, 0) / evidenceCategories.length)
+    : 0;
+  const explorerBase = network === "testnet" ? "https://testnet.xrpl.org/accounts/" : network === "devnet" ? "https://devnet.xrpl.org/accounts/" : "https://livenet.xrpl.org/accounts/";
+
+  async function runResearch() {
+    if (!issuerValid || !currencyValid) {
+      setError("Enter a valid issuer r-address and a 3–20 character or 40-hex currency code.");
+      setState("error");
+      return;
+    }
+    setState("loading");
+    setError("");
+    setResult(null);
+    try {
+      const { analyzeXrplToken } = await import("../lib/xrplTokenResearch");
+      setResult(await analyzeXrplToken({ issuer, currency, network }));
+      setState("success");
+    } catch (nextError) {
+      setState("error");
+      setError(nextError instanceof Error ? nextError.message : "The issuer research could not be completed.");
+    }
+  }
+
+  return (
+    <>
+      <BackButton label="Back to wallet" onClick={onBack} />
+      <PageHeader eyebrow="Explore XRPL · Research Lab" title="Check a project on-ledger" text={`Inspect an exact issuer and currency on ${networkLabel}. The report shows public evidence and uncertainty—not approval, safety or future performance.`} />
+
+      <section className="xaman-card">
+        <SectionHeading icon={<FlaskConical size={22} />} eyebrow="Project identity" title="Issuer and issued asset" />
+        <label className="xaman-field-label" htmlFor="xaman-research-issuer">Issuer wallet</label>
+        <textarea id="xaman-research-issuer" className="xaman-input xaman-single-input" value={issuer} onChange={(event) => setIssuer(event.target.value.trim())} placeholder="r…" rows={1} autoCorrect="off" autoCapitalize="none" spellCheck={false} />
+        <label className="xaman-field-label" htmlFor="xaman-research-currency">Currency code</label>
+        <textarea id="xaman-research-currency" className="xaman-input xaman-single-input" value={currency} onChange={(event) => setCurrency(event.target.value.toUpperCase().trim())} placeholder="USD, RLUSD or 40-character hex" rows={1} maxLength={40} autoCorrect="off" autoCapitalize="characters" spellCheck={false} />
+        <button type="button" className="xaman-button xaman-button-primary xaman-full-button" onClick={() => void runResearch()} disabled={state === "loading" || !issuerValid || !currencyValid}>
+          {state === "loading" ? <Loader2 className="animate-spin" size={19} /> : <Search size={19} />}
+          {state === "loading" ? "Reading validated ledger…" : "Run neutral ledger research"}
+        </button>
+        <p className="xaman-footnote">A project name or ticker is not a unique identity. Always verify the issuer and currency together.</p>
+        {state === "error" ? <ErrorLine text={error} /> : null}
+      </section>
+
+      {result ? (
+        <>
+          <section className="xaman-card">
+            <div className="xaman-research-score">
+              <div><span>Ledger evidence signal</span><strong>{evidenceScore}<small>/100</small></strong></div>
+              <p>This signal summarizes four sampled ledger categories. It is not a project rating, endorsement or fraud determination.</p>
+            </div>
+            <div className="xaman-session-grid">
+              <DataPoint label="Validated ledger" value={String(result.ledgerIndex)} />
+              <DataPoint label="Observed holders" value={String(result.nonZeroHolderCount)} />
+              <DataPoint label="Book offers" value={String(result.offerCount)} />
+              <DataPoint label="Top-10 share" value={`${result.topTenSharePercent.toFixed(1)}%`} />
+              <DataPoint label="Master disabled" value={result.flags.disableMaster ? "Observed" : "Not observed"} />
+              <DataPoint label="Global Freeze" value={result.flags.globalFreeze ? "Enabled" : "Not observed"} />
+            </div>
+          </section>
+
+          <section className="xaman-list-stack" aria-label="Research categories">
+            {evidenceCategories.map((category) => (
+              <article className="xaman-research-category" key={category.id}>
+                <div><span>{category.label}</span><StatusBadge tone={category.status === "strong" ? "positive" : category.status === "limited" ? "warning" : "neutral"} text={`${category.score}/100`} /></div>
+                <p>{category.explanation}</p>
+              </article>
+            ))}
+          </section>
+
+          <section className="xaman-card">
+            <SectionHeading icon={<BadgeCheck size={22} />} eyebrow="Observed evidence" title="What the ledger returned" />
+            <ul className="xaman-research-notes">{result.observations.map((observation) => <li key={observation}><CheckCircle2 size={17} />{observation}</li>)}</ul>
+            <button type="button" className="xaman-button xaman-button-secondary xaman-full-button" onClick={() => onExternal(`${explorerBase}${result.issuer}`)}><ExternalLink size={18} />Open issuer explorer</button>
+          </section>
+
+          <section className="xaman-card xaman-research-limitations">
+            <SectionHeading icon={<AlertTriangle size={22} />} eyebrow="Required context" title="What this does not prove" />
+            <ul>{result.limitations.map((limitation) => <li key={limitation}>{limitation}</li>)}</ul>
+          </section>
+        </>
+      ) : (
+        <section className="xaman-card">
+          <SectionHeading icon={<FileText size={22} />} eyebrow="Four evidence categories" title="What the lab checks" />
+          <div className="xaman-security-grid">
+            <SecurityItem icon={<KeyRound size={19} />} label="Issuer control" value="Keys and flags" />
+            <SecurityItem icon={<Wallet size={19} />} label="Distribution" value="Sampled holders" />
+            <SecurityItem icon={<Activity size={19} />} label="Liquidity" value="XRP book offers" />
+            <SecurityItem icon={<Network size={19} />} label="Technical" value="Domain and settings" />
+          </div>
+        </section>
+      )}
+
+      <p className="xaman-boundary">Research public evidence, then verify team identity, legal claims, documentation and independent sources outside the ledger.</p>
+    </>
+  );
+}
+
+function BackButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return <button type="button" className="xaman-back-button" onClick={onClick}><ChevronRight size={18} />{label}</button>;
 }
 
 function PageHeader({ eyebrow, title, text }: { eyebrow: string; title: string; text: string }) {
