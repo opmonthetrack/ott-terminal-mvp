@@ -90,14 +90,14 @@
 
 .xaman-heatmap-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-top: 12px; }
 .xaman-heatmap-tile { min-width: 0; padding: 14px; border: 1px solid var(--xapp-border); border-top-width: 4px; border-radius: 16px; background: var(--xapp-surface-muted); }
-.xaman-heatmap-tile.is-positive { border-top-color: var(--xapp-success); }
-.xaman-heatmap-tile.is-negative { border-top-color: var(--xapp-error); }
+.xaman-heatmap-tile.is-high { border-top-color: var(--xapp-accent); background: color-mix(in srgb, var(--xapp-accent) 9%, var(--xapp-surface-muted)); }
+.xaman-heatmap-tile.is-medium { border-top-color: var(--xapp-primary); background: color-mix(in srgb, var(--xapp-primary) 7%, var(--xapp-surface-muted)); }
 .xaman-heatmap-tile.is-neutral { border-top-color: var(--xapp-muted); }
 .xaman-heatmap-tile > div:first-child { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .xaman-heatmap-tile > div:first-child strong { font-size: 18px; }
 .xaman-heatmap-tile > div:first-child span { font-size: 12px; font-weight: 850; }
-.xaman-heatmap-tile.is-positive > div:first-child span { color: var(--xapp-success); }
-.xaman-heatmap-tile.is-negative > div:first-child span { color: var(--xapp-error); }
+.xaman-heatmap-tile.is-high > div:first-child span { color: var(--xapp-accent); }
+.xaman-heatmap-tile.is-medium > div:first-child span { color: var(--xapp-primary); }
 .xaman-heatmap-tile > p { min-height: 38px; margin: 4px 0 10px; color: var(--xapp-muted); font-size: 12px; }
 .xaman-heatmap-tile dl { display: grid; gap: 5px; margin: 0; }
 .xaman-heatmap-tile dl div { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; }
