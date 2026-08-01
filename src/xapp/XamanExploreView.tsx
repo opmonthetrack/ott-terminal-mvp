@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ChangeEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -39,7 +39,7 @@ type LiveMarketToken = {
 
 type EvidenceKind = "whitepaper" | "audit" | "legal" | "roadmap" | "source" | "other";
 
-type SessionEvidence = {
+export type SessionEvidence = {
   id: string;
   project: string;
   kind: EvidenceKind;
@@ -73,7 +73,8 @@ function textValue(value: unknown) {
 }
 
 function numericValue(value: unknown) {
-  const parsed = typeof value === "number" ? value : typeof value === "string" ? Number(value) : Number.NaN;
+  if (typeof value === "string" && !value.trim()) return null;
+  const parsed = typeof value === "number" ? value : typeof value === "string" ? Number(value.trim()) : Number.NaN;
   return Number.isFinite(parsed) ? parsed : null;
 }
 
@@ -177,12 +178,14 @@ async function sha256(file: File) {
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-export default function XamanExploreView({ onBack, onResearch, onExternal, onCopy, onShare }: {
+export default function XamanExploreView({ onBack, onResearch, onExternal, onCopy, onShare, evidenceRecords, onEvidenceRecordsChange }: {
   onBack: () => void;
   onResearch: (seed?: ResearchSeed) => void;
   onExternal: (url: string) => void;
   onCopy: (value: string, label: string) => void;
   onShare: (text: string) => void;
+  evidenceRecords: SessionEvidence[];
+  onEvidenceRecordsChange: Dispatch<SetStateAction<SessionEvidence[]>>;
 }) {
   const [section, setSection] = useState<ExploreSection>("heatmap");
 
@@ -205,7 +208,7 @@ export default function XamanExploreView({ onBack, onResearch, onExternal, onCop
       {section === "heatmap" ? <HeatmapSection onResearch={onResearch} /> : null}
       {section === "research" ? <ResearchSection onResearch={onResearch} /> : null}
       {section === "directory" ? <DirectorySection onExternal={onExternal} /> : null}
-      {section === "evidence" ? <EvidenceSection onCopy={onCopy} onShare={onShare} /> : null}
+      {section === "evidence" ? <EvidenceSection records={evidenceRecords} setRecords={onEvidenceRecordsChange} onCopy={onCopy} onShare={onShare} /> : null}
 
       <p className="xaman-boundary">Independent research utility · public or local evidence only · no custody, promotion, trading or financial advice.</p>
     </>
@@ -358,11 +361,12 @@ function DirectorySection({ onExternal }: { onExternal: (url: string) => void })
   );
 }
 
-function EvidenceSection({ onCopy, onShare }: {
+function EvidenceSection({ records, setRecords, onCopy, onShare }: {
+  records: SessionEvidence[];
+  setRecords: Dispatch<SetStateAction<SessionEvidence[]>>;
   onCopy: (value: string, label: string) => void;
   onShare: (text: string) => void;
 }) {
-  const [records, setRecords] = useState<SessionEvidence[]>([]);
   const [project, setProject] = useState("");
   const [kind, setKind] = useState<EvidenceKind>("whitepaper");
   const [sourceUrl, setSourceUrl] = useState("");
