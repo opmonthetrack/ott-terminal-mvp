@@ -1,4 +1,10 @@
-const XRPL_ENDPOINT = "wss://xrplcluster.com/";
+import type { XrplNetwork } from "./walletRegistry";
+
+const XRPL_ENDPOINTS: Record<XrplNetwork, string> = {
+  mainnet: "wss://xrplcluster.com/",
+  testnet: "wss://s.altnet.rippletest.net:51233",
+  devnet: "wss://s.devnet.rippletest.net:51233",
+};
 
 const LSF_DISABLE_MASTER = 0x00100000;
 const LSF_GLOBAL_FREEZE = 0x00400000;
@@ -142,9 +148,9 @@ function overallStatus(score: number): TokenResearchResult["overallStatus"] {
   return "limited-evidence";
 }
 
-function requestXrpl<T>(command: string, parameters: Record<string, unknown>) {
+function requestXrpl<T>(network: XrplNetwork, command: string, parameters: Record<string, unknown>) {
   return new Promise<T>((resolve, reject) => {
-    const socket = new WebSocket(XRPL_ENDPOINT);
+    const socket = new WebSocket(XRPL_ENDPOINTS[network]);
     const id = Date.now() + Math.floor(Math.random() * 10_000);
     const timeout = window.setTimeout(() => {
       socket.close();
@@ -199,9 +205,11 @@ export async function analyzeXrplToken(input: {
   currency: string;
   documentationCount?: number;
   claimText?: string;
+  network?: XrplNetwork;
 }) {
   const issuer = input.issuer.trim();
   const currency = normalizeCurrency(input.currency);
+  const network = input.network ?? "mainnet";
 
   if (!isXrplAddress(issuer)) {
     throw new Error("Enter a valid XRPL issuer address.");
@@ -210,19 +218,19 @@ export async function analyzeXrplToken(input: {
     throw new Error("Enter a 3–20 character currency code or a 40-character hexadecimal XRPL currency code.");
   }
 
-  const accountInfo = await requestXrpl<AccountInfoResult>("account_info", {
+  const accountInfo = await requestXrpl<AccountInfoResult>(network, "account_info", {
     account: issuer,
     ledger_index: "validated",
     strict: true,
   });
 
   const [accountLines, bookOffers] = await Promise.all([
-    requestXrpl<AccountLinesResult>("account_lines", {
+    requestXrpl<AccountLinesResult>(network, "account_lines", {
       account: issuer,
       ledger_index: "validated",
       limit: 400,
     }).catch(() => ({ lines: [], ledger_index: accountInfo.ledger_index })),
-    requestXrpl<BookOffersResult>("book_offers", {
+    requestXrpl<BookOffersResult>(network, "book_offers", {
       taker_gets: { currency, issuer },
       taker_pays: { currency: "XRP" },
       ledger_index: "validated",
