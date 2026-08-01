@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -61,8 +61,10 @@ import {
 import "./xaman-xapp.css";
 
 type LoadState = "idle" | "loading" | "success" | "error";
-type XappView = "home" | "assets" | "activity" | "scan" | "safety" | "learn" | "research";
+type XappView = "home" | "assets" | "activity" | "scan" | "safety" | "learn" | "explore" | "research";
 type ResearchSeed = { issuer: string; currency: string };
+
+const XamanExploreView = lazy(() => import("./XamanExploreView"));
 
 const SOURCE_REPOSITORY = "https://github.com/opmonthetrack/ott-terminal-mvp";
 const ACCOUNT_FLAGS = [
@@ -237,6 +239,7 @@ export function XamanXapp() {
   const [addressError, setAddressError] = useState("");
   const [assetMode, setAssetMode] = useState<"tokens" | "nfts">("tokens");
   const [researchSeed, setResearchSeed] = useState<ResearchSeed>({ issuer: "", currency: "" });
+  const [researchReturnView, setResearchReturnView] = useState<XappView>("home");
   const [notice, setNotice] = useState("");
   const theme = runtime?.theme ?? getXamanXappTheme();
 
@@ -430,8 +433,9 @@ export function XamanXapp() {
     void Promise.resolve(runtime.bridge.openBrowser({ url })).catch(() => setNotice("Xaman could not open the external page."));
   }
 
-  function openResearch(seed: ResearchSeed = { issuer: "", currency: "" }) {
+  function openResearch(seed: ResearchSeed = { issuer: "", currency: "" }, returnView: XappView = "home") {
     setResearchSeed(seed);
+    setResearchReturnView(returnView);
     setView("research");
   }
 
@@ -471,10 +475,10 @@ export function XamanXapp() {
 
         <div className="xaman-view" key={view}>
           {view === "home" ? (
-            <HomeView runtime={runtime} workspace={workspace} state={workspaceState} warnings={warnings} onNavigate={setView} onResearch={() => openResearch()} onCopy={copyValue} onShare={shareText} />
+            <HomeView runtime={runtime} workspace={workspace} state={workspaceState} warnings={warnings} onNavigate={setView} onCopy={copyValue} onShare={shareText} />
           ) : null}
           {view === "assets" ? (
-            <AssetsView workspace={workspace} mode={assetMode} onMode={setAssetMode} onCopy={copyValue} onResearch={openResearch} />
+            <AssetsView workspace={workspace} mode={assetMode} onMode={setAssetMode} onCopy={copyValue} onResearch={(seed) => openResearch(seed, "assets")} />
           ) : null}
           {view === "activity" ? (
             <ActivityView transactions={workspace?.transactions ?? []} onOpen={showNativeTransaction} onInspect={(hash) => { setView("scan"); void verifyTransaction(hash); }} />
@@ -508,8 +512,19 @@ export function XamanXapp() {
           {view === "learn" ? (
             <LearnView onBack={() => setView("home")} onOpenSafety={() => setView("safety")} />
           ) : null}
+          {view === "explore" ? (
+            <Suspense fallback={<LoadingLine text="Opening Explore XRPL…" />}>
+              <XamanExploreView
+                onBack={() => setView("home")}
+                onResearch={(seed) => openResearch(seed, "explore")}
+                onExternal={openExternal}
+                onCopy={copyValue}
+                onShare={shareText}
+              />
+            </Suspense>
+          ) : null}
           {view === "research" ? (
-            <ResearchView seed={researchSeed} network={runtime?.network ?? "mainnet"} networkLabel={runtime?.networkType ?? "Preview"} onBack={() => setView("home")} onExternal={openExternal} />
+            <ResearchView seed={researchSeed} network={runtime?.network ?? "mainnet"} networkLabel={runtime?.networkType ?? "Preview"} onBack={() => setView(researchReturnView)} onExternal={openExternal} />
           ) : null}
         </div>
 
@@ -525,13 +540,12 @@ export function XamanXapp() {
   );
 }
 
-function HomeView({ runtime, workspace, state, warnings, onNavigate, onResearch, onCopy, onShare }: {
+function HomeView({ runtime, workspace, state, warnings, onNavigate, onCopy, onShare }: {
   runtime: XamanXappRuntime | null;
   workspace: XrplWalletWorkspace | null;
   state: LoadState;
   warnings: string[];
   onNavigate: (view: XappView) => void;
-  onResearch: () => void;
   onCopy: (value: string, label: string) => void;
   onShare: (text: string) => void;
 }) {
@@ -567,10 +581,10 @@ function HomeView({ runtime, workspace, state, warnings, onNavigate, onResearch,
             <small>6 micro-lessons · knowledge checks</small>
             <ChevronRight size={19} />
           </button>
-          <button type="button" className="xaman-feature-card" onClick={onResearch}>
+          <button type="button" className="xaman-feature-card" onClick={() => onNavigate("explore")}>
             <span><FlaskConical size={22} /></span>
-            <strong>Research Lab</strong>
-            <small>Inspect an issuer and issued asset</small>
+            <strong>Explore XRPL</strong>
+            <small>Heatmap · research · directory · evidence</small>
             <ChevronRight size={19} />
           </button>
         </div>

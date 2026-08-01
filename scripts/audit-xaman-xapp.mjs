@@ -20,6 +20,7 @@ function fail(message) {
 const main = read("src/main.tsx");
 const index = read("index.html");
 const component = read("src/xapp/XamanXapp.tsx");
+const explore = read("src/xapp/XamanExploreView.tsx");
 const runtime = read("src/lib/xamanXappRuntime.ts");
 const styles = read("src/xapp/xaman-xapp.css");
 const support = read("public/xapp-support.html");
@@ -47,7 +48,7 @@ for (const fragment of ["xAppToken", "xaman-xapp-boot", "background: transparent
 for (const fragment of [
   "Independent xApp by OnTheTrack · not operated by Xaman",
   "This xApp is read-only",
-  'type XappView = "home" | "assets" | "activity" | "scan" | "safety" | "learn" | "research"',
+  'type XappView = "home" | "assets" | "activity" | "scan" | "safety" | "learn" | "explore" | "research"',
   "loadXrplWalletWorkspace",
   "Learn before you sign",
   "Check a project on-ledger",
@@ -67,14 +68,28 @@ for (const fragment of [
   if (!component.includes(fragment)) fail(`xApp accountability copy is missing '${fragment}'`);
 }
 
+for (const fragment of [
+  "Top 50 XRPL Heatmap",
+  "No estimated or fallback prices are shown",
+  "Token Research",
+  "DeFi Directory",
+  "Evidence Files",
+  'crypto.subtle.digest("SHA-256"',
+  "Your file never leaves this device",
+  "No swap and no signing request",
+  "Inclusion is not endorsement",
+]) {
+  if (!explore.includes(fragment)) fail(`Explore XRPL safeguard is missing '${fragment}'`);
+}
+
 for (const fragment of ["openBrowser", "scanQr", "selectDestination", "tx", "share", "close", "ready", "sdk.user.account", "sdk.user.networkType"]) {
   if (!runtime.includes(fragment) && !component.includes(fragment)) {
     fail(`native Xaman integration is missing '${fragment}'`);
   }
 }
 
-for (const forbidden of ["window.open", "setInterval(", "localStorage", "sessionStorage", "AccessGateTab", "SupportDonationTab"]) {
-  if (component.includes(forbidden) || runtime.includes(forbidden)) {
+for (const forbidden of ["window.open", "setInterval(", "localStorage", "sessionStorage", "AccessGateTab", "SupportDonationTab", "XrplDexSwapTerminal", "openSignRequest", "createPayload"]) {
+  if (component.includes(forbidden) || explore.includes(forbidden) || runtime.includes(forbidden)) {
     fail(`xApp code contains forbidden or review-risky pattern '${forbidden}'`);
   }
 }

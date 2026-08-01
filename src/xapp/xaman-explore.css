@@ -1,0 +1,158 @@
+.xaman-explore-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+  margin: 0 0 12px;
+  padding: 6px;
+  border: 1px solid var(--xapp-border);
+  border-radius: 18px;
+  background: var(--xapp-surface);
+}
+
+.xaman-explore-tabs button {
+  display: inline-flex;
+  min-width: 0;
+  min-height: 58px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 0;
+  border-radius: 13px;
+  background: transparent;
+  color: var(--xapp-muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.xaman-explore-tabs button.is-active {
+  background: color-mix(in srgb, var(--xapp-primary) 12%, transparent);
+  color: var(--xapp-primary);
+}
+
+.xaman-explore-panel { margin-top: 0; }
+
+.xaman-explore-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 48px;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.xaman-explore-toolbar.is-stacked { grid-template-columns: minmax(0, 1fr) minmax(140px, .45fr); }
+
+.xaman-explore-toolbar label {
+  display: flex;
+  min-width: 0;
+  min-height: 48px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid var(--xapp-border);
+  border-radius: 13px;
+  background: var(--xapp-surface-muted);
+  color: var(--xapp-muted);
+}
+
+.xaman-explore-toolbar input,
+.xaman-explore-toolbar select,
+.xaman-evidence-form input,
+.xaman-evidence-form select,
+.xaman-evidence-form textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--xapp-border);
+  border-radius: 12px;
+  background: var(--xapp-surface-muted);
+  color: var(--xapp-text);
+  font: inherit;
+  font-size: 16px;
+}
+
+.xaman-explore-toolbar label input { min-height: 44px; padding: 0; border: 0; background: transparent; }
+.xaman-explore-toolbar select { min-height: 48px; padding: 0 12px; }
+.xaman-explore-toolbar > button { display: inline-flex; min-height: 48px; align-items: center; justify-content: center; border: 1px solid var(--xapp-border); border-radius: 13px; background: var(--xapp-surface-muted); color: var(--xapp-primary); }
+
+.xaman-explore-message,
+.xaman-explore-source,
+.xaman-explore-warning,
+.xaman-privacy-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+}
+
+.xaman-explore-message { margin: 12px 0 0; padding: 14px; border-radius: 14px; background: var(--xapp-surface-muted); color: var(--xapp-muted); }
+.xaman-explore-message.is-warning, .xaman-explore-warning { background: var(--xapp-warning-bg); color: var(--xapp-warning); }
+.xaman-explore-message svg, .xaman-explore-source svg, .xaman-explore-warning svg, .xaman-privacy-callout svg { flex: 0 0 auto; margin-top: 2px; }
+.xaman-explore-source { margin: 10px 0; color: var(--xapp-success); font-size: 12px; font-weight: 800; }
+.xaman-explore-warning { margin: 10px 0 0; padding: 12px; border-radius: 12px; font-size: 13px; }
+
+.xaman-heatmap-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-top: 12px; }
+.xaman-heatmap-tile { min-width: 0; padding: 14px; border: 1px solid var(--xapp-border); border-top-width: 4px; border-radius: 16px; background: var(--xapp-surface-muted); }
+.xaman-heatmap-tile.is-high { border-top-color: var(--xapp-accent); background: color-mix(in srgb, var(--xapp-accent) 9%, var(--xapp-surface-muted)); }
+.xaman-heatmap-tile.is-medium { border-top-color: var(--xapp-primary); background: color-mix(in srgb, var(--xapp-primary) 7%, var(--xapp-surface-muted)); }
+.xaman-heatmap-tile.is-neutral { border-top-color: var(--xapp-muted); }
+.xaman-heatmap-tile > div:first-child { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.xaman-heatmap-tile > div:first-child strong { font-size: 18px; }
+.xaman-heatmap-tile > div:first-child span { font-size: 12px; font-weight: 850; }
+.xaman-heatmap-tile.is-high > div:first-child span { color: var(--xapp-accent); }
+.xaman-heatmap-tile.is-medium > div:first-child span { color: var(--xapp-primary); }
+.xaman-heatmap-tile > p { min-height: 38px; margin: 4px 0 10px; color: var(--xapp-muted); font-size: 12px; }
+.xaman-heatmap-tile dl { display: grid; gap: 5px; margin: 0; }
+.xaman-heatmap-tile dl div { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; }
+.xaman-heatmap-tile dt { color: var(--xapp-muted); }
+.xaman-heatmap-tile dd { margin: 0; overflow-wrap: anywhere; font-weight: 800; text-align: right; }
+.xaman-heatmap-tile > small { display: block; overflow: hidden; margin-top: 10px; color: var(--xapp-muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.xaman-heatmap-tile > button { display: flex; width: 100%; min-height: 44px; align-items: center; justify-content: space-between; margin-top: 7px; border: 0; background: transparent; color: var(--xapp-primary); font-weight: 800; text-align: left; }
+
+.xaman-explore-checklist { display: grid; gap: 8px; margin-bottom: 14px; }
+.xaman-explore-checklist p { display: flex; align-items: flex-start; gap: 9px; margin: 0; padding: 12px; border-radius: 13px; background: var(--xapp-surface-muted); }
+.xaman-explore-checklist svg { flex: 0 0 auto; margin-top: 2px; color: var(--xapp-success); }
+.xaman-explore-checklist strong { display: block; font-size: 14px; }
+.xaman-explore-checklist span { color: var(--xapp-muted); font-size: 13px; }
+
+.xaman-directory-list { display: grid; gap: 9px; }
+.xaman-directory-list > article { overflow: hidden; border: 1px solid var(--xapp-border); border-radius: 15px; background: var(--xapp-surface-muted); }
+.xaman-directory-summary { display: flex; width: 100%; min-height: 74px; align-items: center; justify-content: space-between; gap: 12px; padding: 13px; border: 0; background: transparent; color: var(--xapp-text); text-align: left; }
+.xaman-directory-summary > span { display: grid; min-width: 0; gap: 2px; }
+.xaman-directory-summary small { color: var(--xapp-primary); font-size: 10px; font-weight: 850; letter-spacing: .09em; text-transform: uppercase; }
+.xaman-directory-summary strong { font-size: 16px; }
+.xaman-directory-summary em { overflow: hidden; color: var(--xapp-muted); font-size: 12px; font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
+.xaman-directory-summary > svg { flex: 0 0 auto; transition: transform .16s ease; }
+.xaman-directory-summary > svg.is-open { transform: rotate(90deg); }
+.xaman-directory-detail { display: grid; gap: 10px; padding: 0 13px 13px; border-top: 1px solid var(--xapp-border); }
+.xaman-directory-detail > p, .xaman-directory-detail > div { margin: 0; padding-top: 10px; color: var(--xapp-muted); font-size: 13px; }
+.xaman-directory-detail strong { display: block; margin-bottom: 2px; color: var(--xapp-text); }
+.xaman-directory-detail ul { margin: 4px 0 0; padding-left: 19px; }
+
+.xaman-privacy-callout { margin-bottom: 14px; padding: 14px; border-radius: 14px; background: var(--xapp-success-bg); color: var(--xapp-success); }
+.xaman-privacy-callout p { margin: 0; font-size: 13px; }
+.xaman-privacy-callout strong { display: block; }
+.xaman-evidence-form { display: grid; gap: 11px; }
+.xaman-evidence-form > label:not(.xaman-file-button) { display: grid; gap: 5px; color: var(--xapp-muted); font-size: 12px; font-weight: 800; }
+.xaman-evidence-form input, .xaman-evidence-form select { min-height: 48px; padding: 0 12px; }
+.xaman-evidence-form textarea { min-height: 88px; padding: 11px 12px; resize: vertical; }
+.xaman-file-button { display: inline-flex; min-height: 52px; align-items: center; justify-content: center; gap: 8px; padding: 0 14px; border-radius: 14px; background: var(--xapp-primary); color: #fff; font-weight: 850; text-align: center; }
+.xaman-file-button input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+.xaman-evidence-list { display: grid; gap: 10px; margin-top: 15px; }
+.xaman-evidence-list > article { padding: 14px; border: 1px solid var(--xapp-border); border-radius: 15px; background: var(--xapp-surface-muted); }
+.xaman-evidence-list article > div:first-child { display: grid; gap: 2px; }
+.xaman-evidence-list article > div:first-child span { color: var(--xapp-primary); font-size: 10px; font-weight: 850; text-transform: uppercase; }
+.xaman-evidence-list article > div:first-child small, .xaman-evidence-list article > p { color: var(--xapp-muted); font-size: 12px; }
+.xaman-evidence-list code { display: block; overflow-wrap: anywhere; margin-top: 10px; padding: 9px; border-radius: 9px; background: var(--xapp-surface); font-size: 11px; }
+.xaman-evidence-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
+.xaman-evidence-actions button { display: inline-flex; min-height: 46px; align-items: center; justify-content: center; gap: 5px; border: 1px solid var(--xapp-border); border-radius: 11px; background: var(--xapp-surface); color: var(--xapp-primary); font-size: 11px; font-weight: 800; }
+.xaman-evidence-actions button.is-danger { color: var(--xapp-error); }
+
+@media (max-width: 440px) {
+  .xaman-explore-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .xaman-explore-tabs button { min-height: 52px; flex-direction: row; }
+  .xaman-explore-toolbar.is-stacked { grid-template-columns: 1fr; }
+  .xaman-heatmap-grid { grid-template-columns: 1fr; }
+  .xaman-evidence-actions { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xaman-directory-summary > svg { transition: none; }
+}
