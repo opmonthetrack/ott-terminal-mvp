@@ -40,6 +40,7 @@ import {
   Wallet,
 } from "lucide-react";
 import type { TokenResearchResult } from "../lib/xrplTokenResearch";
+import type { SessionEvidence } from "./XamanExploreView";
 import {
   loadXrplTransactionSnapshot,
   loadXrplWalletProfile,
@@ -240,6 +241,7 @@ export function XamanXapp() {
   const [assetMode, setAssetMode] = useState<"tokens" | "nfts">("tokens");
   const [researchSeed, setResearchSeed] = useState<ResearchSeed>({ issuer: "", currency: "" });
   const [researchReturnView, setResearchReturnView] = useState<XappView>("home");
+  const [evidenceRecords, setEvidenceRecords] = useState<SessionEvidence[]>([]);
   const [notice, setNotice] = useState("");
   const theme = runtime?.theme ?? getXamanXappTheme();
 
@@ -520,6 +522,8 @@ export function XamanXapp() {
                 onExternal={openExternal}
                 onCopy={copyValue}
                 onShare={shareText}
+                evidenceRecords={evidenceRecords}
+                onEvidenceRecordsChange={setEvidenceRecords}
               />
             </Suspense>
           ) : null}
