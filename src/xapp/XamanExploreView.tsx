@@ -30,10 +30,11 @@ type LiveMarketToken = {
   currency: string;
   name: string;
   issuer: string;
-  priceXrp: number | null;
   priceUsd: number | null;
-  change24h: number | null;
-  volume24hXrp: number | null;
+  volume24hUsd: number | null;
+  marketCapUsd: number | null;
+  numTrades: number | null;
+  lastTradeAt: string;
 };
 
 type EvidenceKind = "whitepaper" | "audit" | "legal" | "roadmap" | "source" | "other";
@@ -53,7 +54,7 @@ type SessionEvidence = {
 
 type RawMarketToken = Record<string, unknown>;
 
-const MARKET_SOURCE = "https://api.onthedex.live/public/v1/ticker";
+const MARKET_SOURCE = "https://api.onthedex.live/public/v1/daily/tokens?by=volume&min_trades=1&per_page=50";
 const XRPL_ADDRESS = /^r[1-9A-HJ-NP-Za-km-z]{25,34}$/;
 const MAX_EVIDENCE_BYTES = 10 * 1024 * 1024;
 
@@ -92,21 +93,22 @@ function normalizeMarketToken(token: RawMarketToken, index: number): LiveMarketT
   const native = currency === "XRP" && (!issuer || issuer.toLowerCase().includes("native"));
   if (!currency || (!native && !XRPL_ADDRESS.test(issuer))) return null;
 
-  const priceXrp = numericValue(token.priceXrp);
-  const priceUsd = numericValue(token.priceUsd);
-  const change24h = numericValue(token.change24h);
-  const volume24hXrp = numericValue(token.volume24hXrp);
-  if ([priceXrp, priceUsd, change24h, volume24hXrp].every((value) => value === null)) return null;
+  const priceUsd = numericValue(token.price_mid_usd);
+  const volume24hUsd = numericValue(token.volume_usd);
+  const marketCapUsd = numericValue(token.market_cap);
+  const numTrades = numericValue(token.num_trades);
+  if ([priceUsd, volume24hUsd, marketCapUsd, numTrades].every((value) => value === null)) return null;
 
   return {
     id: textValue(token.id) || `${currency}-${issuer || "native"}-${index}`,
     currency,
-    name: textValue(token.name) || currency,
+    name: textValue(token.token_name) || currency,
     issuer: native ? "XRPL native asset" : issuer,
-    priceXrp,
     priceUsd,
-    change24h,
-    volume24hXrp,
+    volume24hUsd,
+    marketCapUsd,
+    numTrades,
+    lastTradeAt: textValue(token.last_trade_at),
   };
 }
 
@@ -118,7 +120,7 @@ async function loadLiveMarketTokens() {
   const tokens = payload.tokens
     .map((token, index) => token && typeof token === "object" ? normalizeMarketToken(token as RawMarketToken, index) : null)
     .filter((token): token is LiveMarketToken => token !== null)
-    .sort((left, right) => (right.volume24hXrp ?? -1) - (left.volume24hXrp ?? -1))
+    .sort((left, right) => (right.volume24hUsd ?? -1) - (left.volume24hUsd ?? -1))
     .slice(0, 50);
   if (!tokens.length) throw new Error("No complete live token records were returned.");
   return tokens;
@@ -205,19 +207,21 @@ function HeatmapSection({ onResearch }: { onResearch: (seed?: ResearchSeed) => v
       {state === "success" && filtered.length ? (
         <div className="xaman-heatmap-grid" aria-label="Live XRPL market heatmap">
           {filtered.map((token) => {
-            const change = token.change24h;
-            const tone = change === null ? "neutral" : change > 0 ? "positive" : change < 0 ? "negative" : "neutral";
+            const rank = tokens.findIndex((item) => item.id === token.id) + 1;
+            const tone = rank <= 10 ? "high" : rank <= 25 ? "medium" : "neutral";
             const researchable = XRPL_ADDRESS.test(token.issuer);
             return (
               <article className={`xaman-heatmap-tile is-${tone}`} key={token.id}>
-                <div><strong>{token.currency}</strong><span>{change === null ? "24h unavailable" : `${change >= 0 ? "+" : ""}${change.toFixed(2)}%`}</span></div>
+                <div><strong>{token.currency}</strong><span>Volume rank #{rank}</span></div>
                 <p>{token.name}</p>
                 <dl>
-                  <div><dt>Price</dt><dd>{formatPrice(token.priceXrp, "XRP")}</dd></div>
-                  <div><dt>USD</dt><dd>{formatPrice(token.priceUsd, "USD")}</dd></div>
-                  <div><dt>24h volume</dt><dd>{formatCompact(token.volume24hXrp, " XRP")}</dd></div>
+                  <div><dt>USD mid price</dt><dd>{formatPrice(token.priceUsd, "USD")}</dd></div>
+                  <div><dt>24h USD volume</dt><dd>{formatPrice(token.volume24hUsd, "USD")}</dd></div>
+                  <div><dt>Market cap</dt><dd>{formatPrice(token.marketCapUsd, "USD")}</dd></div>
+                  <div><dt>24h trades</dt><dd>{formatCompact(token.numTrades)}</dd></div>
                 </dl>
                 <small>{token.issuer === "XRPL native asset" ? token.issuer : `${token.issuer.slice(0, 8)}…${token.issuer.slice(-6)}`}</small>
+                {token.lastTradeAt ? <small>Last trade: {new Date(token.lastTradeAt).toLocaleString()}</small> : null}
                 {researchable ? <button type="button" onClick={() => onResearch({ issuer: token.issuer, currency: token.currency })}>Research issuer <ChevronRight size={16} /></button> : null}
               </article>
             );
