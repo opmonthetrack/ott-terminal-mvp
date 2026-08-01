@@ -54,7 +54,10 @@ type SessionEvidence = {
 
 type RawMarketToken = Record<string, unknown>;
 
-const MARKET_SOURCE = "https://api.onthedex.live/public/v1/daily/tokens?by=volume&min_trades=1&per_page=50";
+const MARKET_SOURCES = [
+  { label: "OnTheDEX API", url: "https://api.onthedex.live/public/v1/daily/tokens?by=volume&min_trades=1&per_page=50" },
+  { label: "XRPL.to API", url: "https://api.xrpl.to/v1/tokens?limit=50&sort=volume" },
+] as const;
 const XRPL_ADDRESS = /^r[1-9A-HJ-NP-Za-km-z]{25,34}$/;
 const MAX_EVIDENCE_BYTES = 10 * 1024 * 1024;
 
@@ -101,21 +104,21 @@ function formatPrice(value: number | null, currency: "XRP" | "USD") {
 
 function normalizeMarketToken(token: RawMarketToken, index: number): LiveMarketToken | null {
   const identity = token.token && typeof token.token === "object" ? token.token as RawMarketToken : {};
-  const currency = firstText(token.currency, token.c, identity.currency, identity.c).toUpperCase();
-  const issuer = firstText(token.issuer, token.i, identity.issuer, identity.i);
+  const currency = firstText(token.currency, token.symbol, token.code, token.c, identity.currency, identity.symbol, identity.c).toUpperCase();
+  const issuer = firstText(token.issuer, token.issuerAddress, token.issuer_address, token.i, identity.issuer, identity.issuerAddress, identity.i);
   const native = currency === "XRP" && (!issuer || issuer.toLowerCase().includes("native"));
   if (!currency || (!native && !issuer)) return null;
 
-  const priceUsd = firstNumber(token.price_mid_usd, token.price_usd, token.price, token.p, token.pfx);
-  const volume24hUsd = firstNumber(token.volume_usd, token.volume24hUsd, token.volume, token.v, token.vfx);
-  const marketCapUsd = firstNumber(token.market_cap, token.marketCapUsd, token.marketCap, token.mc);
-  const numTrades = firstNumber(token.num_trades, token.trades, token.trade_count, token.n, token.n24);
+  const priceUsd = firstNumber(token.price_mid_usd, token.price_usd, token.priceUsd, token.priceUSD, token.price, token.p, token.pfx);
+  const volume24hUsd = firstNumber(token.volume_usd, token.volume_24h, token.volume24h, token.volume24hUsd, token.volumeUsd, token.volume, token.v, token.vfx);
+  const marketCapUsd = firstNumber(token.market_cap, token.market_cap_usd, token.marketCapUsd, token.marketCap, token.mc);
+  const numTrades = firstNumber(token.num_trades, token.trades_24h, token.trades24h, token.trades, token.trade_count, token.n, token.n24);
   if ([priceUsd, volume24hUsd, marketCapUsd, numTrades].every((value) => value === null)) return null;
 
   return {
     id: textValue(token.id) || `${currency}-${issuer || "native"}-${index}`,
     currency,
-    name: firstText(token.token_name, token.name, token.nm, identity.token_name, identity.name) || currency,
+    name: firstText(token.token_name, token.name, token.displayName, token.nm, identity.token_name, identity.name) || currency,
     issuer: native ? "XRPL native asset" : issuer,
     priceUsd,
     volume24hUsd,
@@ -125,20 +128,48 @@ function normalizeMarketToken(token: RawMarketToken, index: number): LiveMarketT
   };
 }
 
-async function loadLiveMarketTokens() {
-  const response = await fetch(MARKET_SOURCE, { signal: AbortSignal.timeout(5000) });
-  if (!response.ok) throw new Error(`Market source returned HTTP ${response.status}.`);
-  const payload = await response.json() as { tokens?: unknown; data?: unknown; error?: unknown; message?: unknown };
-  if (payload.error) throw new Error(firstText(payload.message, payload.error) || "Market source reported an error.");
-  const records = Array.isArray(payload.tokens) ? payload.tokens : Array.isArray(payload.data) ? payload.data : null;
-  if (!records) throw new Error("Market source returned an unsupported response.");
+function marketRecords(payload: unknown): unknown[] | null {
+  if (Array.isArray(payload)) return payload;
+  if (!payload || typeof payload !== "object") return null;
+  const root = payload as Record<string, unknown>;
+  for (const candidate of [root.tokens, root.items, root.results, root.data]) {
+    if (Array.isArray(candidate)) return candidate;
+    if (candidate && typeof candidate === "object") {
+      const nested = candidate as Record<string, unknown>;
+      for (const value of [nested.tokens, nested.items, nested.results, nested.data]) {
+        if (Array.isArray(value)) return value;
+      }
+    }
+  }
+  return null;
+}
+
+async function loadMarketSource(source: typeof MARKET_SOURCES[number]) {
+  const response = await fetch(source.url, { signal: AbortSignal.timeout(5000) });
+  if (!response.ok) throw new Error(`${source.label} returned HTTP ${response.status}.`);
+  const payload = await response.json() as { error?: unknown; message?: unknown };
+  if (payload.error) throw new Error(firstText(payload.message, payload.error) || `${source.label} reported an error.`);
+  const records = marketRecords(payload);
+  if (!records) throw new Error(`${source.label} returned an unsupported response.`);
   const tokens = records
     .map((token, index) => token && typeof token === "object" ? normalizeMarketToken(token as RawMarketToken, index) : null)
     .filter((token): token is LiveMarketToken => token !== null)
     .sort((left, right) => (right.volume24hUsd ?? -1) - (left.volume24hUsd ?? -1))
     .slice(0, 50);
-  if (!tokens.length) throw new Error("No complete live token records were returned.");
-  return tokens;
+  if (!tokens.length) throw new Error(`${source.label} returned no complete live token records.`);
+  return { tokens, source: source.label };
+}
+
+async function loadLiveMarketTokens() {
+  const errors: string[] = [];
+  for (const source of MARKET_SOURCES) {
+    try {
+      return await loadMarketSource(source);
+    } catch (error) {
+      errors.push(error instanceof Error ? error.message : `${source.label} is unavailable.`);
+    }
+  }
+  throw new Error(errors.join(" "));
 }
 
 async function sha256(file: File) {
@@ -185,6 +216,7 @@ function HeatmapSection({ onResearch }: { onResearch: (seed?: ResearchSeed) => v
   const [state, setState] = useState<LoadState>("idle");
   const [tokens, setTokens] = useState<LiveMarketToken[]>([]);
   const [error, setError] = useState("");
+  const [source, setSource] = useState("");
   const [query, setQuery] = useState("");
   const [updatedAt, setUpdatedAt] = useState("");
   const filtered = useMemo(() => {
@@ -196,7 +228,9 @@ function HeatmapSection({ onResearch }: { onResearch: (seed?: ResearchSeed) => v
     setState("loading");
     setError("");
     try {
-      setTokens(await loadLiveMarketTokens());
+      const result = await loadLiveMarketTokens();
+      setTokens(result.tokens);
+      setSource(result.source);
       setUpdatedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
       setState("success");
     } catch (nextError) {
@@ -218,7 +252,7 @@ function HeatmapSection({ onResearch }: { onResearch: (seed?: ResearchSeed) => v
       </div>
       {state === "loading" ? <ExploreMessage icon={<Loader2 className="animate-spin" size={21} />} text="Loading current market observations…" /> : null}
       {state === "error" ? <ExploreMessage warning icon={<AlertTriangle size={21} />} text={`${error} No estimated or fallback prices are shown.`} /> : null}
-      {state === "success" ? <p className="xaman-explore-source"><CheckCircle2 size={16} />{tokens.length} live records · updated {updatedAt} · OnTheDEX API</p> : null}
+      {state === "success" ? <p className="xaman-explore-source"><CheckCircle2 size={16} />{tokens.length} live records · updated {updatedAt} · {source}</p> : null}
       {state === "success" && filtered.length ? (
         <div className="xaman-heatmap-grid" aria-label="Live XRPL market heatmap">
           {filtered.map((token) => {
