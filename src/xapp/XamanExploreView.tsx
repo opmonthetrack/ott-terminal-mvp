@@ -74,6 +74,18 @@ function numericValue(value: unknown) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function firstText(...values: unknown[]) {
+  return values.map(textValue).find(Boolean) ?? "";
+}
+
+function firstNumber(...values: unknown[]) {
+  for (const value of values) {
+    const parsed = numericValue(value);
+    if (parsed !== null) return parsed;
+  }
+  return null;
+}
+
 function formatCompact(value: number | null, suffix = "") {
   if (value === null) return "Unavailable";
   return `${new Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 2 }).format(value)}${suffix}`;
@@ -88,36 +100,39 @@ function formatPrice(value: number | null, currency: "XRP" | "USD") {
 }
 
 function normalizeMarketToken(token: RawMarketToken, index: number): LiveMarketToken | null {
-  const currency = textValue(token.currency).toUpperCase();
-  const issuer = textValue(token.issuer);
+  const identity = token.token && typeof token.token === "object" ? token.token as RawMarketToken : {};
+  const currency = firstText(token.currency, token.c, identity.currency, identity.c).toUpperCase();
+  const issuer = firstText(token.issuer, token.i, identity.issuer, identity.i);
   const native = currency === "XRP" && (!issuer || issuer.toLowerCase().includes("native"));
-  if (!currency || (!native && !XRPL_ADDRESS.test(issuer))) return null;
+  if (!currency || (!native && !issuer)) return null;
 
-  const priceUsd = numericValue(token.price_mid_usd);
-  const volume24hUsd = numericValue(token.volume_usd);
-  const marketCapUsd = numericValue(token.market_cap);
-  const numTrades = numericValue(token.num_trades);
+  const priceUsd = firstNumber(token.price_mid_usd, token.price_usd, token.price, token.p, token.pfx);
+  const volume24hUsd = firstNumber(token.volume_usd, token.volume24hUsd, token.volume, token.v, token.vfx);
+  const marketCapUsd = firstNumber(token.market_cap, token.marketCapUsd, token.marketCap, token.mc);
+  const numTrades = firstNumber(token.num_trades, token.trades, token.trade_count, token.n, token.n24);
   if ([priceUsd, volume24hUsd, marketCapUsd, numTrades].every((value) => value === null)) return null;
 
   return {
     id: textValue(token.id) || `${currency}-${issuer || "native"}-${index}`,
     currency,
-    name: textValue(token.token_name) || currency,
+    name: firstText(token.token_name, token.name, token.nm, identity.token_name, identity.name) || currency,
     issuer: native ? "XRPL native asset" : issuer,
     priceUsd,
     volume24hUsd,
     marketCapUsd,
     numTrades,
-    lastTradeAt: textValue(token.last_trade_at),
+    lastTradeAt: firstText(token.last_trade_at, token.lastTradeAt, token.time, token.t),
   };
 }
 
 async function loadLiveMarketTokens() {
   const response = await fetch(MARKET_SOURCE, { signal: AbortSignal.timeout(5000) });
   if (!response.ok) throw new Error(`Market source returned HTTP ${response.status}.`);
-  const payload = await response.json() as { tokens?: unknown };
-  if (!Array.isArray(payload.tokens)) throw new Error("Market source returned an unsupported response.");
-  const tokens = payload.tokens
+  const payload = await response.json() as { tokens?: unknown; data?: unknown; error?: unknown; message?: unknown };
+  if (payload.error) throw new Error(firstText(payload.message, payload.error) || "Market source reported an error.");
+  const records = Array.isArray(payload.tokens) ? payload.tokens : Array.isArray(payload.data) ? payload.data : null;
+  if (!records) throw new Error("Market source returned an unsupported response.");
+  const tokens = records
     .map((token, index) => token && typeof token === "object" ? normalizeMarketToken(token as RawMarketToken, index) : null)
     .filter((token): token is LiveMarketToken => token !== null)
     .sort((left, right) => (right.volume24hUsd ?? -1) - (left.volume24hUsd ?? -1))
