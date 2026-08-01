@@ -201,6 +201,64 @@
 .xaman-warning-list svg { flex: 0 0 auto; margin-top: 2px; }
 .xaman-text-link { min-height: 44px; justify-content: space-between; gap: 8px; width: 100%; margin-top: 10px; border: 0; background: transparent; color: var(--xapp-primary); font-weight: 800; text-align: left; }
 
+.xaman-feature-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.xaman-feature-card { display: grid; min-height: 148px; grid-template-columns: 1fr auto; align-content: start; gap: 5px 8px; border: 1px solid var(--xapp-border); border-radius: 16px; background: var(--xapp-surface-muted); color: var(--xapp-text); padding: 14px; text-align: left; }
+.xaman-feature-card > span { display: inline-flex; width: 42px; height: 42px; grid-column: 1 / -1; align-items: center; justify-content: center; margin-bottom: 5px; border-radius: 13px; background: color-mix(in srgb, var(--xapp-primary) 13%, transparent); color: var(--xapp-primary); }
+.xaman-feature-card strong { font-size: 15px; }
+.xaman-feature-card small { grid-column: 1 / -1; color: var(--xapp-muted); font-size: 12px; line-height: 1.45; }
+.xaman-feature-card > svg { grid-column: 2; grid-row: 2; color: var(--xapp-primary); }
+
+.xaman-back-button { display: inline-flex; min-height: 44px; align-items: center; gap: 5px; margin: 5px 0 0; border: 0; background: transparent; color: var(--xapp-primary); font-weight: 850; }
+.xaman-back-button svg { transform: rotate(180deg); }
+
+.xaman-progress-card > div:first-child { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; font-weight: 800; }
+.xaman-progress-card > div:first-child strong { color: var(--xapp-primary); font-size: 18px; }
+.xaman-progress-track { overflow: hidden; height: 10px; margin-top: 12px; border-radius: 999px; background: var(--xapp-surface-muted); }
+.xaman-progress-track span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--xapp-primary), var(--xapp-accent)); transition: width .2s ease; }
+.xaman-progress-card > p { margin: 10px 0 0; color: var(--xapp-muted); font-size: 12px; }
+
+.xaman-course-list { display: grid; gap: 11px; margin-top: 12px; }
+.xaman-course-card { overflow: hidden; border: 1px solid var(--xapp-border); border-radius: 19px; background: var(--xapp-surface); box-shadow: 0 10px 30px rgb(15 23 42 / 5%); }
+.xaman-course-card summary { display: grid; min-height: 78px; grid-template-columns: 42px 1fr auto; align-items: center; gap: 11px; padding: 14px; cursor: pointer; list-style: none; }
+.xaman-course-card summary::-webkit-details-marker { display: none; }
+.xaman-course-card summary > span { display: inline-flex; width: 40px; height: 40px; align-items: center; justify-content: center; border-radius: 13px; background: color-mix(in srgb, var(--xapp-primary) 12%, transparent); color: var(--xapp-primary); font-size: 12px; font-weight: 900; }
+.xaman-course-card summary > span.is-complete { background: var(--xapp-success-bg); color: var(--xapp-success); }
+.xaman-course-card summary div { min-width: 0; }
+.xaman-course-card summary small, .xaman-course-card summary strong { display: block; }
+.xaman-course-card summary small { color: var(--xapp-muted); font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.xaman-course-card summary strong { margin-top: 3px; font-size: 15px; }
+.xaman-course-card summary > svg { color: var(--xapp-muted); transition: transform .18s ease; }
+.xaman-course-card[open] summary > svg { transform: rotate(90deg); }
+.xaman-course-body { padding: 0 16px 17px; border-top: 1px solid var(--xapp-border); }
+.xaman-course-body > p { margin: 15px 0 0; color: var(--xapp-muted); }
+.xaman-course-body > ul, .xaman-research-notes, .xaman-research-limitations ul { display: grid; gap: 9px; margin: 14px 0 0; padding: 0; list-style: none; }
+.xaman-course-body > ul li, .xaman-research-notes li { display: flex; align-items: flex-start; gap: 8px; color: var(--xapp-muted); font-size: 13px; }
+.xaman-course-body > ul svg, .xaman-research-notes svg { flex: 0 0 auto; margin-top: 2px; color: var(--xapp-primary); }
+.xaman-quiz { margin-top: 17px; border-radius: 15px; background: var(--xapp-surface-muted); padding: 14px; }
+.xaman-quiz > p:first-child { display: flex; align-items: center; gap: 7px; margin: 0; color: var(--xapp-primary); font-size: 12px; }
+.xaman-quiz h3 { margin: 9px 0 11px; font-size: 15px; line-height: 1.45; }
+.xaman-quiz > div { display: grid; gap: 7px; }
+.xaman-quiz button { min-height: 48px; border: 1px solid var(--xapp-border); border-radius: 12px; background: var(--xapp-surface); color: var(--xapp-text); padding: 9px 11px; font-size: 14px; font-weight: 750; text-align: left; }
+.xaman-quiz button.is-correct { border-color: var(--xapp-success); background: var(--xapp-success-bg); color: var(--xapp-success); }
+.xaman-quiz button.is-wrong { border-color: var(--xapp-warning); background: var(--xapp-warning-bg); color: var(--xapp-warning); }
+.xaman-quiz-feedback { margin: 11px 0 0; font-size: 13px; }
+.xaman-quiz-feedback.is-correct { color: var(--xapp-success); }
+.xaman-quiz-feedback.is-wrong { color: var(--xapp-warning); }
+
+.xaman-research-score { display: grid; gap: 10px; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--xapp-border); }
+.xaman-research-score > div { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.xaman-research-score span { color: var(--xapp-muted); font-size: 13px; font-weight: 800; }
+.xaman-research-score strong { color: var(--xapp-primary); font-size: 34px; line-height: 1; }
+.xaman-research-score strong small { font-size: 14px; }
+.xaman-research-score p { margin: 0; color: var(--xapp-muted); font-size: 13px; }
+.xaman-research-category { border: 1px solid var(--xapp-border); border-radius: 17px; background: var(--xapp-surface); padding: 15px; box-shadow: 0 9px 25px rgb(15 23 42 / 5%); }
+.xaman-research-category > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.xaman-research-category > div > span { font-weight: 850; }
+.xaman-research-category > p { margin: 10px 0 0; color: var(--xapp-muted); font-size: 13px; }
+.xaman-research-limitations { border-color: color-mix(in srgb, var(--xapp-warning) 34%, var(--xapp-border)); background: color-mix(in srgb, var(--xapp-warning-bg) 38%, var(--xapp-surface)); }
+.xaman-research-limitations li { position: relative; padding-left: 18px; color: var(--xapp-muted); font-size: 13px; }
+.xaman-research-limitations li::before { position: absolute; top: .62em; left: 3px; width: 5px; height: 5px; border-radius: 999px; background: var(--xapp-warning); content: ""; }
+
 .xaman-segmented { display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; padding: 5px; border: 1px solid var(--xapp-border); border-radius: 15px; background: var(--xapp-surface); }
 .xaman-segmented button { min-height: 45px; border: 0; border-radius: 11px; background: transparent; color: var(--xapp-muted); font-weight: 800; }
 .xaman-segmented button span { margin-left: 5px; opacity: .7; }
@@ -323,11 +381,12 @@
 @media (max-width: 390px) {
   .xaman-status-badge { max-width: 116px; white-space: normal; }
   .xaman-session-grid, .xaman-security-grid { grid-template-columns: 1fr; }
-  .xaman-link-grid { grid-template-columns: 1fr; }
+  .xaman-link-grid, .xaman-feature-grid { grid-template-columns: 1fr; }
   .xaman-bottom-nav button span { font-size: 9px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .xaman-view { animation: none; }
+  .xaman-progress-track span, .xaman-course-card summary > svg { transition: none; }
   .xaman-xapp-shell .animate-spin { animation-duration: 1.8s; }
 }
