@@ -11,8 +11,8 @@ This document is the reviewer-facing explanation, qualification matrix and final
 | Field | Value |
 | --- | --- |
 | Working title | **OTT Xaman Safety Companion** |
-| Short description | A read-only XRPL wallet companion with asset, activity, security, destination and transaction checks for the account selected in Xaman. |
-| Production launch URL | `https://ott-terminal-mvp.vercel.app/` |
+| Short description | A read-only XRPL wallet companion with wallet evidence, free XRPL/Xaman lessons and neutral issuer research for the account and network selected in Xaman. |
+| Configured Xaman WebApp URL | `https://ott-terminal-mvp.vercel.app/?xapp=1` |
 | Browser-only layout preview | `https://ott-terminal-mvp.vercel.app/?xapp=1` |
 | Support | `https://ott-terminal-mvp.vercel.app/xapp-support.html` |
 | Privacy | `https://ott-terminal-mvp.vercel.app/privacy.html` |
@@ -21,7 +21,7 @@ This document is the reviewer-facing explanation, qualification matrix and final
 | Customer support | `info@onthetrack.com` |
 | Technical support | `info@onthetrack.com` |
 
-Use the production root URL in the Xaman Developer Console. Xaman supplies the one-time `xAppToken` itself. The `?xapp=1` parameter is only an account-free browser preview and must not replace a real sandbox test.
+Use the configured WebApp URL above in the Xaman Developer Console. Xaman supplies its one-time `xAppToken` in addition to the URL. Outside Xaman, `?xapp=1` provides only an account-free layout preview and must not replace a real sandbox test.
 
 ## Detailed explanation for the reviewer
 
@@ -30,7 +30,11 @@ OTT Xaman Safety Companion is a dedicated, read-only xApp experience. It is not 
 - a normal browser visit lazy-loads the complete OTT Terminal;
 - a Xaman launch with `xAppToken` lazy-loads only the compact Safety Companion and the Xaman SDK integration.
 
-The xApp reads the account and network selected in Xaman, then retrieves public data from the corresponding XRP Ledger network. Its five mobile sections provide an account/reserve overview, trustline and NFT inventory, recent transaction history, a transaction/address scanner and a security/education report. It exposes public issuer, freeze, account-flag, Regular Key, signer-list, tag and ledger evidence without ranking or promoting an asset.
+The xApp reads the account and network selected in Xaman, then retrieves public data from the corresponding XRP Ledger network. Its five persistent mobile sections provide an account/reserve overview, trustline and NFT inventory, recent transaction history, a transaction/address scanner and a security report. Two focused modules add six free XRPL/Xaman micro-lessons and a read-only Research Lab. It exposes public issuer, freeze, account-flag, Regular Key, signer-list, tag, distribution and order-book evidence without promoting an asset.
+
+The learning module covers public versus private wallet information, validated transactions, XRP versus issued assets, trustlines, reserves, Xaman signing screens, networks, destination tags and secret safety. Knowledge-check answers exist only in the active React session and are not transmitted or persisted.
+
+The Research Lab accepts an exact issuer address and currency code, or receives those fields directly from a displayed trustline. It samples validated account settings, trustlines, holder concentration and XRP order-book offers on the same Mainnet or Testnet selected in Xaman. Results are explicitly described as a ledger-evidence signal—not a project rating, endorsement, safety guarantee, fraud determination or investment recommendation. Legal identity, documentation, team claims and independent sources remain outside the scan.
 
 Users can paste or scan a 64-character transaction hash, scan an XRPL address, or use Xaman's native Destination Picker. A matching transaction displays validation status, result, type, amount, fee, sender, destination, source/destination tags, ledger and date. Native Xaman panels are used for QR scanning, destination selection, transaction details, sharing, external links and closing the xApp.
 
@@ -44,15 +48,15 @@ These answers map directly to the questions in Xaman's publishing guidance.
 
 ### 1. What use case will the app have?
 
-Give Xaman users an account-aware XRPL safety workspace. A user can inspect wallet reserve, assets, trustlines, NFTs, recent activity, security flags, destinations and transaction evidence without granting custody or signing anything.
+Give Xaman users an account-aware XRPL safety and learning workspace. A user can inspect wallet evidence, complete free practical lessons and perform neutral issuer/currency research without granting custody or signing anything.
 
 ### 2. Who is the target audience?
 
-Xaman users who want to confirm account context or transaction evidence, including newer XRPL users, support teams, educators and experienced users checking an unfamiliar hash. The utility is asset-neutral and is not limited to holders of an OTT token or NFT.
+Xaman users who want to learn XRPL basics, confirm account context, inspect an issued asset or verify transaction evidence. This includes newer users, support teams, educators and experienced users checking an unfamiliar issuer or hash. The utility is asset-neutral and is not limited to holders of an OTT token or NFT.
 
 ### 3. Does it use an issued currency?
 
-No. The xApp does not issue, sell, swap, promote or require any issued currency. It can display the public amount field from a transaction supplied by the user, including an issued-asset amount when that is what the ledger transaction contains.
+No. The xApp does not issue, sell, swap, promote or require any issued currency. It can display public issued-asset data and run a neutral ledger scan when the user supplies an issuer and currency. Presence in a wallet or research result is never presented as endorsement.
 
 ### 4. Is the xApp intended to make a profit?
 
@@ -73,7 +77,7 @@ The xApp itself is free and contains no purchase, fee, subscription, donation, t
 ### 9. Working title and description
 
 **Title:** OTT Xaman Safety Companion  
-**Description:** A read-only XRPL wallet companion with asset, activity, security, destination and transaction checks for the account selected in Xaman. No custody and no signing requests.
+**Description:** A read-only XRPL wallet companion with public wallet evidence, free XRPL/Xaman lessons and neutral issuer research for the account and network selected in Xaman. No custody and no signing requests.
 
 ## Qualification matrix
 
@@ -81,14 +85,14 @@ Status meanings: **PASS** is backed by code or a live platform audit; **LIVE TES
 
 | Xaman requirement | Evidence | Status |
 | --- | --- | --- |
-| Value to a significant share of users | Wallet reserve, asset inventory, activity, address/tag and transaction verification are general XRPL safety utilities. | **PASS** |
+| Value to a significant share of users | Wallet evidence, six free lessons, issuer/currency research, address/tag and transaction verification serve both new and experienced XRPL users. | **PASS** |
 | Clear first screen and instructions | First screen identifies the selected network, wallet balance, estimated reserve and explicit read-only boundary. | **PASS** |
-| Protect users from dangerous mistakes | No payload creation; secret warnings; issuer/freeze/flag visibility; destination-tag detection; transaction/account comparison. | **PASS** |
+| Protect users from dangerous mistakes | No payload creation; interactive signing lessons; secret warnings; issuer/freeze/flag visibility; destination-tag detection; transaction/account comparison; research limitations. | **PASS** |
 | Say what it does and do what it says | Static xApp audit checks required claims and forbids signing/payment/gating modules in the xApp boundary. | **PASS** |
 | Public and maintained source | Public GitHub repository; xApp code, audits, CI and dependency overrides are versioned together. | **PASS** |
 | Accountable, non-anonymous developer | Publisher identity and KYC must be supplied directly to Xaman; in-app owner/support identity is visible. | **OWNER** |
 | Customer and technical support | Dedicated bilingual page, separate email subjects, in-app support button and secret-sharing warning. | **PASS** |
-| No speculation or token-purchase pressure | xApp has no token purchase, swap, price, yield, donation or NFT-unlock route. | **PASS** |
+| No speculation or token-purchase pressure | Research is evidence-only and explicitly not a rating or recommendation; xApp has no token purchase, swap, price, yield, donation or NFT-unlock route. | **PASS** |
 | Clearly third-party | Header states “Independent xApp by OnTheTrack · not operated by Xaman.” | **PASS** |
 | Tailored to Xaman, not a normal website | `xAppToken` selects a separate lazy-loaded component; full web app and xApp bundles are isolated. | **PASS** |
 | Xaman account/network integration | Uses Xaman SDK environment, selected account/network, QR, Destination Picker, transaction details and share actions. | **LIVE TEST** |
@@ -114,6 +118,7 @@ Status meanings: **PASS** is backed by code or a live platform audit; **LIVE TES
 | `src/xapp/xaman-xapp.css` | Responsive themes, contrast, fonts and touch targets. |
 | `src/lib/xamanXappRuntime.ts` | One-time Xaman token initialization and native bridge methods. |
 | `src/lib/xrplWalletProfile.ts` | Bounded public XRPL WebSocket reads for wallet and transaction evidence. |
+| `src/lib/xrplTokenResearch.ts` | Bounded Mainnet/Testnet issuer, trustline, distribution and order-book sampling for the Research Lab. |
 | `src/lib/xamanXappRuntime.ts` | Initializes the native bridge with the registered public Xaman application identifier; never contains the API secret. |
 | `public/xapp-support.html` | Customer/technical support and safe reporting instructions. |
 | `scripts/audit-xaman-xapp.mjs` | Automated review-boundary regression checks. |
@@ -129,9 +134,12 @@ Status meanings: **PASS** is backed by code or a live platform audit; **LIVE TES
 6. Open Activity and confirm recent transaction types, direction and result; open one in Xaman's native details panel.
 7. Paste and scan a known transaction hash and verify the decoded result against an independent explorer.
 8. Use Destination Picker for an address with and without a required destination tag, then scan an address QR.
-9. Review AccountRoot flags, Regular Key, signer-list counts and all five safety lessons.
-10. Test invalid/cross-network evidence, Share, support/privacy/terms/source, Close, scrolling, rotation, text scaling and every theme.
-11. Confirm a normal browser visit still opens the full OTT Terminal, while a Xaman launch never exposes full-terminal tabs.
+9. Complete all six free lessons, answer each knowledge check and confirm progress resets after the xApp session closes.
+10. Open Research Lab from Home, run a valid issuer/currency scan, then launch it from a trustline and confirm the fields are prefilled.
+11. Compare the ledger-evidence categories with an independent explorer; confirm limitations and non-endorsement language remain visible.
+12. Review AccountRoot flags, Regular Key, signer-list counts and all five signing-safety reminders.
+13. Test invalid/cross-network evidence, Share, support/privacy/terms/source, Close, scrolling, rotation, text scaling and every theme.
+14. Confirm a normal browser visit still opens the full OTT Terminal, while a Xaman launch never exposes full-terminal trading, swap, purchase or founder tabs.
 
 ## Sandbox test record
 
