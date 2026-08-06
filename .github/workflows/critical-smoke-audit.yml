@@ -1,0 +1,104 @@
+name: Critical Smoke Audit
+
+on:
+  push:
+    branches:
+      - agent/critical-smoke-audit-20260724
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Prepare evidence directory
+        run: mkdir -p artifacts/critical-smoke-audit
+
+      - name: Test reproducible clean install
+        id: clean_install
+        continue-on-error: true
+        run: npm ci 2>&1 | tee artifacts/critical-smoke-audit/npm-ci.log
+
+      - name: Install declared dependencies for continued audit
+        if: steps.clean_install.outcome != 'success'
+        run: npm install --no-audit --no-fund 2>&1 | tee artifacts/critical-smoke-audit/npm-install-fallback.log
+
+      - name: Run route audit, TypeScript and production build
+        id: quality
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npm run quality 2>&1 | tee artifacts/critical-smoke-audit/quality.log
+
+      - name: Install browser audit dependencies
+        if: always()
+        run: |
+          npm install --no-save playwright @axe-core/playwright
+          npx playwright install --with-deps chromium
+
+      - name: Start production preview
+        id: preview
+        if: always()
+        continue-on-error: true
+        run: |
+          if [ ! -d dist ]; then
+            npm run build
+          fi
+          nohup npm run preview -- --host 127.0.0.1 --port 4173 > artifacts/critical-smoke-audit/preview.log 2>&1 &
+          for attempt in {1..40}; do
+            if curl --fail --silent http://127.0.0.1:4173 >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat artifacts/critical-smoke-audit/preview.log
+          exit 1
+
+      - name: Run desktop, mobile, language and accessibility smoke audit
+        id: browser_audit
+        if: always() && steps.preview.outcome == 'success'
+        continue-on-error: true
+        run: node scripts/critical-smoke-audit.mjs
+        env:
+          AUDIT_BASE_URL: http://127.0.0.1:4173
+
+      - name: Record workflow status
+        if: always()
+        run: |
+          {
+            echo "clean_install_outcome=${{ steps.clean_install.outcome }}"
+            echo "quality_outcome=${{ steps.quality.outcome }}"
+            echo "preview_outcome=${{ steps.preview.outcome }}"
+            echo "browser_audit_outcome=${{ steps.browser_audit.outcome }}"
+            echo "commit=${GITHUB_SHA}"
+            echo "branch=${GITHUB_REF_NAME}"
+          } > artifacts/critical-smoke-audit/workflow-status.txt
+
+      - name: Upload audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ott-critical-smoke-audit
+          path: artifacts/critical-smoke-audit
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Fail on release-blocking audit outcomes
+        if: always() && (steps.clean_install.outcome != 'success' || steps.quality.outcome != 'success' || steps.preview.outcome != 'success' || steps.browser_audit.outcome != 'success')
+        run: exit 1
