@@ -282,7 +282,7 @@ export function AccessGateTab({ walletAddress = "guest", onNavigate, onWalletCon
               <OTTLogoMark size="lg" />
               {unlocked ? <ShieldCheck className="text-emerald-300" size={29} /> : <Lock className="text-slate-500" size={27} />}
             </div>
-            <p className="mt-7 text-xs font-semibold text-slate-400">Current access</p>
+            <p className="mt-7 text-xs font-semibold text-slate-300">{en ? "Current access" : "Huidige toegang"}</p>
             <p className="mt-2 text-3xl font-semibold">{unlocked ? (en ? "Unlocked" : "Ontgrendeld") : (en ? "Public preview" : "Publieke preview")}</p>
             <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
               <DarkMetric label="Wallet" value={guest ? (en ? "Not linked" : "Niet gekoppeld") : `${walletAddress.slice(0, 7)}…${walletAddress.slice(-5)}`} />
@@ -649,7 +649,7 @@ function Metric({ label, value }: { label: string; value: string }) {
 }
 
 function DarkMetric({ label, value }: { label: string; value: string }) {
-  return <div className="rounded-2xl border border-white/10 bg-white/5 p-4"><p className="text-xs text-slate-400">{label}</p><p className="mt-2 break-all font-semibold text-slate-100">{value}</p></div>;
+  return <div className="rounded-2xl border border-white/10 bg-white/5 p-4"><p className="text-xs text-slate-300">{label}</p><p className="mt-2 break-all font-semibold text-slate-100">{value}</p></div>;
 }
 
 function SummaryCard({ icon: Icon, label, value, text }: { icon: typeof ShoppingBag; label: string; value: string; text: string }) {

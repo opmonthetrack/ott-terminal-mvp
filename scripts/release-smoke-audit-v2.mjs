@@ -10,7 +10,7 @@ fs.mkdirSync(outputDir, { recursive: true });
 const routes = [
   "home", "dashboard", "wallet", "academy", "xamanactivation", "network",
   "intel", "news", "ottintelligence", "roadmap", "support", "xaman",
-  "xrplverify", "source", "checkin", "rewardledger", "accessgate",
+  "xrplverify", "source", "checkin", "rewardledger", "accessgate", "portfolio",
 ];
 const languages = ["en", "nl"];
 const profiles = [

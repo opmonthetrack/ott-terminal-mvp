@@ -12,6 +12,20 @@ type Props = {
 export function AgeWalletDna({ account = "", network = "mainnet", language = "en", lockedContext = false, onBack, initialScan, onScan }: Props) {
   const en = language === "en";
   const text = (english: string, dutch: string) => en ? english : dutch;
+  const message = (value: string) => en ? value : ({
+    "Enter a public XRPL r-address.": "Voer een openbaar XRPL-walletadres in dat met r begint.",
+    "Weighted average from validated wallet history, including directly attributable purchase fees.": "Gewogen gemiddelde uit gevalideerde wallethistorie, inclusief direct toe te rekenen aankoopkosten.",
+    "The scan limit was reached or the history service is unavailable.": "De scanlimiet is bereikt of de dienst voor transactiehistorie is niet beschikbaar.",
+    "The available history does not establish a complete opening balance.": "De beschikbare historie onderbouwt geen volledig beginsaldo.",
+    "The reconstructed holdings do not match the ledger balance.": "Het berekende bezit komt niet overeen met het saldo op de ledger.",
+    "An incoming transfer or unsupported acquisition has an unknown purchase cost.": "De aankoopkosten van een ontvangst of niet-ondersteunde aankoop zijn onbekend.",
+    "The public XRPL server is busy. Wait at least a minute before trying again.": "De openbare XRPL-server is druk. Wacht minstens een minuut voordat je opnieuw probeert.",
+    "XRPL did not answer in time. Try again.": "De XRPL-server antwoordde niet op tijd. Probeer opnieuw.",
+    "Could not reach the selected XRP Ledger": "De geselecteerde XRP Ledger is niet bereikbaar.",
+    "Wallet holdings changed or are restricted. Run a new scan.": "Het bezit is gewijzigd of heeft beperkingen. Voer een nieuwe scan uit.",
+    "Issuer Global Freeze is active": "De uitgever heeft alle tegoeden bevroren.",
+    "Issuer authorization has not been established": "Toestemming van de uitgever is niet vastgesteld.",
+  } as Record<string, string>)[value] ?? value;
   const [address, setAddress] = useState(account === "guest" ? "" : account);
   const [selectedNetwork, setSelectedNetwork] = useState<XrplNetwork>(network);
   const [scan, setScan] = useState<DnaScan | null>(initialScan?.account === account && initialScan.network === network ? initialScan : null);
@@ -102,7 +116,7 @@ export function AgeWalletDna({ account = "", network = "mainnet", language = "en
     <p id="dna-context" className="dna-muted">{lockedContext
       ? text("Account and network come from Xaman. No seed or signing request is needed.", "Account en netwerk komen uit Xaman. Er is geen seed of ondertekenverzoek nodig.")
       : text("Public addresses only. Never enter recovery words or private keys.", "Alleen openbare adressen. Voer nooit herstelwoorden of privésleutels in.")}</p>
-    {error && <p className="dna-error" role="alert">{error}</p>}
+    {error && <p className="dna-error" role="alert">{message(error)}</p>}
     <div aria-live="polite" role="status">{busy && <p className="dna-note">{text("Reading holdings and up to four history pages. Older or transferred holdings may have an unknown purchase price.", "Bezittingen en maximaal vier pagina’s historie worden gelezen. Bij oudere of ontvangen tokens kan de aankoopprijs onbekend blijven.")}</p>}</div>
     {scan && <>
       <div className="dna-summary">
@@ -126,7 +140,7 @@ export function AgeWalletDna({ account = "", network = "mainnet", language = "en
           </dl>
           {asset.frozen && <p className="dna-note">{text("A trustline freeze flag is present. A sale estimate is unavailable.", "Er staat een freeze-vlag op de trustline. Een verkoopschatting is niet beschikbaar.")}</p>}
           <details><summary>{text("Why this purchase-cost status?", "Waarom deze aankoopstatus?")}</summary>
-            <p>{asset.basis.reason}</p>
+            <p>{message(asset.basis.reason)}</p>
             <p>{text("Transfers and airdrops do not establish what you paid elsewhere. A partial history cannot establish the cost of the whole position.", "Ontvangsten en airdrops bewijzen niet wat je ergens anders hebt betaald. Gedeeltelijke historie bewijst niet de kosten van je hele positie.")}</p>
             {asset.basis.observedPurchases.length > 0 && <><h3>{text("Recent purchases observed in this scan", "Recente aankopen in deze scan")}</h3>
               <ul>{asset.basis.observedPurchases.map(buy => <li key={buy.hash}>{buy.quantity} {text("tokens for", "tokens voor")} {buy.costXrp} XRP <span className="dna-hash">{buy.hash}</span></li>)}</ul>
@@ -136,7 +150,7 @@ export function AgeWalletDna({ account = "", network = "mainnet", language = "en
             {quoting === key ? <Loader2 size={17} className="dna-spin" /> : <RefreshCw size={17} />}
             {text("Check current bids", "Bekijk huidige biedingen")}
           </button>
-          {quoteErrors[key] && <p className="dna-error" role="alert">{quoteErrors[key]}</p>}
+          {quoteErrors[key] && <p className="dna-error" role="alert">{message(quoteErrors[key])}</p>}
           {quote && <div className="dna-quote">
             <h3>{text("Order-book estimate", "Schatting uit het orderboek")}</h3>
             <dl className="dna-values">
@@ -146,7 +160,7 @@ export function AgeWalletDna({ account = "", network = "mainnet", language = "en
               <div><dt>{text("Estimated net proceeds, full position", "Geschatte netto-opbrengst, hele positie")}</dt><dd>{quote.fullCoverage ? quote.netXrp + " XRP" : text("Insufficient sampled depth", "Onvoldoende bekeken biedingen")}</dd></div>
               <div><dt>{text("Estimated gain / loss", "Geschatte winst / verlies")}</dt><dd>{quote.estimatedPnlXrp === null ? text("Not established", "Niet vast te stellen") : quote.estimatedPnlXrp + " XRP"}</dd></div>
             </dl>
-            {quote.estimatedPnlPercent !== null && <p>{quote.estimatedPnlPercent}% {text("relative to the reconstructed XRP cost", "ten opzichte van de gereconstrueerde XRP-kosten")}</p>}
+            {quote.estimatedPnlPercent !== null && <p>{new Intl.NumberFormat(language, { maximumFractionDigits: 2 }).format(Number(quote.estimatedPnlPercent))}% {text("relative to the reconstructed XRP cost", "ten opzichte van de gereconstrueerde XRP-kosten")}</p>}
             <p className="dna-muted">Ledger {quote.ledger} · {new Date(quote.quotedAt).toLocaleString(language)}</p>
             <p>{text("Direct XRP bids only; the issuer transfer rate and one estimated network fee are included. AMM paths and later market changes are not included. This is an estimate, not an executable quote or a prediction.", "Alleen directe XRP-biedingen; de overdrachtsfactor van de uitgever en één geschatte netwerkfee zijn meegenomen. AMM-routes en latere marktveranderingen niet. Dit is een schatting, geen uitvoerbare offerte of voorspelling.")}</p>
           </div>}

@@ -32,6 +32,8 @@ Run npm run quality for route and xApp boundary checks, dependency audit, arithm
 
 Tests cover fee-inclusive purchase basis, weighted partial sales, transfers, missing history, reconciliation, issuer collisions, v1/v2 formats, partial-payment metadata, failed transactions, funded and missing depth, expired and self-owned orders, issuer transfer rate, losses and unknown costs. See the final release evidence for actual results and remaining limits.
 
+The release smoke workflow includes Wallet DNA in its 72 desktop/mobile, English/Dutch route checks. Run `node scripts/smoke-age-wallet-dna-ui.mjs` for the focused browser suite. Set `AUDIT_BASE_URL` to the intended deployment, `AUDIT_OUTPUT_DIR` for evidence and optionally `CHROMIUM_PATH` for an installed test browser. A protected candidate can use `AUDIT_ACCESS_FILE`, an untracked JSON file containing a temporary Vercel share URL under `url`; do not commit this file. `AUDIT_REAL_SCAN=1` opts into one read-only scan of a public XRPL documentation address. Default evidence scenarios use explicitly synthetic WebSocket responses, including unknown acquisition costs and insufficient order-book depth. They never create or sign transactions.
+
 ## Primary references
 
 - https://xrpl.org/docs/references/http-websocket-apis/public-api-methods/account-methods/account_tx
