@@ -21,6 +21,7 @@ const main = read("src/main.tsx");
 const index = read("index.html");
 const component = read("src/xapp/XamanXapp.tsx");
 const explore = read("src/xapp/XamanExploreView.tsx");
+const dna = read("src/components/AgeWalletDna.tsx") + read("src/lib/ageWalletDna.ts");
 const runtime = read("src/lib/xamanXappRuntime.ts");
 const styles = read("src/xapp/xaman-xapp.css");
 const support = read("public/xapp-support.html");
@@ -94,9 +95,13 @@ for (const fragment of ["openBrowser", "scanQr", "selectDestination", "tx", "sha
 }
 
 for (const forbidden of ["window.open", "setInterval(", "localStorage", "sessionStorage", "AccessGateTab", "SupportDonationTab", "XrplDexSwapTerminal", "openSignRequest", "createPayload"]) {
-  if (component.includes(forbidden) || explore.includes(forbidden) || runtime.includes(forbidden)) {
+  if (component.includes(forbidden) || explore.includes(forbidden) || runtime.includes(forbidden) || dna.includes(forbidden)) {
     fail(`xApp code contains forbidden or review-risky pattern '${forbidden}'`);
   }
+}
+
+for (const forbidden of ["wallet-dna-service", "executeSelectedTokenSales", "trading-vault", "submitAndWait", "OWNER_PASSWORD"]) {
+  if (dna.includes(forbidden)) fail(`AGE owner execution code must not enter the public xApp: ${forbidden}`);
 }
 
 if (!styles.includes("font-size: 16px") || !styles.includes("min-height: 48px")) {

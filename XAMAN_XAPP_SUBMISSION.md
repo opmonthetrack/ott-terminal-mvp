@@ -1,6 +1,6 @@
 # OTT Xaman Safety Companion — review package
 
-Prepared: 31 July 2026  
+Updated: 10 September 2026 — release candidate; device re-verification required
 Publisher draft: OnTheTrack / TruthOnTheTrack  
 Public source: <https://github.com/opmonthetrack/ott-terminal-mvp>
 
@@ -33,6 +33,12 @@ OTT Xaman Safety Companion is a dedicated, read-only xApp experience. It is not 
 The xApp reads the account and network selected in Xaman, then retrieves public data from the corresponding XRP Ledger network. Its five persistent mobile sections provide an account/reserve overview, trustline and NFT inventory, recent transaction history, a transaction/address scanner and a security report. Six free XRPL/Xaman micro-lessons and an Explore XRPL workspace add a live read-only market heatmap, neutral issuer Research Lab, risk-first DeFi Directory and local Evidence Files tool. It exposes public issuer, freeze, account-flag, Regular Key, signer-list, tag, distribution and order-book evidence without promoting an asset.
 
 The learning module covers public versus private wallet information, validated transactions, XRP versus issued assets, trustlines, reserves, Xaman signing screens, networks, destination tags and secret safety. Knowledge-check answers exist only in the active React session and are not transmitted or persisted.
+
+The home screen also opens AGE Wallet DNA, a standalone free utility for the selected Xaman account and network. On request it reads validated holdings and bounded transaction history, reconstructs weighted XRP acquisition costs where supported by complete evidence, and compares current inventory with funded direct XRP bids. Unknown cost, transfers and partial history stay explicit. The estimate accounts for sampled depth, expired orders, issuer transfer rates and an estimated network fee. It does not promise profit, forecast returns or provide a buy/hold/sell recommendation. It creates no order or signing request.
+
+AGE (Adaptive Grid Engine) is introduced in an in-app explanation as another OnTheTrack product. The xApp does not require an AGE account, subscription or installed app. It does not import AGE owner execution services and does not send scan results to AGE. No external AGE launch link has been verified or added. Public XRPL servers receive the requested public addresses and connection metadata. DNA results and lesson answers remain in memory during the xApp session.
+
+Release-specific verification is described in `docs/AGE_WALLET_DNA.md`. Prior PASS rows below describe the existing design and earlier checks; they do not replace physical iOS/Android testing of this changed release or constitute Xaman approval.
 
 The Research Lab accepts an exact issuer address and currency code, or receives those fields directly from a displayed trustline. It samples validated account settings, trustlines, holder concentration and XRP order-book offers on the same Mainnet or Testnet selected in Xaman. Results are explicitly described as a ledger-evidence signal—not a project rating, endorsement, safety guarantee, fraud determination or investment recommendation. Legal identity, documentation, team claims and independent sources remain outside the scan.
 

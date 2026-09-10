@@ -35,7 +35,6 @@ const FOUNDER_TAB_IDS = new Set([
   "truthdesk",
   "marketplace",
   "otttestnet",
-  "portfolio",
   "partners",
   "factory",
   "profile",

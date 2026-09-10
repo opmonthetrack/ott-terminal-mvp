@@ -246,9 +246,9 @@ function getRouteCatalog(language: TerminalLanguage): Record<ActiveTab, RouteIte
     },
     portfolio: {
       id: "portfolio",
-      label: "Portfolio",
-      description: en ? "Internal portfolio prototype." : "Intern portfolioprototype.",
-      audience: "founder",
+      label: "AGE Wallet DNA",
+      description: en ? "Acquisition costs and current XRP bids, with evidence." : "Aankoopkosten en huidige XRP-biedingen, met bewijs.",
+      audience: "public",
     },
     ecosystem: {
       id: "ecosystem",
@@ -412,7 +412,7 @@ function getCoreMenuGroups(catalog: Record<ActiveTab, RouteItem>, language: Term
   const en = language === "en";
   return [
     { title: en ? "Start" : "Start", items: pickRoutes(catalog, ["home", "academy"]) },
-    { title: en ? "Discover" : "Ontdekken", items: pickRoutes(catalog, ["intel", "network"]) },
+    { title: en ? "Discover" : "Ontdekken", items: pickRoutes(catalog, ["intel", "network", "portfolio"]) },
     { title: en ? "My OTT" : "Mijn OTT", items: pickRoutes(catalog, ["wallet", "dashboard"]) },
     { title: en ? "Access & community" : "Toegang en community", items: pickRoutes(catalog, ["accessgate", "roadmap", "support"]) },
   ];
@@ -435,7 +435,6 @@ function getFounderMenuGroups(catalog: Record<ActiveTab, RouteItem>, language: T
         "rewardpolicy",
         "ai",
         "marketplace",
-        "portfolio",
         "token",
         "profile",
       ]),
@@ -516,7 +515,7 @@ export default function App() {
   const primaryNavigation = useMemo(() => getPrimaryNavigation(language, founderMode), [founderMode, language]);
   const activeItem = catalog[activeTab];
   const lockReason = getRouteLockReason(activeItem, signedIn, founderAuthorized, entitlements);
-  const routeAccessPending = authLoading || (activeItem.audience === "premium" && signedIn && premiumLoading);
+  const routeAccessPending = (activeItem.audience !== "public" && authLoading) || (activeItem.audience === "premium" && signedIn && premiumLoading);
   const accountName = getOttAccountName(user);
 
   const refreshPremiumAccess = useCallback(async (silent = false) => {

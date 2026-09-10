@@ -15,6 +15,7 @@ const expectedPublicHubs = [
   "academy",
   "intel",
   "network",
+  "portfolio",
   "wallet",
   "dashboard",
   "accessgate",
@@ -32,6 +33,7 @@ const expectedNonFounderRoutes = [
   "xamanactivation",
   "xrplverify",
   "network",
+  "portfolio",
   "wallet",
   "ecosystem",
   "validator",
@@ -55,7 +57,7 @@ const founderOnlyRoutes = [
   "truthdesk",
   "marketplace",
   "otttestnet",
-  "portfolio",
+
   "partners",
   "factory",
   "profile",
@@ -103,7 +105,7 @@ for (const id of expectedPublicHubs) {
 
 for (const id of publicHubIds) {
   if (!expectedPublicHubs.includes(id)) {
-    fail(`unexpected public hub '${id}' is not part of the nine-hub contract`);
+    fail(`unexpected public hub '${id}' is not part of the public-hub contract`);
   }
   if (founderOnlyRoutes.includes(id)) {
     fail(`founder route '${id}' leaked into the public hub menu`);
