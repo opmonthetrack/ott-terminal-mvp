@@ -115,7 +115,7 @@ export function deriveDnaBasis(account: string, assets: DnaAsset[], history: Jso
   let valid = true;
   let accountCreationSeen = false;
   const seen = new Set<string>();
-  const ordered = history.map(row => ({ ...row, ledger_index: row.ledger_index ?? row.tx?.ledger_index })).sort((a, b) => (a.ledger_index - b.ledger_index) || ((a.meta?.TransactionIndex ?? 0) - (b.meta?.TransactionIndex ?? 0)));
+  const ordered = history.map<Json>(row => ({ ...row, ledger_index: row.ledger_index ?? row.tx?.ledger_index })).sort((a, b) => (a.ledger_index - b.ledger_index) || ((a.meta?.TransactionIndex ?? 0) - (b.meta?.TransactionIndex ?? 0)));
   for (const row of ordered) {
     const tx = row.tx_json || row.tx;
     const hash = row.hash || tx?.hash;
