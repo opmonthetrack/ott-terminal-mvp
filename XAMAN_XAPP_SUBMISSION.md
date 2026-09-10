@@ -11,7 +11,7 @@ This document is the reviewer-facing explanation, qualification matrix and final
 | Field | Value |
 | --- | --- |
 | Working title | **OTT Xaman Safety Companion** |
-| Short description | A read-only XRPL wallet companion with wallet evidence, free lessons, a live market heatmap, neutral issuer research, a risk-first ecosystem directory and local evidence-file fingerprints. |
+| Short description | A read-only XRPL wallet companion with wallet evidence, free lessons, third-party market observations, neutral issuer research, a risk-first ecosystem directory and local evidence-file fingerprints. |
 | Configured Xaman WebApp URL | `https://ott-terminal-mvp.vercel.app/?xapp=1` |
 | Browser-only layout preview | `https://ott-terminal-mvp.vercel.app/?xapp=1` |
 | Support | `https://ott-terminal-mvp.vercel.app/xapp-support.html` |
@@ -30,7 +30,7 @@ OTT Xaman Safety Companion is a dedicated, read-only xApp experience. It is not 
 - a normal browser visit lazy-loads the complete OTT Terminal;
 - a Xaman launch with `xAppToken` lazy-loads only the compact Safety Companion and the Xaman SDK integration.
 
-The xApp reads the account and network selected in Xaman, then retrieves public data from the corresponding XRP Ledger network. Its five persistent mobile sections provide an account/reserve overview, trustline and NFT inventory, recent transaction history, a transaction/address scanner and a security report. Six free XRPL/Xaman micro-lessons and an Explore XRPL workspace add a live read-only market heatmap, neutral issuer Research Lab, risk-first DeFi Directory and local Evidence Files tool. It exposes public issuer, freeze, account-flag, Regular Key, signer-list, tag, distribution and order-book evidence without promoting an asset.
+The xApp reads the account and network selected in Xaman, then retrieves public data from the corresponding XRP Ledger network. Its five persistent mobile sections provide an account/reserve overview, trustline and NFT inventory, recent transaction history, a transaction/address scanner and a security report. Six free XRPL/Xaman micro-lessons and an Explore XRPL workspace add read-only market observations, neutral issuer Research Lab, risk-first DeFi Directory and local Evidence Files tool. It exposes public issuer, freeze, account-flag, Regular Key, signer-list, tag, distribution and order-book evidence without promoting an asset.
 
 The learning module covers public versus private wallet information, validated transactions, XRP versus issued assets, trustlines, reserves, Xaman signing screens, networks, destination tags and secret safety. Knowledge-check answers exist only in the active React session and are not transmitted or persisted.
 
@@ -38,11 +38,11 @@ The home screen also opens AGE Wallet DNA, a standalone free utility for the sel
 
 AGE (Adaptive Grid Engine) is introduced in an in-app explanation as another OnTheTrack product. The xApp does not require an AGE account, subscription or installed app. It does not import AGE owner execution services and does not send scan results to AGE. No external AGE launch link has been verified or added. Public XRPL servers receive the requested public addresses and connection metadata. DNA results and lesson answers remain in memory during the xApp session.
 
-Release-specific verification is described in `docs/AGE_WALLET_DNA.md`. Prior PASS rows below describe the existing design and earlier checks; they do not replace physical iOS/Android testing of this changed release or constitute Xaman approval.
+Release-specific verification is described in `docs/AGE_WALLET_DNA.md` and `docs/RELIABILITY_RELEASE_2026-09-10.md`. Prior PASS rows below describe the existing design and earlier checks; they do not replace physical iOS/Android testing of this changed release or constitute Xaman approval.
 
 The Research Lab accepts an exact issuer address and currency code, or receives those fields directly from a displayed trustline. It samples validated account settings, trustlines, holder concentration and XRP order-book offers on the same Mainnet or Testnet selected in Xaman. Results are explicitly described as a ledger-evidence signal—not a project rating, endorsement, safety guarantee, fraud determination or investment recommendation. Legal identity, documentation, team claims and independent sources remain outside the scan.
 
-The heatmap displays only complete live records returned by the identified third-party market source and never substitutes static estimated prices when that source is unavailable. It has no buy, swap, offer or signing control. The directory provides neutral technology, custody, wallet and risk context; inclusion is not endorsement, and reviewed external sources open through Xaman's native browser flow.
+The market view displays up to 50 available third-party records, ordered by reported 24-hour USD volume where present. Missing metrics remain unknown, and the retrieved time is not claimed to be the quote time. Source-specific field mappings follow the provider documentation; generic price and volume fields are never assumed to be USD. Provider maintenance, malformed responses and failed requests show an unavailable state without estimated fallback prices. It has no buy, swap, offer or signing control. The directory provides neutral technology, custody, wallet and risk context; inclusion is not endorsement, and reviewed external sources open through Xaman's native browser flow.
 
 Evidence Files calculates a SHA-256 fingerprint locally with the browser Web Crypto API. The selected file is not uploaded, transmitted, parsed or persisted. Only user-entered context and file metadata remain in React memory until the xApp closes; the user can copy or share a text evidence record and can remove it during the session.
 
@@ -58,7 +58,7 @@ These answers map directly to the questions in Xaman's publishing guidance.
 
 ### 1. What use case will the app have?
 
-Give Xaman users an account-aware XRPL safety, learning and research workspace. A user can inspect wallet evidence, complete free practical lessons, view live market context, research an exact issuer/currency, compare ecosystem risks and fingerprint source files without granting custody or signing anything.
+Give Xaman users an account-aware XRPL safety, learning and research workspace. A user can inspect wallet evidence, complete free practical lessons, view reported market context, research an exact issuer/currency, compare ecosystem risks and fingerprint source files without granting custody or signing anything.
 
 ### 2. Who is the target audience?
 
@@ -87,7 +87,7 @@ The xApp itself is free and contains no purchase, fee, subscription, donation, t
 ### 9. Working title and description
 
 **Title:** OTT Xaman Safety Companion  
-**Description:** A read-only XRPL wallet companion with public wallet evidence, free lessons, a live market heatmap, neutral issuer research, a risk-first ecosystem directory and local evidence-file fingerprints. No custody, swaps or signing requests.
+**Description:** A read-only XRPL wallet companion with public wallet evidence, free lessons, third-party market observations, neutral issuer research, a risk-first ecosystem directory and local evidence-file fingerprints. No custody, swaps or signing requests.
 
 ## Qualification matrix
 
@@ -95,7 +95,7 @@ Status meanings: **PASS** is backed by code or a live platform audit; **LIVE TES
 
 | Xaman requirement | Evidence | Status |
 | --- | --- | --- |
-| Value to a significant share of users | Wallet evidence, six free lessons, live market context, issuer/currency research, ecosystem risk summaries, local evidence fingerprints, address/tag checks and transaction verification serve both new and experienced XRPL users. | **PASS** |
+| Value to a significant share of users | Wallet evidence, six free lessons, reported market context, issuer/currency research, ecosystem risk summaries, local evidence fingerprints, address/tag checks and transaction verification serve both new and experienced XRPL users. | **PASS** |
 | Clear first screen and instructions | First screen identifies the selected network, wallet balance, estimated reserve and explicit read-only boundary. | **PASS** |
 | Protect users from dangerous mistakes | No payload creation; interactive signing lessons; secret warnings; issuer/freeze/flag visibility; destination-tag detection; transaction/account comparison; research limitations. | **PASS** |
 | Say what it does and do what it says | Static xApp audit checks required claims and forbids signing/payment/gating modules in the xApp boundary. | **PASS** |
@@ -147,7 +147,7 @@ Status meanings: **PASS** is backed by code or a live platform audit; **LIVE TES
 7. Paste and scan a known transaction hash and verify the decoded result against an independent explorer.
 8. Use Destination Picker for an address with and without a required destination tag, then scan an address QR.
 9. Complete all six free lessons, answer each knowledge check and confirm progress resets after the xApp session closes.
-10. Open Explore XRPL and verify the heatmap either shows identified live source data or a clear unavailable state without fallback prices.
+10. Open Explore XRPL and verify the heatmap either shows identified source data or a clear unavailable state without fallback prices.
 11. Open Token Research, run a valid issuer/currency scan, then launch it from a trustline and heatmap record and confirm the fields are prefilled.
 12. Review several DeFi Directory entries, their custody/risk context and the native external-browser confirmation.
 13. Fingerprint a non-sensitive test file, compare the SHA-256 independently, copy/share the record, remove it and confirm no record remains after closing the session.
@@ -172,6 +172,11 @@ Number of distinct devices: **_pending_**
 All blocking defects resolved: **_pending_**
 
 ## Platform assurance notes
+
+Supabase was restored on 10 September 2026 after inactivity. The service reports ACTIVE_HEALTHY; email and Google authentication settings respond successfully. All ten public tables retain RLS, and unauthenticated profile/completion reads are denied. A full owner login/email-confirmation round trip still needs a real user session.
+
+Native initialization has an overall deadline. Missing, unsupported or inconsistent XRPL network context blocks wallet tools; a network-switch event invalidates displayed wallet/DNA results and requires closing and reopening OTT. Bridge failures, including synchronous errors and missing native responses, produce user-facing messages. Physical device tests remain pending.
+
 
 - Production build, TypeScript, public-route audit and xApp boundary audit pass locally.
 - The dependency gate reports 0 critical, 0 high and 0 moderate advisories. Nine low advisories remain in the existing Crossmark/XRPL dependency chain used by the separate browser terminal; upstream offers no complete fix. Crossmark is not imported by the xApp entry mode.

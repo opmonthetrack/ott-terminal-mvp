@@ -13,7 +13,8 @@
     "audit:xapp": "node scripts/audit-xaman-xapp.mjs",
     "lint": "tsc --noEmit",
     "test:dna": "tsx scripts/test-age-wallet-dna.ts",
-    "quality": "npm run audit:routes && npm run audit:xapp && npm run audit:dependencies && npm run test:dna && npm run lint && npm run build"
+    "quality": "npm run audit:routes && npm run audit:xapp && npm run audit:dependencies && npm run test:dna && npm run test:reliability && npm run lint && npm run build",
+    "test:reliability": "tsx scripts/test-reliability.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "^4.12.1",

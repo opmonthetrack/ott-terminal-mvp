@@ -56,11 +56,17 @@ jobs:
           cat artifacts/release-smoke-audit/preview.log
           exit 1
 
-      - name: Run precise 72-screen UI UX language and WCAG audit
+      - name: Run precise 92-screen UI UX language and WCAG audit
         run: node scripts/release-smoke-audit-v2.mjs
         env:
           AUDIT_BASE_URL: http://127.0.0.1:4173
           AUDIT_OUTPUT_DIR: artifacts/release-smoke-audit
+
+      - name: Verify repaired market, directory and native failure states
+        run: node scripts/smoke-reliability-ui.mjs
+        env:
+          AUDIT_BASE_URL: http://127.0.0.1:4173
+          AUDIT_OUTPUT_DIR: artifacts/release-smoke-audit/reliability
 
       - name: Upload audit evidence
         if: always()

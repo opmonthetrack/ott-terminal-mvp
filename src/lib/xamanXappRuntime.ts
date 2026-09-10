@@ -1,3 +1,5 @@
+import { withTimeout } from "./asyncReliability";
+import { resolveXamanNetwork } from "./xamanNetwork";
 import type { Xumm } from "xumm";
 import type { XrplNetwork } from "./walletRegistry";
 
@@ -25,6 +27,8 @@ export type XamanXappBridge = {
   selectDestination?: (options: { ignoreDestinationTag: boolean }) => void | Promise<unknown>;
   tx?: (options: { account: string; tx: string }) => void | Promise<unknown>;
   share?: (options: { text: string }) => void | Promise<unknown>;
+  on(event: "networkswitch", listener: (data: unknown) => void): void;
+  off?(event: "networkswitch", listener: (data: unknown) => void): void;
   on(event: "qr", listener: (data: XamanQrEvent) => void): void;
   on(event: "destination", listener: (data: XamanDestinationEvent) => void): void;
   off?(event: "qr", listener: (data: XamanQrEvent) => void): void;
@@ -57,31 +61,12 @@ export function getXamanXappTheme(): XamanXappTheme {
   return "light";
 }
 
-function normalizeNetwork(networkType: string, networkId: number | null): XrplNetwork {
-  const normalized = networkType.trim().toLowerCase();
-  if (normalized.includes("test") || networkId === 1) return "testnet";
-  if (normalized.includes("dev") || networkId === 2) return "devnet";
-  return "mainnet";
-}
-
-async function withTimeout<T>(promise: Promise<T>, timeoutMs: number) {
-  let timeoutId = 0;
-  const timeout = new Promise<never>((_resolve, reject) => {
-    timeoutId = window.setTimeout(() => reject(new Error("Xaman context took too long to load.")), timeoutMs);
-  });
-
-  try {
-    return await Promise.race([promise, timeout]);
-  } finally {
-    window.clearTimeout(timeoutId);
-  }
-}
-
 async function createXamanXappRuntime(): Promise<XamanXappRuntime> {
   const params = new URLSearchParams(window.location.search);
   const token = params.get("xAppToken")?.trim() ?? "";
   const theme = getXamanXappTheme();
 
+  if (params.has("xAppToken") && !token) throw new Error("The Xaman launch token is missing. Close and reopen OTT from Xaman.");
   if (!token) {
     return {
       account: "",
@@ -94,29 +79,30 @@ async function createXamanXappRuntime(): Promise<XamanXappRuntime> {
     };
   }
 
-  const { Xumm: XummSdk } = await import("xumm");
+  const { Xumm: XummSdk } = await withTimeout(import("xumm"), XAPP_READY_TIMEOUT_MS);
   const sdk: Xumm = new XummSdk(XAMAN_APPLICATION_ID, token);
   let bridge = (sdk.xapp ?? null) as XamanXappBridge | null;
 
   try {
     await withTimeout(sdk.environment.ready, XAPP_READY_TIMEOUT_MS);
     bridge = (sdk.xapp ?? bridge) as XamanXappBridge | null;
-    const [accountValue, networkTypeValue, networkIdValue] = await Promise.all([
+    const [accountValue, networkTypeValue, networkIdValue] = await withTimeout(Promise.all([
       sdk.user.account,
       sdk.user.networkType,
       sdk.user.networkId,
-    ]);
+    ]), XAPP_READY_TIMEOUT_MS, "Xaman context took too long to load. Close and reopen OTT in Xaman.");
     const account = accountValue?.trim() ?? "";
     if (!XRPL_ADDRESS_PATTERN.test(account)) {
       throw new Error("Xaman did not provide a valid selected XRPL account.");
     }
 
-    const networkType = networkTypeValue?.trim() || "Mainnet";
+    const network = resolveXamanNetwork(networkTypeValue, networkIdValue);
+    const networkType = networkTypeValue?.trim() || network.toUpperCase();
     const networkId = typeof networkIdValue === "number" ? networkIdValue : null;
     return {
       account,
       bridge,
-      network: normalizeNetwork(networkType, networkId),
+      network,
       networkId,
       networkType,
       preview: false,
@@ -125,7 +111,7 @@ async function createXamanXappRuntime(): Promise<XamanXappRuntime> {
   } finally {
     try {
       const readyBridge = (sdk.xapp ?? bridge) as XamanXappBridge | null;
-      await Promise.resolve(readyBridge?.ready());
+      await withTimeout(Promise.resolve(readyBridge?.ready()), 1000);
     } catch {
       // The content remains usable if an older Xaman client does not support ready().
     }
@@ -134,7 +120,10 @@ async function createXamanXappRuntime(): Promise<XamanXappRuntime> {
 
 export function initializeXamanXapp() {
   if (!runtimePromise) {
-    runtimePromise = createXamanXappRuntime();
+    runtimePromise = withTimeout(createXamanXappRuntime(), 12000, "Xaman context took too long to load. Close and reopen OTT in Xaman.").catch(error => {
+      runtimePromise = null;
+      throw error;
+    });
   }
   return runtimePromise;
 }

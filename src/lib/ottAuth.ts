@@ -6,6 +6,7 @@ import {
   type SupabaseClient,
   type User,
 } from "@supabase/supabase-js";
+import { boundedFetch, withTimeout } from "./asyncReliability";
 
 export type OttAuthProvider = "google" | "apple" | "azure" | "github" | "discord";
 
@@ -74,6 +75,7 @@ export function isOttAuthProviderEnabled(provider: OttAuthProvider) {
 
 export const ottSupabase: SupabaseClient | null = isOttAuthConfigured
   ? createClient(supabaseUrl, supabaseKey, {
+      global: { fetch: boundedFetch },
       auth: {
         persistSession: true,
         autoRefreshToken: true,
@@ -110,6 +112,11 @@ export function getFriendlyOttAuthError(error: unknown, language: "en" | "nl") {
       ? String((error as { message?: unknown }).message ?? "")
       : "";
   const message = raw.toLowerCase();
+  if (/fetch|network|timed? ?out|too long|abort|failed to fetch/.test(message)) {
+    return language === "en"
+      ? "The account service could not be reached. Check your connection and try again."
+      : "De accountdienst is niet bereikbaar. Controleer je verbinding en probeer het opnieuw.";
+  }
 
   if (message.includes("invalid login credentials")) {
     return language === "en"
@@ -145,7 +152,7 @@ export async function getOttSession() {
     return null;
   }
 
-  const { data, error } = await ottSupabase.auth.getSession();
+  const { data, error } = await withTimeout(ottSupabase.auth.getSession(), 8000);
   if (error) {
     throw error;
   }

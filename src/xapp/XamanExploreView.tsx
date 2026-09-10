@@ -20,22 +20,12 @@ import {
 } from "lucide-react";
 import type { DefiDirectoryEntry } from "../lib/defiDirectory";
 import "./xaman-explore.css";
+import { useXrplMarketSnapshot } from "../lib/useXrplMarketSnapshot";
 
 type ExploreSection = "heatmap" | "research" | "directory" | "evidence";
 type ResearchSeed = { issuer: string; currency: string };
 type LoadState = "idle" | "loading" | "success" | "error";
 
-type LiveMarketToken = {
-  id: string;
-  currency: string;
-  name: string;
-  issuer: string;
-  priceUsd: number | null;
-  volume24hUsd: number | null;
-  marketCapUsd: number | null;
-  numTrades: number | null;
-  lastTradeAt: string;
-};
 
 type EvidenceKind = "whitepaper" | "audit" | "legal" | "roadmap" | "source" | "other";
 
@@ -52,12 +42,6 @@ export type SessionEvidence = {
   addedAt: string;
 };
 
-type RawMarketToken = Record<string, unknown>;
-
-const MARKET_SOURCES = [
-  { label: "OnTheDEX API", url: "https://api.onthedex.live/public/v1/daily/tokens?by=volume&min_trades=1&per_page=50" },
-  { label: "XRPL.to API", url: "https://api.xrpl.to/v1/tokens?limit=50&sort=volume" },
-] as const;
 const XRPL_ADDRESS = /^r[1-9A-HJ-NP-Za-km-z]{25,34}$/;
 const MAX_EVIDENCE_BYTES = 10 * 1024 * 1024;
 
@@ -72,22 +56,8 @@ function textValue(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function numericValue(value: unknown) {
-  if (typeof value === "string" && !value.trim()) return null;
-  const parsed = typeof value === "number" ? value : typeof value === "string" ? Number(value.trim()) : Number.NaN;
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
 function firstText(...values: unknown[]) {
   return values.map(textValue).find(Boolean) ?? "";
-}
-
-function firstNumber(...values: unknown[]) {
-  for (const value of values) {
-    const parsed = numericValue(value);
-    if (parsed !== null) return parsed;
-  }
-  return null;
 }
 
 function formatCompact(value: number | null, suffix = "") {
@@ -101,76 +71,6 @@ function formatPrice(value: number | null, currency: "XRP" | "USD") {
   return currency === "USD"
     ? new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", maximumFractionDigits }).format(value)
     : `${new Intl.NumberFormat(undefined, { maximumFractionDigits }).format(value)} XRP`;
-}
-
-function normalizeMarketToken(token: RawMarketToken, index: number): LiveMarketToken | null {
-  const identity = token.token && typeof token.token === "object" ? token.token as RawMarketToken : {};
-  const currency = firstText(token.currency, token.symbol, token.code, token.c, identity.currency, identity.symbol, identity.c).toUpperCase();
-  const issuer = firstText(token.issuer, token.issuerAddress, token.issuer_address, token.i, identity.issuer, identity.issuerAddress, identity.i);
-  const native = currency === "XRP" && (!issuer || issuer.toLowerCase().includes("native"));
-  if (!currency || (!native && !issuer)) return null;
-
-  const priceUsd = firstNumber(token.price_mid_usd, token.price_usd, token.priceUsd, token.priceUSD, token.price, token.p, token.pfx);
-  const volume24hUsd = firstNumber(token.volume_usd, token.volume_24h, token.volume24h, token.volume24hUsd, token.volumeUsd, token.volume, token.v, token.vfx);
-  const marketCapUsd = firstNumber(token.market_cap, token.market_cap_usd, token.marketCapUsd, token.marketCap, token.mc);
-  const numTrades = firstNumber(token.num_trades, token.trades_24h, token.trades24h, token.trades, token.trade_count, token.n, token.n24);
-  if ([priceUsd, volume24hUsd, marketCapUsd, numTrades].every((value) => value === null)) return null;
-
-  return {
-    id: textValue(token.id) || `${currency}-${issuer || "native"}-${index}`,
-    currency,
-    name: firstText(token.token_name, token.name, token.displayName, token.nm, identity.token_name, identity.name) || currency,
-    issuer: native ? "XRPL native asset" : issuer,
-    priceUsd,
-    volume24hUsd,
-    marketCapUsd,
-    numTrades,
-    lastTradeAt: firstText(token.last_trade_at, token.lastTradeAt, token.time, token.t),
-  };
-}
-
-function marketRecords(payload: unknown): unknown[] | null {
-  if (Array.isArray(payload)) return payload;
-  if (!payload || typeof payload !== "object") return null;
-  const root = payload as Record<string, unknown>;
-  for (const candidate of [root.tokens, root.items, root.results, root.data]) {
-    if (Array.isArray(candidate)) return candidate;
-    if (candidate && typeof candidate === "object") {
-      const nested = candidate as Record<string, unknown>;
-      for (const value of [nested.tokens, nested.items, nested.results, nested.data]) {
-        if (Array.isArray(value)) return value;
-      }
-    }
-  }
-  return null;
-}
-
-async function loadMarketSource(source: typeof MARKET_SOURCES[number]) {
-  const response = await fetch(source.url, { signal: AbortSignal.timeout(5000) });
-  if (!response.ok) throw new Error(`${source.label} returned HTTP ${response.status}.`);
-  const payload = await response.json() as { error?: unknown; message?: unknown };
-  if (payload.error) throw new Error(firstText(payload.message, payload.error) || `${source.label} reported an error.`);
-  const records = marketRecords(payload);
-  if (!records) throw new Error(`${source.label} returned an unsupported response.`);
-  const tokens = records
-    .map((token, index) => token && typeof token === "object" ? normalizeMarketToken(token as RawMarketToken, index) : null)
-    .filter((token): token is LiveMarketToken => token !== null)
-    .sort((left, right) => (right.volume24hUsd ?? -1) - (left.volume24hUsd ?? -1))
-    .slice(0, 50);
-  if (!tokens.length) throw new Error(`${source.label} returned no complete live token records.`);
-  return { tokens, source: source.label };
-}
-
-async function loadLiveMarketTokens() {
-  const errors: string[] = [];
-  for (const source of MARKET_SOURCES) {
-    try {
-      return await loadMarketSource(source);
-    } catch (error) {
-      errors.push(error instanceof Error ? error.message : `${source.label} is unavailable.`);
-    }
-  }
-  throw new Error(errors.join(" "));
 }
 
 async function sha256(file: File) {
@@ -205,7 +105,7 @@ export default function XamanExploreView({ onBack, onResearch, onExternal, onCop
         })}
       </div>
 
-      {section === "heatmap" ? <HeatmapSection onResearch={onResearch} /> : null}
+      {section === "heatmap" ? <HeatmapSection onResearch={onResearch} onExternal={onExternal} /> : null}
       {section === "research" ? <ResearchSection onResearch={onResearch} /> : null}
       {section === "directory" ? <DirectorySection onExternal={onExternal} /> : null}
       {section === "evidence" ? <EvidenceSection records={evidenceRecords} setRecords={onEvidenceRecordsChange} onCopy={onCopy} onShare={onShare} /> : null}
@@ -215,59 +115,42 @@ export default function XamanExploreView({ onBack, onResearch, onExternal, onCop
   );
 }
 
-function HeatmapSection({ onResearch }: { onResearch: (seed?: ResearchSeed) => void }) {
-  const [state, setState] = useState<LoadState>("idle");
-  const [tokens, setTokens] = useState<LiveMarketToken[]>([]);
-  const [error, setError] = useState("");
-  const [source, setSource] = useState("");
+function HeatmapSection({ onResearch, onExternal }: { onResearch: (seed?: ResearchSeed) => void; onExternal: (url: string) => void }) {
+  const { snapshot, state, refresh: load } = useXrplMarketSnapshot();
+  const tokens = snapshot?.tokens ?? [];
+  const source = snapshot?.source ?? "";
+  const updatedAt = snapshot ? new Date(snapshot.fetchedAt).toLocaleString() : "";
   const [query, setQuery] = useState("");
-  const [updatedAt, setUpdatedAt] = useState("");
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return needle ? tokens.filter((token) => `${token.currency} ${token.name} ${token.issuer}`.toLowerCase().includes(needle)) : tokens;
   }, [query, tokens]);
 
-  async function load() {
-    setState("loading");
-    setError("");
-    try {
-      const result = await loadLiveMarketTokens();
-      setTokens(result.tokens);
-      setSource(result.source);
-      setUpdatedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
-      setState("success");
-    } catch (nextError) {
-      setTokens([]);
-      setError(nextError instanceof Error ? nextError.message : "Live market data is unavailable.");
-      setState("error");
-    }
-  }
-
-  useEffect(() => { void load(); }, []);
 
   return (
     <section className="xaman-card xaman-explore-panel">
-      <ExploreHeading icon={<Flame size={22} />} eyebrow="Live public source" title="Top 50 XRPL Heatmap" />
-      <p className="xaman-muted">Tokens are ordered by the reported 24-hour XRP volume. Market values are third-party observations, can be delayed and are never a recommendation.</p>
+      <ExploreHeading icon={<Flame size={22} />} eyebrow="Third-party market data" title="XRPL market observations" />
+      <p className="xaman-muted">Up to 50 available records are ordered by the reported 24-hour USD volume. Market values are third-party observations, can be delayed and are never a recommendation.</p>
       <div className="xaman-explore-toolbar">
         <label><Search size={18} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Token, ticker or issuer" aria-label="Search heatmap" /></label>
-        <button type="button" onClick={() => void load()} disabled={state === "loading"} aria-label="Refresh live market data"><RefreshCcw className={state === "loading" ? "animate-spin" : ""} size={19} /></button>
+        <button type="button" onClick={() => void load()} disabled={state === "loading"} aria-label="Refresh market data"><RefreshCcw className={state === "loading" ? "animate-spin" : ""} size={19} /></button>
       </div>
       {state === "loading" ? <ExploreMessage icon={<Loader2 className="animate-spin" size={21} />} text="Loading current market observations…" /> : null}
-      {state === "error" ? <ExploreMessage warning icon={<AlertTriangle size={21} />} text={`${error} No estimated or fallback prices are shown.`} /> : null}
-      {state === "success" ? <p className="xaman-explore-source"><CheckCircle2 size={16} />{tokens.length} live records · updated {updatedAt} · {source}</p> : null}
+      {state === "error" ? <ExploreMessage warning icon={<AlertTriangle size={21} />} text="Market data is unavailable. No estimated or fallback prices are shown." /> : null}
+      {state === "success" ? <p className="xaman-explore-source"><CheckCircle2 size={16} />{tokens.length} records · retrieved {updatedAt} · {source}</p> : null}
+      {source === "XRPL.to API" ? <button type="button" className="xaman-back-button" onClick={() => onExternal("https://xrpl.to/")}>Data by xrpl.to <ExternalLink size={18} /></button> : null}
       {state === "success" && filtered.length ? (
-        <div className="xaman-heatmap-grid" aria-label="Live XRPL market heatmap">
+        <div className="xaman-heatmap-grid" aria-label="XRPL market observations">
           {filtered.map((token) => {
             const rank = tokens.findIndex((item) => item.id === token.id) + 1;
             const tone = rank <= 10 ? "high" : rank <= 25 ? "medium" : "neutral";
             const researchable = XRPL_ADDRESS.test(token.issuer);
             return (
               <article className={`xaman-heatmap-tile is-${tone}`} key={token.id}>
-                <div><strong>{token.currency}</strong><span>Volume rank #{rank}</span></div>
+                <div><strong>{token.currency}</strong><span>{token.volume24hUsd === null ? "Volume rank unavailable" : `Volume rank #${rank} in this sample`}</span></div>
                 <p>{token.name}</p>
                 <dl>
-                  <div><dt>USD mid price</dt><dd>{formatPrice(token.priceUsd, "USD")}</dd></div>
+                  <div><dt>Reported USD price</dt><dd>{formatPrice(token.priceUsd, "USD")}</dd></div>
                   <div><dt>24h USD volume</dt><dd>{formatPrice(token.volume24hUsd, "USD")}</dd></div>
                   <div><dt>Market cap</dt><dd>{formatPrice(token.marketCapUsd, "USD")}</dd></div>
                   <div><dt>24h trades</dt><dd>{formatCompact(token.numTrades)}</dd></div>
@@ -280,7 +163,7 @@ function HeatmapSection({ onResearch }: { onResearch: (seed?: ResearchSeed) => v
           })}
         </div>
       ) : null}
-      {state === "success" && !filtered.length ? <ExploreMessage icon={<Search size={21} />} text="No live records match this search." /> : null}
+      {state === "success" && !filtered.length ? <ExploreMessage icon={<Search size={21} />} text="No records match this search." /> : null}
     </section>
   );
 }

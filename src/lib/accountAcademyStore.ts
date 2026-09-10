@@ -76,9 +76,9 @@ export async function loadAccountAcademyCompletions(userId: string) {
   return (data ?? []).map((row) => rowToCompletion(row as AcademyCompletionRow));
 }
 
-export async function hydrateAccountAcademyCache(userId: string) {
+export async function hydrateAccountAcademyCache(userId: string, stillCurrent: () => boolean = () => true) {
   const completions = await loadAccountAcademyCompletions(userId);
-  cacheAcademyAccountCompletions(userId, completions);
+  if (stillCurrent()) cacheAcademyAccountCompletions(userId, completions);
   return completions;
 }
 

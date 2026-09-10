@@ -20,7 +20,7 @@ function fail(message) {
 const main = read("src/main.tsx");
 const index = read("index.html");
 const component = read("src/xapp/XamanXapp.tsx");
-const explore = read("src/xapp/XamanExploreView.tsx");
+const explore = read("src/xapp/XamanExploreView.tsx") + read("src/lib/xrplHeatmapData.ts") + read("src/lib/useXrplMarketSnapshot.ts");
 const dna = read("src/components/AgeWalletDna.tsx") + read("src/lib/ageWalletDna.ts");
 const runtime = read("src/lib/xamanXappRuntime.ts");
 const styles = read("src/xapp/xaman-xapp.css");
@@ -70,7 +70,7 @@ for (const fragment of [
 }
 
 for (const fragment of [
-  "Top 50 XRPL Heatmap",
+  "XRPL market observations",
   "No estimated or fallback prices are shown",
   "Token Research",
   "DeFi Directory",
@@ -79,7 +79,7 @@ for (const fragment of [
   "Your file never leaves this device",
   "No swap and no signing request",
   "Inclusion is not endorsement",
-  'if (typeof value === "string" && !value.trim()) return null',
+  'if (typeof value === "string" && !value.trim()) continue',
 ]) {
   if (!explore.includes(fragment)) fail(`Explore XRPL safeguard is missing '${fragment}'`);
 }
