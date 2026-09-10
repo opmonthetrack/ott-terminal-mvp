@@ -4,6 +4,7 @@ import {
   BookOpen,
   CheckCircle2,
   Compass,
+  Dna,
   FileSearch,
   ShieldCheck,
   UserCircle,
@@ -47,7 +48,8 @@ export function TerminalHomeTab({
       return;
     }
 
-    setWelcomeOpen(window.localStorage.getItem(WELCOME_CHOICE_KEY) !== "done");
+    // Let visitors use the public tools before choosing whether to create an account.
+    setWelcomeOpen(false);
   }, [authLoading, signedIn]);
 
   const journey: JourneyCard[] = [
@@ -124,59 +126,57 @@ export function TerminalHomeTab({
               </div>
 
               <p className="mb-5 text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
-                {isEnglish ? "Learn before you act" : "Leer voordat je handelt"}
+                AGE Wallet DNA · OTT Terminal
               </p>
 
               <h1 className="max-w-3xl text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">
                 {isEnglish
-                  ? "Learn XRPL. Verify your progress. Connect a wallet when you are ready."
-                  : "Leer XRPL. Verifieer je voortgang. Koppel een wallet wanneer je er klaar voor bent."}
+                  ? "Understand your wallet. Know your costs before your next move."
+                  : "Begrijp je wallet. Ken je kosten vóór je volgende stap."}
               </h1>
 
               <p className="mt-7 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
                 {isEnglish
-                  ? "Start with a normal OTT account or explore as a guest. A wallet is never required just to learn."
-                  : "Start met een normaal OTT-account of ontdek als gast. Een wallet is nooit nodig om alleen te leren."}
+                  ? "Use AGE Wallet DNA to review token purchase evidence and current XRP bids. Learn XRPL and check what the ledger can actually tell you."
+                  : "Bekijk met AGE Wallet DNA het aankoopbewijs van je tokens en huidige XRP-biedingen. Leer XRPL kennen en controleer wat de ledger werkelijk laat zien."}
               </p>
 
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
                 <button
                   type="button"
-                  onClick={() => signedIn ? navigate("academy") : openAccount()}
+                  onClick={() => navigate("portfolio")}
                   className="inline-flex items-center justify-center gap-2 rounded-xl bg-[linear-gradient(135deg,#315cff_0%,#8249ed_52%,#ef2f91_100%)] px-5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-300/30 transition hover:brightness-95"
                 >
-                  {signedIn
-                    ? isEnglish ? "Continue learning" : "Ga verder met leren"
-                    : isEnglish ? "Create free account" : "Maak gratis account"}
+                  Open Wallet DNA
                   <ArrowRight size={17} />
                 </button>
                 <button
                   type="button"
-                  onClick={() => navigate("intel")}
+                  onClick={() => navigate("academy")}
                   className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3.5 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
                 >
-                  {isEnglish ? "Explore as guest" : "Ontdek als gast"}
+                  {isEnglish ? "Start a free lesson" : "Start een gratis les"}
                   <Compass size={17} />
                 </button>
               </div>
 
               <p className="mt-4 text-xs text-slate-500">
                 {isEnglish
-                  ? "No wallet, seed phrase or payment required to create an account."
-                  : "Geen wallet, seed phrase of betaling nodig om een account te maken."}
+                  ? "Public wallet analysis. No account, payment or signing request required."
+                  : "Openbare walletanalyse. Geen account, betaling of ondertekenverzoek nodig."}
               </p>
             </div>
 
-            <AccountStartingPoint
-              isEnglish={isEnglish}
-              authLoading={authLoading}
-              signedIn={signedIn}
-              accountName={accountName}
-              userEmail={user?.email ?? ""}
-              walletConnected={!isGuestWallet}
-              onAccount={openAccount}
-              onAcademy={() => navigate("academy")}
-            />
+            <aside className="rounded-3xl border border-violet-200 bg-white p-7 shadow-xl shadow-violet-100/50" aria-labelledby="dna-start-title">
+              <Dna size={36} className="text-violet-700" />
+              <p className="mt-5 text-xs font-semibold uppercase tracking-widest text-violet-700">AGE · Adaptive Grid Engine</p>
+              <h2 id="dna-start-title" className="mt-3 text-2xl font-semibold">{isEnglish ? "From a balance to evidence." : "Van een saldo naar bewijs."}</h2>
+              <ol className="mt-6 space-y-5 text-base leading-7 text-slate-700">
+                <li><strong className="block text-slate-950">{isEnglish ? "01 · What did you pay?" : "01 · Wat heb je betaald?"}</strong>{isEnglish ? "Reconstruct acquisition costs where the available history supports it." : "Reconstrueer aankoopkosten waar de beschikbare historie dat toelaat."}</li>
+                <li><strong className="block text-slate-950">{isEnglish ? "02 · What can bids cover?" : "02 · Wat dekken de biedingen?"}</strong>{isEnglish ? "Check available XRP bids and costs, including limited market depth." : "Controleer beschikbare XRP-biedingen en kosten, ook bij weinig vraag."}</li>
+                <li><strong className="block text-slate-950">{isEnglish ? "03 · What remains unknown?" : "03 · Wat blijft onbekend?"}</strong>{isEnglish ? "Missing prices stay unknown. An estimate never promises a profitable sale." : "Ontbrekende prijzen blijven onbekend. Een schatting belooft nooit een winstgevende verkoop."}</li>
+              </ol>
+            </aside>
           </div>
         </div>
       </section>

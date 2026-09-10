@@ -12,6 +12,7 @@ import {
   CircleDollarSign,
   CircleHelp,
   Copy,
+  Dna,
   ExternalLink,
   FileCode2,
   FlaskConical,
@@ -41,6 +42,7 @@ import {
 } from "lucide-react";
 import type { TokenResearchResult } from "../lib/xrplTokenResearch";
 import type { SessionEvidence } from "./XamanExploreView";
+import type { DnaScan } from "../lib/ageWalletDna";
 import {
   loadXrplTransactionSnapshot,
   loadXrplWalletProfile,
@@ -62,10 +64,11 @@ import {
 import "./xaman-xapp.css";
 
 type LoadState = "idle" | "loading" | "success" | "error";
-type XappView = "home" | "assets" | "activity" | "scan" | "safety" | "learn" | "explore" | "research";
+type XappView = "home" | "assets" | "activity" | "scan" | "safety" | "learn" | "explore" | "research" | "dna";
 type ResearchSeed = { issuer: string; currency: string };
 
 const XamanExploreView = lazy(() => import("./XamanExploreView"));
+const AgeWalletDna = lazy(() => import("../components/AgeWalletDna").then(module => ({ default: module.AgeWalletDna })));
 
 const SOURCE_REPOSITORY = "https://github.com/opmonthetrack/ott-terminal-mvp";
 const ACCOUNT_FLAGS = [
@@ -242,6 +245,8 @@ export function XamanXapp() {
   const [researchSeed, setResearchSeed] = useState<ResearchSeed>({ issuer: "", currency: "" });
   const [researchReturnView, setResearchReturnView] = useState<XappView>("home");
   const [evidenceRecords, setEvidenceRecords] = useState<SessionEvidence[]>([]);
+  const [dnaScan, setDnaScan] = useState<DnaScan | null>(null);
+  const [lessonAnswers, setLessonAnswers] = useState<Record<string, number>>({});
   const [notice, setNotice] = useState("");
   const theme = runtime?.theme ?? getXamanXappTheme();
 
@@ -512,7 +517,7 @@ export function XamanXapp() {
             <SafetyView profile={profile} workspace={workspace} warnings={warnings} onExternal={openExternal} />
           ) : null}
           {view === "learn" ? (
-            <LearnView onBack={() => setView("home")} onOpenSafety={() => setView("safety")} />
+            <LearnView answers={lessonAnswers} setAnswers={setLessonAnswers} onBack={() => setView("home")} onOpenSafety={() => setView("safety")} />
           ) : null}
           {view === "explore" ? (
             <Suspense fallback={<LoadingLine text="Opening Explore XRPL…" />}>
@@ -525,6 +530,11 @@ export function XamanXapp() {
                 evidenceRecords={evidenceRecords}
                 onEvidenceRecordsChange={setEvidenceRecords}
               />
+            </Suspense>
+          ) : null}
+          {view === "dna" ? (
+            <Suspense fallback={<LoadingLine text="Opening Wallet DNA…" />}>
+              <AgeWalletDna account={runtime?.account ?? ""} network={runtime?.network ?? "mainnet"} lockedContext initialScan={dnaScan} onScan={setDnaScan} onBack={() => setView("home")} />
             </Suspense>
           ) : null}
           {view === "research" ? (
@@ -557,10 +567,10 @@ function HomeView({ runtime, workspace, state, warnings, onNavigate, onCopy, onS
   return (
     <>
       <section className="xaman-hero-card">
-        <div className="xaman-hero-topline"><span><Network size={16} />{runtime?.networkType ?? "Loading network"}</span><span className="xaman-live-dot">Validated ledger</span></div>
+        <div className="xaman-hero-topline"><span><Network size={16} />{runtime?.networkType ?? "Loading network"}</span><span className="xaman-live-dot">{profile ? "Validated ledger" : "Snapshot unavailable"}</span></div>
         <h1 className="xaman-home-title">Wallet overview</h1>
         <p className="xaman-hero-label">Selected wallet balance</p>
-        <div className="xaman-balance-row"><strong>{profile?.balanceXrp ?? (state === "loading" ? "…" : "0")}</strong><span>XRP</span></div>
+        <div className="xaman-balance-row"><strong>{profile?.balanceXrp ?? (state === "loading" ? "…" : "—")}</strong><span>XRP</span></div>
         <p className="xaman-address-line">{runtime?.account ? shortValue(runtime.account, 12, 9) : "Available inside the live xApp"}</p>
         <div className="xaman-hero-actions">
           <button type="button" onClick={() => runtime?.account && onCopy(runtime.account, "Wallet address")} disabled={!runtime?.account}><Copy size={17} />Copy</button>
@@ -571,14 +581,20 @@ function HomeView({ runtime, workspace, state, warnings, onNavigate, onCopy, onS
       <div className="xaman-stat-grid">
         <StatCard label="Estimated available" value={`${profile?.availableXrp ?? "—"} XRP`} icon={<CircleDollarSign size={20} />} />
         <StatCard label="Owner reserve" value={`${profile?.estimatedReserveXrp ?? "—"} XRP`} icon={<LockKeyhole size={20} />} />
-        <StatCard label="Tokens" value={String(profile?.tokenCount ?? 0)} icon={<Tag size={20} />} />
-        <StatCard label="NFTs" value={String(profile?.nftCount ?? 0)} icon={<Image size={20} />} />
+        <StatCard label="Tokens" value={String(profile?.tokenCount ?? "—")} icon={<Tag size={20} />} />
+        <StatCard label="NFTs" value={String(profile?.nftCount ?? "—")} icon={<Image size={20} />} />
       </div>
 
       <section className="xaman-card">
         <SectionHeading icon={<GraduationCap size={22} />} eyebrow="Free knowledge" title="Learn before you sign" />
         <p className="xaman-muted">Short XRPL and Xaman lessons explain the fields, permissions and safety checks users meet in real wallet activity.</p>
         <div className="xaman-feature-grid">
+          <button type="button" className="xaman-feature-card" onClick={() => onNavigate("dna")}>
+            <span><Dna size={22} /></span>
+            <strong>AGE Wallet DNA</strong>
+            <small>Purchase costs · current bids · evidence</small>
+            <ChevronRight size={19} />
+          </button>
           <button type="button" className="xaman-feature-card" onClick={() => onNavigate("learn")}>
             <span><GraduationCap size={22} /></span>
             <strong>Free lessons</strong>
@@ -595,9 +611,9 @@ function HomeView({ runtime, workspace, state, warnings, onNavigate, onCopy, onS
       </section>
 
       <section className="xaman-card">
-        <SectionHeading icon={<ShieldCheck size={22} />} eyebrow="Wallet safety" title={warnings.length ? `${warnings.length} item${warnings.length === 1 ? "" : "s"} to review` : "No immediate warnings found"} />
+        <SectionHeading icon={<ShieldCheck size={22} />} eyebrow="Wallet safety" title={!profile ? "Wallet check unavailable" : warnings.length ? `${warnings.length} item${warnings.length === 1 ? "" : "s"} to review` : "No immediate warnings found"} />
         <p className="xaman-muted">This is a public-ledger checklist, not a guarantee of wallet, token or issuer safety.</p>
-        {warnings.length ? <ul className="xaman-warning-list">{warnings.slice(0, 3).map((warning) => <li key={warning}><AlertTriangle size={18} />{warning}</li>)}</ul> : <div className="xaman-positive-line"><CheckCircle2 size={20} />No supported high-attention flag was detected in the current snapshot.</div>}
+        {!profile ? <p className="xaman-muted">Load a validated wallet snapshot before drawing conclusions.</p> : warnings.length ? <ul className="xaman-warning-list">{warnings.slice(0, 3).map((warning) => <li key={warning}><AlertTriangle size={18} />{warning}</li>)}</ul> : <div className="xaman-positive-line"><CheckCircle2 size={20} />No supported high-attention flag was detected in the current snapshot.</div>}
         <button type="button" className="xaman-text-link" onClick={() => onNavigate("safety")}>Open full safety report <ChevronRight size={17} /></button>
       </section>
 
@@ -781,21 +797,21 @@ function SafetyView({ profile, workspace, warnings, onExternal }: {
     <>
       <PageHeader eyebrow="Account controls & education" title="Safety" text="Understand public account settings and learn what to verify before approving anything in Xaman." />
       <section className="xaman-card">
-        <SectionHeading icon={<ShieldAlert size={22} />} eyebrow="Current snapshot" title={warnings.length ? "Items needing attention" : "No immediate warnings found"} />
-        {warnings.length ? <ul className="xaman-warning-list">{warnings.map((warning) => <li key={warning}><AlertTriangle size={18} />{warning}</li>)}</ul> : <div className="xaman-positive-line"><CheckCircle2 size={20} />No supported high-attention flag was detected. This is not a guarantee of safety.</div>}
+        <SectionHeading icon={<ShieldAlert size={22} />} eyebrow="Current snapshot" title={!profile ? "Wallet check unavailable" : warnings.length ? "Items needing attention" : "No immediate warnings found"} />
+        {!profile ? <p className="xaman-muted">No validated account snapshot is loaded. Safety conclusions are unavailable.</p> : warnings.length ? <ul className="xaman-warning-list">{warnings.map((warning) => <li key={warning}><AlertTriangle size={18} />{warning}</li>)}</ul> : <div className="xaman-positive-line"><CheckCircle2 size={20} />No supported high-attention flag was detected. This is not a guarantee of safety.</div>}
       </section>
 
       <section className="xaman-card">
         <SectionHeading icon={<Flag size={22} />} eyebrow="AccountRoot flags" title="Active account controls" />
-        {flags.length ? <div className="xaman-flag-grid">{flags.map((flag) => <StatusBadge key={flag.label} tone={flag.tone} text={flag.label} />)}</div> : <p className="xaman-muted">No supported AccountRoot flags are active in the current snapshot.</p>}
-        <div className="xaman-security-grid">
+        {!profile ? <p className="xaman-muted">Account controls have not been checked.</p> : flags.length ? <div className="xaman-flag-grid">{flags.map((flag) => <StatusBadge key={flag.label} tone={flag.tone} text={flag.label} />)}</div> : <p className="xaman-muted">No supported AccountRoot flags are active in the current snapshot.</p>}
+        {profile ? <div className="xaman-security-grid">
           <SecurityItem icon={<KeyRound size={19} />} label="Regular Key" value={profile?.regularKey ? shortValue(profile.regularKey) : "Not configured"} />
           <SecurityItem icon={<LockKeyhole size={19} />} label="Signer lists" value={String(profile?.signerListCount ?? 0)} />
           <SecurityItem icon={<BadgeCheck size={19} />} label="Deposit preauth" value={String(profile?.depositPreauthCount ?? 0)} />
           <SecurityItem icon={<FileText size={19} />} label="Escrows / checks" value={`${profile?.escrowCount ?? 0} / ${profile?.checkCount ?? 0}`} />
           <SecurityItem icon={<Activity size={19} />} label="Offers / channels" value={`${profile?.offerCount ?? 0} / ${profile?.paymentChannelCount ?? 0}`} />
-          <SecurityItem icon={<Network size={19} />} label="Ledger objects" value={String(profile?.objectCountLoaded ?? 0)} />
-        </div>
+          <SecurityItem icon={<Network size={19} />} label="Ledger objects" value={String(profile.objectCountLoaded)} />
+        </div> : null}
         {workspace?.profile.partial ? <p className="xaman-footnote">Partial result: at least one public query failed or returned a pagination marker.</p> : null}
       </section>
 
@@ -820,8 +836,7 @@ function SafetyView({ profile, workspace, warnings, onExternal }: {
   );
 }
 
-function LearnView({ onBack, onOpenSafety }: { onBack: () => void; onOpenSafety: () => void }) {
-  const [answers, setAnswers] = useState<Record<string, number>>({});
+function LearnView({ onBack, onOpenSafety, answers, setAnswers }: { onBack: () => void; onOpenSafety: () => void; answers: Record<string, number>; setAnswers: React.Dispatch<React.SetStateAction<Record<string, number>>> }) {
   const completed = FREE_LESSONS.filter((lesson) => answers[lesson.id] === lesson.correct).length;
   const progress = Math.round((completed / FREE_LESSONS.length) * 100);
 

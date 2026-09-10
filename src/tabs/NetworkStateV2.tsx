@@ -277,7 +277,7 @@ export function NetworkState() {
           </div>
           <div className="rounded-[2rem] border border-white/80 bg-slate-950 p-6 text-white shadow-2xl">
             <div className="flex items-center justify-between"><span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10"><Activity size={22} /></span><StatusPill status={networkStatus} /></div>
-            <p className="mt-7 text-xs font-semibold text-white/45">Validated ledger</p>
+            <p className="mt-7 text-xs font-semibold text-white/70">{en ? "Validated ledger" : "Gevalideerde ledger"}</p>
             <p className="mt-2 text-3xl font-semibold">{ledgerInfo?.ledgerIndex.toLocaleString() ?? "—"}</p>
             <div className="mt-5 grid grid-cols-2 gap-3"><DarkMetric label={en ? "Transactions" : "Transacties"} value={String(ledgerInfo?.txCount ?? 0)} /><DarkMetric label={en ? "Updated" : "Bijgewerkt"} value={lastUpdated} /></div>
           </div>
