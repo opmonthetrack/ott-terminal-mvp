@@ -1,3 +1,4 @@
+import { useTerminalLanguage } from "../lib/useTerminalLanguage";
 import { useState } from "react";
 import type { ElementType } from "react";
 import {
@@ -156,6 +157,7 @@ const futureFeatures = [
 ];
 
 export function TokenizationTab() {
+  const { language } = useTerminalLanguage();
   const [selectedAsset, setSelectedAsset] = useState<AssetType>(assetTypes[0]);
   const [selectedStep, setSelectedStep] = useState<TokenStep>(tokenSteps[0]);
 
@@ -164,12 +166,13 @@ export function TokenizationTab() {
 
   return (
     <div className="p-6 bg-black min-h-screen text-white">
+      <p className="mb-5 border border-white/30 bg-white/10 p-4 text-sm leading-relaxed text-white">{language === "en" ? "Reference workflow for learning about tokenization. The examples below do not issue tokens or verify legal rights." : "Voorbeeldproces om tokenisatie te begrijpen. De voorbeelden hieronder geven geen tokens uit en bevestigen geen juridische rechten."}</p>
       <div className="relative overflow-hidden border border-white/10 bg-white/[0.02] p-6 mb-6">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_white,_transparent_35%)]" />
 
         <div className="relative z-10 grid grid-cols-12 gap-6 items-center">
           <div className="col-span-12 xl:col-span-8">
-            <div className="flex items-center gap-2 mb-4 text-white/45">
+            <div className="flex items-center gap-2 mb-4 text-white/70">
               <Vault size={17} />
 
               <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
@@ -177,11 +180,11 @@ export function TokenizationTab() {
               </p>
             </div>
 
-            <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
+            <h1 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
               Real World Assets On XRPL
-            </h2>
+            </h1>
 
-            <p className="font-mono text-sm text-white/45 max-w-3xl leading-relaxed">
+            <p className="font-mono text-sm text-white/70 max-w-3xl leading-relaxed">
               De tokenization-laag van OTT Terminal. Hier ontwerpen we RWA
               flows, issuer pages, certificate tokens, document proof,
               compliance checks en veilige XRPL uitgifte.
@@ -225,7 +228,7 @@ export function TokenizationTab() {
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
+                <p className="font-mono text-[10px] text-white/70 uppercase tracking-[0.35em] mb-2">
                   Selected Asset
                 </p>
 
@@ -237,7 +240,7 @@ export function TokenizationTab() {
               <SelectedAssetIcon size={22} className="text-white/60" />
             </div>
 
-            <p className="font-mono text-sm text-white/45 leading-relaxed mb-5">
+            <p className="font-mono text-sm text-white/70 leading-relaxed mb-5">
               {selectedAsset.text}
             </p>
 
@@ -250,7 +253,7 @@ export function TokenizationTab() {
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
+                <p className="font-mono text-[10px] text-white/70 uppercase tracking-[0.35em] mb-2">
                   Token Flow
                 </p>
 
@@ -282,11 +285,11 @@ export function TokenizationTab() {
                 <SelectedStepIcon size={18} className="text-white/60" />
               </div>
 
-              <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-3">
+              <p className="font-mono text-[10px] text-white/70 uppercase tracking-widest mb-3">
                 {selectedStep.status}
               </p>
 
-              <p className="font-mono text-xs text-white/45 leading-relaxed">
+              <p className="font-mono text-xs text-white/70 leading-relaxed">
                 {selectedStep.text}
               </p>
             </div>
@@ -351,7 +354,7 @@ function StatBox({
     <div className="border border-white/10 bg-black/60 p-4">
       <Icon size={18} className="text-white/60 mb-3" />
 
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+      <p className="font-mono text-[10px] text-white/70 uppercase tracking-widest mb-2">
         {label}
       </p>
 
@@ -389,7 +392,7 @@ function AssetButton({
           </p>
         </div>
 
-        <p className="font-mono text-[10px] text-white/35 uppercase">
+        <p className="font-mono text-[10px] text-white/70 uppercase">
           {asset.status}
         </p>
       </div>
@@ -426,7 +429,7 @@ function StepButton({
           </p>
         </div>
 
-        <p className="font-mono text-[10px] text-white/35 uppercase">
+        <p className="font-mono text-[10px] text-white/70 uppercase">
           {step.status}
         </p>
       </div>
@@ -437,7 +440,7 @@ function StepButton({
 function MiniStatus({ label, value }: { label: string; value: string }) {
   return (
     <div className="border border-white/10 bg-black p-4">
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+      <p className="font-mono text-[10px] text-white/70 uppercase tracking-widest mb-2">
         {label}
       </p>
 
@@ -454,7 +457,7 @@ function RuleCard({ rule }: { rule: ComplianceRule }) {
       <div className="flex items-start justify-between mb-3">
         <Icon size={17} className="text-white/60" />
 
-        <p className="font-mono text-[10px] text-white/30 uppercase">
+        <p className="font-mono text-[10px] text-white/70 uppercase">
           {rule.status}
         </p>
       </div>
@@ -463,7 +466,7 @@ function RuleCard({ rule }: { rule: ComplianceRule }) {
         {rule.title}
       </p>
 
-      <p className="font-mono text-[10px] text-white/40 leading-relaxed">
+      <p className="font-mono text-[10px] text-white/70 leading-relaxed">
         {rule.text}
       </p>
     </div>
@@ -475,7 +478,7 @@ function FutureLine({ label }: { label: string }) {
     <div className="border border-white/10 bg-black p-3 flex items-center gap-2">
       <CheckCircle2 size={14} className="text-white/60" />
 
-      <p className="font-mono text-xs text-white/50">{label}</p>
+      <p className="font-mono text-xs text-white/70">{label}</p>
     </div>
   );
 }
@@ -495,7 +498,7 @@ function FeatureBox({
 
       <p className="font-orbitron text-sm font-bold uppercase mb-2">{title}</p>
 
-      <p className="font-mono text-xs text-white/40">{text}</p>
+      <p className="font-mono text-xs text-white/70">{text}</p>
     </div>
   );
 }

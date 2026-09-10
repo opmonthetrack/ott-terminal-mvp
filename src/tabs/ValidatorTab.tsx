@@ -1,3 +1,4 @@
+import { useTerminalLanguage } from "../lib/useTerminalLanguage";
 import { useState } from "react";
 import type { ElementType } from "react";
 import {
@@ -62,8 +63,8 @@ const validatorMetrics: ValidatorMetric[] = [
   },
   {
     label: "Consensus",
-    value: "Active",
-    subtitle: "Live concept",
+    value: "Unavailable",
+    subtitle: "Not measured",
     icon: Network,
   },
   {
@@ -74,8 +75,8 @@ const validatorMetrics: ValidatorMetric[] = [
   },
   {
     label: "Health",
-    value: "Good",
-    subtitle: "Mock score",
+    value: "Unavailable",
+    subtitle: "Not measured",
     icon: Activity,
   },
 ];
@@ -84,16 +85,16 @@ const validators: ValidatorNode[] = [
   {
     name: "XRPL Foundation",
     country: "Global",
-    status: "Trusted",
-    uptime: "99.9%",
+    status: "Example",
+    uptime: "Unavailable",
     description:
       "Publieke validator-laag voor educatie, UNL awareness en network monitoring.",
   },
   {
     name: "Ripple Validator",
     country: "Global",
-    status: "Core",
-    uptime: "99.9%",
+    status: "Example",
+    uptime: "Unavailable",
     description:
       "Belangrijke infrastructuurlaag binnen het XRPL ecosysteem en consensus monitoring.",
   },
@@ -101,7 +102,7 @@ const validators: ValidatorNode[] = [
     name: "Community Validator",
     country: "EU",
     status: "Watch",
-    uptime: "99.5%",
+    uptime: "Unavailable",
     description:
       "Community node voorbeeld voor decentralisatie, governance en uptime uitleg.",
   },
@@ -185,6 +186,7 @@ const roadmap = [
 ];
 
 export function ValidatorTab() {
+  const { language } = useTerminalLanguage();
   const [selectedValidator, setSelectedValidator] = useState<ValidatorNode>(
     validators[0]
   );
@@ -194,12 +196,13 @@ export function ValidatorTab() {
 
   return (
     <div className="p-6 bg-black min-h-screen text-white">
+      <p className="mb-5 border border-white/30 bg-white/10 p-4 text-sm leading-relaxed text-white">{language === "en" ? "Educational reference: this page does not measure live validator status, uptime or consensus health. Missing measurements are shown as unavailable." : "Educatieve uitleg: deze pagina meet geen actuele validatorstatus, uptime of consensuskwaliteit. Ontbrekende metingen worden als niet beschikbaar getoond."}</p>
       <div className="relative overflow-hidden border border-white/10 bg-white/[0.02] p-6 mb-6">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_white,_transparent_35%)]" />
 
         <div className="relative z-10 grid grid-cols-12 gap-6 items-center">
           <div className="col-span-12 xl:col-span-8">
-            <div className="flex items-center gap-2 mb-4 text-white/45">
+            <div className="flex items-center gap-2 mb-4 text-white/70">
               <Server size={17} />
 
               <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
@@ -207,11 +210,11 @@ export function ValidatorTab() {
               </p>
             </div>
 
-            <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
+            <h1 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
               Network Health & Consensus
-            </h2>
+            </h1>
 
-            <p className="font-mono text-sm text-white/45 max-w-3xl leading-relaxed">
+            <p className="font-mono text-sm text-white/70 max-w-3xl leading-relaxed">
               De validator-laag van OTT Terminal. Hier maken we XRPL consensus,
               UNL, amendments, validator health en governance begrijpelijk voor
               gebruikers, builders en partners.
@@ -231,7 +234,7 @@ export function ValidatorTab() {
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
+                <p className="font-mono text-[10px] text-white/70 uppercase tracking-[0.35em] mb-2">
                   Validators
                 </p>
 
@@ -258,7 +261,7 @@ export function ValidatorTab() {
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
+                <p className="font-mono text-[10px] text-white/70 uppercase tracking-[0.35em] mb-2">
                   Selected Validator
                 </p>
 
@@ -270,7 +273,7 @@ export function ValidatorTab() {
               <ShieldCheck size={22} className="text-white/60" />
             </div>
 
-            <p className="font-mono text-sm text-white/45 leading-relaxed mb-5">
+            <p className="font-mono text-sm text-white/70 leading-relaxed mb-5">
               {selectedValidator.description}
             </p>
 
@@ -284,7 +287,7 @@ export function ValidatorTab() {
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
+                <p className="font-mono text-[10px] text-white/70 uppercase tracking-[0.35em] mb-2">
                   Network Layers
                 </p>
 
@@ -339,11 +342,11 @@ export function ValidatorTab() {
               {selectedAmendment.title}
             </p>
 
-            <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-4">
+            <p className="font-mono text-[10px] text-white/70 uppercase tracking-widest mb-4">
               {selectedAmendment.status} • {selectedAmendment.impact}
             </p>
 
-            <p className="font-mono text-xs text-white/45 leading-relaxed">
+            <p className="font-mono text-xs text-white/70 leading-relaxed">
               {selectedAmendment.description}
             </p>
           </div>
@@ -383,7 +386,7 @@ function MetricBox({ metric }: { metric: ValidatorMetric }) {
     <div className="border border-white/10 bg-black/60 p-4">
       <Icon size={18} className="text-white/60 mb-3" />
 
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+      <p className="font-mono text-[10px] text-white/70 uppercase tracking-widest mb-2">
         {metric.label}
       </p>
 
@@ -391,7 +394,7 @@ function MetricBox({ metric }: { metric: ValidatorMetric }) {
         {metric.value}
       </p>
 
-      <p className="font-mono text-[10px] text-white/30 uppercase">
+      <p className="font-mono text-[10px] text-white/70 uppercase">
         {metric.subtitle}
       </p>
     </div>
@@ -422,17 +425,17 @@ function ValidatorRow({
             {validator.name}
           </p>
 
-          <p className="font-mono text-[10px] text-white/35 uppercase">
+          <p className="font-mono text-[10px] text-white/70 uppercase">
             {validator.country}
           </p>
         </div>
 
         <div className="text-right">
-          <p className="font-mono text-[10px] text-white/45 uppercase mb-1">
+          <p className="font-mono text-[10px] text-white/70 uppercase mb-1">
             {validator.status}
           </p>
 
-          <p className="font-mono text-[10px] text-white/30 uppercase">
+          <p className="font-mono text-[10px] text-white/70 uppercase">
             {validator.uptime}
           </p>
         </div>
@@ -444,7 +447,7 @@ function ValidatorRow({
 function MiniStatus({ label, value }: { label: string; value: string }) {
   return (
     <div className="border border-white/10 bg-black p-4">
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+      <p className="font-mono text-[10px] text-white/70 uppercase tracking-widest mb-2">
         {label}
       </p>
 
@@ -461,7 +464,7 @@ function LayerCard({ layer }: { layer: NetworkLayer }) {
       <div className="flex items-start justify-between mb-4">
         <Icon size={20} className="text-white/60" />
 
-        <p className="font-mono text-[10px] uppercase text-white/35">
+        <p className="font-mono text-[10px] uppercase text-white/70">
           {layer.value}
         </p>
       </div>
@@ -470,7 +473,7 @@ function LayerCard({ layer }: { layer: NetworkLayer }) {
         {layer.title}
       </p>
 
-      <p className="font-mono text-xs text-white/40 leading-relaxed">
+      <p className="font-mono text-xs text-white/70 leading-relaxed">
         {layer.text}
       </p>
     </div>
@@ -500,7 +503,7 @@ function AmendmentButton({
           {amendment.title}
         </p>
 
-        <p className="font-mono text-[10px] text-white/35 uppercase">
+        <p className="font-mono text-[10px] text-white/70 uppercase">
           {amendment.status}
         </p>
       </div>
@@ -513,7 +516,7 @@ function RoadmapLine({ label }: { label: string }) {
     <div className="border border-white/10 bg-black p-3 flex items-center gap-2">
       <CheckCircle2 size={14} className="text-white/60" />
 
-      <p className="font-mono text-xs text-white/50">{label}</p>
+      <p className="font-mono text-xs text-white/70">{label}</p>
     </div>
   );
 }
@@ -533,7 +536,7 @@ function FeatureBox({
 
       <p className="font-orbitron text-sm font-bold uppercase mb-2">{title}</p>
 
-      <p className="font-mono text-xs text-white/40">{text}</p>
+      <p className="font-mono text-xs text-white/70">{text}</p>
     </div>
   );
 }

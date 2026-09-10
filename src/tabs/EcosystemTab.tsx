@@ -1,3 +1,4 @@
+import { useTerminalLanguage } from "../lib/useTerminalLanguage";
 import { useState } from "react";
 import type { ElementType } from "react";
 import {
@@ -194,6 +195,7 @@ const signals: Signal[] = [
 ];
 
 export function EcosystemTab() {
+  const { language } = useTerminalLanguage();
   const [selectedCategory, setSelectedCategory] = useState<EcosystemCategory>(
     categories[0]
   );
@@ -208,23 +210,24 @@ export function EcosystemTab() {
 
   return (
     <div className="p-6 bg-black min-h-screen text-white">
+      <p className="mb-5 border border-white/30 bg-white/10 p-4 text-sm leading-relaxed text-white">{language === "en" ? "Reference examples for exploring the XRPL ecosystem. This page is not a complete or continuously updated project directory." : "Referentievoorbeelden om het XRPL-ecosysteem te ontdekken. Dit is geen volledig of doorlopend bijgewerkt projectenoverzicht."}</p>
       <div className="relative overflow-hidden border border-white/10 bg-white/[0.02] p-6 mb-6">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_white,_transparent_35%)]" />
 
         <div className="relative z-10 grid grid-cols-12 gap-6 items-center">
           <div className="col-span-12 xl:col-span-8">
-            <div className="flex items-center gap-2 mb-4 text-white/45">
+            <div className="flex items-center gap-2 mb-4 text-white/70">
               <Globe2 size={17} />
               <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
                 XRPL Ecosystem Map
               </p>
             </div>
 
-            <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
+            <h1 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
               Discover The XRP Ledger
-            </h2>
+            </h1>
 
-            <p className="font-mono text-sm text-white/45 max-w-3xl leading-relaxed">
+            <p className="font-mono text-sm text-white/70 max-w-3xl leading-relaxed">
               De discovery-laag van OTT Terminal. Hier maken we XRPL zichtbaar
               voor beginners, builders, partners, investeerders en communities.
             </p>
@@ -243,7 +246,7 @@ export function EcosystemTab() {
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
+                <p className="font-mono text-[10px] text-white/70 uppercase tracking-[0.35em] mb-2">
                   Categories
                 </p>
 
@@ -270,7 +273,7 @@ export function EcosystemTab() {
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
+                <p className="font-mono text-[10px] text-white/70 uppercase tracking-[0.35em] mb-2">
                   Selected Category
                 </p>
 
@@ -282,7 +285,7 @@ export function EcosystemTab() {
               <SelectedIcon size={22} className="text-white/60" />
             </div>
 
-            <p className="font-mono text-sm text-white/45 leading-relaxed mb-5">
+            <p className="font-mono text-sm text-white/70 leading-relaxed mb-5">
               {selectedCategory.description}
             </p>
 
@@ -295,7 +298,7 @@ export function EcosystemTab() {
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
+                <p className="font-mono text-[10px] text-white/70 uppercase tracking-[0.35em] mb-2">
                   Project Feed
                 </p>
 
@@ -324,7 +327,7 @@ export function EcosystemTab() {
               </p>
             </div>
 
-            <p className="font-mono text-xs text-white/45 leading-relaxed mb-5">
+            <p className="font-mono text-xs text-white/70 leading-relaxed mb-5">
               Dit scherm wordt de startpagina waar mensen XRPL projecten,
               tools, wallets, events, DeFi, AI en educational content kunnen
               vinden.
@@ -362,7 +365,7 @@ export function EcosystemTab() {
               </p>
             </div>
 
-            <p className="font-mono text-xs text-white/45 leading-relaxed">
+            <p className="font-mono text-xs text-white/70 leading-relaxed">
               Later kan AI vragen beantwoorden zoals: welke wallet moet ik
               gebruiken, welke projecten zijn actief, wat is veilig, en waar kan
               ik leren of bouwen.
@@ -388,7 +391,7 @@ function SignalBox({ signal }: { signal: Signal }) {
     <div className="border border-white/10 bg-black/60 p-4">
       <Icon size={18} className="text-white/60 mb-3" />
 
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+      <p className="font-mono text-[10px] text-white/70 uppercase tracking-widest mb-2">
         {signal.title}
       </p>
 
@@ -396,7 +399,7 @@ function SignalBox({ signal }: { signal: Signal }) {
         {signal.value}
       </p>
 
-      <p className="font-mono text-[10px] text-white/30 uppercase">
+      <p className="font-mono text-[10px] text-white/70 uppercase">
         {signal.status}
       </p>
     </div>
@@ -426,7 +429,7 @@ function CategoryCard({
       <div className="flex items-start justify-between mb-4">
         <Icon size={20} className="text-white/60" />
 
-        <p className="font-mono text-[10px] uppercase text-white/35">
+        <p className="font-mono text-[10px] uppercase text-white/70">
           {category.status}
         </p>
       </div>
@@ -435,7 +438,7 @@ function CategoryCard({
         {category.title}
       </p>
 
-      <p className="font-mono text-[10px] text-white/35 uppercase">
+      <p className="font-mono text-[10px] text-white/70 uppercase">
         {category.count} items
       </p>
     </button>
@@ -445,7 +448,7 @@ function CategoryCard({
 function MiniStatus({ label, value }: { label: string; value: string }) {
   return (
     <div className="border border-white/10 bg-black p-4">
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+      <p className="font-mono text-[10px] text-white/70 uppercase tracking-widest mb-2">
         {label}
       </p>
 
@@ -462,16 +465,16 @@ function ProjectRow({ project }: { project: EcosystemProject }) {
           {project.name}
         </p>
 
-        <p className="font-mono text-[10px] text-white/35 uppercase">
+        <p className="font-mono text-[10px] text-white/70 uppercase">
           {project.status}
         </p>
       </div>
 
-      <p className="font-mono text-[10px] text-white/35 uppercase mb-3">
+      <p className="font-mono text-[10px] text-white/70 uppercase mb-3">
         {project.category}
       </p>
 
-      <p className="font-mono text-xs text-white/45 leading-relaxed">
+      <p className="font-mono text-xs text-white/70 leading-relaxed">
         {project.description}
       </p>
     </div>
@@ -483,7 +486,7 @@ function PurposeLine({ label }: { label: string }) {
     <div className="border border-white/10 bg-black p-3 flex items-center gap-2">
       <Activity size={14} className="text-white/60" />
 
-      <p className="font-mono text-xs text-white/50">{label}</p>
+      <p className="font-mono text-xs text-white/70">{label}</p>
     </div>
   );
 }
@@ -505,7 +508,7 @@ function LayerLine({
         <p className="font-orbitron text-xs font-bold uppercase">{label}</p>
       </div>
 
-      <p className="font-mono text-[10px] text-white/35 uppercase">{value}</p>
+      <p className="font-mono text-[10px] text-white/70 uppercase">{value}</p>
     </div>
   );
 }
@@ -525,7 +528,7 @@ function FeatureBox({
 
       <p className="font-orbitron text-sm font-bold uppercase mb-2">{title}</p>
 
-      <p className="font-mono text-xs text-white/40">{text}</p>
+      <p className="font-mono text-xs text-white/70">{text}</p>
     </div>
   );
 }

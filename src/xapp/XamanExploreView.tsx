@@ -147,7 +147,7 @@ function HeatmapSection({ onResearch, onExternal }: { onResearch: (seed?: Resear
             const researchable = XRPL_ADDRESS.test(token.issuer);
             return (
               <article className={`xaman-heatmap-tile is-${tone}`} key={token.id}>
-                <div><strong>{token.currency}</strong><span>Volume rank #{rank}</span></div>
+                <div><strong>{token.currency}</strong><span>{token.volume24hUsd === null ? "Volume rank unavailable" : `Volume rank #${rank} in this sample`}</span></div>
                 <p>{token.name}</p>
                 <dl>
                   <div><dt>Reported USD price</dt><dd>{formatPrice(token.priceUsd, "USD")}</dd></div>

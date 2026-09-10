@@ -1,3 +1,4 @@
+import { useTerminalLanguage } from "../lib/useTerminalLanguage";
 import { useState } from "react";
 import type { ElementType } from "react";
 import {
@@ -51,13 +52,13 @@ const devTools: DevTool[] = [
     id: "xaman",
     title: "Xaman Payload Builder",
     status: "Soon",
-    text: "Maak later veilige Xaman payloads voor Daily Check-In, source tag 2606 en user confirmation.",
+    text: "Maak later veilige Xaman payloads voor Daily Check-In, source tag 2606170002 en user confirmation.",
     icon: Wallet,
   },
   {
     id: "source",
     title: "Source Tag Helper",
-    status: "2606",
+    status: "2606170002",
     text: "Helper om Make Waves transacties altijd met de juiste source tag zichtbaar te maken.",
     icon: Fingerprint,
   },
@@ -79,7 +80,7 @@ const devTools: DevTool[] = [
 
 const codeExamples: CodeExample[] = [
   {
-    title: "Source Tag 2606",
+    title: "Source Tag 2606170002",
     status: "Make Waves",
     description: "Voorbeeldstructuur voor een XRPL transactie met source tag.",
     code: `{
@@ -87,7 +88,7 @@ const codeExamples: CodeExample[] = [
   Account: userWallet,
   Destination: ottWallet,
   Amount: "1000",
-  SourceTag: 2606
+  SourceTag: 2606170002
 }`,
   },
   {
@@ -135,7 +136,7 @@ const buildSteps: BuildStep[] = [
   {
     title: "Mainnet Proof",
     status: "Later",
-    text: "Daily Check-In krijgt later echte mainnet proof met source tag 2606.",
+    text: "Daily Check-In krijgt later echte mainnet proof met source tag 2606170002.",
     icon: Waves,
   },
 ];
@@ -151,7 +152,7 @@ const apiRoutes = [
   },
   {
     path: "/api/source-tag",
-    status: "2606 Helper",
+    status: "2606170002 Helper",
   },
   {
     path: "/api/check-in",
@@ -160,6 +161,7 @@ const apiRoutes = [
 ];
 
 export function DeveloperHubTab() {
+  const { language } = useTerminalLanguage();
   const [selectedTool, setSelectedTool] = useState<DevTool>(devTools[0]);
   const [selectedExample, setSelectedExample] = useState<CodeExample>(
     codeExamples[0]
@@ -169,12 +171,13 @@ export function DeveloperHubTab() {
 
   return (
     <div className="p-6 bg-black min-h-screen text-white">
+      <p className="mb-5 border border-white/30 bg-white/10 p-4 text-sm leading-relaxed text-white">{language === "en" ? "Developer reference and example code. These controls do not create signing requests or execute ledger transactions." : "Ontwikkelaarsinformatie en voorbeeldcode. Deze knoppen maken geen tekenverzoeken aan en voeren geen ledgertransacties uit."}</p>
       <div className="relative overflow-hidden border border-white/10 bg-white/[0.02] p-6 mb-6">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_white,_transparent_35%)]" />
 
         <div className="relative z-10 grid grid-cols-12 gap-6 items-center">
           <div className="col-span-12 xl:col-span-8">
-            <div className="flex items-center gap-2 mb-4 text-white/45">
+            <div className="flex items-center gap-2 mb-4 text-white/70">
               <Terminal size={17} />
 
               <p className="font-mono text-[10px] uppercase tracking-[0.35em]">
@@ -182,11 +185,11 @@ export function DeveloperHubTab() {
               </p>
             </div>
 
-            <h2 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
+            <h1 className="font-orbitron text-3xl xl:text-4xl font-black uppercase mb-4">
               Build Layer For XRPL
-            </h2>
+            </h1>
 
-            <p className="font-mono text-sm text-white/45 max-w-3xl leading-relaxed">
+            <p className="font-mono text-sm text-white/70 max-w-3xl leading-relaxed">
               De builder-laag van OTT Terminal. Hier komen Xaman payloads,
               XRPL API voorbeelden, source tag helpers, docs, code snippets en
               partner integrations samen.
@@ -194,8 +197,8 @@ export function DeveloperHubTab() {
           </div>
 
           <div className="col-span-12 xl:col-span-4 grid grid-cols-2 gap-3">
-            <StatBox icon={Code2} label="Modules" value="14+" />
-            <StatBox icon={Fingerprint} label="Source Tag" value="2606" />
+            <StatBox icon={Code2} label="Modules" value={String(devTools.length)} />
+            <StatBox icon={Fingerprint} label="Source Tag" value="2606170002" />
             <StatBox icon={Lock} label="Secrets" value="Backend" />
             <StatBox icon={Rocket} label="Build" value="MVP" />
           </div>
@@ -246,7 +249,7 @@ export function DeveloperHubTab() {
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
+                <p className="font-mono text-[10px] text-white/70 uppercase tracking-[0.35em] mb-2">
                   Selected Tool
                 </p>
 
@@ -258,12 +261,12 @@ export function DeveloperHubTab() {
               <SelectedToolIcon size={22} className="text-white/60" />
             </div>
 
-            <p className="font-mono text-sm text-white/45 leading-relaxed mb-5">
+            <p className="font-mono text-sm text-white/70 leading-relaxed mb-5">
               {selectedTool.text}
             </p>
 
             <div className="border border-white/10 bg-black p-4">
-              <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+              <p className="font-mono text-[10px] text-white/70 uppercase tracking-widest mb-2">
                 Status
               </p>
 
@@ -276,7 +279,7 @@ export function DeveloperHubTab() {
           <div className="border border-white/10 bg-white/[0.02] p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <p className="font-mono text-[10px] text-white/35 uppercase tracking-[0.35em] mb-2">
+                <p className="font-mono text-[10px] text-white/70 uppercase tracking-[0.35em] mb-2">
                   Code Examples
                 </p>
 
@@ -305,12 +308,12 @@ export function DeveloperHubTab() {
                   {selectedExample.title}
                 </p>
 
-                <p className="font-mono text-[10px] text-white/35 uppercase">
+                <p className="font-mono text-[10px] text-white/70 uppercase">
                   {selectedExample.status}
                 </p>
               </div>
 
-              <p className="font-mono text-xs text-white/45 leading-relaxed mb-4">
+              <p className="font-mono text-xs text-white/70 leading-relaxed mb-4">
                 {selectedExample.description}
               </p>
 
@@ -382,7 +385,7 @@ function StatBox({
     <div className="border border-white/10 bg-black/60 p-4">
       <Icon size={18} className="text-white/60 mb-3" />
 
-      <p className="font-mono text-[10px] text-white/35 uppercase tracking-widest mb-2">
+      <p className="font-mono text-[10px] text-white/70 uppercase tracking-widest mb-2">
         {label}
       </p>
 
@@ -420,7 +423,7 @@ function ToolButton({
           </p>
         </div>
 
-        <p className="font-mono text-[10px] text-white/35 uppercase">
+        <p className="font-mono text-[10px] text-white/70 uppercase">
           {tool.status}
         </p>
       </div>
@@ -433,7 +436,7 @@ function ApiRouteRow({ path, status }: { path: string; status: string }) {
     <div className="border border-white/10 bg-black p-3">
       <p className="font-mono text-xs text-white/60 mb-1">{path}</p>
 
-      <p className="font-mono text-[10px] text-white/30 uppercase">
+      <p className="font-mono text-[10px] text-white/70 uppercase">
         {status}
       </p>
     </div>
@@ -463,7 +466,7 @@ function ExampleButton({
           {example.title}
         </p>
 
-        <p className="font-mono text-[10px] text-white/35 uppercase">
+        <p className="font-mono text-[10px] text-white/70 uppercase">
           {example.status}
         </p>
       </div>
@@ -482,7 +485,7 @@ function SecurityLine({
     <div className="border border-white/10 bg-black p-3 flex items-center gap-2">
       <Icon size={14} className="text-white/60" />
 
-      <p className="font-mono text-xs text-white/50">{label}</p>
+      <p className="font-mono text-xs text-white/70">{label}</p>
     </div>
   );
 }
@@ -495,7 +498,7 @@ function BuildStepCard({ step }: { step: BuildStep }) {
       <div className="flex items-start justify-between mb-3">
         <Icon size={17} className="text-white/60" />
 
-        <p className="font-mono text-[10px] text-white/30 uppercase">
+        <p className="font-mono text-[10px] text-white/70 uppercase">
           {step.status}
         </p>
       </div>
@@ -504,7 +507,7 @@ function BuildStepCard({ step }: { step: BuildStep }) {
         {step.title}
       </p>
 
-      <p className="font-mono text-[10px] text-white/40 leading-relaxed">
+      <p className="font-mono text-[10px] text-white/70 leading-relaxed">
         {step.text}
       </p>
     </div>
@@ -526,7 +529,7 @@ function FeatureBox({
 
       <p className="font-orbitron text-sm font-bold uppercase mb-2">{title}</p>
 
-      <p className="font-mono text-xs text-white/40">{text}</p>
+      <p className="font-mono text-xs text-white/70">{text}</p>
     </div>
   );
 }
