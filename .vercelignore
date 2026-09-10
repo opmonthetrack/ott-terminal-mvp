@@ -1,0 +1,9 @@
+artifacts/
+node_modules/
+.git/
+.env*
+!.env.example
+dist/
+build/
+coverage/
+*.log
