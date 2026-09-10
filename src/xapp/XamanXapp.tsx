@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -40,6 +40,7 @@ import {
   Tag,
   Wallet,
 } from "lucide-react";
+import { runNativeAction } from "../lib/asyncReliability";
 import type { TokenResearchResult } from "../lib/xrplTokenResearch";
 import type { SessionEvidence } from "./XamanExploreView";
 import type { DnaScan } from "../lib/ageWalletDna";
@@ -225,6 +226,9 @@ function profileWarnings(profile: XrplWalletProfile, workspace: XrplWalletWorksp
 }
 
 export function XamanXapp() {
+  const contextInvalid = useRef(false);
+  const pendingNative = useRef<(() => void) | null>(null);
+  useEffect(() => () => { pendingNative.current?.(); }, []);
   const [view, setView] = useState<XappView>("home");
   const [runtime, setRuntime] = useState<XamanXappRuntime | null>(null);
   const [sessionState, setSessionState] = useState<LoadState>("loading");
@@ -278,13 +282,32 @@ export function XamanXapp() {
   }, []);
 
   useEffect(() => {
-    if (!runtime?.account) return;
+    const bridge = runtime?.bridge;
+    if (!bridge) return;
+    const invalidate = () => {
+      contextInvalid.current = true;
+      pendingNative.current?.();
+      setSessionState("error");
+      setSessionError("Your Xaman network changed. Close and reopen OTT to load the selected account and network again.");
+      setWorkspace(null);
+      setDnaScan(null);
+      setTransaction(null);
+      setAddressProfile(null);
+      setWorkspaceState("idle");
+      setView("home");
+    };
+    bridge.on("networkswitch", invalidate);
+    return () => { bridge.off?.("networkswitch", invalidate); };
+  }, [runtime]);
+
+  useEffect(() => {
+    if (!runtime?.account || sessionState !== "success") return;
     let active = true;
     setWorkspaceState("loading");
     setWorkspaceError("");
     void loadXrplWalletWorkspace(runtime.account, runtime.network)
       .then((nextWorkspace) => {
-        if (!active) return;
+        if (!active || contextInvalid.current) return;
         setWorkspace(nextWorkspace);
         setWorkspaceState("success");
       })
@@ -294,14 +317,16 @@ export function XamanXapp() {
         setWorkspaceError(error instanceof Error ? error.message : "The wallet workspace could not be loaded.");
       });
     return () => { active = false; };
-  }, [runtime?.account, runtime?.network]);
+  }, [runtime?.account, runtime?.network, sessionState]);
 
   async function refreshWorkspace() {
-    if (!runtime?.account) return;
+    if (!runtime?.account || contextInvalid.current || sessionState !== "success") return;
     setWorkspaceState("loading");
     setWorkspaceError("");
     try {
-      setWorkspace(await loadXrplWalletWorkspace(runtime.account, runtime.network));
+      const next = await loadXrplWalletWorkspace(runtime.account, runtime.network);
+      if (contextInvalid.current) return;
+      setWorkspace(next);
       setWorkspaceState("success");
       setNotice("Validated wallet data refreshed.");
     } catch (error) {
@@ -311,6 +336,7 @@ export function XamanXapp() {
   }
 
   async function verifyTransaction(candidate = hashInput) {
+    if (contextInvalid.current || sessionState !== "success") return;
     const hash = extractXrplTransactionHash(candidate.trim());
     if (!hash) {
       setTransactionState("error");
@@ -322,7 +348,9 @@ export function XamanXapp() {
     setTransactionError("");
     setTransactionState("loading");
     try {
-      setTransaction(await loadXrplTransactionSnapshot(hash, runtime?.network ?? "mainnet"));
+      const next = await loadXrplTransactionSnapshot(hash, runtime?.network ?? "mainnet");
+      if (contextInvalid.current) return;
+      setTransaction(next);
       setTransactionState("success");
     } catch (error) {
       setTransactionState("error");
@@ -331,6 +359,7 @@ export function XamanXapp() {
   }
 
   async function inspectAddress(candidate = addressInput, tag: number | null = addressTag) {
+    if (contextInvalid.current || sessionState !== "success") return;
     const address = extractXrplAddress(candidate.trim());
     if (!address) {
       setAddressState("error");
@@ -343,7 +372,9 @@ export function XamanXapp() {
     setAddressError("");
     setAddressState("loading");
     try {
-      setAddressProfile(await loadXrplWalletProfile(address, runtime?.network ?? "mainnet"));
+      const next = await loadXrplWalletProfile(address, runtime?.network ?? "mainnet");
+      if (contextInvalid.current) return;
+      setAddressProfile(next);
       setAddressState("success");
     } catch (error) {
       setAddressState("error");
@@ -357,8 +388,10 @@ export function XamanXapp() {
       setNotice("The native QR scanner is available only inside the live xApp.");
       return;
     }
+    pendingNative.current?.();
     const handleQr = (event: XamanQrEvent) => {
-      bridge.off?.("qr", handleQr);
+      pendingNative.current?.();
+      if (contextInvalid.current) return;
       if (event.reason !== "SCANNED" || !event.qrContents) {
         setNotice("No QR content was scanned.");
         return;
@@ -379,8 +412,9 @@ export function XamanXapp() {
       }
       setNotice("The QR code did not contain a supported XRPL address or transaction hash.");
     };
+    pendingNative.current = () => { bridge.off?.("qr", handleQr); pendingNative.current = null; };
     bridge.on("qr", handleQr);
-    void Promise.resolve(bridge.scanQr()).catch(() => {
+    void runNativeAction(() => bridge.scanQr()).catch(() => {
       bridge.off?.("qr", handleQr);
       setNotice("Xaman could not open the QR scanner.");
     });
@@ -392,8 +426,10 @@ export function XamanXapp() {
       setNotice("Destination Picker requires a supported Xaman version inside the live xApp.");
       return;
     }
+    pendingNative.current?.();
     const handleDestination = (event: XamanDestinationEvent) => {
-      bridge.off?.("destination", handleDestination);
+      pendingNative.current?.();
+      if (contextInvalid.current) return;
       const address = event.destination?.address ?? "";
       if (!address) {
         setNotice("No destination was selected.");
@@ -403,8 +439,9 @@ export function XamanXapp() {
       setNotice(event.destination?.name ? `Selected ${event.destination.name}. Checking its public account settings.` : "Destination selected. Checking its public account settings.");
       void inspectAddress(address, tag);
     };
+    pendingNative.current = () => { bridge.off?.("destination", handleDestination); pendingNative.current = null; };
     bridge.on("destination", handleDestination);
-    void Promise.resolve(bridge.selectDestination({ ignoreDestinationTag: false })).catch(() => {
+    void runNativeAction(() => bridge.selectDestination!({ ignoreDestinationTag: false })).catch(() => {
       bridge.off?.("destination", handleDestination);
       setNotice("Xaman could not open the Destination Picker.");
     });
@@ -415,7 +452,7 @@ export function XamanXapp() {
       setNotice("Open this transaction from the live xApp to use Xaman's native details panel.");
       return;
     }
-    void Promise.resolve(runtime.bridge.tx({ account: runtime.account, tx: hash })).catch(() => setNotice("Xaman could not open the transaction panel."));
+    void runNativeAction(() => runtime.bridge!.tx!({ account: runtime.account, tx: hash })).catch(() => setNotice("Xaman could not open the transaction panel."));
   }
 
   function shareText(text: string) {
@@ -423,11 +460,11 @@ export function XamanXapp() {
       setNotice("Native sharing is available only inside a supported Xaman xApp.");
       return;
     }
-    void Promise.resolve(runtime.bridge.share({ text })).catch(() => setNotice("Xaman could not open the share dialog."));
+    void runNativeAction(() => runtime.bridge!.share!({ text })).catch(() => setNotice("Xaman could not open the share dialog."));
   }
 
   function copyValue(value: string, label: string) {
-    void navigator.clipboard.writeText(value)
+    void runNativeAction(() => navigator.clipboard.writeText(value))
       .then(() => setNotice(`${label} copied.`))
       .catch(() => setNotice(`${label} could not be copied on this device.`));
   }
@@ -437,7 +474,7 @@ export function XamanXapp() {
       setNotice("Open the live xApp in Xaman to use its confirmed external-browser flow.");
       return;
     }
-    void Promise.resolve(runtime.bridge.openBrowser({ url })).catch(() => setNotice("Xaman could not open the external page."));
+    void runNativeAction(() => runtime.bridge!.openBrowser({ url })).catch(() => setNotice("Xaman could not open the external page."));
   }
 
   function openResearch(seed: ResearchSeed = { issuer: "", currency: "" }, returnView: XappView = "home") {
@@ -451,10 +488,21 @@ export function XamanXapp() {
       setNotice("The close action is available only inside Xaman.");
       return;
     }
-    void Promise.resolve(runtime.bridge.close({ refreshEvents: false })).catch(() => setNotice("Xaman could not close the xApp automatically."));
+    void runNativeAction(() => runtime.bridge!.close({ refreshEvents: false })).catch(() => setNotice("Xaman could not close the xApp automatically."));
   }
 
   const profile = workspace?.profile ?? null;
+
+  if (sessionState !== "success") return (
+    <main className="xaman-xapp-shell" data-theme={theme}><div className="xaman-xapp-container">
+      <h1>OTT · Xaman</h1>
+      {sessionState === "loading" ? <LoadingLine text="Reading verified Xaman context…" /> : <>
+        <ErrorLine text={sessionError} />
+        <p>Close this xApp and open OTT again from Xaman. Wallet tools stay unavailable until the account and network can be verified.</p>
+        {runtime?.bridge ? <button type="button" className="xaman-back-button" onClick={closeXapp}>Close xApp</button> : null}
+      </>}
+    </div></main>
+  );
 
   return (
     <main className="xaman-xapp-shell" data-theme={theme}>
@@ -476,8 +524,6 @@ export function XamanXapp() {
         </header>
 
         {notice ? <button type="button" className="xaman-notice" onClick={() => setNotice("")} aria-label="Dismiss message"><ShieldCheck size={20} /><span>{notice}</span></button> : null}
-        {sessionState === "loading" ? <LoadingLine text="Reading verified Xaman context…" /> : null}
-        {sessionState === "error" ? <ErrorLine text={sessionError} /> : null}
         {workspaceState === "error" ? <ErrorLine text={workspaceError} /> : null}
 
         <div className="xaman-view" key={view}>

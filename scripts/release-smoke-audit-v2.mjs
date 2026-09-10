@@ -11,6 +11,7 @@ const routes = [
   "home", "dashboard", "wallet", "academy", "xamanactivation", "network",
   "intel", "news", "ottintelligence", "roadmap", "support", "xaman",
   "xrplverify", "source", "checkin", "rewardledger", "accessgate", "portfolio",
+  "ecosystem", "validator", "developer", "tokenization", "defi",
 ];
 const languages = ["en", "nl"];
 const profiles = [
@@ -45,7 +46,7 @@ async function waitForRoute(page) {
   await page.waitForTimeout(200);
 }
 
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({ headless: true, ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}) });
 
 for (const profile of profiles) {
   const context = await browser.newContext({

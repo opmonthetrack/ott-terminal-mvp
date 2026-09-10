@@ -36,7 +36,7 @@ jobs:
       - name: Install dependencies reproducibly
         run: npm ci --no-audit --no-fund
 
-      - name: Audit all 17 public routes
+      - name: Audit all 23 public routes
         run: npm run audit:routes
 
       - name: Audit dedicated Xaman xApp boundary

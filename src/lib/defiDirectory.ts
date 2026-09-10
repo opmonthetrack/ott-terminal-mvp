@@ -65,8 +65,8 @@ export const DEFI_DIRECTORY: DefiDirectoryEntry[] = [
     walletNl: "Hangt af van product, netwerk en ondersteunde signingflow.",
   },
   {
-    id: "strobe", name: "Strobe Finance", category: "lending", verifiedDomain: true, status: "reviewed",
-    url: "https://strobe.finance/", sourceLabel: "Official Strobe Finance website and documentation",
+    id: "strobe", name: "Strobe Finance", category: "lending", verifiedDomain: false, status: "research",
+    url: "https://strobe.finance/", sourceLabel: "Website unavailable during the 10 September 2026 review",
     summaryEn: "An XRPL-focused lending protocol interface for supplying assets, borrowing and monitoring positions.",
     summaryNl: "Een XRPL-gerichte lendinginterface voor het aanbieden van assets, lenen en volgen van posities.",
     technologyEn: "Smart-contract or protocol logic around collateral, borrowing, interest and liquidation, with XRPL ecosystem connectivity.",
@@ -133,8 +133,8 @@ export const DEFI_DIRECTORY: DefiDirectoryEntry[] = [
     walletEn: "Uses the GateHub account experience; external wallet compatibility depends on the feature.", walletNl: "Gebruikt de GateHub-accountervaring; externe walletcompatibiliteit verschilt per functie.",
   },
   {
-    id: "moai", name: "Moai Finance", category: "bridge", verifiedDomain: true, status: "reviewed",
-    url: "https://docs.moai-finance.xyz/", sourceLabel: "Official Moai Finance documentation",
+    id: "moai", name: "Moai Finance", category: "bridge", verifiedDomain: false, status: "research",
+    url: "https://moai-finance.xyz/", sourceLabel: "Official service could not be verified on 10 September 2026",
     summaryEn: "Multi-chain liquidity, swapping and bridge-oriented tooling connected to XRP ecosystem assets.",
     summaryNl: "Multi-chain liquiditeits-, swap- en bridgetools rond assets uit het XRP-ecosysteem.",
     technologyEn: "Cross-chain contracts, routing and liquidity pools outside the native XRPL trust model.",

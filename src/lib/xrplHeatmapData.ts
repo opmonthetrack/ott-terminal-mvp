@@ -1,307 +1,87 @@
-export type XrplTokenCategory = "stablecoin" | "defi" | "nft-utility" | "community" | "infrastructure";
-
 export type XrplTokenMarketData = {
-  id: string;
-  currency: string;
-  name: string;
-  issuer: string;
-  priceXrp: number;
-  priceUsd: number;
-  change24h: number;
-  volume24hXrp: number;
-  marketCapUsd: number;
-  trustlines: number;
-  category: XrplTokenCategory;
-  accentColor: string;
-  verified: boolean;
-  onTheDexUrl?: string;
-  xMagneticUrl?: string;
+  id: string; currency: string; name: string; issuer: string;
+  priceUsd: number | null; volume24hUsd: number | null;
+  marketCapUsd: number | null; numTrades: number | null; lastTradeAt: string;
 };
+export type MarketSnapshot = { tokens: XrplTokenMarketData[]; source: string; fetchedAt: string };
 
-export const TOP_50_XRPL_TOKENS: XrplTokenMarketData[] = [
-  {
-    id: "xrp-native",
-    currency: "XRP",
-    name: "XRP (Native)",
-    issuer: "XRPL Ledger Native",
-    priceXrp: 1.0,
-    priceUsd: 2.45,
-    change24h: 4.82,
-    volume24hXrp: 142500000,
-    marketCapUsd: 142000000000,
-    trustlines: 5500000,
-    category: "infrastructure",
-    accentColor: "#23292F",
-    verified: true,
-    onTheDexUrl: "https://onthedex.live",
-    xMagneticUrl: "https://xmagnetic.org",
-  },
-  {
-    id: "rlusd-ripple",
-    currency: "RLUSD",
-    name: "Ripple USD",
-    issuer: "rQh8VDKGyr82Zxv5yCHEGqGZ88A9mB5f",
-    priceXrp: 0.408,
-    priceUsd: 1.0,
-    change24h: 0.02,
-    volume24hXrp: 18500000,
-    marketCapUsd: 450000000,
-    trustlines: 85400,
-    category: "stablecoin",
-    accentColor: "#0085FF",
-    verified: true,
-    onTheDexUrl: "https://onthedex.live/currencies/RLUSD",
-    xMagneticUrl: "https://xmagnetic.org/tokens/RLUSD",
-  },
-  {
-    id: "solo-sologenic",
-    currency: "SOLO",
-    name: "Sologenic",
-    issuer: "rsoLo2S1kiGeCcn6hCUXVrCpGMWLrRrLZz",
-    priceXrp: 0.082,
-    priceUsd: 0.201,
-    change24h: 8.45,
-    volume24hXrp: 4200000,
-    marketCapUsd: 80000000,
-    trustlines: 245000,
-    category: "defi",
-    accentColor: "#E53935",
-    verified: true,
-    onTheDexUrl: "https://onthedex.live/currencies/SOLO",
-    xMagneticUrl: "https://xmagnetic.org/tokens/SOLO",
-  },
-  {
-    id: "core-coreum",
-    currency: "CORE",
-    name: "Coreum Token",
-    issuer: "rcoreNu12pMw63nZG7qRj546mGcnPzJLLs",
-    priceXrp: 0.045,
-    priceUsd: 0.110,
-    change24h: -3.21,
-    volume24hXrp: 2800000,
-    marketCapUsd: 55000000,
-    trustlines: 128000,
-    category: "infrastructure",
-    accentColor: "#00E676",
-    verified: true,
-    onTheDexUrl: "https://onthedex.live/currencies/CORE",
-    xMagneticUrl: "https://xmagnetic.org/tokens/CORE",
-  },
-  {
-    id: "mag-magnetic",
-    currency: "MAG",
-    name: "XMagnetic Token",
-    issuer: "rMAGnetiC3Kz9u1x99X9a1vB9x2Zk3L",
-    priceXrp: 0.125,
-    priceUsd: 0.306,
-    change24h: 14.60,
-    volume24hXrp: 3900000,
-    marketCapUsd: 32000000,
-    trustlines: 64200,
-    category: "defi",
-    accentColor: "#9C27B0",
-    verified: true,
-    onTheDexUrl: "https://onthedex.live/currencies/MAG",
-    xMagneticUrl: "https://xmagnetic.org/tokens/MAG",
-  },
-  {
-    id: "csc-casinocoin",
-    currency: "CSC",
-    name: "CasinoCoin",
-    issuer: "rCSCMan12pMws78vJ9u1x2B3c4D5e6F7g",
-    priceXrp: 0.00018,
-    priceUsd: 0.00044,
-    change24h: -1.15,
-    volume24hXrp: 1400000,
-    marketCapUsd: 28000000,
-    trustlines: 92000,
-    category: "community",
-    accentColor: "#FF9800",
-    verified: true,
-    onTheDexUrl: "https://onthedex.live/currencies/CSC",
-    xMagneticUrl: "https://xmagnetic.org/tokens/CSC",
-  },
-  {
-    id: "vgb-vagabond",
-    currency: "VGB",
-    name: "Vagabond",
-    issuer: "rVGBMan12pMw63nZG7qRj546mGcnPzJLLs",
-    priceXrp: 0.034,
-    priceUsd: 0.083,
-    change24h: 5.12,
-    volume24hXrp: 980000,
-    marketCapUsd: 18500000,
-    trustlines: 48000,
-    category: "nft-utility",
-    accentColor: "#3F51B5",
-    verified: true,
-  },
-  {
-    id: "els-elysian",
-    currency: "ELS",
-    name: "Elysian",
-    issuer: "rELSMan12pMw63nZG7qRj546mGcnPzJLLs",
-    priceXrp: 0.012,
-    priceUsd: 0.029,
-    change24h: -6.40,
-    volume24hXrp: 750000,
-    marketCapUsd: 14200000,
-    trustlines: 39500,
-    category: "defi",
-    accentColor: "#00BCD4",
-    verified: true,
-  },
-  {
-    id: "ctf-crypto-trading",
-    currency: "CTF",
-    name: "CTF Token",
-    issuer: "rCTFMan12pMw63nZG7qRj546mGcnPzJLLs",
-    priceXrp: 0.380,
-    priceUsd: 0.931,
-    change24h: 18.25,
-    volume24hXrp: 5200000,
-    marketCapUsd: 41000000,
-    trustlines: 51200,
-    category: "defi",
-    accentColor: "#FF5722",
-    verified: true,
-  },
-  {
-    id: "mint-minting",
-    currency: "MINT",
-    name: "MINT Token",
-    issuer: "rMINTMan12pMw63nZG7qRj546mGcnPzJLLs",
-    priceXrp: 0.0055,
-    priceUsd: 0.0134,
-    change24h: 2.10,
-    volume24hXrp: 620000,
-    marketCapUsd: 9800000,
-    trustlines: 28400,
-    category: "nft-utility",
-    accentColor: "#4CAF50",
-    verified: true,
-  },
-  {
-    id: "xpunk-xpunks",
-    currency: "XPUNK",
-    name: "xPunks Token",
-    issuer: "rXPUNKMan12pMw63nZG7qRj546mGcnPzJLLs",
-    priceXrp: 4.25,
-    priceUsd: 10.41,
-    change24h: -2.85,
-    volume24hXrp: 1100000,
-    marketCapUsd: 21000000,
-    trustlines: 31000,
-    category: "nft-utility",
-    accentColor: "#E91E63",
-    verified: true,
-  },
-  {
-    id: "drop-drop-token",
-    currency: "DROP",
-    name: "Drop Token",
-    issuer: "rDROPMan12pMw63nZG7qRj546mGcnPzJLLs",
-    priceXrp: 0.00084,
-    priceUsd: 0.00205,
-    change24h: 7.90,
-    volume24hXrp: 490000,
-    marketCapUsd: 7400000,
-    trustlines: 22100,
-    category: "community",
-    accentColor: "#2196F3",
-    verified: true,
-  },
-  {
-    id: "sgb-songbird",
-    currency: "SGB",
-    name: "Songbird Wrapped",
-    issuer: "rSGBMan12pMw63nZG7qRj546mGcnPzJLLs",
-    priceXrp: 0.0082,
-    priceUsd: 0.020,
-    change24h: -0.80,
-    volume24hXrp: 380000,
-    marketCapUsd: 12500000,
-    trustlines: 41000,
-    category: "infrastructure",
-    accentColor: "#673AB7",
-    verified: true,
-  },
-  {
-    id: "equal-equality",
-    currency: "EQUAL",
-    name: "Equal Token",
-    issuer: "rEQUALMan12pMw63nZG7qRj546mGcnPzJLLs",
-    priceXrp: 0.0195,
-    priceUsd: 0.0477,
-    change24h: 3.40,
-    volume24hXrp: 310000,
-    marketCapUsd: 6200000,
-    trustlines: 18900,
-    category: "community",
-    accentColor: "#009688",
-    verified: false,
-  },
-  {
-    id: "xeb-xpectmore",
-    currency: "XPECT",
-    name: "XpectMore Token",
-    issuer: "rXPECTMan12pMw63nZG7qRj546mGcnPzJLLs",
-    priceXrp: 0.062,
-    priceUsd: 0.151,
-    change24h: 11.30,
-    volume24hXrp: 890000,
-    marketCapUsd: 15400000,
-    trustlines: 34200,
-    category: "defi",
-    accentColor: "#8BC34A",
-    verified: true,
-  },
-  {
-    id: "nexo-wrapped",
-    currency: "NEXO",
-    name: "Nexo Wrapped XRPL",
-    issuer: "rNEXOMan12pMw63nZG7qRj546mGcnPzJLLs",
-    priceXrp: 0.520,
-    priceUsd: 1.274,
-    change24h: 1.15,
-    volume24hXrp: 1800000,
-    marketCapUsd: 26000000,
-    trustlines: 27800,
-    category: "stablecoin",
-    accentColor: "#1A237E",
-    verified: true,
-  },
+export function marketNumber(...values: unknown[]): number | null {
+  for (const value of values) {
+    if (typeof value === "string" && !value.trim()) continue;
+    if (typeof value !== "string" && typeof value !== "number") continue;
+    const number = Number(value);
+    if (Number.isFinite(number) && number >= 0) return number;
+  }
+  return null;
+}
+
+export function normalizeMarketToken(value: unknown): XrplTokenMarketData | null {
+  if (!value || typeof value !== "object") return null;
+  const row = value as Record<string, unknown>;
+  const currency = String(row.currency ?? row.code ?? row.symbol ?? "").trim();
+  const issuer = String(row.issuer ?? "").trim();
+  if (!currency || (currency !== "XRP" && !/^r[1-9A-HJ-NP-Za-km-z]{25,34}$/.test(issuer))) return null;
+  if (currency === "XRP" && issuer) return null;
+  // Generic price/volume fields do not establish a currency or reporting period.
+  const priceUsd = marketNumber(row.price_mid_usd, row.price_usd, row.priceUsd, row.priceUSD);
+  const volume24hUsd = marketNumber(row.volume_24h_usd, row.volume24hUsd, row.volume24hUSD);
+  const marketCapUsd = marketNumber(row.market_cap_usd, row.marketCapUsd);
+  const numTrades = marketNumber(row.trades_24h, row.trades24h);
+  if ([priceUsd, volume24hUsd, marketCapUsd, numTrades].every(item => item === null)) return null;
+  const lastTrade = String(row.last_trade_at ?? row.lastTradeAt ?? "");
+  return {
+    id: `${currency}:${issuer}`, currency, issuer: issuer || "XRPL native asset",
+    name: String(row.name ?? currency), priceUsd, volume24hUsd, marketCapUsd, numTrades,
+    lastTradeAt: Number.isFinite(Date.parse(lastTrade)) ? lastTrade : "",
+  };
+}
+
+export function parseMarketSnapshot(payload: unknown, source: string): MarketSnapshot {
+  const body = payload && typeof payload === "object" ? payload as Record<string, unknown> : {};
+  if (body.error) throw new Error("Market provider returned an error");
+  const data = Array.isArray(payload) ? payload : body.tokens ?? body.items ?? body.results ?? body.data;
+  const nested = data && typeof data === "object" ? data as Record<string, unknown> : {};
+  const rows = Array.isArray(data) ? data : nested.tokens ?? nested.items;
+  if (!Array.isArray(rows)) throw new Error("Market provider returned no token records");
+  const unique = new Map<string, XrplTokenMarketData>();
+  for (const row of rows) {
+    // OnTheDEX documents these fields for its rolling 24-hour daily endpoint.
+    // Keep this mapping source-specific: generic fields from other providers have no proven units.
+    const record = row && typeof row === "object" ? row as Record<string, unknown> : {};
+    const token = normalizeMarketToken(source === "OnTheDEX API" ? {
+      ...record, name: record.token_name ?? record.name,
+      volume_24h_usd: record.volume_usd, market_cap_usd: record.market_cap,
+      trades_24h: record.num_trades,
+    } : row);
+    if (token && !unique.has(token.id)) unique.set(token.id, token);
+  }
+  const tokens = [...unique.values()].sort((a, b) => (b.volume24hUsd ?? -1) - (a.volume24hUsd ?? -1)).slice(0, 50);
+  if (!tokens.length) throw new Error("No usable market records");
+  return { tokens, source, fetchedAt: new Date().toISOString() };
+}
+
+export const MARKET_SOURCES = [
+  { label: "OnTheDEX API", url: "https://api.onthedex.live/public/v1/daily/tokens?by=volume&min_trades=1&per_page=50" },
+  { label: "XRPL.to API", url: "https://api.xrpl.to/v1/tokens?limit=50&sort=volume" },
 ];
 
-export async function loadTop50XrplTokens(): Promise<XrplTokenMarketData[]> {
-  try {
-    const res = await fetch("https://api.onthedex.live/public/v1/ticker", {
-      signal: AbortSignal.timeout(3000),
-    });
-    if (res.ok) {
-      const data = await res.json() as { tokens?: Partial<XrplTokenMarketData>[] };
-      if (Array.isArray(data.tokens) && data.tokens.length > 0) {
-        return data.tokens.map((t, idx) => ({
-          id: String(t.id || `token-${idx}`),
-          currency: String(t.currency || "TOKEN"),
-          name: String(t.name || t.currency || "XRPL Token"),
-          issuer: String(t.issuer || "r..."),
-          priceXrp: Number(t.priceXrp ?? 0.1),
-          priceUsd: Number(t.priceUsd ?? 0.25),
-          change24h: Number(t.change24h ?? 0),
-          volume24hXrp: Number(t.volume24hXrp ?? 100000),
-          marketCapUsd: Number(t.marketCapUsd ?? 5000000),
-          trustlines: Number(t.trustlines ?? 1000),
-          category: (t.category as XrplTokenCategory) || "defi",
-          accentColor: t.accentColor || "#3898E8",
-          verified: Boolean(t.verified),
-          onTheDexUrl: `https://onthedex.live/currencies/${t.currency}`,
-          xMagneticUrl: `https://xmagnetic.org/tokens/${t.currency}`,
-        }));
-      }
+export async function loadMarketSnapshot(signal?: AbortSignal): Promise<MarketSnapshot> {
+  for (const source of MARKET_SOURCES) {
+    signal?.throwIfAborted();
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    signal?.addEventListener("abort", abort, { once: true });
+    const timer = setTimeout(abort, 5000);
+    try {
+      const response = await fetch(source.url, { signal: controller.signal });
+      if (!response.ok) throw new Error(`Market provider HTTP ${response.status}`);
+      return parseMarketSnapshot(await response.json(), source.label);
+    } catch {
+      signal?.throwIfAborted();
+    } finally {
+      clearTimeout(timer);
+      signal?.removeEventListener("abort", abort);
     }
-  } catch {
-    // Graceful fallback to static curated XRPL market data
   }
-  return TOP_50_XRPL_TOKENS;
+  throw new Error("Market data is unavailable. No estimated or fallback prices are shown.");
 }
